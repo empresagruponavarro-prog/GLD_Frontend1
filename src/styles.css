@@ -1,26 +1,36 @@
-/* Sistema GLD - Variables Globales del Diseño */
+/* Sistema GLD - Paleta Oficial de Colores Corporativos (Logo GLD Arquitectura e Implementación) */
 :root {
-  --primary-yellow: #f59e0b;      /* Color amarillo principal */
-  --primary-yellow-dark: #d97706; /* Color amarillo oscuro */
-  --primary-yellow-light: #fef3c7;/* Color amarillo claro */
-  --header-bg: #f59e0b;           /* Color de fondo de la barra superior (Header) */
-  --header-text: #ffffff;         /* Color del texto de la barra superior */
-  
-  --sidebar-bg: #004d40;          /* Color de fondo del menú lateral (Verde oscuro corporativo) */
-  --sidebar-text: #ffffff;        /* Color principal de texto del menú lateral */
-  --sidebar-hover: #00695c;       /* Color de fondo al pasar el ratón por encima de una opción */
-  --sidebar-active: #009688;      /* Color de fondo de la opción seleccionada/activa */
+  /* Colores Corporativos del Logo GLD */
+  --gld-green-primary: #5a9e80;     /* Verde esmeralda oficial de las letras 'L' y 'D' del logo */
+  --gld-green-dark: #3b7a5e;        /* Verde esmeralda oscuro corporativo */
+  --gld-green-light: #e8f4ef;       /* Verde claro para tarjetas y fondos */
 
-  --bg-main: #f8fafc;             /* Color de fondo de la pantalla principal (Gris muy claro) */
-  --card-bg: #ffffff;             /* Color de fondo de las tarjetas y modales */
-  --text-main: #1e293b;           /* Color del texto principal del sistema (Gris oscuro) */
+  --gld-olive-primary: #b5b882;     /* Verde oliva/dorado oficial de la letra 'G' del logo */
+  --gld-olive-dark: #8f925b;        /* Verde oliva oscuro */
+  --gld-olive-light: #f5f6e8;      /* Verde oliva suave */
+
+  --gld-charcoal-dark: #1f2321;     /* Gris carbón oscuro del texto del logo GLD */
+  --gld-charcoal-medium: #2d312e;   /* Gris carbón elegante */
+
+  /* Asignación de Roles en el Sistema */
+  --header-bg: #1f2321;             /* Color de fondo de la barra superior (Gris carbón elegante GLD) */
+  --header-text: #ffffff;           /* Color del texto de la barra superior (Blanco) */
+  
+  --sidebar-bg: #2d312e;            /* Color de fondo del menú lateral (Gris carbón corporativo GLD) */
+  --sidebar-text: #ffffff;          /* Color principal de texto del menú lateral */
+  --sidebar-hover: #3b7a5e;         /* Color de fondo al pasar el ratón por encima (Verde esmeralda GLD) */
+  --sidebar-active: #5a9e80;        /* Color de fondo de la opción activa (Verde esmeralda GLD) */
+
+  --bg-main: #f8faf9;             /* Color de fondo de la pantalla principal (Gris/verde muy suave) */
+  --card-bg: #ffffff;             /* Color de fondo de tarjetas y modales */
+  --text-main: #1f2321;           /* Color del texto principal (Gris carbón oscuro) */
   --text-muted: #64748b;          /* Color de textos secundarios o atenuados */
   --border-color: #e2e8f0;        /* Color de los bordes de tablas y formularios */
 
-  --success-color: #10b981;       /* Color verde para botones de éxito o guardar */
-  --warning-color: #f59e0b;       /* Color naranja/amarillo para advertencias */
-  --danger-color: #ef4444;        /* Color rojo para eliminar o errores */
-  --info-color: #3b82f6;          /* Color azul para información o detalles */
+  --success-color: #5a9e80;       /* Verde esmeralda GLD para botones guardar/éxito */
+  --warning-color: #b5b882;       /* Verde oliva GLD para advertencias */
+  --danger-color: #ef4444;        /* Rojo para eliminar o errores */
+  --info-color: #3b82f6;          /* Azul para información */
 
   --radius-sm: 6px;               /* Esquinas redondeadas pequeñas */
   --radius-md: 10px;              /* Esquinas redondeadas medianas */
@@ -51,16 +61,17 @@ body {
   overflow: hidden;               /* Evita barras de desplazamiento dobles inservibles */
 }
 
-/* Barra Superior Amarilla (Header) */
+/* Barra Superior del Sistema (Header) */
 .app-header {
   height: 56px;                   /* Alto de la barra superior */
-  background-color: var(--header-bg); /* Color de fondo amarillo */
+  background-color: #1f2321 !important; /* Color de fondo gris carbón del logo GLD */
   color: var(--header-text);      /* Color del texto del encabezado */
   display: flex;                  /* Organiza el logo a la izquierda y el usuario a la derecha */
   align-items: center;            /* Centra verticalmente los elementos */
   justify-content: space-between; /* Deja espacio entre el logo y el usuario */
   padding: 0 1.5rem;              /* Espaciado interno a los lados */
   box-shadow: var(--shadow-sm);   /* Sombra inferior sutil */
+  border-bottom: 2px solid #5a9e80; /* Línea divisoria inferior con el verde esmeralda de GLD */
   z-index: 10;                    /* Mantiene la barra superior por encima del contenido */
 }
 
@@ -70,38 +81,41 @@ body {
   gap: 0.75rem;                   /* Separación entre el icono y el texto */
   font-weight: 700;               /* Letra en negrita (Bold) */
   font-size: 1.125rem;            /* Tamaño del título principal */
+  color: #ffffff;
 }
 
 .app-header .brand i {
   font-size: 1.25rem;             /* Tamaño del icono del título */
+  color: #5a9e80;                 /* Color verde esmeralda GLD para el icono */
 }
 
 /* ==========================================================================
-   Menú Lateral Izquierdo (Sidebar)
+   Menú Lateral Izquierdo (Sidebar Corporativo GLD)
    ========================================================================== */
 
 /* Contenedor principal del Menú Lateral */
 app-sidebar, .app-sidebar {
   width: 260px;                   /* Ancho fijo del menú lateral */
-  background-color: #004d40 !important; /* Color de fondo verde oscuro corporativo */
+  background-color: #2d312e !important; /* Color de fondo gris carbón corporativo GLD */
   color: #ffffff;                 /* Color del texto interno */
   display: flex;                  /* Disposición flexible en columna */
   flex-direction: column;         /* Apila los elementos verticalmente */
   transition: width 0.3s ease;    /* Transición suave si se cambia de tamaño */
   flex-shrink: 0;                 /* Evita que se encoja si la pantalla se reduce */
   height: 100%;                   /* Cubre el 100% de la altura disponible */
+  border-right: 1px solid rgba(255,255,255,0.08);
 }
 
 /* Encabezado del Menú Lateral (Título GLD ARQUITECTURA) */
 .sidebar-header {
   padding: 1.25rem 1rem;          /* Relleno interno arriba/abajo y a los lados */
-  background-color: #05705f;      /* Color de fondo del encabezado GLD ARQUITECTURA */
+  background-color: #1f2321;      /* Color de fondo gris carbón oscuro GLD */
   border-bottom: 1px solid rgba(255,255,255,0.1); /* Línea divisoria inferior muy sutil */
   font-weight: 700;               /* Texto en negrita (Bold) */
   font-size: 0.875rem;            /* Tamaño de la letra (14px) */
   letter-spacing: 0.05em;         /* Espaciado adicional entre letras */
   text-transform: uppercase;      /* Transforma el texto a Mayúsculas */
-  color: #ffffff;                 /* Color de la letra (Blanco puro 100% visible) */
+  color: #b5b882;                 /* Color de la letra (Verde Oliva Dorado GLD de la 'G') */
 }
 
 /* Lista contenedora de las opciones del menú */
@@ -110,14 +124,14 @@ app-sidebar, .app-sidebar {
   padding: 0.75rem 0.5rem;        /* Relleno interno alrededor del menú */
   overflow-y: auto;               /* Habilita barra de desplazamiento vertical si hay muchas opciones */
   flex: 1;                        /* Hace que ocupe todo el espacio disponible hacia abajo */
-  background-color: #004d40 !important; /* Color de fondo verde oscuro */
+  background-color: #2d312e !important; /* Color de fondo gris carbón GLD */
 }
 
 /* Títulos de Categoría (NAVEGACIÓN, OPERACIONES, MÓDULOS DEL SISTEMA, ADMINISTRACIÓN) */
 .menu-category {
   font-size: 0.75rem;             /* Tamaño de letra pequeño para categorías */
   font-weight: 700;               /* Letra en negrita (Bold) */
-  color: #80cbd2;                 /* Color celeste menta brillante para las categorías */
+  color: #b5b882;                 /* Color verde oliva/dorado GLD para categorías */
   text-transform: uppercase;      /* Transforma a mayúsculas */
   padding: 0.75rem 0.75rem 0.25rem 0.75rem; /* Relleno superior e inferior */
   margin-top: 0.5rem;             /* Espacio de separación respecto a la opción anterior */
@@ -143,13 +157,13 @@ app-sidebar, .app-sidebar {
 
 /* Efecto al pasar el ratón sobre un módulo principal */
 .sidebar-item:hover {
-  background-color: #00695c;      /* Color de fondo verde esmeralda al sobrevolar */
+  background-color: #3b7a5e;      /* Color de fondo verde esmeralda oscuro GLD al sobrevolar */
   color: #ffffff !important;      /* Color del texto en blanco puro */
 }
 
 /* Módulo principal activo (Pantalla seleccionada actualmente) */
 .sidebar-item.active {
-  background-color: #00897b;      /* Color de fondo verde brillante para la opción activa */
+  background-color: #5a9e80;      /* Color de fondo verde esmeralda brillante GLD para la opción activa */
   color: #ffffff !important;      /* Color del texto en blanco puro */
   font-weight: 700;               /* Letra en negrita fuerte */
   box-shadow: var(--shadow-sm);   /* Sombra inferior sutil para darle relieve */
@@ -175,7 +189,7 @@ app-sidebar, .app-sidebar {
   gap: 0.75rem;                   /* Separación entre icono y texto */
   padding: 0.5rem 0.75rem;        /* Relleno compacto */
   border-radius: var(--radius-sm);/* Esquinas redondeadas */
-  color: #b2dfdb !important;      /* Color de texto verde claro mint */
+  color: #e8f4ef !important;      /* Color de texto verde claro mint suave de GLD */
   text-decoration: none;          /* Quita subrayados */
   font-size: 0.825rem;            /* Tamaño de letra ligeramente más pequeño (13px) */
   font-weight: 500;               /* Grosor de letra medio */
@@ -187,13 +201,13 @@ app-sidebar, .app-sidebar {
 
 /* Efecto al sobrevolar un sub-módulo */
 .sidebar-subitem:hover {
-  background-color: #1ce0c9;      /* Color de fondo turquesa brillante interactivo al pasar el ratón */
+  background-color: #5a9e80;      /* Color de fondo verde esmeralda GLD al pasar el ratón */
   color: #ffffff !important;      /* Texto en blanco puro */
 }
 
 /* Sub-módulo activo actualmente */
 .sidebar-subitem.active {
-  background-color: #00897b;      /* Color de fondo verde resaltado para el sub-módulo activo */
+  background-color: #5a9e80;      /* Color de fondo verde esmeralda GLD para el sub-módulo activo */
   color: #ffffff !important;      /* Texto en blanco puro */
   font-weight: 700;               /* Letra en negrita fuerte */
 }
