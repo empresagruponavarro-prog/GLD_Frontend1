@@ -1,199 +1,208 @@
-/* Sistema GLD Design System */
+/* Sistema GLD - Variables Globales del Diseño */
 :root {
-  --primary-yellow: #f59e0b;
-  --primary-yellow-dark: #d97706;
-  --primary-yellow-light: #fef3c7;
-  --header-bg: #f59e0b;
-  --header-text: #ffffff;
+  --primary-yellow: #f59e0b;      /* Color amarillo principal */
+  --primary-yellow-dark: #d97706; /* Color amarillo oscuro */
+  --primary-yellow-light: #fef3c7;/* Color amarillo claro */
+  --header-bg: #f59e0b;           /* Color de fondo de la barra superior (Header) */
+  --header-text: #ffffff;         /* Color del texto de la barra superior */
   
-  --sidebar-bg: #004d40;
-  --sidebar-text: #ffffff;
-  --sidebar-hover: #00695c;
-  --sidebar-active: #009688;
+  --sidebar-bg: #004d40;          /* Color de fondo del menú lateral (Verde oscuro corporativo) */
+  --sidebar-text: #ffffff;        /* Color principal de texto del menú lateral */
+  --sidebar-hover: #00695c;       /* Color de fondo al pasar el ratón por encima de una opción */
+  --sidebar-active: #009688;      /* Color de fondo de la opción seleccionada/activa */
 
-  --bg-main: #f8fafc;
-  --card-bg: #ffffff;
-  --text-main: #1e293b;
-  --text-muted: #64748b;
-  --border-color: #e2e8f0;
+  --bg-main: #f8fafc;             /* Color de fondo de la pantalla principal (Gris muy claro) */
+  --card-bg: #ffffff;             /* Color de fondo de las tarjetas y modales */
+  --text-main: #1e293b;           /* Color del texto principal del sistema (Gris oscuro) */
+  --text-muted: #64748b;          /* Color de textos secundarios o atenuados */
+  --border-color: #e2e8f0;        /* Color de los bordes de tablas y formularios */
 
-  --success-color: #10b981;
-  --warning-color: #f59e0b;
-  --danger-color: #ef4444;
-  --info-color: #3b82f6;
+  --success-color: #10b981;       /* Color verde para botones de éxito o guardar */
+  --warning-color: #f59e0b;       /* Color naranja/amarillo para advertencias */
+  --danger-color: #ef4444;        /* Color rojo para eliminar o errores */
+  --info-color: #3b82f6;          /* Color azul para información o detalles */
 
-  --radius-sm: 6px;
-  --radius-md: 10px;
-  --radius-lg: 16px;
-  --shadow-sm: 0 1px 3px rgba(0,0,0,0.05);
-  --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06);
-  --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05);
+  --radius-sm: 6px;               /* Esquinas redondeadas pequeñas */
+  --radius-md: 10px;              /* Esquinas redondeadas medianas */
+  --radius-lg: 16px;              /* Esquinas redondeadas grandes */
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.05); /* Sombra suave pequeña */
+  --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06); /* Sombra mediana */
+  --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05); /* Sombra grande para modales */
 }
 
 * {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
+  box-sizing: border-box;         /* Incluye el padding y bordes en el cálculo del ancho total */
+  margin: 0;                      /* Elimina margenes por defecto del navegador */
+  padding: 0;                     /* Elimina rellenos por defecto del navegador */
 }
 
 body {
-  font-family: 'Inter', system-ui, -apple-system, sans-serif;
-  background-color: var(--bg-main);
-  color: var(--text-main);
-  line-height: 1.5;
-  -webkit-font-smoothing: antialiased;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif; /* Tipo de letra principal */
+  background-color: var(--bg-main);/* Color de fondo general de la aplicación */
+  color: var(--text-main);        /* Color predeterminado de los textos */
+  line-height: 1.5;               /* Altura entre líneas para mejor lectura */
+  -webkit-font-smoothing: antialiased; /* Suaviza los bordes de la tipografía */
 }
 
-/* Layout */
+/* Estructura Principal (Layout) */
 .app-container {
-  display: flex;
-  height: 100vh;
-  overflow: hidden;
+  display: flex;                  /* Coloca el sidebar y el contenido lado a lado */
+  height: 100vh;                  /* Ocupa el 100% del alto de la ventana del navegador */
+  overflow: hidden;               /* Evita barras de desplazamiento dobles inservibles */
 }
 
-/* Header */
+/* Barra Superior Amarilla (Header) */
 .app-header {
-  height: 56px;
-  background-color: var(--header-bg);
-  color: var(--header-text);
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0 1.5rem;
-  box-shadow: var(--shadow-sm);
-  z-index: 10;
+  height: 56px;                   /* Alto de la barra superior */
+  background-color: var(--header-bg); /* Color de fondo amarillo */
+  color: var(--header-text);      /* Color del texto del encabezado */
+  display: flex;                  /* Organiza el logo a la izquierda y el usuario a la derecha */
+  align-items: center;            /* Centra verticalmente los elementos */
+  justify-content: space-between; /* Deja espacio entre el logo y el usuario */
+  padding: 0 1.5rem;              /* Espaciado interno a los lados */
+  box-shadow: var(--shadow-sm);   /* Sombra inferior sutil */
+  z-index: 10;                    /* Mantiene la barra superior por encima del contenido */
 }
 
 .app-header .brand {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  font-weight: 700;
-  font-size: 1.125rem;
+  display: flex;                  /* Alinea el icono y el texto del título en fila */
+  align-items: center;            /* Centra el icono con el texto */
+  gap: 0.75rem;                   /* Separación entre el icono y el texto */
+  font-weight: 700;               /* Letra en negrita (Bold) */
+  font-size: 1.125rem;            /* Tamaño del título principal */
 }
 
 .app-header .brand i {
-  font-size: 1.25rem;
+  font-size: 1.25rem;             /* Tamaño del icono del título */
 }
 
-/* Sidebar */
+/* ==========================================================================
+   Menú Lateral Izquierdo (Sidebar)
+   ========================================================================== */
+
+/* Contenedor principal del Menú Lateral */
 app-sidebar, .app-sidebar {
-  width: 260px;
-  background-color: #004d40 !important;
-  color: #ffffff;
-  display: flex;
-  flex-direction: column;
-  transition: width 0.3s ease;
-  flex-shrink: 0;
-  height: 100%;
+  width: 260px;                   /* Ancho fijo del menú lateral */
+  background-color: #004d40 !important; /* Color de fondo verde oscuro corporativo */
+  color: #ffffff;                 /* Color del texto interno */
+  display: flex;                  /* Disposición flexible en columna */
+  flex-direction: column;         /* Apila los elementos verticalmente */
+  transition: width 0.3s ease;    /* Transición suave si se cambia de tamaño */
+  flex-shrink: 0;                 /* Evita que se encoja si la pantalla se reduce */
+  height: 100%;                   /* Cubre el 100% de la altura disponible */
 }
 
+/* Encabezado del Menú Lateral (Título GLD ARQUITECTURA) */
 .sidebar-header {
-  padding: 1.25rem 1rem;
-  background-color: #05705f;
-  border-bottom: 1px solid rgba(255,255,255,0.1);
-  font-weight: 700;
-  font-size: 0.875rem;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
-  color: #ffffff;
+  padding: 1.25rem 1rem;          /* Relleno interno arriba/abajo y a los lados */
+  background-color: #05705f;      /* Color de fondo del encabezado GLD ARQUITECTURA */
+  border-bottom: 1px solid rgba(255,255,255,0.1); /* Línea divisoria inferior muy sutil */
+  font-weight: 700;               /* Texto en negrita (Bold) */
+  font-size: 0.875rem;            /* Tamaño de la letra (14px) */
+  letter-spacing: 0.05em;         /* Espaciado adicional entre letras */
+  text-transform: uppercase;      /* Transforma el texto a Mayúsculas */
+  color: #ffffff;                 /* Color de la letra (Blanco puro 100% visible) */
 }
 
+/* Lista contenedora de las opciones del menú */
 .sidebar-menu {
-  list-style: none;
-  padding: 0.75rem 0.5rem;
-  overflow-y: auto;
-  flex: 1;
-  background-color: #004d40 !important;
+  list-style: none;               /* Elimina los viñetas o puntos de lista */
+  padding: 0.75rem 0.5rem;        /* Relleno interno alrededor del menú */
+  overflow-y: auto;               /* Habilita barra de desplazamiento vertical si hay muchas opciones */
+  flex: 1;                        /* Hace que ocupe todo el espacio disponible hacia abajo */
+  background-color: #004d40 !important; /* Color de fondo verde oscuro */
 }
 
+/* Títulos de Categoría (NAVEGACIÓN, OPERACIONES, MÓDULOS DEL SISTEMA, ADMINISTRACIÓN) */
 .menu-category {
-  font-size: 0.75rem;
-  font-weight: 700;
-  color: #80cbd2;
-  text-transform: uppercase;
-  padding: 0.75rem 0.75rem 0.25rem 0.75rem;
-  margin-top: 0.5rem;
-  letter-spacing: 0.05em;
+  font-size: 0.75rem;             /* Tamaño de letra pequeño para categorías */
+  font-weight: 700;               /* Letra en negrita (Bold) */
+  color: #80cbd2;                 /* Color celeste menta brillante para las categorías */
+  text-transform: uppercase;      /* Transforma a mayúsculas */
+  padding: 0.75rem 0.75rem 0.25rem 0.75rem; /* Relleno superior e inferior */
+  margin-top: 0.5rem;             /* Espacio de separación respecto a la opción anterior */
+  letter-spacing: 0.05em;         /* Separación entre letras */
 }
 
-/* Sub-titulos de los modulos */
+/* Opciones de Módulos Principales (ej. Registro de Incidencias, Maestros Generales) */
 .sidebar-item {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  padding: 0.75rem 1rem;
-  border-radius: var(--radius-sm);
-  color: #ffffff !important;
-  text-decoration: none;
-  font-size: 0.875rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: background 0.2s ease;
-  margin-bottom: 0.25rem;
-  opacity: 1;
+  display: flex;                  /* Coloca el icono y el texto en fila horizontal */
+  align-items: center;            /* Centra verticalmente el icono con la letra */
+  gap: 0.75rem;                   /* Separación horizontal entre el icono y el texto */
+  padding: 0.75rem 1rem;          /* Relleno interno del botón */
+  border-radius: var(--radius-sm);/* Esquinas ligeramente redondeadas */
+  color: #ffffff !important;      /* Color del texto del módulo (Blanco puro) */
+  text-decoration: none;          /* Quita el subrayado predeterminado de enlaces */
+  font-size: 0.875rem;            /* Tamaño de letra (14px) */
+  font-weight: 600;               /* Grosor de letra semibold */
+  cursor: pointer;                /* Cambia el cursor a manito al pasar el ratón */
+  transition: background 0.2s ease; /* Transición suave de 0.2s al cambiar de color */
+  margin-bottom: 0.25rem;         /* Espacio inferior entre cada botón */
+  opacity: 1;                     /* 100% de opacidad sin transparencias opacas */
 }
 
+/* Efecto al pasar el ratón sobre un módulo principal */
 .sidebar-item:hover {
-  background-color: #00695c;
-  color: #ffffff !important;
+  background-color: #00695c;      /* Color de fondo verde esmeralda al sobrevolar */
+  color: #ffffff !important;      /* Color del texto en blanco puro */
 }
 
+/* Módulo principal activo (Pantalla seleccionada actualmente) */
 .sidebar-item.active {
-  background-color: #00897b;
-  color: #ffffff !important;
-  font-weight: 700;
-  box-shadow: var(--shadow-sm);
+  background-color: #00897b;      /* Color de fondo verde brillante para la opción activa */
+  color: #ffffff !important;      /* Color del texto en blanco puro */
+  font-weight: 700;               /* Letra en negrita fuerte */
+  box-shadow: var(--shadow-sm);   /* Sombra inferior sutil para darle relieve */
 }
 
+/* Alineación para categorías desplegables que contienen sub-módulos */
 .sidebar-item.has-sub {
-  justify-content: space-between;
+  justify-content: space-between; /* Empuja el título a la izquierda y la flechita desplegable a la derecha */
 }
 
+/* Submenú desplegable (Lista anidada de sub-módulos) */
 .sidebar-submenu {
-  list-style: none;
-  padding-left: 1rem;
-  margin-top: 0.25rem;
-  margin-bottom: 0.5rem;
+  list-style: none;               /* Quita los puntos de la lista */
+  padding-left: 1rem;             /* Aplica sangría hacia la derecha para meter los sub-módulos hacia adentro */
+  margin-top: 0.25rem;            /* Espacio superior */
+  margin-bottom: 0.5rem;          /* Espacio inferior */
 }
 
+/* Estilo de los Sub-Módulos (ej. Empresas) */
 .sidebar-subitem {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  padding: 0.5rem 0.75rem;
-  border-radius: var(--radius-sm);
-  color: #b2dfdb !important;
-  text-decoration: none;
-  font-size: 0.825rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  margin-bottom: 0.2rem;
-  opacity: 1;
+  display: flex;                  /* Alinea en fila el icono y el texto del sub-módulo */
+  align-items: center;            /* Centra verticalmente */
+  gap: 0.75rem;                   /* Separación entre icono y texto */
+  padding: 0.5rem 0.75rem;        /* Relleno compacto */
+  border-radius: var(--radius-sm);/* Esquinas redondeadas */
+  color: #b2dfdb !important;      /* Color de texto verde claro mint */
+  text-decoration: none;          /* Quita subrayados */
+  font-size: 0.825rem;            /* Tamaño de letra ligeramente más pequeño (13px) */
+  font-weight: 500;               /* Grosor de letra medio */
+  cursor: pointer;                /* Cursor en forma de manito */
+  transition: all 0.2s ease;      /* Transición suave de 0.2s */
+  margin-bottom: 0.2rem;          /* Espacio entre sub-módulos */
+  opacity: 1;                     /* 100% de opacidad sin transparencia */
 }
 
+/* Efecto al sobrevolar un sub-módulo */
 .sidebar-subitem:hover {
-  background-color: #1ce0c9;
-  color: #ffffff !important;
+  background-color: #1ce0c9;      /* Color de fondo turquesa brillante interactivo al pasar el ratón */
+  color: #ffffff !important;      /* Texto en blanco puro */
 }
 
+/* Sub-módulo activo actualmente */
 .sidebar-subitem.active {
-  background-color: #00897b;
-  color: #ffffff !important;
-  font-weight: 700;
+  background-color: #00897b;      /* Color de fondo verde resaltado para el sub-módulo activo */
+  color: #ffffff !important;      /* Texto en blanco puro */
+  font-weight: 700;               /* Letra en negrita fuerte */
 }
 
-.sidebar-subitem.active {
-  background-color: var(--sidebar-active);
-  color: #ffffff;
-  font-weight: 600;
-}
-
+/* Estilo de los iconos dentro de cada módulo del menú */
 .sidebar-item i {
-  font-size: 1rem;
-  width: 20px;
-  text-align: center;
+  font-size: 1rem;                /* Tamaño de los iconos (16px) */
+  width: 20px;                    /* Ancho fijo para que todos los iconos ocupen el mismo espacio */
+  text-align: center;             /* Centra el icono en su casilla para que los textos queden alineados verticalmente */
 }
 
 /* Content Area */
@@ -510,27 +519,30 @@ app-sidebar, .app-sidebar {
 }
 
 /* Tree View Layout for Estructura de Menús */
+/* Estructura de Tarjetas de Menús (Estructura de Menús) */
 .menu-tree-container {
   display: flex;
   flex-direction: column;
   gap: 1rem;
 }
 
+/* Tarjeta contenedora de Menú Raíz (ej. TESORERIA) */
 .menu-root-card {
-  background: #ffffff;
-  border: 1px solid #068259b1;
-  border-radius: var(--radius-md);
-  box-shadow: 0 1px 3px rgba(16, 185, 129, 0.05);
+  background: #0f172a;            /* Fondo blanco neutro */
+  border: 1px solid #e2e8f0;      /* Borde gris claro neutro */
+  border-radius: var(--radius-md);/* Esquinas redondeadas */
+  box-shadow: var(--shadow-sm);   /* Sombra suave */
   overflow: hidden;
 }
 
+/* Encabezado superior de la tarjeta de menú */
 .menu-root-header {
-  padding: 0.85rem 1.25rem;
-  background: #f0fdf4;
+  padding: 0.85rem 1.25rem;       /* Relleno interno */
+  background: #f8fafc;            /* Fondo gris muy claro neutro (Sin verde) */
   display: flex;
   align-items: center;
   justify-content: space-between;
-  border-bottom: 1px solid #d1fae5;
+  border-bottom: 1px solid #e2e8f0; /* Línea divisoria gris claro */
 }
 
 .menu-root-info {
@@ -539,40 +551,43 @@ app-sidebar, .app-sidebar {
   gap: 0.75rem;
 }
 
+/* Asa para arrastrar (Drag Handle ::) */
 .menu-drag-handle {
-  color: #94a3b8;
-  cursor: grab;
+  color: #94a3b8;                 /* Color gris del icono de arrastrar */
+  cursor: grab;                   /* Icono de mano abierta */
   font-size: 1rem;
   padding: 0.25rem;
 }
 
 .menu-drag-handle:active {
-  cursor: grabbing;
+  cursor: grabbing;               /* Icono de mano cerrada al arrastrar */
 }
 
 .menu-root-card.dragging,
 .submenu-card.dragging {
   opacity: 0.4;
   border-style: dashed;
-  border-color: #10b981;
+  border-color: #3b82f6;          /* Borde azul al arrastrar */
 }
 
+/* Título principal del menú (ej. TESORERIA) */
 .menu-root-title {
-  font-weight: 700;
-  font-size: 0.95rem;
-  color: #065f46;
+  font-weight: 700;               /* Texto en negrita */
+  font-size: 0.95rem;             /* Tamaño de la letra */
+  color: #0f172a;                 /* Color de la letra principal (Gris oscuro/negro neutro) */
   display: flex;
   align-items: center;
   gap: 0.5rem;
 }
 
+/* Etiqueta / Badge del ID o Identificador del Menú */
 .menu-id-badge {
-  font-size: 0.75rem;
-  color: #047857;
+  font-size: 0.75rem;             /* Tamaño pequeño */
+  color: #475569;                 /* Color del texto de la etiqueta (Gris oscuro) */
   font-weight: 600;
-  background: #056136;
-  padding: 0.1rem 0.4rem;
-  border-radius: 4px;
+  background: #e2e8f0;            /* Fondo neutro gris claro (TOTALMENTE SIN VERDE) */
+  padding: 0.1rem 0.45rem;        /* Relleno alrededor del texto */
+  border-radius: 4px;             /* Esquinas redondeadas de la etiqueta */
 }
 
 .menu-root-subtitle {
