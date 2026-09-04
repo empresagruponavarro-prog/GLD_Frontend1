@@ -8,9 +8,10 @@ import { MaestrosGeneralesComponent } from './features/maestros-generales/maestr
 import { CentrosCostosDashboardComponent } from './features/centros-costos/centros-costos-dashboard.component';
 
 export const routes: Routes = [
-  { path: '', component: ModulesDashboardComponent },
+  { path: '', component: CentrosCostosDashboardComponent },
   { path: 'dashboard-situacional', component: CentrosCostosDashboardComponent },
   { path: 'centros-costos', component: CentrosCostosDashboardComponent },
+  { path: 'modulos', component: ModulesDashboardComponent },
   { path: 'incidencias', component: IncidenciasComponent },
   { path: 'maestros-generales', component: MaestrosGeneralesComponent },
   { path: 'admin/usuarios', component: UsuariosComponent },
@@ -18,4 +19,5 @@ export const routes: Routes = [
   { path: 'admin/empresas', component: EmpresasComponent },
   { path: '**', redirectTo: '' }
 ];
+
 

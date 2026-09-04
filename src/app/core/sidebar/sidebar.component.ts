@@ -15,21 +15,22 @@ import { RouterModule } from '@angular/router';
       <li class="menu-category">Navegación</li>
       <li>
         <a class="sidebar-item" routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}">
+          <i class="fa-solid fa-chart-line"></i> Dashboard Situacional
+        </a>
+      </li>
+      <li>
+        <a class="sidebar-item" routerLink="/modulos" routerLinkActive="active">
           <i class="fa-solid fa-grid-2"></i> Módulos Principal
         </a>
       </li>
 
       <li class="menu-category">Operaciones</li>
       <li>
-        <a class="sidebar-item" routerLink="/dashboard-situacional" routerLinkActive="active">
-          <i class="fa-solid fa-chart-line"></i> Dashboard Situacional
-        </a>
-      </li>
-      <li>
         <a class="sidebar-item" routerLink="/incidencias" routerLinkActive="active">
           <i class="fa-solid fa-clipboard-list"></i> Registro de Incidencias
         </a>
       </li>
+
 
 
       <li class="menu-category">Módulos del Sistema</li>

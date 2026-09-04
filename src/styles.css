@@ -89,6 +89,27 @@ body {
   color: #5a9e80;                 /* Color verde esmeralda GLD para el icono */
 }
 
+/* Botón del Menú Hamburguesa en la Barra Superior */
+.hamburger-btn {
+  background-color: transparent;  /* Fondo transparente para integrarse con la barra */
+  border: 1px solid rgba(255, 255, 255, 0.2); /* Borde sutil semi-transparente */
+  color: #ffffff;                 /* Color blanco para el icono de tres líneas */
+  font-size: 1.15rem;             /* Tamaño del icono de tres líneas */
+  padding: 6px 12px;              /* Relleno interno del botón */
+  border-radius: var(--radius-sm);/* Esquinas suavizadas */
+  cursor: pointer;                /* Cambia el cursor a puntero al pasar el ratón */
+  display: flex;                  /* Centrado flexible del icono */
+  align-items: center;            /* Centrado vertical */
+  justify-content: center;        /* Centrado horizontal */
+  transition: all 0.25s ease;     /* Animación suave de hover y click */
+}
+
+.hamburger-btn:hover {
+  background-color: var(--gld-green-primary); /* Fondo verde esmeralda al pasar el ratón */
+  border-color: var(--gld-green-primary);     /* Borde verde esmeralda al pasar el ratón */
+  color: #ffffff;                             /* Color blanco del icono */
+}
+
 /* ==========================================================================
    Menú Lateral Izquierdo (Sidebar Corporativo GLD)
    ========================================================================== */
@@ -100,11 +121,23 @@ app-sidebar, .app-sidebar {
   color: #ffffff;                 /* Color del texto interno */
   display: flex;                  /* Disposición flexible en columna */
   flex-direction: column;         /* Apila los elementos verticalmente */
-  transition: width 0.3s ease;    /* Transición suave si se cambia de tamaño */
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); /* Transición fluida al abrir y cerrar */
   flex-shrink: 0;                 /* Evita que se encoja si la pantalla se reduce */
   height: 100%;                   /* Cubre el 100% de la altura disponible */
   border-right: 1px solid rgba(255,255,255,0.08);
+  overflow: hidden;               /* Evita el desbordamiento durante la animación */
 }
+
+/* Estado Colapsado / Oculto del Menú Lateral (Menú Hamburguesa) */
+.app-container.sidebar-collapsed app-sidebar,
+.app-container.sidebar-collapsed .app-sidebar {
+  width: 0px !important;          /* Oculta completamente el ancho del menú lateral */
+  opacity: 0;                     /* Transparencia total */
+  visibility: hidden;             /* Oculta la visibilidad para evitar clics fantasma */
+  padding: 0 !important;          /* Elimina rellenos de espacio */
+  border-right: none !important;  /* Elimina el borde derecho */
+}
+
 
 /* Encabezado del Menú Lateral (Título GLD ARQUITECTURA) */
 .sidebar-header {
@@ -279,15 +312,15 @@ app-sidebar, .app-sidebar {
 .module-card:hover {
   transform: translateY(-3px);
   box-shadow: var(--shadow-md);
-  border-color: var(--primary-yellow);
+  border-color: var(--gld-green-primary, #5a9e80);
 }
 
 .module-icon {
   width: 56px;
   height: 56px;
   border-radius: 12px;
-  background: #fffbeb;
-  color: var(--primary-yellow-dark);
+  background: var(--gld-green-light, #e8f4ef);
+  color: var(--gld-green-dark, #3b7a5e);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -343,8 +376,8 @@ app-sidebar, .app-sidebar {
 }
 
 .form-control:focus {
-  border-color: var(--primary-yellow-dark);
-  box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.15);
+  border-color: var(--gld-green-dark, #3b7a5e);
+  box-shadow: 0 0 0 3px rgba(90, 158, 128, 0.2);
 }
 
 /* Buttons */
@@ -457,7 +490,7 @@ app-sidebar, .app-sidebar {
 }
 
 .status-pill.en-proceso {
-  background-color: #f59e0b;
+  background-color: #10b981;
   color: #ffffff;
 }
 
