@@ -117,19 +117,8 @@ import {
 
       </div>
 
-      <!-- Tabla Maestra de Centros de Costos (Imágenes 1 y 2) -->
+      <!-- Tabla Maestra de Centros de Costos -->
       <div class="card table-card">
-        <div class="table-header-flex">
-          <div class="table-info">
-            <span class="records-count">Mostrando <strong>{{ pagedCentros.length }}</strong> de <strong>{{ centros.length }}</strong> registros</span>
-            <span class="tip-text">💡 Haz clic en cualquier fila para ver el análisis financiero (ppto.Sub Total en adelante)</span>
-          </div>
-          <div class="pagination-controls" *ngIf="totalPages > 1">
-            <button class="btn-page" [disabled]="currentPage === 1" (click)="changePage(currentPage - 1)">‹</button>
-            <span class="page-indicator">Página {{ currentPage }} de {{ totalPages }}</span>
-            <button class="btn-page" [disabled]="currentPage === totalPages" (click)="changePage(currentPage + 1)">›</button>
-          </div>
-        </div>
 
         <div class="table-responsive">
           <table class="data-table">
@@ -238,13 +227,16 @@ import {
 
         <!-- Paginación Inferior -->
         <div class="table-footer-flex" *ngIf="centros.length > 0">
-          <div class="footer-page-size">
-            <span>Registros por página:</span>
-            <select (change)="onPageSizeChange($event)" [value]="pageSize" class="select-page-size">
-              <option value="20">20</option>
-              <option value="50">50</option>
-              <option value="100">100</option>
-            </select>
+          <div class="footer-left">
+            <div class="footer-page-size">
+              <span>Registros por página:</span>
+              <select (change)="onPageSizeChange($event)" [value]="pageSize" class="select-page-size">
+                <option value="20">20</option>
+                <option value="50">50</option>
+                <option value="100">100</option>
+              </select>
+            </div>
+            <span class="tip-text">💡 Haz clic en cualquier fila para ver el análisis financiero (ppto.Sub Total en adelante)</span>
           </div>
           <div class="pagination-controls" *ngIf="totalPages > 1">
             <button class="btn-page" [disabled]="currentPage === 1" (click)="changePage(currentPage - 1)">‹ Anterior</button>
@@ -440,15 +432,27 @@ import {
     </div>
   `,
   styles: [`
+    /* Hace que el elemento host de Angular participe en la cadena flex */
+    :host {
+      display: flex;
+      flex-direction: column;
+      flex: 1;
+      height: 100%;
+      overflow: hidden;
+    }
+
     /* ==========================================================================
        ESTILOS CORPORATIVOS GLD - DASHBOARD DE CENTROS DE COSTOS
        ========================================================================== */
 
     .dashboard-wrapper {
-      padding: 24px 32px 48px 32px;
+      padding: 16px 24px 16px 24px;
       color: var(--text-main, #1f2937);
       background-color: var(--bg-app, #f8fafc);
-      min-height: calc(100vh - 60px);
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
     }
 
     /* Encabezado */
@@ -456,9 +460,10 @@ import {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-bottom: 20px;
-      gap: 16px;
+      margin-bottom: 14px;
+      gap: 12px;
       flex-wrap: wrap;
+      flex-shrink: 0;
     }
 
     .page-title {
@@ -492,13 +497,14 @@ import {
        BARRA HORIZONTAL DE FILTROS (Uno al lado del otro)
        ========================================================================== */
     .filters-horizontal-card {
-      padding: 12px 18px;
-      margin-bottom: 18px;
+      padding: 10px 16px;
+      margin-bottom: 12px;
       display: flex;
       flex-wrap: wrap;
       align-items: flex-end;
       gap: 10px;
       background: #ffffff;
+      flex-shrink: 0;
     }
 
     .filter-box {
@@ -573,15 +579,20 @@ import {
        ========================================================================== */
     .table-card {
       overflow: hidden;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
     }
 
     .table-header-flex {
-      padding: 16px 20px;
+      padding: 12px 20px;
       border-bottom: 1px solid #e2e8f0;
       display: flex;
       justify-content: space-between;
       align-items: center;
       background: #fafafa;
+      flex-shrink: 0;
     }
 
     .records-count {
@@ -598,7 +609,9 @@ import {
 
     .table-responsive {
       overflow-x: auto;
-      max-height: 640px;
+      overflow-y: auto;
+      flex: 1;
+      min-height: 0;
     }
 
     .data-table {
@@ -725,12 +738,13 @@ import {
 
     /* Paginación */
     .table-footer-flex {
-      padding: 14px 20px;
+      padding: 10px 20px;
       display: flex;
       justify-content: space-between;
       align-items: center;
       border-top: 1px solid #e2e8f0;
       background: #fafafa;
+      flex-shrink: 0;
     }
 
     .footer-page-size {
@@ -864,6 +878,18 @@ import {
       justify-content: space-between;
       align-items: flex-start;
       gap: 20px;
+    }
+
+    .footer-right {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .footer-left {
+      display: flex;
+      align-items: center;
+      gap: 16px;
     }
 
     .header-tags {
