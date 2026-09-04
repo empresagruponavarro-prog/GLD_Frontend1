@@ -5,9 +5,12 @@ import { UsuariosComponent } from './features/administration/usuarios/usuarios.c
 import { MenusComponent } from './features/administration/menus/menus.component';
 import { EmpresasComponent } from './features/administration/empresas/empresas.component';
 import { MaestrosGeneralesComponent } from './features/maestros-generales/maestros-generales.component';
+import { CentrosCostosDashboardComponent } from './features/centros-costos/centros-costos-dashboard.component';
 
 export const routes: Routes = [
   { path: '', component: ModulesDashboardComponent },
+  { path: 'dashboard-situacional', component: CentrosCostosDashboardComponent },
+  { path: 'centros-costos', component: CentrosCostosDashboardComponent },
   { path: 'incidencias', component: IncidenciasComponent },
   { path: 'maestros-generales', component: MaestrosGeneralesComponent },
   { path: 'admin/usuarios', component: UsuariosComponent },
@@ -15,3 +18,4 @@ export const routes: Routes = [
   { path: 'admin/empresas', component: EmpresasComponent },
   { path: '**', redirectTo: '' }
 ];
+
