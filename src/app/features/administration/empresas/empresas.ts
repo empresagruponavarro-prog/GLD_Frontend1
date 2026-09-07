@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { EmpresasService } from './empresas.service';
@@ -10,11 +10,13 @@ import { Empresa } from './empresas.interface';
   imports: [CommonModule, FormsModule],
   templateUrl: './empresas.html'
 })
-export class EmpresasComponent implements OnInit {
-  empresas: Empresa[] = [];
-  showModal = false;
-  loading = false;
-  editingCod: string | null = null;
+export class EmpresasComponent {
+  private empresasService = inject(EmpresasService);
+
+  empresas = signal<Empresa[]>([]);
+  showModal = signal<boolean>(false);
+  loading = signal<boolean>(false);
+  editingCod = signal<string | null>(null);
 
   formData: Empresa = {
     CodEmpresa: '',
@@ -25,41 +27,39 @@ export class EmpresasComponent implements OnInit {
     CorreoCompras: '',
   };
 
-  constructor(private empresasService: EmpresasService) {}
-
-  ngOnInit() {
+  constructor() {
     this.loadEmpresas();
   }
 
   loadEmpresas() {
-    this.loading = true;
+    this.loading.set(true);
     this.empresasService.getAll().subscribe({
       next: (data) => {
-        this.empresas = data;
-        this.loading = false;
+        this.empresas.set(data);
+        this.loading.set(false);
       },
       error: (err) => {
         console.error(err);
-        this.loading = false;
+        this.loading.set(false);
       },
     });
   }
 
   openModal() {
-    this.editingCod = null;
+    this.editingCod.set(null);
     this.formData = { CodEmpresa: '', RUC: '', RazonSocial: '', DomicilioFiscal: '', DireccionEntrega: '', CorreoCompras: '' };
-    this.showModal = true;
+    this.showModal.set(true);
   }
 
   editModal(item: Empresa) {
-    this.editingCod = item.CodEmpresa;
+    this.editingCod.set(item.CodEmpresa);
     this.formData = { ...item };
-    this.showModal = true;
+    this.showModal.set(true);
   }
 
   closeModal() {
-    this.showModal = false;
-    this.editingCod = null;
+    this.showModal.set(false);
+    this.editingCod.set(null);
   }
 
   saveEmpresa() {
@@ -68,8 +68,9 @@ export class EmpresasComponent implements OnInit {
       return;
     }
 
-    if (this.editingCod) {
-      this.empresasService.update(this.editingCod, this.formData).subscribe({
+    const cod = this.editingCod();
+    if (cod) {
+      this.empresasService.update(cod, this.formData).subscribe({
         next: () => { this.closeModal(); this.loadEmpresas(); },
         error: (err) => alert('Error al actualizar: ' + err.error?.message),
       });

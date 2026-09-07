@@ -4,8 +4,8 @@
     <p class="content-subtitle">Administración de empresas registradas en el sistema GLD.</p>
   </div>
   <div style="display: flex; gap: 0.5rem;">
-    <button class="btn btn-secondary" (click)="loadEmpresas()" [disabled]="loading">
-      <i class="fa-solid fa-arrows-rotate" [class.fa-spin]="loading"></i> {{ loading ? 'Actualizando...' : 'Actualizar' }}
+    <button class="btn btn-secondary" (click)="loadEmpresas()" [disabled]="loading()">
+      <i class="fa-solid fa-arrows-rotate" [class.fa-spin]="loading()"></i> {{ loading() ? 'Actualizando...' : 'Actualizar' }}
     </button>
     <button class="btn btn-primary" (click)="openModal()">
       <i class="fa-solid fa-building-circle-check"></i> + Nueva Empresa
@@ -28,7 +28,7 @@
         </tr>
       </thead>
       <tbody>
-        <tr *ngFor="let item of empresas">
+        <tr *ngFor="let item of empresas()">
           <td><strong>{{ item.CodEmpresa }}</strong></td>
           <td>{{ item.RUC || '—' }}</td>
           <td>{{ item.RazonSocial || '—' }}</td>
@@ -44,13 +44,13 @@
             </button>
           </td>
         </tr>
-        <tr *ngIf="empresas.length === 0 && !loading">
+        <tr *ngIf="empresas().length === 0 && !loading">
           <td colspan="7" style="text-align: center; padding: 3rem; color: var(--text-muted);">
             <i class="fa-solid fa-building-circle-xmark" style="font-size: 2.5rem; margin-bottom: 0.5rem; display: block;"></i>
             No se encontraron empresas registradas.
           </td>
         </tr>
-        <tr *ngIf="loading">
+        <tr *ngIf="loading()">
           <td colspan="7" style="text-align: center; padding: 2rem; color: var(--text-muted);">
             <i class="fa-solid fa-spinner fa-spin"></i> Cargando...
           </td>
@@ -61,12 +61,12 @@
 </div>
 
 <!-- Modal Formulario -->
-<div class="modal-overlay" *ngIf="showModal">
+<div class="modal-overlay" *ngIf="showModal()">
   <div class="modal-content" style="max-width: 600px;">
     <div class="modal-header">
       <h3 style="display: flex; align-items: center; gap: 0.5rem;">
         <i class="fa-solid fa-building"></i>
-        {{ editingCod ? 'Editar Empresa' : 'Nueva Empresa' }}
+        {{ editingCod() ? 'Editar Empresa' : 'Nueva Empresa' }}
       </h3>
       <button class="btn btn-secondary" style="padding: 0.25rem 0.5rem;" (click)="closeModal()">✕</button>
     </div>
@@ -74,8 +74,8 @@
       <div class="form-group">
         <label>Código de Empresa *</label>
         <input type="text" class="form-control" [(ngModel)]="formData.CodEmpresa"
-          placeholder="Ej. EMP001" [disabled]="!!editingCod"
-          [style.background]="editingCod ? '#f1f5f9' : ''">
+          placeholder="Ej. EMP001" [disabled]="!!editingCod()"
+          [style.background]="editingCod() ? '#f1f5f9' : ''">
         <small *ngIf="editingCod" style="color: var(--text-muted); font-size: 0.75rem;">
           El código no se puede modificar una vez creado.
         </small>

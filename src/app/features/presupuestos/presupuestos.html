@@ -1,0 +1,226 @@
+<div class="content-header">
+  <div>
+    <h1 class="content-title">Presupuestos</h1>
+    <p class="content-subtitle">Gestión y consulta del catálogo de Presupuestos del sistema.</p>
+  </div>
+  <div style="display: flex; gap: 0.5rem;">
+    <button class="btn btn-secondary" (click)="loadData()" [disabled]="loading()">
+      <i class="fa-solid fa-arrows-rotate" [class.fa-spin]="loading()"></i>
+      {{ loading() ? 'Cargando...' : 'Actualizar' }}
+    </button>
+    <button class="btn btn-primary" (click)="openModal()">
+      <i class="fa-solid fa-plus"></i> + Nuevo Presupuesto
+    </button>
+  </div>
+</div>
+
+<div class="content-body">
+
+  <!-- Búsqueda -->
+  <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 1rem; flex-wrap: wrap;">
+    <input
+      type="text"
+      class="form-control"
+      placeholder="Buscar por proyecto, código, empresa..."
+      style="max-width: 380px;"
+      [(ngModel)]="searchInput"
+      (keyup.enter)="onSearch()"
+    />
+    <button class="btn btn-primary" style="padding: 0.45rem 1rem;" (click)="onSearch()">
+      <i class="fa-solid fa-magnifying-glass"></i> Buscar
+    </button>
+    <button class="btn btn-secondary" style="padding: 0.45rem 0.75rem;" *ngIf="search()" (click)="clearSearch()">
+      ✕ Limpiar
+    </button>
+    <span style="font-size: 0.875rem; color: var(--text-muted); margin-left: auto;">
+      Mostrando {{ presupuestos().length }} de {{ totalRecords() }} registros
+    </span>
+  </div>
+
+  <!-- Tabla con scroll -->
+  <div class="table-card" style="overflow-x: auto;">
+    <table class="table" style="min-width: 1000px;">
+      <thead>
+        <tr>
+          <th>ID Presupuesto</th>
+          <th>Proyecto</th>
+          <th>Centro Costo</th>
+          <th>Empresa</th>
+          <th>Tipo</th>
+          <th>Costo Directo</th>
+          <th>Total</th>
+          <th>Periodo</th>
+          <th>Estado</th>
+          <th>Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let item of presupuestos()">
+          <td><strong>{{ item.IdPresupuesto }}</strong></td>
+          <td style="max-width: 220px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" [title]="item.Proyecto || ''">
+            {{ item.Proyecto || '—' }}
+          </td>
+          <td>{{ item.CodCentroCto || '—' }}</td>
+          <td>{{ item.CodEmpresa || '—' }}</td>
+          <td>
+            <span style="font-size: 0.75rem; padding: 0.1rem 0.5rem; border-radius: 4px; background: #e2e8f0; color: #475569;">
+              {{ item.TipoPpto || '—' }}
+            </span>
+          </td>
+          <td>S/ {{ item.CostoDirecto | number:'1.2-2' }}</td>
+          <td><strong>S/ {{ item.Total | number:'1.2-2' }}</strong></td>
+          <td>{{ item.IdPeriodo || '—' }}</td>
+          <td>
+            <span class="badge" [ngClass]="badgeClass(item.Estado)">{{ item.Estado || '—' }}</span>
+          </td>
+          <td>
+            <button class="btn btn-secondary" style="padding: 0.25rem 0.5rem; margin-right: 0.25rem;" (click)="editModal(item)" title="Editar">
+              <i class="fa-solid fa-pen-to-square"></i>
+            </button>
+            <button class="btn btn-danger" style="padding: 0.25rem 0.5rem;" (click)="delete(item.IdPresupuesto)" title="Eliminar">
+              <i class="fa-solid fa-trash"></i>
+            </button>
+          </td>
+        </tr>
+        <tr *ngIf="presupuestos().length === 0 && !loading()">
+          <td colspan="9" style="text-align: center; padding: 2.5rem; color: var(--text-muted);">
+            <i class="fa-solid fa-file-invoice-dollar" style="font-size: 2rem; display: block; margin-bottom: 0.5rem;"></i>
+            No hay presupuestos que coincidan con la búsqueda.
+          </td>
+        </tr>
+        <tr *ngIf="loading()">
+          <td colspan="9" style="text-align: center; padding: 2rem; color: var(--text-muted);">
+            <i class="fa-solid fa-spinner fa-spin" style="font-size: 1.5rem;"></i> Cargando...
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Paginación estilo Dashboard -->
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 1rem; padding: 0.5rem 1rem; background: #f8fafc; border: 1px solid var(--border-color); border-radius: 8px;">
+    
+    <div style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.875rem; color: #475569;">
+      <span>Registros por página:</span>
+      <select class="form-control" style="width: auto; padding: 0.2rem 0.5rem; border-color: #cbd5e1; height: auto;"
+        [ngModel]="pageSize()"
+        (ngModelChange)="onPageSizeChange($event)">
+        <option [value]="10">10</option>
+        <option [value]="20">20</option>
+        <option [value]="50">50</option>
+        <option [value]="100">100</option>
+      </select>
+    </div>
+
+    <div *ngIf="totalPages() > 1" style="display: flex; align-items: center; gap: 0.35rem;">
+      <button class="btn btn-secondary" style="padding: 0.2rem 0.6rem; background: #fff; border-color: #cbd5e1; color: #475569;"
+        (click)="goToPage(currentPage() - 1)" [disabled]="currentPage() === 1">
+        <i class="fa-solid fa-chevron-left"></i> Anterior
+      </button>
+
+      <button *ngIf="currentPage() > 3" class="btn btn-secondary" style="padding: 0.2rem 0.5rem; background: #fff; border-color: #cbd5e1; color: #475569;"
+        (click)="goToPage(1)">1</button>
+      <span *ngIf="currentPage() > 3" style="color: #94a3b8;">...</span>
+
+      <button *ngFor="let page of pages()" class="btn" style="padding: 0.2rem 0.6rem; min-width: 36px;"
+        [ngClass]="page === currentPage() ? 'btn-primary' : 'btn-secondary'"
+        [style.background]="page !== currentPage() ? '#fff' : ''"
+        [style.border-color]="page !== currentPage() ? '#cbd5e1' : ''"
+        (click)="goToPage(page)">{{ page }}</button>
+
+      <span *ngIf="currentPage() < totalPages() - 2" style="color: #94a3b8;">...</span>
+      <button *ngIf="currentPage() < totalPages() - 2" class="btn btn-secondary"
+        style="padding: 0.2rem 0.5rem; background: #fff; border-color: #cbd5e1; color: #475569;"
+        (click)="goToPage(totalPages())">{{ totalPages() }}</button>
+
+      <button class="btn btn-secondary" style="padding: 0.2rem 0.6rem; background: #fff; border-color: #cbd5e1; color: #475569;"
+        (click)="goToPage(currentPage() + 1)" [disabled]="currentPage() === totalPages()">
+        Siguiente <i class="fa-solid fa-chevron-right"></i>
+      </button>
+    </div>
+
+    <span style="font-size: 0.875rem; color: #64748b;">
+      Página <strong>{{ currentPage() }}</strong> de {{ totalPages() }}
+    </span>
+  </div>
+
+</div>
+
+<!-- Modal -->
+<div class="modal-overlay" *ngIf="showModal()">
+  <div class="modal-content" style="max-width: 800px;">
+    <div class="modal-header">
+      <h3>{{ editingId() ? 'Editar Presupuesto' : 'Nuevo Presupuesto' }}</h3>
+      <button class="btn btn-secondary" style="padding: 0.25rem 0.5rem;" (click)="closeModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+        <div class="form-group">
+          <label>ID Presupuesto *</label>
+          <input type="text" class="form-control" [(ngModel)]="formData.IdPresupuesto" [disabled]="!!editingId()" [style.background]="editingId() ? '#f1f5f9' : ''" placeholder="Ej. PPTO-2026-001">
+        </div>
+        <div class="form-group">
+          <label>Proyecto</label>
+          <input type="text" class="form-control" [(ngModel)]="formData.Proyecto" placeholder="Ej. Obra Civil Fase 1">
+        </div>
+        <div class="form-group">
+          <label>Empresa</label>
+          <input type="text" class="form-control" [(ngModel)]="formData.CodEmpresa" placeholder="Código de Empresa">
+        </div>
+        <div class="form-group">
+          <label>Centro de Costo</label>
+          <input type="text" class="form-control" [(ngModel)]="formData.CodCentroCto" placeholder="Código Centro de Costo">
+        </div>
+        <div class="form-group">
+          <label>Periodo</label>
+          <input type="text" class="form-control" [(ngModel)]="formData.IdPeriodo" placeholder="Ej. 2026">
+        </div>
+        <div class="form-group">
+          <label>Tipo Presupuesto</label>
+          <input type="text" class="form-control" [(ngModel)]="formData.TipoPpto" placeholder="Ej. OBRA">
+        </div>
+        
+        <div class="form-group">
+          <label>Costo Directo</label>
+          <input type="number" class="form-control" [(ngModel)]="formData.CostoDirecto">
+        </div>
+        <div class="form-group">
+          <label>% Gastos Generales</label>
+          <input type="number" class="form-control" [(ngModel)]="formData.GGPorcentaje" placeholder="Ej. 10">
+        </div>
+        <div class="form-group">
+          <label>% Utilidad</label>
+          <input type="number" class="form-control" [(ngModel)]="formData.UtiliPorcentaje" placeholder="Ej. 10">
+        </div>
+        <div class="form-group">
+          <label>Viáticos</label>
+          <input type="number" class="form-control" [(ngModel)]="formData.Viaticos">
+        </div>
+        <div class="form-group">
+          <label>Descuento Comercial</label>
+          <input type="number" class="form-control" [(ngModel)]="formData.DsctoComercial">
+        </div>
+        
+        <div class="form-group">
+          <label>Estado</label>
+          <select class="form-control" [(ngModel)]="formData.Estado">
+            <option value="PENDIENTE">PENDIENTE</option>
+            <option value="EN REVISION">EN REVISIÓN</option>
+            <option value="APROBADO">APROBADO</option>
+            <option value="RECHAZADO">RECHAZADO</option>
+          </select>
+        </div>
+        <div class="form-group" style="grid-column: 1 / -1;">
+          <label>Comentarios</label>
+          <textarea class="form-control" [(ngModel)]="formData.Comentarios" rows="3"></textarea>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" (click)="closeModal()">Cancelar</button>
+      <button class="btn btn-primary" (click)="save()">
+        <i class="fa-solid fa-floppy-disk"></i> {{ editingId() ? 'Guardar Cambios' : 'Crear Presupuesto' }}
+      </button>
+    </div>
+  </div>
+</div>

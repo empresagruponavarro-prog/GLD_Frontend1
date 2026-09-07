@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { UsuariosService } from './usuarios.service';
@@ -10,48 +10,48 @@ import { Usuario } from './usuarios.interface';
   imports: [CommonModule, FormsModule],
   templateUrl: './usuarios.html'
 })
-export class UsuariosComponent implements OnInit {
-  usuarios: Usuario[] = [];
-  showModal = false;
-  editingId: string | null = null;
-  loading = false;
+export class UsuariosComponent {
+  private usuariosService = inject(UsuariosService);
+
+  usuarios = signal<Usuario[]>([]);
+  showModal = signal<boolean>(false);
+  editingId = signal<string | null>(null);
+  loading = signal<boolean>(false);
   formData: Usuario = { IdUsuario: '', Nombres: '', Usuario: '', Rol: 'Promotor', Clave: '' };
 
-  constructor(private usuariosService: UsuariosService) {}
-
-  ngOnInit() {
+  constructor() {
     this.loadUsuarios();
   }
 
   loadUsuarios() {
-    this.loading = true;
+    this.loading.set(true);
     this.usuariosService.getAll().subscribe({
       next: (data) => {
-        this.usuarios = data;
-        this.loading = false;
+        this.usuarios.set(data);
+        this.loading.set(false);
       },
       error: (err) => {
         console.error(err);
-        this.loading = false;
+        this.loading.set(false);
       },
     });
   }
 
   openModal() {
-    this.editingId = null;
+    this.editingId.set(null);
     this.formData = { IdUsuario: '', Nombres: '', Usuario: '', Rol: 'Promotor', Clave: '' };
-    this.showModal = true;
+    this.showModal.set(true);
   }
 
   editModal(item: Usuario) {
-    this.editingId = item.IdUsuario;
+    this.editingId.set(item.IdUsuario);
     this.formData = { ...item, Clave: '' };
-    this.showModal = true;
+    this.showModal.set(true);
   }
 
   closeModal() {
-    this.showModal = false;
-    this.editingId = null;
+    this.showModal.set(false);
+    this.editingId.set(null);
   }
 
   saveUsuario() {
@@ -60,7 +60,8 @@ export class UsuariosComponent implements OnInit {
       return;
     }
 
-    if (this.editingId) {
+    const editId = this.editingId();
+    if (editId) {
       const updatePayload: any = {
         Nombres: this.formData.Nombres,
         Usuario: this.formData.Usuario,
@@ -69,7 +70,7 @@ export class UsuariosComponent implements OnInit {
       if (this.formData.Clave) {
         updatePayload.Clave = this.formData.Clave;
       }
-      this.usuariosService.update(this.editingId, updatePayload).subscribe({
+      this.usuariosService.update(editId, updatePayload).subscribe({
         next: () => { this.closeModal(); this.loadUsuarios(); },
         error: (err) => alert('Error al actualizar: ' + err.error?.message),
       });

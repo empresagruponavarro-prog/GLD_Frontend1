@@ -1,4 +1,4 @@
-import { Component, OnInit, AfterViewChecked } from '@angular/core';
+import { Component, inject, signal, AfterViewChecked } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { IncidenciasService, Incidencia } from './incidencias.service';
@@ -11,9 +11,10 @@ declare var L: any; // Leaflet global JS library
   imports: [CommonModule, FormsModule],
   templateUrl: './incidencias.html'
 })
-export class IncidenciasComponent implements OnInit, AfterViewChecked {
-  incidencias: Incidencia[] = [];
-  loading = false;
+export class IncidenciasComponent implements AfterViewChecked {
+  private service = inject(IncidenciasService);
+  incidencias = signal<Incidencia[]>([]);
+  loading = signal<boolean>(false);
 
   // Leaflet Map References
   private leafletMap: any = null;
@@ -21,10 +22,10 @@ export class IncidenciasComponent implements OnInit, AfterViewChecked {
   private mapNeedsInit = false;
 
   // Modal State
-  showFormModal = false;
-  showDetailModal = false;
-  editingId: number | null = null;
-  selectedItem: Incidencia | null = null;
+  showFormModal = signal<boolean>(false);
+  showDetailModal = signal<boolean>(false);
+  editingId = signal<number | null>(null);
+  selectedItem = signal<Incidencia | null>(null);
 
   filters = {
     fechaInicio: '',
@@ -62,14 +63,14 @@ export class IncidenciasComponent implements OnInit, AfterViewChecked {
     estado: 'PENDIENTE',
   };
 
-  constructor(private service: IncidenciasService) {}
+  constructor() { this.loadIncidencias(); }
 
   ngOnInit() {
     this.loadIncidencias();
   }
 
   ngAfterViewChecked() {
-    if (this.showFormModal && this.mapNeedsInit) {
+    if (this.showFormModal() && this.mapNeedsInit) {
       this.mapNeedsInit = false;
       setTimeout(() => this.initLeafletMap(), 150);
     }
@@ -143,7 +144,7 @@ export class IncidenciasComponent implements OnInit, AfterViewChecked {
 
   getCurrentLocation() {
     if (navigator.geolocation) {
-      this.loading = true;
+      this.loading.set(true);
       navigator.geolocation.getCurrentPosition(
         (position) => {
           const lat = position.coords.latitude.toFixed(8);
@@ -155,10 +156,10 @@ export class IncidenciasComponent implements OnInit, AfterViewChecked {
             this.leafletMarker.setLatLng([Number(lat), Number(lng)]);
             this.leafletMap.setView([Number(lat), Number(lng)], 16);
           }
-          this.loading = false;
+          this.loading.set(false);
         },
         (error) => {
-          this.loading = false;
+          this.loading.set(false);
           alert('No se pudo detectar la posición GPS: ' + error.message);
         },
         { enableHighAccuracy: true }
@@ -169,15 +170,15 @@ export class IncidenciasComponent implements OnInit, AfterViewChecked {
   }
 
   loadIncidencias() {
-    this.loading = true;
+    this.loading.set(true);
     this.service.getAll(this.filters).subscribe({
       next: (data) => {
-        this.incidencias = data;
-        this.loading = false;
+        this.incidencias.set(data);
+        this.loading.set(false);
       },
       error: (err) => {
         console.error(err);
-        this.loading = false;
+        this.loading.set(false);
       },
     });
   }
@@ -196,7 +197,7 @@ export class IncidenciasComponent implements OnInit, AfterViewChecked {
   }
 
   openCreateModal() {
-    this.editingId = null;
+    this.editingId.set(null);
     this.formData = {
       promotor: '',
       docRegistrador: '',
@@ -222,20 +223,20 @@ export class IncidenciasComponent implements OnInit, AfterViewChecked {
       representante: '',
       estado: 'PENDIENTE',
     };
-    this.showFormModal = true;
+    this.showFormModal.set(true);
     this.mapNeedsInit = true;
   }
 
   openEditModal(item: Incidencia) {
-    this.editingId = item.id!;
+    this.editingId.set(item.id!);
     this.formData = { ...item };
-    this.showFormModal = true;
+    this.showFormModal.set(true);
     this.mapNeedsInit = true;
   }
 
   openDetailModal(item: Incidencia) {
-    this.selectedItem = item;
-    this.showDetailModal = true;
+    this.selectedItem.set(item);
+    this.showDetailModal.set(true);
   }
 
   saveIncidencia() {
@@ -244,8 +245,9 @@ export class IncidenciasComponent implements OnInit, AfterViewChecked {
       return;
     }
 
-    if (this.editingId) {
-      this.service.update(this.editingId, this.formData).subscribe({
+    const editId = this.editingId();
+    if (editId) {
+      this.service.update(editId!, this.formData).subscribe({
         next: () => { this.closeModals(); this.loadIncidencias(); },
         error: (err) => alert('Error al actualizar: ' + err.error?.message),
       });
@@ -290,9 +292,9 @@ export class IncidenciasComponent implements OnInit, AfterViewChecked {
   }
 
   closeModals() {
-    this.showFormModal = false;
-    this.showDetailModal = false;
-    this.editingId = null;
-    this.selectedItem = null;
+    this.showFormModal.set(false);
+    this.showDetailModal.set(false);
+    this.editingId.set(null);
+    this.selectedItem.set(null);
   }
 }

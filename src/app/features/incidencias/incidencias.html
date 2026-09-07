@@ -9,8 +9,8 @@
     </div>
   </div>
   <div style="display: flex; gap: 0.5rem;">
-    <button class="btn btn-secondary" (click)="loadIncidencias()" [disabled]="loading">
-      <i class="fa-solid fa-arrows-rotate" [class.fa-spin]="loading"></i> {{ loading ? 'Actualizando...' : 'Actualizar' }}
+    <button class="btn btn-secondary" (click)="loadIncidencias()" [disabled]="loading()">
+      <i class="fa-solid fa-arrows-rotate" [class.fa-spin]="loading()"></i> {{ loading() ? 'Actualizando...' : 'Actualizar' }}
     </button>
     <button class="btn btn-primary" style="background: #059669; border-color: #059669;" (click)="openCreateModal()">
       <i class="fa-solid fa-plus"></i> + Agregar Caso
@@ -99,7 +99,7 @@
         </tr>
       </thead>
       <tbody>
-        <tr *ngFor="let item of incidencias">
+        <tr *ngFor="let item of incidencias()">
           <td><strong>{{ item.id }}</strong></td>
           <td style="font-size: 0.8rem; font-weight: 600;">{{ item.promotor || '—' }}</td>
           <td style="font-size: 0.8rem;">{{ item.docRegistrador || '—' }}</td>
@@ -139,13 +139,13 @@
             </button>
           </td>
         </tr>
-        <tr *ngIf="incidencias.length === 0 && !loading">
+        <tr *ngIf="incidencias().length === 0 && !loading">
           <td colspan="13" style="text-align: center; padding: 3rem; color: var(--text-muted);">
             <i class="fa-solid fa-clipboard-question" style="font-size: 2.5rem; margin-bottom: 0.5rem; display: block;"></i>
             No se encontraron casos o incidencias registradas.
           </td>
         </tr>
-        <tr *ngIf="loading">
+        <tr *ngIf="loading()">
           <td colspan="13" style="text-align: center; padding: 2.5rem; color: var(--text-muted);">
             <i class="fa-solid fa-spinner fa-spin"></i> Cargando registros...
           </td>
@@ -156,12 +156,12 @@
 </div>
 
 <!-- Modal Formulario Ficha -->
-<div class="modal-overlay" *ngIf="showFormModal">
+<div class="modal-overlay" *ngIf="showFormModal()">
   <div class="modal-content" style="max-width: 780px; max-height: 90vh; overflow-y: auto;">
     <div class="modal-header" style="background: linear-gradient(135deg, #0284c7 0%, #059669 100%); color: white;">
       <h3 style="display: flex; align-items: center; gap: 0.5rem; margin: 0; font-size: 1.1rem; color: white;">
         <i class="fa-solid fa-square-plus"></i>
-        {{ editingId ? 'Editar Ficha de Caso' : 'Nueva Ficha de Caso / Incidencia' }}
+        {{ editingId() ? 'Editar Ficha de Caso' : 'Nueva Ficha de Caso / Incidencia' }}
       </h3>
       <button class="btn btn-secondary" style="padding: 0.2rem 0.5rem; color: white; background: rgba(255,255,255,0.2); border: none;" (click)="closeModals()">✕</button>
     </div>
@@ -363,7 +363,7 @@
         <h3 style="margin: 0; color: white; font-size: 1.1rem;">
           <i class="fa-solid fa-file-lines"></i> Detalles de Ficha de Caso
         </h3>
-        <small style="color: #e0f2fe; font-size: 0.75rem;">ID Registro: {{ selectedItem.id }}</small>
+        <small style="color: #e0f2fe; font-size: 0.75rem;">ID Registro: {{ selectedItem()?.id }}</small>
       </div>
       <button class="btn btn-secondary" style="padding: 0.2rem 0.5rem; color: white; background: rgba(255,255,255,0.2); border: none;" (click)="closeModals()">✕</button>
     </div>
@@ -372,33 +372,33 @@
       <div style="background: #f8fafc; padding: 0.85rem; border-radius: 8px; border: 1px solid var(--border-color);">
         <div style="font-weight: 700; color: #047857; margin-bottom: 0.4rem;">👤 I.- REGISTRADOR</div>
         <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0.5rem;">
-          <div><small style="color: var(--text-muted); display: block;">REGISTRADOR:</small> <strong>{{ selectedItem.promotor || '—' }}</strong></div>
-          <div><small style="color: var(--text-muted); display: block;">DOCUMENTO:</small> <strong>{{ selectedItem.docRegistrador || '—' }}</strong></div>
-          <div><small style="color: var(--text-muted); display: block;">CARGO:</small> <strong>{{ selectedItem.cargoRegistrador || '—' }}</strong></div>
+          <div><small style="color: var(--text-muted); display: block;">REGISTRADOR:</small> <strong>{{ selectedItem()?.promotor || '—' }}</strong></div>
+          <div><small style="color: var(--text-muted); display: block;">DOCUMENTO:</small> <strong>{{ selectedItem()?.docRegistrador || '—' }}</strong></div>
+          <div><small style="color: var(--text-muted); display: block;">CARGO:</small> <strong>{{ selectedItem()?.cargoRegistrador || '—' }}</strong></div>
         </div>
       </div>
 
       <div style="background: #f8fafc; padding: 0.85rem; border-radius: 8px; border: 1px solid var(--border-color);">
         <div style="font-weight: 700; color: #047857; margin-bottom: 0.4rem;">🧑‍🤝‍🧑 II.- SOLICITANTE / CLIENTE</div>
         <div style="display: grid; grid-template-columns: 1.5fr 1fr 1fr; gap: 0.5rem; margin-bottom: 0.4rem;">
-          <div><small style="color: var(--text-muted); display: block;">NOMBRES / EMPRESA:</small> <strong>{{ selectedItem.solicitante || '—' }}</strong></div>
-          <div><small style="color: var(--text-muted); display: block;">DOCUMENTO:</small> <strong>{{ selectedItem.docSolicitante || '—' }}</strong></div>
-          <div><small style="color: var(--text-muted); display: block;">TELÉFONO:</small> <strong>{{ selectedItem.telefonoSolicitante || '—' }}</strong></div>
+          <div><small style="color: var(--text-muted); display: block;">NOMBRES / EMPRESA:</small> <strong>{{ selectedItem()?.solicitante || '—' }}</strong></div>
+          <div><small style="color: var(--text-muted); display: block;">DOCUMENTO:</small> <strong>{{ selectedItem()?.docSolicitante || '—' }}</strong></div>
+          <div><small style="color: var(--text-muted); display: block;">TELÉFONO:</small> <strong>{{ selectedItem()?.telefonoSolicitante || '—' }}</strong></div>
         </div>
-        <div><small style="color: var(--text-muted); display: block;">DIRECCIÓN FISCAL:</small> <strong>{{ selectedItem.domicilioSolicitante || '—' }}</strong></div>
+        <div><small style="color: var(--text-muted); display: block;">DIRECCIÓN FISCAL:</small> <strong>{{ selectedItem()?.domicilioSolicitante || '—' }}</strong></div>
       </div>
 
       <div style="background: #f8fafc; padding: 0.85rem; border-radius: 8px; border: 1px solid var(--border-color);">
         <div style="font-weight: 700; color: #047857; margin-bottom: 0.4rem;">📍 III.- DETALLES DEL CASO / INCIDENCIA</div>
         <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0.5rem; margin-bottom: 0.4rem;">
-          <div><small style="color: var(--text-muted); display: block;">FECHA:</small> <strong>{{ selectedItem.fechaIncidencia || '—' }}</strong></div>
-          <div><small style="color: var(--text-muted); display: block;">HORA:</small> <strong>{{ selectedItem.horaIncidencia || '—' }}</strong></div>
-          <div><small style="color: var(--text-muted); display: block;">TIPIFICACIÓN:</small> <strong>{{ selectedItem.tipificacion || '—' }}</strong></div>
+          <div><small style="color: var(--text-muted); display: block;">FECHA:</small> <strong>{{ selectedItem()?.fechaIncidencia || '—' }}</strong></div>
+          <div><small style="color: var(--text-muted); display: block;">HORA:</small> <strong>{{ selectedItem()?.horaIncidencia || '—' }}</strong></div>
+          <div><small style="color: var(--text-muted); display: block;">TIPIFICACIÓN:</small> <strong>{{ selectedItem()?.tipificacion || '—' }}</strong></div>
         </div>
         <div style="margin-top: 0.4rem;">
           <small style="color: var(--text-muted); display: block;">DESCRIPCIÓN COMPLETA:</small>
           <div style="background: #ffffff; padding: 0.5rem; border-radius: 4px; border: 1px solid #cbd5e1; margin-top: 0.2rem;">
-            {{ selectedItem.incidencia || 'Sin descripción...' }}
+            {{ selectedItem()?.incidencia || 'Sin descripción...' }}
           </div>
         </div>
       </div>

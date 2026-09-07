@@ -1,0 +1,195 @@
+<div class="content-header">
+  <div>
+    <h1 class="content-title">Centros de Costos</h1>
+    <p class="content-subtitle">Gestión y administración del catálogo de Centros de Costos.</p>
+  </div>
+  <div style="display: flex; gap: 0.5rem;">
+    <button class="btn btn-secondary" (click)="load()" [disabled]="loading()">
+      <i class="fa-solid fa-arrows-rotate" [class.fa-spin]="loading()"></i>
+      {{ loading() ? 'Cargando...' : 'Actualizar' }}
+    </button>
+    <button class="btn btn-primary" (click)="openModal()">
+      <i class="fa-solid fa-plus"></i> + Nuevo Centro
+    </button>
+  </div>
+</div>
+
+<div class="content-body">
+  <!-- Barra de búsqueda + contador -->
+  <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem; gap: 1rem; flex-wrap: wrap;">
+    <input
+      type="text"
+      class="form-control"
+      placeholder="Buscar por código, nombre, empresa o cliente..."
+      style="max-width: 400px;"
+      [ngModel]="search()"
+      (ngModelChange)="onSearch($event)"
+    />
+    <span style="font-size: 0.875rem; color: var(--text-muted); white-space: nowrap;">
+      Mostrando {{ filteredItems().length }} registros 💡 Haz clic en editar para modificar
+    </span>
+  </div>
+
+  <!-- Tabla con scroll horizontal -->
+  <div class="table-card" style="overflow-x: auto; max-height: calc(100vh - 280px); overflow-y: auto;">
+    <table class="table" style="min-width: 900px;">
+      <thead>
+        <tr>
+          <th>Código</th>
+          <th>Nombre</th>
+          <th>Empresa</th>
+          <th>Cliente</th>
+          <th>Periodo</th>
+          <th>Estado</th>
+          <th>Ppto. Estado</th>
+          <th>Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let item of pagedItems()">
+          <td><strong>{{ item.CodCentroCto }}</strong></td>
+          <td>{{ item.CentroCosto }}</td>
+          <td>{{ item.Empresa || item.CodEmpresa || '—' }}</td>
+          <td>{{ item.Cliente || item.CodCliente || '—' }}</td>
+          <td>{{ item.IdPeriodo || '—' }}</td>
+          <td>
+            <span class="badge" [ngClass]="item.Estado === 'ABIERTO' ? 'badge-progress' : 'badge-danger'">
+              {{ item.Estado || '—' }}
+            </span>
+          </td>
+          <td>
+            <span class="badge"
+              [ngClass]="{
+                'badge-completed': item.PresupuestoEstado === 'APROBADO',
+                'badge-progress': item.PresupuestoEstado === 'EN REVISION',
+                'badge-pending': item.PresupuestoEstado === 'PENDIENTE',
+                'badge-danger': item.PresupuestoEstado === 'RECHAZADO'
+              }">
+              {{ item.PresupuestoEstado || '—' }}
+            </span>
+          </td>
+          <td>
+            <button class="btn btn-secondary" style="padding: 0.25rem 0.5rem; margin-right: 0.25rem;" (click)="editModal(item)" title="Editar">
+              <i class="fa-solid fa-pen-to-square"></i>
+            </button>
+            <button class="btn btn-danger" style="padding: 0.25rem 0.5rem;" (click)="delete(item.CodCentroCto)" title="Eliminar">
+              <i class="fa-solid fa-trash"></i>
+            </button>
+          </td>
+        </tr>
+        <tr *ngIf="pagedItems().length === 0 && !loading()">
+          <td colspan="8" style="text-align: center; padding: 2.5rem; color: var(--text-muted);">
+            <i class="fa-solid fa-building-flag" style="font-size: 2rem; display: block; margin-bottom: 0.5rem;"></i>
+            No hay centros de costos registrados.
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Paginación -->
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 1rem; padding: 0.5rem 1rem; background: #f8fafc; border: 1px solid var(--border-color); border-radius: 8px;">
+    
+    <div style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.875rem; color: #475569;">
+      <span>Registros por página:</span>
+      <select class="form-control" style="width: auto; padding: 0.2rem 0.5rem; border-color: #cbd5e1; height: auto;" [ngModel]="pageSize()" (ngModelChange)="pageSize.set($event); currentPage.set(1)">
+        <option [value]="10">10</option>
+        <option [value]="15">15</option>
+        <option [value]="20">20</option>
+        <option [value]="50">50</option>
+      </select>
+    </div>
+
+    <div *ngIf="totalPages() > 1" style="display: flex; align-items: center; gap: 0.35rem;">
+      <button class="btn btn-secondary" style="padding: 0.2rem 0.5rem; background: #fff; border-color: #cbd5e1; color: #475569;" (click)="goToPage(currentPage() - 1)" [disabled]="currentPage() === 1">
+        <i class="fa-solid fa-chevron-left"></i> Anterior
+      </button>
+
+      <span style="font-size: 0.875rem; margin: 0 0.5rem; color: #475569;">
+        Página <strong>{{ currentPage() }}</strong> de {{ totalPages() }}
+      </span>
+
+      <button class="btn btn-secondary" style="padding: 0.2rem 0.5rem; background: #fff; border-color: #cbd5e1; color: #475569;" (click)="goToPage(currentPage() + 1)" [disabled]="currentPage() === totalPages()">
+        Siguiente <i class="fa-solid fa-chevron-right"></i>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal -->
+<div class="modal-overlay" *ngIf="showModal()">
+  <div class="modal-content" style="max-width: 620px;">
+    <div class="modal-header">
+      <h3>{{ editingCod() ? 'Editar Centro de Costo' : 'Nuevo Centro de Costo' }}</h3>
+      <button class="btn btn-secondary" style="padding: 0.25rem 0.5rem;" (click)="closeModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+        <div class="form-group">
+          <label>Código *</label>
+          <input type="text" class="form-control" [(ngModel)]="formData.CodCentroCto" disabled style="background: #f1f5f9; cursor: not-allowed; font-family: monospace;">
+        </div>
+        <div class="form-group">
+          <label>Nombre del Centro de Costo *</label>
+          <input type="text" class="form-control" [(ngModel)]="formData.CentroCosto" placeholder="Ej. Obra Norte">
+        </div>
+        <div class="form-group">
+          <label>Empresa</label>
+          <select class="form-control" [(ngModel)]="formData.CodEmpresa" (change)="onEmpresaChange()">
+            <option value="">Seleccione Empresa...</option>
+            <option *ngFor="let e of empresasList" [value]="e.id">{{ e.nombre }}</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Nombre Empresa (Auto)</label>
+          <input type="text" class="form-control" [(ngModel)]="formData.Empresa" disabled style="background: #f1f5f9;">
+        </div>
+        <div class="form-group">
+          <label>Cliente</label>
+          <select class="form-control" [(ngModel)]="formData.CodCliente" (change)="onClienteChange()">
+            <option value="">Seleccione Cliente...</option>
+            <option *ngFor="let c of clientesList" [value]="c.id">{{ c.nombre }}</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Nombre Cliente (Auto)</label>
+          <input type="text" class="form-control" [(ngModel)]="formData.Cliente" disabled style="background: #f1f5f9;">
+        </div>
+        <div class="form-group">
+          <label>Periodo</label>
+          <input type="text" class="form-control" [(ngModel)]="formData.IdPeriodo" placeholder="Ej. 2025">
+        </div>
+        <div class="form-group">
+          <label>Estado Operativo</label>
+          <select class="form-control" [(ngModel)]="formData.Estado">
+            <option value="ABIERTO">ABIERTO</option>
+            <option value="CERRADO">CERRADO</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Estado Presupuesto</label>
+          <select class="form-control" [(ngModel)]="formData.PresupuestoEstado">
+            <option value="PENDIENTE">PENDIENTE</option>
+            <option value="EN REVISION">EN REVISIÓN</option>
+            <option value="APROBADO">APROBADO</option>
+            <option value="RECHAZADO">RECHAZADO</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Monto Presupuesto</label>
+          <input type="number" class="form-control" [(ngModel)]="formData.PresupuestoMonto" placeholder="Ej. 150000">
+        </div>
+        <div class="form-group" style="grid-column: 1 / -1;">
+          <label>Centro de Costo Principal (opcional)</label>
+          <input type="text" class="form-control" [(ngModel)]="formData.CodCentroCtoPrincipal" placeholder="Cód. Centro Principal">
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" (click)="closeModal()">Cancelar</button>
+      <button class="btn btn-primary" (click)="save()">
+        <i class="fa-solid fa-floppy-disk"></i> {{ editingCod() ? 'Guardar Cambios' : 'Crear Centro' }}
+      </button>
+    </div>
+  </div>
+</div>
