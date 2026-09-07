@@ -1,11 +1,11 @@
 import { Routes } from '@angular/router';
-import { ModulesDashboardComponent } from './features/modules-dashboard/modules-dashboard.component';
-import { IncidenciasComponent } from './features/incidencias/incidencias.component';
-import { UsuariosComponent } from './features/administration/usuarios/usuarios.component';
-import { MenusComponent } from './features/administration/menus/menus.component';
-import { EmpresasComponent } from './features/administration/empresas/empresas.component';
-import { MaestrosGeneralesComponent } from './features/maestros-generales/maestros-generales.component';
-import { CentrosCostosDashboardComponent } from './features/centros-costos/centros-costos-dashboard.component';
+import { ModulesDashboardComponent } from './features/modules-dashboard/modules-dashboard';
+import { IncidenciasComponent } from './features/incidencias/incidencias';
+import { UsuariosComponent } from './features/administration/usuarios/usuarios';
+import { MenusComponent } from './features/administration/menus/menus';
+import { EmpresasComponent } from './features/administration/empresas/empresas';
+import { MaestrosGeneralesComponent } from './features/maestros-generales/maestros-generales';
+import { CentrosCostosDashboardComponent } from './features/centros-costos/centros-costos-dashboard';
 
 export const routes: Routes = [
   { path: '', component: CentrosCostosDashboardComponent },

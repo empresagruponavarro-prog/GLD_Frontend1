@@ -1,0 +1,416 @@
+<div class="dashboard-wrapper">
+  
+  <!-- Encabezado del Dashboard -->
+  <header class="dashboard-header">
+    <div class="header-titles">
+      <h1 class="page-title">Dashboard de Centros de Costos</h1>
+      <p class="page-subtitle">Control presupuestal, estado operativo y consolidado financiero integral</p>
+    </div>
+    <div class="header-actions">
+      <button class="btn btn-outline" (click)="refreshData()" [disabled]="loadingCentros">
+        <span [class.fa-spin]="loadingCentros">🔄</span> Actualizar
+      </button>
+      <button class="btn btn-primary" (click)="exportAllTable()">
+        📥 Exportar Lista
+      </button>
+    </div>
+  </header>
+
+  <!-- Barra Horizontal de Filtros de Búsqueda (Uno al lado del otro) -->
+  <div class="filters-horizontal-card card">
+    
+    <!-- Filtro Empresa -->
+    <div class="filter-box col-empresa-filter">
+      <label class="filter-title">Empresa</label>
+      <select class="filter-select" [value]="filtroEmpresa" (change)="onFilterSelect('empresa', $event)">
+        <option value="TODOS">Todas las Empresas</option>
+        <option *ngFor="let emp of catalogos.empresas" [value]="emp">{{ emp }}</option>
+      </select>
+    </div>
+
+    <!-- Filtro Periodo (Año) -->
+    <div class="filter-box col-periodo-filter">
+      <label class="filter-title">Periodo (Año)</label>
+      <select class="filter-select" [value]="filtroPeriodo" (change)="onFilterSelect('periodo', $event)">
+        <option value="TODOS">Todos</option>
+        <option *ngFor="let per of catalogos.periodos" [value]="per">{{ per }}</option>
+      </select>
+    </div>
+
+    <!-- Filtro Cliente (con nombre del cliente) -->
+    <div class="filter-box col-cliente-filter">
+      <label class="filter-title">Cliente</label>
+      <select class="filter-select" [value]="filtroCliente" (change)="onFilterSelect('cliente', $event)">
+        <option value="TODOS">Todos los Clientes</option>
+        <option *ngFor="let cli of catalogos.clientes" [value]="cli">{{ cli }}</option>
+      </select>
+    </div>
+
+    <!-- Filtro Centro de Costo (Nombre / Código) -->
+    <div class="filter-box col-cto-filter">
+      <label class="filter-title">Centro de Costo</label>
+      <input 
+        type="text" 
+        class="filter-input" 
+        placeholder="Filtrar por centro..." 
+        [value]="filtroCentroCosto"
+        (input)="onCentroCostoInput($event)"
+      />
+    </div>
+
+    <!-- Filtro Estado -->
+    <div class="filter-box col-estado-filter">
+      <label class="filter-title">Estado</label>
+      <select class="filter-select" [value]="filtroEstado" (change)="onFilterSelect('estado', $event)">
+        <option value="TODOS">Todos ({{ stats.total }})</option>
+        <option value="ABIERTO">ABIERTO ({{ stats.abiertos }})</option>
+        <option value="CERRADO">CERRADO ({{ stats.cerrados }})</option>
+        <ng-container *ngFor="let est of catalogos.estados">
+          <option *ngIf="est !== 'ABIERTO' && est !== 'CERRADO'" [value]="est">{{ est }}</option>
+        </ng-container>
+      </select>
+    </div>
+
+    <!-- Filtro Presupuesto Estado -->
+    <div class="filter-box col-ppto-filter">
+      <label class="filter-title">Presupuesto Estado</label>
+      <select class="filter-select" [value]="filtroPptoEstado" (change)="onFilterSelect('pptoEstado', $event)">
+        <option value="TODOS">Todos</option>
+        <option *ngFor="let p of catalogos.pptoEstados" [value]="p">{{ p }}</option>
+      </select>
+    </div>
+
+    <!-- Buscador General -->
+    <div class="filter-box col-search-filter">
+      <label class="filter-title">Búsqueda General</label>
+      <input 
+        type="text" 
+        class="filter-input" 
+        placeholder="🔍 Código, empresa..." 
+        [value]="filtroSearch"
+        (input)="onSearchInput($event)"
+      />
+    </div>
+
+    <!-- Botón Limpiar Filtros -->
+    <div class="filter-box col-action-filter">
+      <button class="btn-clear-filters" (click)="resetFilters()" title="Limpiar todos los filtros">
+        🧹 Limpiar
+      </button>
+    </div>
+
+  </div>
+
+  <!-- Tabla Maestra de Centros de Costos -->
+  <div class="card table-card">
+
+    <div class="table-responsive">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th class="col-empresa">Empresa</th>
+            <th class="col-periodo">Año</th>
+            <th class="col-cliente">Cliente</th>
+            <th class="col-principal">Centro de costo Principal</th>
+            <th class="col-codigo">Codigo CTO</th>
+            <th class="col-nombre">CentroCosto</th>
+            <th class="col-estado">Estado</th>
+            <th class="col-ppto-estado">PresupuestoEstado</th>
+            <th class="col-accion text-center">Acción</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr 
+            *ngFor="let item of pagedCentros" 
+            (click)="openDetail(item)"
+            [class.row-selected]="selectedCentro?.CodCentroCto === item.CodCentroCto"
+            class="table-row-clickable"
+          >
+            <!-- Empresa -->
+            <td class="col-empresa" [title]="item.Empresa || item.CodEmpresa || ''">
+              {{ item.Empresa || item.CodEmpresa || '-' }}
+            </td>
+
+            <!-- IdPeriodo -->
+            <td class="col-periodo">{{ item.IdPeriodo || '-' }}</td>
+
+            <!-- CodCliente (Muestra el NOMBRE del cliente tal como se solicitó) -->
+            <td class="col-cliente font-client" [title]="item.Cliente || item.CodCliente || ''">
+              {{ item.Cliente || item.CodCliente || '-' }}
+            </td>
+
+            <!-- Centro de costo Principal -->
+            <td class="col-principal" [title]="item.CentroCostoPrincipal || item.CodCentroCtoPrincipal || ''">
+              {{ item.CentroCostoPrincipal || item.CodCentroCtoPrincipal || '-' }}
+            </td>
+
+            <!-- Codigo CTO -->
+            <td class="col-codigo">
+              <span class="code-pill">{{ item.CodCentroCto }}</span>
+            </td>
+
+            <!-- CentroCosto -->
+            <td class="col-nombre font-medium" [title]="item.CentroCosto">
+              {{ item.CentroCosto }}
+            </td>
+
+            <!-- Estado -->
+            <td class="col-estado">
+              <span 
+                class="badge" 
+                [class.badge-abierto]="item.Estado === 'ABIERTO' || item.Estado === 'Activo'"
+                [class.badge-cerrado]="item.Estado === 'CERRADO' || item.Estado === 'Liquidado'"
+                [class.badge-proceso]="item.Estado === 'En Proceso' || item.Estado === 'POR LIQUIDAR'"
+              >
+                {{ item.Estado || 'ABIERTO' }}
+              </span>
+            </td>
+
+            <!-- PresupuestoEstado -->
+            <td class="col-ppto-estado">
+              <span 
+                *ngIf="item.PresupuestoEstado" 
+                class="badge badge-ppto"
+                [class.badge-aprobado]="item.PresupuestoEstado === 'Aprobado'"
+              >
+                {{ item.PresupuestoEstado }}
+              </span>
+              <span *ngIf="!item.PresupuestoEstado" class="text-muted">-</span>
+            </td>
+
+            <!-- Acción -->
+            <td class="col-accion text-center">
+              <button class="btn-icon-view" title="Ver análisis financiero" (click)="openDetail(item); $event.stopPropagation()">
+                <span class="arrow-icon">›</span>
+              </button>
+            </td>
+          </tr>
+
+          <!-- Estado Vacío -->
+          <tr *ngIf="centros.length === 0 && !loadingCentros">
+            <td colspan="9" class="empty-cell">
+              <div class="empty-state">
+                <p class="empty-title">No se encontraron centros de costos con los filtros seleccionados</p>
+                <p class="empty-sub">Prueba ajustando los filtros de empresa, periodo, cliente o estado.</p>
+              </div>
+            </td>
+          </tr>
+
+          <!-- Estado Cargando -->
+          <tr *ngIf="loadingCentros">
+            <td colspan="9" class="loading-cell">
+              <div class="table-loading">
+                <div class="spinner"></div>
+                <span>Cargando centros de costos...</span>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Paginación Inferior -->
+    <div class="table-footer-flex" *ngIf="centros.length > 0">
+      <div class="footer-left">
+        <div class="footer-page-size">
+          <span>Registros por página:</span>
+          <select (change)="onPageSizeChange($event)" [value]="pageSize" class="select-page-size">
+            <option value="20">20</option>
+            <option value="50">50</option>
+            <option value="100">100</option>
+          </select>
+        </div>
+        <span class="tip-text">💡 Haz clic en cualquier fila para ver el análisis financiero (ppto.Sub Total en adelante)</span>
+      </div>
+      <div class="pagination-controls" *ngIf="totalPages > 1">
+        <button class="btn-page" [disabled]="currentPage === 1" (click)="changePage(currentPage - 1)">‹ Anterior</button>
+        <span class="page-indicator">{{ currentPage }} / {{ totalPages }}</span>
+        <button class="btn-page" [disabled]="currentPage === totalPages" (click)="changePage(currentPage + 1)">Siguiente ›</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL DETALLE FINANCIERO (Imagen 3: ppto.Sub Total en adelante) -->
+  <div class="modal-backdrop" *ngIf="isDetailOpen && selectedCentro" (click)="closeDetail()">
+    <div class="modal-card" (click)="$event.stopPropagation()">
+      
+      <!-- Encabezado Oscuro (Imagen 3) -->
+      <div class="detail-header-dark">
+        <div class="detail-header-left">
+          <div class="header-tags">
+            <span class="tag-hash">{{ selectedCentro.CodCentroCto }}</span>
+            <span class="tag-client">Cliente: {{ selectedCentro.Cliente || selectedCentro.CodCliente || 'CLI-001' }}</span>
+            <span class="tag-company" *ngIf="selectedCentro.Empresa">{{ selectedCentro.Empresa }}</span>
+          </div>
+          <h2 class="detail-title">{{ selectedCentro.CentroCosto }}</h2>
+          <div class="detail-substatus">
+            Estado Operativo: <strong>{{ selectedCentro.Estado || 'ABIERTO' }}</strong>
+            <span *ngIf="selectedCentro.PresupuestoEstado" class="substatus-sep">|</span>
+            <span *ngIf="selectedCentro.PresupuestoEstado">Presupuesto: <strong>{{ selectedCentro.PresupuestoEstado }}</strong></span>
+            <span *ngIf="selectedCentro.IdPeriodo" class="substatus-sep">|</span>
+            <span *ngIf="selectedCentro.IdPeriodo">Periodo: <strong>{{ selectedCentro.IdPeriodo }}</strong></span>
+          </div>
+        </div>
+        <div class="detail-header-right">
+          <button class="btn-header-csv" (click)="exportSummary()" title="Exportar ficha en CSV">
+            📊 CSV
+          </button>
+          <button class="btn-close-modal" (click)="closeDetail()" title="Cerrar vista">
+            ✕
+          </button>
+        </div>
+      </div>
+
+      <!-- Cuerpo del Modal -->
+      <div class="detail-body">
+        
+        <!-- Loading Resumen -->
+        <div *ngIf="loadingResumen" class="loading-resumen">
+          <div class="spinner"></div>
+          <span>Calculando consolidado financiero en tiempo real...</span>
+        </div>
+
+        <ng-container *ngIf="!loadingResumen && resumen">
+          
+          <!-- 5 Tarjetas KPIs Financieras (Imagen 3) -->
+          <div class="kpi-grid">
+            
+            <!-- 1. Presupuesto Base -->
+            <div class="kpi-card card-kpi-base">
+              <div class="kpi-top">
+                <span class="kpi-icon">📌</span>
+                <span class="kpi-label">PRESUPUESTO BASE</span>
+              </div>
+              <div class="kpi-value">S/ {{ resumen.presupuestoBase | number:'1.2-2' }}</div>
+              <div class="kpi-footnote">Costo directo + GG + Viáticos</div>
+            </div>
+
+            <!-- 2. Presupuesto Comercial -->
+            <div class="kpi-card card-kpi-comercial">
+              <div class="kpi-top">
+                <span class="kpi-icon">📈</span>
+                <span class="kpi-label">PRESUPUESTO COMERCIAL</span>
+              </div>
+              <div class="kpi-value">S/ {{ resumen.presupuestoComercial | number:'1.2-2' }}</div>
+              <div class="kpi-footnote">Monto adjudicado/contratado</div>
+            </div>
+
+            <!-- 3. Pagos Realizados -->
+            <div class="kpi-card card-kpi-pagos">
+              <div class="kpi-top">
+                <span class="kpi-icon">💳</span>
+                <span class="kpi-label">PAGOS REALIZADOS</span>
+              </div>
+              <div class="kpi-value">S/ {{ resumen.pagosRealizados | number:'1.2-2' }}</div>
+              <div class="kpi-footnote">Facturas y planillas abonadas</div>
+            </div>
+
+            <!-- 4. Gastos Acumulados -->
+            <div class="kpi-card card-kpi-gastos">
+              <div class="kpi-top">
+                <span class="kpi-icon">📉</span>
+                <span class="kpi-label">GASTOS ACUMULADOS</span>
+              </div>
+              <div class="kpi-value">S/ {{ resumen.gastosAcumulados | number:'1.2-2' }}</div>
+              <div class="kpi-footnote">Compras y caja ejecutada</div>
+            </div>
+
+            <!-- 5. Saldo Actual Disponible -->
+            <div class="kpi-card card-kpi-saldo" [class.saldo-negativo]="resumen.saldoActual < 0">
+              <div class="kpi-top">
+                <span class="kpi-icon">💰</span>
+                <span class="kpi-label">SALDO ACTUAL DISPONIBLE</span>
+              </div>
+              <div class="kpi-value">S/ {{ resumen.saldoActual | number:'1.2-2' }}</div>
+              <div class="kpi-footnote">Diferencia Presupuestal</div>
+            </div>
+
+          </div>
+
+          <!-- Barra de Progreso de Ejecución Comercial (Imagen 3) -->
+          <div class="card progress-section">
+            <div class="progress-info-row">
+              <span class="progress-title">Nivel de Ejecución del Presupuesto Comercial</span>
+              <span class="progress-badge" [class.badge-danger]="resumen.porcentajeEjecucion >= 100" [class.badge-warning]="resumen.porcentajeEjecucion >= 80 && resumen.porcentajeEjecucion < 100">
+                {{ resumen.porcentajeEjecucion }}% Ejecutado
+              </span>
+            </div>
+            <div class="progress-track-bg">
+              <div 
+                class="progress-fill-bar" 
+                [style.width.%]="resumen.porcentajeEjecucion > 100 ? 100 : resumen.porcentajeEjecucion"
+                [class.bar-danger]="resumen.porcentajeEjecucion >= 100"
+                [class.bar-warning]="resumen.porcentajeEjecucion >= 80 && resumen.porcentajeEjecucion < 100"
+              ></div>
+            </div>
+            <div class="progress-labels-row">
+              <span>S/ 0.00</span>
+              <span>Límite Comercial: S/ {{ resumen.presupuestoComercial | number:'1.2-2' }}</span>
+            </div>
+          </div>
+
+          <!-- Desglose Consolidado por Fuente de Información (Imagen 3) -->
+          <div class="card breakdown-section">
+            <h3 class="breakdown-heading">Desglose Consolidado por Fuente de Información</h3>
+            
+            <div class="breakdown-list">
+              
+              <!-- Facturas DocCompra -->
+              <div class="breakdown-card-row">
+                <div class="b-row-left">
+                  <div class="b-icon-box">🧾</div>
+                  <div class="b-text">
+                    <div class="b-primary-label">Facturas de Compra/Servicios</div>
+                    <div class="b-secondary-label">DocCompra (Proveedores)</div>
+                  </div>
+                </div>
+                <div class="b-row-right">
+                  <span class="b-total-amount">S/ {{ (resumen.gastosFacturas || 0) | number:'1.2-2' }}</span>
+                </div>
+              </div>
+
+              <!-- Caja Chica y Egresos -->
+              <div class="breakdown-card-row">
+                <div class="b-row-left">
+                  <div class="b-icon-box">💵</div>
+                  <div class="b-text">
+                    <div class="b-primary-label">Caja Chica y Egresos Retail</div>
+                    <div class="b-secondary-label">CajaEgresosRetail</div>
+                  </div>
+                </div>
+                <div class="b-row-right">
+                  <span class="b-total-amount">S/ {{ (resumen.gastosCajaChica || 0) | number:'1.2-2' }}</span>
+                </div>
+              </div>
+
+              <!-- Planillas de Mano de Obra -->
+              <div class="breakdown-card-row">
+                <div class="b-row-left">
+                  <div class="b-icon-box">👷</div>
+                  <div class="b-text">
+                    <div class="b-primary-label">Planillas y Mano de Obra</div>
+                    <div class="b-secondary-label">PlanillaPago (Semanal)</div>
+                  </div>
+                </div>
+                <div class="b-row-right">
+                  <span class="b-total-amount">S/ {{ (resumen.pagosPlanillas || 0) | number:'1.2-2' }}</span>
+                </div>
+              </div>
+
+            </div>
+          </div>
+
+        </ng-container>
+
+      </div>
+
+      <!-- Pie del Modal -->
+      <div class="modal-footer">
+        <button class="btn btn-outline" (click)="closeDetail()">Cerrar</button>
+        <button class="btn btn-primary" (click)="exportSummary()">📥 Exportar Ficha CSV</button>
+      </div>
+
+    </div>
+  </div>
+
+</div>

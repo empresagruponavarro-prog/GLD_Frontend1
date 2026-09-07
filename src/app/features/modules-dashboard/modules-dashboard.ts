@@ -12,25 +12,7 @@ interface ModuleCard {
   selector: 'app-modules-dashboard',
   standalone: true,
   imports: [CommonModule, RouterModule],
-  template: `
-    <div class="content-header">
-      <div>
-        <h1 class="content-title">Menú de Módulos Principal</h1>
-        <p class="content-subtitle">Selecciona el módulo de GLD al que deseas ingresar.</p>
-      </div>
-    </div>
-
-    <div class="content-body">
-      <div class="modules-grid">
-        <div class="module-card" *ngFor="let mod of modules" [routerLink]="mod.route">
-          <div class="module-icon">
-            <i [class]="mod.icon"></i>
-          </div>
-          <span class="module-title">{{ mod.title }}</span>
-        </div>
-      </div>
-    </div>
-  `
+  templateUrl: './modules-dashboard.html'
 })
 export class ModulesDashboardComponent {
   modules: ModuleCard[] = [
