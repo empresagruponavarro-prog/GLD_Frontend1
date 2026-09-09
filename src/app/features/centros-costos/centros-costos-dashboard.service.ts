@@ -20,10 +20,9 @@ export class CentrosCostosDashboardService {
   constructor(private http: HttpClient) {}
 
   getCentrosCostos(filtros?: FiltrosCentrosCostos): Observable<CentroCostoItem[]> {
-  
     let params = new HttpParams();
+
     if (filtros) {
-      console.log(filtros.estado);
       if (filtros.search?.trim()) params = params.set('search', filtros.search.trim());
       if (filtros.estado?.trim() && filtros.estado !== 'TODOS') params = params.set('estado', filtros.estado.trim());
       if (filtros.empresa?.trim() && filtros.empresa !== 'TODOS') params = params.set('empresa', filtros.empresa.trim());
@@ -32,6 +31,7 @@ export class CentrosCostosDashboardService {
       if (filtros.centroCosto?.trim()) params = params.set('centroCosto', filtros.centroCosto.trim());
       if (filtros.pptoEstado?.trim() && filtros.pptoEstado !== 'TODOS') params = params.set('pptoEstado', filtros.pptoEstado.trim());
     }
+
     return this.http.get<CentroCostoItem[]>(this.apiUrl, { params });
   }
 

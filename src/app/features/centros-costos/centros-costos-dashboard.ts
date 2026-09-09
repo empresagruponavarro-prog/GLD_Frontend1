@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { CentrosCostosDashboardService } from './centros-costos-dashboard.service';
 import { 
@@ -50,7 +50,10 @@ export class CentrosCostosDashboardComponent implements OnInit {
   private searchDebounceTimer: any;
   private ctoDebounceTimer: any;
 
-  constructor(private dashboardService: CentrosCostosDashboardService) {}
+  constructor(
+    private dashboardService: CentrosCostosDashboardService,
+    private cdr: ChangeDetectorRef
+  ) {}
 
   ngOnInit(): void {
     this.loadCatalogos();
@@ -62,6 +65,7 @@ export class CentrosCostosDashboardComponent implements OnInit {
     this.dashboardService.getCatalogosFiltros().subscribe({
       next: (cats) => {
         this.catalogos = cats;
+        this.cdr.detectChanges();
       },
       error: (err) => console.warn('Error al cargar catálogos de filtros:', err)
     });
@@ -71,6 +75,7 @@ export class CentrosCostosDashboardComponent implements OnInit {
     this.dashboardService.getConteoEstados().subscribe({
       next: (data) => {
         this.stats = data;
+        this.cdr.detectChanges();
       },
       error: (err) => console.warn('Error al cargar conteo de estados:', err)
     });
@@ -91,10 +96,12 @@ export class CentrosCostosDashboardComponent implements OnInit {
         this.centros = data;
         this.loadingCentros = false;
         this.currentPage = 1;
+        this.cdr.detectChanges();
       },
       error: (err) => {
         console.error('Error al cargar centros de costos:', err);
         this.loadingCentros = false;
+        this.cdr.detectChanges();
       }
     });
   }
@@ -185,10 +192,12 @@ export class CentrosCostosDashboardComponent implements OnInit {
       next: (data) => {
         this.resumen = data;
         this.loadingResumen = false;
+        this.cdr.detectChanges();
       },
       error: (err) => {
         console.error('Error al cargar resumen financiero:', err);
         this.loadingResumen = false;
+        this.cdr.detectChanges();
       }
     });
   }
