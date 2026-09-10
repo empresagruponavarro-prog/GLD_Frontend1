@@ -2,12 +2,14 @@ import { Component, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { DataTableComponent } from '../../shared/components/data-table/data-table';
+import { ModalComponent } from '../../shared/components/modal/modal';
 import { DataTable } from '../../shared/interfaces';
 import { PresupuestosService, PresupuestoPrincipal, PaginatedResponse } from './presupuestos.service';
 
 @Component({
   selector: 'app-presupuestos',
-  imports: [CommonModule, FormsModule, DataTableComponent],
+  standalone: true,
+  imports: [CommonModule, FormsModule, DataTableComponent, ModalComponent],
   templateUrl: './presupuestos.html'
 })
 export class PresupuestosComponent {

@@ -14,43 +14,34 @@
 </div>
 
 <div class="content-body">
-  <div class="table-card">
-    <table class="table">
-      <thead>
-        <tr>
-          <th>ID Usuario</th>
-          <th>Nombres Completos</th>
-          <th>Usuario / Login</th>
-          <th>Rol Asignado</th>
-          <th>Acciones</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr *ngFor="let item of usuarios()">
-          <td><strong>{{ item.IdUsuario }}</strong></td>
-          <td>{{ item.Nombres }}</td>
-          <td>{{ item.Usuario }}</td>
-          <td>
-            <span class="badge badge-progress">{{ item.Rol || 'Sin Rol' }}</span>
-          </td>
-          <td>
-            <button class="btn btn-secondary" style="padding: 0.25rem 0.5rem; margin-right: 0.25rem;" (click)="editModal(item)" title="Editar">
-              <i class="fa-solid fa-pen-to-square"></i>
-            </button>
-            <button class="btn btn-danger" style="padding: 0.25rem 0.5rem;" (click)="deleteUsuario(item.IdUsuario)" title="Eliminar">
-              <i class="fa-solid fa-trash"></i>
-            </button>
-          </td>
-        </tr>
-        <tr *ngIf="usuarios().length === 0">
-          <td colspan="5" style="text-align: center; padding: 2.5rem; color: var(--text-muted);">
-            <i class="fa-solid fa-users-slash" style="font-size: 2rem; display: block; margin-bottom: 0.5rem;"></i>
-            No se registraron usuarios aún.
-          </td>
-        </tr>
-      </tbody>
-    </table>
-  </div>
+  <app-data-table
+    [columns]="columns"
+    [items]="usuarios()"
+    [loading]="loading()"
+    emptyMessage="No se registraron usuarios aún."
+    emptyIcon="fa-solid fa-users-slash"
+    minWidth="800px"
+    [rowTemplate]="usuarioRow">
+  </app-data-table>
+
+  <ng-template #usuarioRow let-item>
+    <tr>
+      <td><strong>{{ item.IdUsuario }}</strong></td>
+      <td>{{ item.Nombres }}</td>
+      <td>{{ item.Usuario }}</td>
+      <td>
+        <span class="badge badge-progress">{{ item.Rol || 'Sin Rol' }}</span>
+      </td>
+      <td>
+        <button class="btn btn-secondary" style="padding: 0.25rem 0.5rem; margin-right: 0.25rem;" (click)="editModal(item)" title="Editar">
+          <i class="fa-solid fa-pen-to-square"></i>
+        </button>
+        <button class="btn btn-danger" style="padding: 0.25rem 0.5rem;" (click)="deleteUsuario(item.IdUsuario)" title="Eliminar">
+          <i class="fa-solid fa-trash"></i>
+        </button>
+      </td>
+    </tr>
+  </ng-template>
 </div>
 
 <!-- Modal Formulario -->

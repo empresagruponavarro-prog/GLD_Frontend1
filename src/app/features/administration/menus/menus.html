@@ -100,63 +100,53 @@
 </div>
 
 <!-- Modal Menú Raíz -->
-<div class="modal-overlay" *ngIf="showRootModal()">
-  <div class="modal-content">
-    <div class="modal-header">
-      <h3>{{ editingRootId() ? 'Editar Menú Raíz' : 'Nuevo Menú Raíz' }}</h3>
-      <button class="btn btn-secondary" style="padding: 0.25rem 0.5rem;" (click)="closeModals()">✕</button>
+<app-modal
+  [isOpen]="showRootModal()"
+  [title]="editingRootId() ? 'Editar Menú Raíz' : 'Nuevo Menú Raíz'"
+  submitText="Guardar Menú Raíz"
+  (closed)="closeModals()"
+  (saved)="saveRootMenu()">
+  <div modal-body>
+    <div class="form-group">
+      <label>ID Menú Raíz *</label>
+      <input type="text" class="form-control" [(ngModel)]="rootForm.MenuId"
+        placeholder="Ej. MNU001" [disabled]="!!editingRootId()"
+        [style.background]="editingRootId() ? '#f1f5f9' : ''">
     </div>
-    <div class="modal-body">
-      <div class="form-group">
-        <label>ID Menú Raíz *</label>
-        <input type="text" class="form-control" [(ngModel)]="rootForm.MenuId"
-          placeholder="Ej. MNU001" [disabled]="!!editingRootId()"
-          [style.background]="editingRootId() ? '#f1f5f9' : ''">
-      </div>
-      <div class="form-group">
-        <label>Nombre del Menú Raíz *</label>
-        <input type="text" class="form-control" [(ngModel)]="rootForm.MenuNombre" placeholder="Ej. Participación Vecinal">
-      </div>
-      <div class="form-group">
-        <label>Icono (FontAwesome)</label>
-        <input type="text" class="form-control" [(ngModel)]="rootForm.Imagen" placeholder="Ej. Users">
-      </div>
+    <div class="form-group">
+      <label>Nombre del Menú Raíz *</label>
+      <input type="text" class="form-control" [(ngModel)]="rootForm.MenuNombre" placeholder="Ej. Participación Vecinal">
     </div>
-    <div class="modal-footer">
-      <button class="btn btn-secondary" (click)="closeModals()">Cancelar</button>
-      <button class="btn btn-primary" (click)="saveRootMenu()">Guardar Menú Raíz</button>
+    <div class="form-group">
+      <label>Icono (FontAwesome)</label>
+      <input type="text" class="form-control" [(ngModel)]="rootForm.Imagen" placeholder="Ej. Users">
     </div>
   </div>
-</div>
+</app-modal>
 
 <!-- Modal Submenú -->
-<div class="modal-overlay" *ngIf="showSubModal()">
-  <div class="modal-content">
-    <div class="modal-header">
-      <h3>{{ editingSubNombre() ? 'Editar Submenú' : 'Nuevo Submenú' }}</h3>
-      <button class="btn btn-secondary" style="padding: 0.25rem 0.5rem;" (click)="closeModals()">✕</button>
+<app-modal
+  [isOpen]="showSubModal()"
+  [title]="editingSubNombre() ? 'Editar Submenú' : 'Nuevo Submenú'"
+  submitText="Guardar Submenú"
+  (closed)="closeModals()"
+  (saved)="saveSubMenu()">
+  <div modal-body>
+    <div class="form-group">
+      <label>Menú Padre (ID)</label>
+      <input type="text" class="form-control" [value]="subForm.MenuId" disabled style="background: #f1f5f9;">
     </div>
-    <div class="modal-body">
-      <div class="form-group">
-        <label>Menú Padre (ID)</label>
-        <input type="text" class="form-control" [value]="subForm.MenuId" disabled style="background: #f1f5f9;">
-      </div>
-      <div class="form-group">
-        <label>Nombre del Submenú *</label>
-        <input type="text" class="form-control" [(ngModel)]="subForm.SubMenuNombre" placeholder="Ej. Registro de Incidencias">
-      </div>
-      <div class="form-group">
-        <label>Ruta / Vista (URL)</label>
-        <input type="text" class="form-control" [(ngModel)]="subForm.SubMenuVista" placeholder="Ej. /participacion_vecinal/registro_incidencias">
-      </div>
-      <div class="form-group">
-        <label>Icono (FontAwesome)</label>
-        <input type="text" class="form-control" [(ngModel)]="subForm.Imagen" placeholder="Ej. ClipboardList">
-      </div>
+    <div class="form-group">
+      <label>Nombre del Submenú *</label>
+      <input type="text" class="form-control" [(ngModel)]="subForm.SubMenuNombre" placeholder="Ej. Registro de Incidencias">
     </div>
-    <div class="modal-footer">
-      <button class="btn btn-secondary" (click)="closeModals()">Cancelar</button>
-      <button class="btn btn-primary" (click)="saveSubMenu()">Guardar Submenú</button>
+    <div class="form-group">
+      <label>Ruta / Vista (URL)</label>
+      <input type="text" class="form-control" [(ngModel)]="subForm.SubMenuVista" placeholder="Ej. /participacion_vecinal/registro_incidencias">
+    </div>
+    <div class="form-group">
+      <label>Icono (FontAwesome)</label>
+      <input type="text" class="form-control" [(ngModel)]="subForm.Imagen" placeholder="Ej. ClipboardList">
     </div>
   </div>
-</div>
+</app-modal>

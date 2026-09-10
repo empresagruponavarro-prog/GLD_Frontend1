@@ -86,81 +86,73 @@
 
 </div>
 
-<!-- Modal -->
-<div class="modal-overlay" *ngIf="showModal()">
-  <div class="modal-content" style="max-width: 800px;">
-    <div class="modal-header">
-      <h3>{{ editingId() ? 'Editar Presupuesto' : 'Nuevo Presupuesto' }}</h3>
-      <button class="btn btn-secondary" style="padding: 0.25rem 0.5rem;" (click)="closeModal()">✕</button>
+<!-- Modal Reutilizable -->
+<app-modal
+  [isOpen]="showModal()"
+  [title]="editingId() ? 'Editar Presupuesto' : 'Nuevo Presupuesto'"
+  maxWidth="800px"
+  [submitText]="editingId() ? 'Guardar Cambios' : 'Crear Presupuesto'"
+  (closed)="closeModal()"
+  (saved)="save()">
+  <div modal-body style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+    <div class="form-group">
+      <label>ID Presupuesto *</label>
+      <input type="text" class="form-control" [(ngModel)]="formData.IdPresupuesto" [disabled]="!!editingId()" [style.background]="editingId() ? '#f1f5f9' : ''" placeholder="Ej. PPTO-2026-001">
     </div>
-    <div class="modal-body">
-      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
-        <div class="form-group">
-          <label>ID Presupuesto *</label>
-          <input type="text" class="form-control" [(ngModel)]="formData.IdPresupuesto" [disabled]="!!editingId()" [style.background]="editingId() ? '#f1f5f9' : ''" placeholder="Ej. PPTO-2026-001">
-        </div>
-        <div class="form-group">
-          <label>Proyecto</label>
-          <input type="text" class="form-control" [(ngModel)]="formData.Proyecto" placeholder="Ej. Obra Civil Fase 1">
-        </div>
-        <div class="form-group">
-          <label>Empresa</label>
-          <input type="text" class="form-control" [(ngModel)]="formData.CodEmpresa" placeholder="Código de Empresa">
-        </div>
-        <div class="form-group">
-          <label>Centro de Costo</label>
-          <input type="text" class="form-control" [(ngModel)]="formData.CodCentroCto" placeholder="Código Centro de Costo">
-        </div>
-        <div class="form-group">
-          <label>Periodo</label>
-          <input type="text" class="form-control" [(ngModel)]="formData.IdPeriodo" placeholder="Ej. 2026">
-        </div>
-        <div class="form-group">
-          <label>Tipo Presupuesto</label>
-          <input type="text" class="form-control" [(ngModel)]="formData.TipoPpto" placeholder="Ej. OBRA">
-        </div>
-        
-        <div class="form-group">
-          <label>Costo Directo</label>
-          <input type="number" class="form-control" [(ngModel)]="formData.CostoDirecto">
-        </div>
-        <div class="form-group">
-          <label>% Gastos Generales</label>
-          <input type="number" class="form-control" [(ngModel)]="formData.GGPorcentaje" placeholder="Ej. 10">
-        </div>
-        <div class="form-group">
-          <label>% Utilidad</label>
-          <input type="number" class="form-control" [(ngModel)]="formData.UtiliPorcentaje" placeholder="Ej. 10">
-        </div>
-        <div class="form-group">
-          <label>Viáticos</label>
-          <input type="number" class="form-control" [(ngModel)]="formData.Viaticos">
-        </div>
-        <div class="form-group">
-          <label>Descuento Comercial</label>
-          <input type="number" class="form-control" [(ngModel)]="formData.DsctoComercial">
-        </div>
-        
-        <div class="form-group">
-          <label>Estado</label>
-          <select class="form-control" [(ngModel)]="formData.Estado">
-            <option value="PENDIENTE">PENDIENTE</option>
-            <option value="EN REVISION">EN REVISIÓN</option>
-            <option value="APROBADO">APROBADO</option>
-            <option value="RECHAZADO">RECHAZADO</option>
-          </select>
-        </div>
-        <div class="form-group" style="grid-column: 1 / -1;">
-          <label>Comentarios</label>
-          <textarea class="form-control" [(ngModel)]="formData.Comentarios" rows="3"></textarea>
-        </div>
-      </div>
+    <div class="form-group">
+      <label>Proyecto</label>
+      <input type="text" class="form-control" [(ngModel)]="formData.Proyecto" placeholder="Ej. Obra Civil Fase 1">
     </div>
-    <div class="modal-footer">
-      <button class="btn btn-secondary" (click)="closeModal()">Cancelar</button>
-      <button class="btn btn-primary" (click)="save()">
-        <i class="fa-solid fa-floppy-disk"></i> {{ editingId() ? 'Guardar Cambios' : 'Crear Presupuesto' }}
-      </button>
+    <div class="form-group">
+      <label>Empresa</label>
+      <input type="text" class="form-control" [(ngModel)]="formData.CodEmpresa" placeholder="Código de Empresa">
+    </div>
+    <div class="form-group">
+      <label>Centro de Costo</label>
+      <input type="text" class="form-control" [(ngModel)]="formData.CodCentroCto" placeholder="Código Centro de Costo">
+    </div>
+    <div class="form-group">
+      <label>Periodo</label>
+      <input type="text" class="form-control" [(ngModel)]="formData.IdPeriodo" placeholder="Ej. 2026">
+    </div>
+    <div class="form-group">
+      <label>Tipo Presupuesto</label>
+      <input type="text" class="form-control" [(ngModel)]="formData.TipoPpto" placeholder="Ej. OBRA">
+    </div>
+    
+    <div class="form-group">
+      <label>Costo Directo</label>
+      <input type="number" class="form-control" [(ngModel)]="formData.CostoDirecto">
+    </div>
+    <div class="form-group">
+      <label>% Gastos Generales</label>
+      <input type="number" class="form-control" [(ngModel)]="formData.GGPorcentaje" placeholder="Ej. 10">
+    </div>
+    <div class="form-group">
+      <label>% Utilidad</label>
+      <input type="number" class="form-control" [(ngModel)]="formData.UtiliPorcentaje" placeholder="Ej. 10">
+    </div>
+    <div class="form-group">
+      <label>Viáticos</label>
+      <input type="number" class="form-control" [(ngModel)]="formData.Viaticos">
+    </div>
+    <div class="form-group">
+      <label>Descuento Comercial</label>
+      <input type="number" class="form-control" [(ngModel)]="formData.DsctoComercial">
+    </div>
+    
+    <div class="form-group">
+      <label>Estado</label>
+      <select class="form-control" [(ngModel)]="formData.Estado">
+        <option value="PENDIENTE">PENDIENTE</option>
+        <option value="EN REVISION">EN REVISIÓN</option>
+        <option value="APROBADO">APROBADO</option>
+        <option value="RECHAZADO">RECHAZADO</option>
+      </select>
+    </div>
+    <div class="form-group" style="grid-column: 1 / -1;">
+      <label>Comentarios</label>
+      <textarea class="form-control" [(ngModel)]="formData.Comentarios" rows="3"></textarea>
     </div>
   </div>
-</div>
+</app-modal>

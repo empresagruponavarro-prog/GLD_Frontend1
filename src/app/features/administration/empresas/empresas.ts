@@ -3,15 +3,27 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { EmpresasService } from './empresas.service';
 import { Empresa } from './interfaces';
+import { DataTableComponent } from '../../../shared/components/data-table/data-table';
+import { DataTable } from '../../../shared/interfaces';
 
 @Component({
   selector: 'app-empresas',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, DataTableComponent],
   templateUrl: './empresas.html'
 })
 export class EmpresasComponent {
   private empresasService = inject(EmpresasService);
+
+  columns: DataTable[] = [
+    { label: 'Código' },
+    { label: 'RUC' },
+    { label: 'Razón Social' },
+    { label: 'Domicilio Fiscal' },
+    { label: 'Dirección Entrega' },
+    { label: 'Correo Compras' },
+    { label: 'Acciones' }
+  ];
 
   empresas = signal<Empresa[]>([]);
   showModal = signal<boolean>(false);

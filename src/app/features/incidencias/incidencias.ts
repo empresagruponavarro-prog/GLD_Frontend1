@@ -3,16 +3,34 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { IncidenciasService } from './incidencias.service';
 import { Incidencia } from './interfaces';
+import { DataTableComponent } from '../../shared/components/data-table/data-table';
+import { DataTable } from '../../shared/interfaces';
 declare var L: any; // Leaflet global JS library
 
 @Component({
   selector: 'app-incidencias',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, DataTableComponent],
   templateUrl: './incidencias.html'
 })
 export class IncidenciasComponent implements AfterViewChecked {
   private service = inject(IncidenciasService);
+
+  columns: DataTable[] = [
+    { label: 'ID ⇅' },
+    { label: 'REGISTRADOR ⇅' },
+    { label: 'DOC. IDENTIDAD ⇅' },
+    { label: 'CARGO ⇅' },
+    { label: 'SOLICITANTE ⇅' },
+    { label: 'DOC. SOLICITANTE ⇅' },
+    { label: 'TELÉFONO ⇅' },
+    { label: 'DOMICILIO ⇅' },
+    { label: 'FECHA ⇅' },
+    { label: 'ORIGEN ⇅' },
+    { label: 'DIRECCIÓN ⇅' },
+    { label: 'ESTADO ⇅', align: 'center' },
+    { label: 'ACCIONES', align: 'center' }
+  ];
   incidencias = signal<Incidencia[]>([]);
   loading = signal<boolean>(false);
 

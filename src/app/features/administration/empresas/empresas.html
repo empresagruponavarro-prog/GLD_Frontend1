@@ -14,50 +14,34 @@
 </div>
 
 <div class="content-body">
-  <div class="table-card">
-    <table class="table">
-      <thead>
-        <tr>
-          <th>Código</th>
-          <th>RUC</th>
-          <th>Razón Social</th>
-          <th>Domicilio Fiscal</th>
-          <th>Dirección Entrega</th>
-          <th>Correo Compras</th>
-          <th>Acciones</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr *ngFor="let item of empresas()">
-          <td><strong>{{ item.CodEmpresa }}</strong></td>
-          <td>{{ item.RUC || '—' }}</td>
-          <td>{{ item.RazonSocial || '—' }}</td>
-          <td>{{ item.DomicilioFiscal || '—' }}</td>
-          <td>{{ item.DireccionEntrega || '—' }}</td>
-          <td>{{ item.CorreoCompras || '—' }}</td>
-          <td>
-            <button class="btn btn-secondary" style="padding: 0.25rem 0.5rem; margin-right: 0.25rem;" (click)="editModal(item)" title="Editar">
-              <i class="fa-solid fa-pen-to-square"></i>
-            </button>
-            <button class="btn btn-danger" style="padding: 0.25rem 0.5rem;" (click)="deleteEmpresa(item.CodEmpresa)" title="Eliminar">
-              <i class="fa-solid fa-trash"></i>
-            </button>
-          </td>
-        </tr>
-        <tr *ngIf="empresas().length === 0 && !loading">
-          <td colspan="7" style="text-align: center; padding: 3rem; color: var(--text-muted);">
-            <i class="fa-solid fa-building-circle-xmark" style="font-size: 2.5rem; margin-bottom: 0.5rem; display: block;"></i>
-            No se encontraron empresas registradas.
-          </td>
-        </tr>
-        <tr *ngIf="loading()">
-          <td colspan="7" style="text-align: center; padding: 2rem; color: var(--text-muted);">
-            <i class="fa-solid fa-spinner fa-spin"></i> Cargando...
-          </td>
-        </tr>
-      </tbody>
-    </table>
-  </div>
+  <app-data-table
+    [columns]="columns"
+    [items]="empresas()"
+    [loading]="loading()"
+    emptyMessage="No se encontraron empresas registradas."
+    emptyIcon="fa-solid fa-building-circle-xmark"
+    minWidth="900px"
+    [rowTemplate]="empresaRow">
+  </app-data-table>
+
+  <ng-template #empresaRow let-item>
+    <tr>
+      <td><strong>{{ item.CodEmpresa }}</strong></td>
+      <td>{{ item.RUC || '—' }}</td>
+      <td>{{ item.RazonSocial || '—' }}</td>
+      <td>{{ item.DomicilioFiscal || '—' }}</td>
+      <td>{{ item.DireccionEntrega || '—' }}</td>
+      <td>{{ item.CorreoCompras || '—' }}</td>
+      <td>
+        <button class="btn btn-secondary" style="padding: 0.25rem 0.5rem; margin-right: 0.25rem;" (click)="editModal(item)" title="Editar">
+          <i class="fa-solid fa-pen-to-square"></i>
+        </button>
+        <button class="btn btn-danger" style="padding: 0.25rem 0.5rem;" (click)="deleteEmpresa(item.CodEmpresa)" title="Eliminar">
+          <i class="fa-solid fa-trash"></i>
+        </button>
+      </td>
+    </tr>
+  </ng-template>
 </div>
 
 <!-- Modal Formulario -->

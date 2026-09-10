@@ -81,80 +81,72 @@
   </ng-template>
 </div>
 
-<!-- Modal -->
-<div class="modal-overlay" *ngIf="showModal()">
-  <div class="modal-content" style="max-width: 620px;">
-    <div class="modal-header">
-      <h3>{{ editingCod() ? 'Editar Centro de Costo' : 'Nuevo Centro de Costo' }}</h3>
-      <button class="btn btn-secondary" style="padding: 0.25rem 0.5rem;" (click)="closeModal()">✕</button>
+<!-- Modal Reutilizable -->
+<app-modal
+  [isOpen]="showModal()"
+  [title]="editingCod() ? 'Editar Centro de Costo' : 'Nuevo Centro de Costo'"
+  maxWidth="620px"
+  [submitText]="editingCod() ? 'Guardar Cambios' : 'Crear Centro'"
+  (closed)="closeModal()"
+  (saved)="save()">
+  <div modal-body style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+    <div class="form-group">
+      <label>Código *</label>
+      <input type="text" class="form-control" [(ngModel)]="formData.CodCentroCto" disabled style="background: #f1f5f9; cursor: not-allowed; font-family: monospace;">
     </div>
-    <div class="modal-body">
-      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
-        <div class="form-group">
-          <label>Código *</label>
-          <input type="text" class="form-control" [(ngModel)]="formData.CodCentroCto" disabled style="background: #f1f5f9; cursor: not-allowed; font-family: monospace;">
-        </div>
-        <div class="form-group">
-          <label>Nombre del Centro de Costo *</label>
-          <input type="text" class="form-control" [(ngModel)]="formData.CentroCosto" placeholder="Ej. Obra Norte">
-        </div>
-        <div class="form-group">
-          <label>Empresa</label>
-          <select class="form-control" [(ngModel)]="formData.CodEmpresa" (change)="onEmpresaChange()">
-            <option value="">Seleccione Empresa...</option>
-            <option *ngFor="let e of empresasList" [value]="e.id">{{ e.nombre }}</option>
-          </select>
-        </div>
-        <div class="form-group">
-          <label>Nombre Empresa (Auto)</label>
-          <input type="text" class="form-control" [(ngModel)]="formData.Empresa" disabled style="background: #f1f5f9;">
-        </div>
-        <div class="form-group">
-          <label>Cliente</label>
-          <select class="form-control" [(ngModel)]="formData.CodCliente" (change)="onClienteChange()">
-            <option value="">Seleccione Cliente...</option>
-            <option *ngFor="let c of clientesList" [value]="c.id">{{ c.nombre }}</option>
-          </select>
-        </div>
-        <div class="form-group">
-          <label>Nombre Cliente (Auto)</label>
-          <input type="text" class="form-control" [(ngModel)]="formData.Cliente" disabled style="background: #f1f5f9;">
-        </div>
-        <div class="form-group">
-          <label>Periodo</label>
-          <input type="text" class="form-control" [(ngModel)]="formData.IdPeriodo" placeholder="Ej. 2025">
-        </div>
-        <div class="form-group">
-          <label>Estado Operativo</label>
-          <select class="form-control" [(ngModel)]="formData.Estado">
-            <option value="ABIERTO">ABIERTO</option>
-            <option value="CERRADO">CERRADO</option>
-          </select>
-        </div>
-        <div class="form-group">
-          <label>Estado Presupuesto</label>
-          <select class="form-control" [(ngModel)]="formData.PresupuestoEstado">
-            <option value="PENDIENTE">PENDIENTE</option>
-            <option value="EN REVISION">EN REVISIÓN</option>
-            <option value="APROBADO">APROBADO</option>
-            <option value="RECHAZADO">RECHAZADO</option>
-          </select>
-        </div>
-        <div class="form-group">
-          <label>Monto Presupuesto</label>
-          <input type="number" class="form-control" [(ngModel)]="formData.PresupuestoMonto" placeholder="Ej. 150000">
-        </div>
-        <div class="form-group" style="grid-column: 1 / -1;">
-          <label>Centro de Costo Principal (opcional)</label>
-          <input type="text" class="form-control" [(ngModel)]="formData.CodCentroCtoPrincipal" placeholder="Cód. Centro Principal">
-        </div>
-      </div>
+    <div class="form-group">
+      <label>Nombre del Centro de Costo *</label>
+      <input type="text" class="form-control" [(ngModel)]="formData.CentroCosto" placeholder="Ej. Obra Norte">
     </div>
-    <div class="modal-footer">
-      <button class="btn btn-secondary" (click)="closeModal()">Cancelar</button>
-      <button class="btn btn-primary" (click)="save()">
-        <i class="fa-solid fa-floppy-disk"></i> {{ editingCod() ? 'Guardar Cambios' : 'Crear Centro' }}
-      </button>
+    <div class="form-group">
+      <label>Empresa</label>
+      <select class="form-control" [(ngModel)]="formData.CodEmpresa" (change)="onEmpresaChange()">
+        <option value="">Seleccione Empresa...</option>
+        <option *ngFor="let e of empresasList" [value]="e.id">{{ e.nombre }}</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label>Nombre Empresa (Auto)</label>
+      <input type="text" class="form-control" [(ngModel)]="formData.Empresa" disabled style="background: #f1f5f9;">
+    </div>
+    <div class="form-group">
+      <label>Cliente</label>
+      <select class="form-control" [(ngModel)]="formData.CodCliente" (change)="onClienteChange()">
+        <option value="">Seleccione Cliente...</option>
+        <option *ngFor="let c of clientesList" [value]="c.id">{{ c.nombre }}</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label>Nombre Cliente (Auto)</label>
+      <input type="text" class="form-control" [(ngModel)]="formData.Cliente" disabled style="background: #f1f5f9;">
+    </div>
+    <div class="form-group">
+      <label>Periodo</label>
+      <input type="text" class="form-control" [(ngModel)]="formData.IdPeriodo" placeholder="Ej. 2025">
+    </div>
+    <div class="form-group">
+      <label>Estado Operativo</label>
+      <select class="form-control" [(ngModel)]="formData.Estado">
+        <option value="ABIERTO">ABIERTO</option>
+        <option value="CERRADO">CERRADO</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label>Estado Presupuesto</label>
+      <select class="form-control" [(ngModel)]="formData.PresupuestoEstado">
+        <option value="PENDIENTE">PENDIENTE</option>
+        <option value="EN REVISION">EN REVISIÓN</option>
+        <option value="APROBADO">APROBADO</option>
+        <option value="RECHAZADO">RECHAZADO</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label>Monto Presupuesto</label>
+      <input type="number" class="form-control" [(ngModel)]="formData.PresupuestoMonto" placeholder="Ej. 150000">
+    </div>
+    <div class="form-group" style="grid-column: 1 / -1;">
+      <label>Centro de Costo Principal (opcional)</label>
+      <input type="text" class="form-control" [(ngModel)]="formData.CodCentroCtoPrincipal" placeholder="Cód. Centro Principal">
     </div>
   </div>
-</div>
+</app-modal>

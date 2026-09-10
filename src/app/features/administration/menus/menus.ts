@@ -4,10 +4,12 @@ import { FormsModule } from '@angular/forms';
 import { MenusService } from './menus.service';
 import { MenuRoot, SubMenu } from './interfaces';
 
+import { ModalComponent } from '../../../shared/components/modal/modal';
+
 @Component({
   selector: 'app-menus',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, ModalComponent],
   templateUrl: './menus.html'
 })
 export class MenusComponent {

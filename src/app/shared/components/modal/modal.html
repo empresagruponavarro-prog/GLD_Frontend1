@@ -1,0 +1,29 @@
+@if (isOpen()) {
+  <div class="modal-overlay" (click)="onClose()">
+    <div class="modal-content" [style.max-width]="maxWidth()" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3>{{ title() }}</h3>
+        <button class="btn btn-secondary" style="padding: 0.25rem 0.5rem;" (click)="onClose()" type="button">✕</button>
+      </div>
+      <div class="modal-body">
+        <ng-content select="[modal-body]"></ng-content>
+        <ng-content></ng-content>
+      </div>
+      <ng-content select="[modal-footer]"></ng-content>
+      @if (showDefaultFooter()) {
+        <div class="modal-footer">
+          <button class="btn btn-secondary" (click)="onClose()" [disabled]="loading()" type="button">
+            {{ cancelText() }}
+          </button>
+          <button class="btn btn-primary" (click)="onSave()" [disabled]="loading()" type="button">
+            @if (loading()) {
+              <i class="fa-solid fa-spinner fa-spin"></i> Guardando...
+            } @else {
+              <i [class]="submitIcon()"></i> {{ submitText() }}
+            }
+          </button>
+        </div>
+      }
+    </div>
+  </div>
+}

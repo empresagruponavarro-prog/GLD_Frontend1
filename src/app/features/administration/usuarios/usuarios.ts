@@ -3,15 +3,25 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { UsuariosService } from './usuarios.service';
 import { Usuario } from './interfaces';
+import { DataTableComponent } from '../../../shared/components/data-table/data-table';
+import { DataTable } from '../../../shared/interfaces';
 
 @Component({
   selector: 'app-usuarios',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, DataTableComponent],
   templateUrl: './usuarios.html'
 })
 export class UsuariosComponent {
   private usuariosService = inject(UsuariosService);
+
+  columns: DataTable[] = [
+    { label: 'ID Usuario' },
+    { label: 'Nombres Completos' },
+    { label: 'Usuario / Login' },
+    { label: 'Rol Asignado' },
+    { label: 'Acciones' }
+  ];
 
   usuarios = signal<Usuario[]>([]);
   showModal = signal<boolean>(false);

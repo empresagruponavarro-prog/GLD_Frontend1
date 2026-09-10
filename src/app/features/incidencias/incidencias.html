@@ -78,81 +78,59 @@
     </div>
   </div>
 
-  <!-- Tabla Principal -->
-  <div class="table-card" style="overflow-x: auto;">
-    <table class="table" style="min-width: 1300px;">
-      <thead>
-        <tr>
-          <th>ID ⇅</th>
-          <th>REGISTRADOR ⇅</th>
-          <th>DOC. IDENTIDAD ⇅</th>
-          <th>CARGO ⇅</th>
-          <th>SOLICITANTE ⇅</th>
-          <th>DOC. SOLICITANTE ⇅</th>
-          <th>TELÉFONO ⇅</th>
-          <th>DOMICILIO ⇅</th>
-          <th>FECHA ⇅</th>
-          <th>ORIGEN ⇅</th>
-          <th>DIRECCIÓN ⇅</th>
-          <th style="text-align: center;">ESTADO ⇅</th>
-          <th style="text-align: center;">ACCIONES</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr *ngFor="let item of incidencias()">
-          <td><strong>{{ item.id }}</strong></td>
-          <td style="font-size: 0.8rem; font-weight: 600;">{{ item.promotor || '—' }}</td>
-          <td style="font-size: 0.8rem;">{{ item.docRegistrador || '—' }}</td>
-          <td style="font-size: 0.75rem; color: var(--text-muted);">{{ item.cargoRegistrador || '—' }}</td>
-          <td style="font-weight: 600;">{{ item.solicitante || '—' }}</td>
-          <td>{{ item.docSolicitante || '—' }}</td>
-          <td>{{ item.telefonoSolicitante || '—' }}</td>
-          <td style="font-size: 0.75rem; max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
-            {{ item.domicilioSolicitante || '—' }}
-          </td>
-          <td style="font-size: 0.8rem; white-space: nowrap;">
-            {{ item.fechaIncidencia || (item.fechaInicio ? (item.fechaInicio | date:'yyyy-MM-dd') : '—') }}
-          </td>
-          <td style="font-size: 0.75rem;">{{ item.origenIncidencia || 'DIRECTO' }}</td>
-          <td style="font-size: 0.75rem; max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
-            {{ item.direccionExacta || item.domicilioSolicitante || '—' }}
-          </td>
-          <td style="text-align: center;">
-            <span class="status-pill" [class.pendiente]="(item.estado || 'PENDIENTE') === 'PENDIENTE'"
-              [class.en-proceso]="item.estado === 'EN PROCESO'"
-              [class.resuelto]="item.estado === 'RESUELTO'">
-              {{ item.estado || 'PENDIENTE' }}
-            </span>
-          </td>
-          <td style="text-align: center; white-space: nowrap;">
-            <button class="btn-icon-action" (click)="openDetailModal(item)" title="Ver Detalles de la Ficha">
-              <i class="fa-solid fa-eye"></i>
-            </button>
-            <button class="btn-icon-action" style="margin-left: 0.2rem;" (click)="openEditModal(item)" title="Editar Ficha">
-              <i class="fa-solid fa-pen-to-square"></i>
-            </button>
-            <button class="btn-icon-action primary" style="margin-left: 0.2rem;" (click)="duplicateIncidencia(item.id!)" title="Duplicar Ficha">
-              <i class="fa-solid fa-copy"></i>
-            </button>
-            <button class="btn-icon-action danger" style="margin-left: 0.2rem;" (click)="deleteIncidencia(item.id!)" title="Eliminar Caso">
-              <i class="fa-solid fa-trash"></i>
-            </button>
-          </td>
-        </tr>
-        <tr *ngIf="incidencias().length === 0 && !loading">
-          <td colspan="13" style="text-align: center; padding: 3rem; color: var(--text-muted);">
-            <i class="fa-solid fa-clipboard-question" style="font-size: 2.5rem; margin-bottom: 0.5rem; display: block;"></i>
-            No se encontraron casos o incidencias registradas.
-          </td>
-        </tr>
-        <tr *ngIf="loading()">
-          <td colspan="13" style="text-align: center; padding: 2.5rem; color: var(--text-muted);">
-            <i class="fa-solid fa-spinner fa-spin"></i> Cargando registros...
-          </td>
-        </tr>
-      </tbody>
-    </table>
-  </div>
+  <!-- Tabla Principal con Componente Reutilizable Dumb -->
+  <app-data-table
+    [columns]="columns"
+    [items]="incidencias()"
+    [loading]="loading()"
+    emptyMessage="No se encontraron casos o incidencias registradas."
+    emptyIcon="fa-solid fa-clipboard-question"
+    minWidth="1300px"
+    [rowTemplate]="incidenciaRow">
+  </app-data-table>
+
+  <ng-template #incidenciaRow let-item>
+    <tr>
+      <td><strong>{{ item.id }}</strong></td>
+      <td style="font-size: 0.8rem; font-weight: 600;">{{ item.promotor || '—' }}</td>
+      <td style="font-size: 0.8rem;">{{ item.docRegistrador || '—' }}</td>
+      <td style="font-size: 0.75rem; color: var(--text-muted);">{{ item.cargoRegistrador || '—' }}</td>
+      <td style="font-weight: 600;">{{ item.solicitante || '—' }}</td>
+      <td>{{ item.docSolicitante || '—' }}</td>
+      <td>{{ item.telefonoSolicitante || '—' }}</td>
+      <td style="font-size: 0.75rem; max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+        {{ item.domicilioSolicitante || '—' }}
+      </td>
+      <td style="font-size: 0.8rem; white-space: nowrap;">
+        {{ item.fechaIncidencia || (item.fechaInicio ? (item.fechaInicio | date:'yyyy-MM-dd') : '—') }}
+      </td>
+      <td style="font-size: 0.75rem;">{{ item.origenIncidencia || 'DIRECTO' }}</td>
+      <td style="font-size: 0.75rem; max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+        {{ item.direccionExacta || item.domicilioSolicitante || '—' }}
+      </td>
+      <td style="text-align: center;">
+        <span class="status-pill" [class.pendiente]="(item.estado || 'PENDIENTE') === 'PENDIENTE'"
+          [class.en-proceso]="item.estado === 'EN PROCESO'"
+          [class.resuelto]="item.estado === 'RESUELTO'">
+          {{ item.estado || 'PENDIENTE' }}
+        </span>
+      </td>
+      <td style="text-align: center; white-space: nowrap;">
+        <button class="btn-icon-action" (click)="openDetailModal(item)" title="Ver Detalles de la Ficha">
+          <i class="fa-solid fa-eye"></i>
+        </button>
+        <button class="btn-icon-action" style="margin-left: 0.2rem;" (click)="openEditModal(item)" title="Editar Ficha">
+          <i class="fa-solid fa-pen-to-square"></i>
+        </button>
+        <button class="btn-icon-action primary" style="margin-left: 0.2rem;" (click)="duplicateIncidencia(item.id!)" title="Duplicar Ficha">
+          <i class="fa-solid fa-copy"></i>
+        </button>
+        <button class="btn-icon-action danger" style="margin-left: 0.2rem;" (click)="deleteIncidencia(item.id!)" title="Eliminar Caso">
+          <i class="fa-solid fa-trash"></i>
+        </button>
+      </td>
+    </tr>
+  </ng-template>
 </div>
 
 <!-- Modal Formulario Ficha -->
