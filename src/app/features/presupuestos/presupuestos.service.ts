@@ -9,13 +9,14 @@ import {
   PaginatedResponse,
   PresupuestoCompleto
 } from './interfaces';
+import { environment } from '../../../environments/environment';
 
 export * from './interfaces';
 
 @Service()
 export class PresupuestosService {
   private http = inject(HttpClient);
-  private apiUrl = 'http://localhost:3000/presupuestos';
+  private apiUrl = `${environment.apiUrl}/presupuestos`;
 
   // Presupuestos Principales
   getPresupuestos(page?: number, pageSize?: number, search?: string): Observable<PaginatedResponse | PresupuestoPrincipal[]> {

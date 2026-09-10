@@ -8,13 +8,14 @@ import {
   FiltrosCentrosCostos, 
   ResumenFinanciero 
 } from '../interfaces';
+import { environment } from '../../../../environments/environment';
 
 export * from '../interfaces';
 
 @Service()
 export class CentrosCostosDashboardService {
   private http = inject(HttpClient);
-  private apiUrl = 'http://localhost:3000/centros-costos';
+  private apiUrl = `${environment.apiUrl}/centros-costos`;
 
   getCentrosCostos(filtros?: FiltrosCentrosCostos): Observable<CentroCostoItem[]> {
     let params = new HttpParams();

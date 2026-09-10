@@ -2,11 +2,12 @@ import { Service, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { Empresa } from './interfaces';
+import { environment } from '../../../../environments/environment';
 
 @Service()
 export class EmpresasService {
   private http = inject(HttpClient);
-  private apiUrl = 'http://localhost:3000/administration/empresas';
+  private apiUrl = `${environment.apiUrl}/administration/empresas`;
 
   getAll(): Observable<Empresa[]> {
     return this.http.get<Empresa[]>(this.apiUrl);
