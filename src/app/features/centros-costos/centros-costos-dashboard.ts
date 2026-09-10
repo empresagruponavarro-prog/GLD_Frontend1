@@ -7,16 +7,30 @@ import {
   ConteoEstados, 
   CatalogosFiltros 
 } from './interfaces';
+import { DataTableComponent } from '../../shared/components/data-table/data-table';
+import { DataTable } from '../../shared/interfaces';
 
 /* Componente Standalone Angular para el Dashboard de Centros de Costos */
 @Component({
   selector: 'app-centros-costos-dashboard',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, DataTableComponent],
   templateUrl: './centros-costos-dashboard.html',
   styleUrl: './centros-costos-dashboard.css'
 })
 export class CentrosCostosDashboardComponent implements OnInit {
+  tableColumns: DataTable[] = [
+    { key: 'Empresa', label: 'Empresa' },
+    { key: 'IdPeriodo', label: 'Año' },
+    { key: 'Cliente', label: 'Cliente' },
+    { key: 'CentroCostoPrincipal', label: 'Centro de costo Principal' },
+    { key: 'CodCentroCto', label: 'Codigo CTO' },
+    { key: 'CentroCosto', label: 'CentroCosto' },
+    { key: 'Estado', label: 'Estado' },
+    { key: 'PresupuestoEstado', label: 'PresupuestoEstado' },
+    { key: 'accion', label: 'Acción', align: 'center' }
+  ];
+
   centros: CentroCostoItem[] = [];
   selectedCentro: CentroCostoItem | null = null;
   resumen: ResumenFinanciero | null = null;

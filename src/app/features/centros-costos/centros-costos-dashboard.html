@@ -102,133 +102,70 @@
   </div>
 
   <!-- Tabla Maestra de Centros de Costos -->
-  <div class="card table-card">
+  <app-data-table
+    [columns]="tableColumns"
+    [items]="pagedCentros"
+    [loading]="loadingCentros"
+    [totalItems]="centros.length"
+    [currentPage]="currentPage"
+    [pageSize]="pageSize"
+    [pageSizeOptions]="[20, 50, 100]"
+    emptyMessage="No se encontraron centros de costos con los filtros seleccionados."
+    emptyIcon="fa-solid fa-folder-open"
+    [rowTemplate]="rowTpl"
+    (pageChange)="currentPage = $event"
+    (pageSizeChange)="pageSize = $event; currentPage = 1">
+  </app-data-table>
 
-    <div class="table-responsive">
-      <table class="data-table">
-        <thead>
-          <tr>
-            <th class="col-empresa">Empresa</th>
-            <th class="col-periodo">Año</th>
-            <th class="col-cliente">Cliente</th>
-            <th class="col-principal">Centro de costo Principal</th>
-            <th class="col-codigo">Codigo CTO</th>
-            <th class="col-nombre">CentroCosto</th>
-            <th class="col-estado">Estado</th>
-            <th class="col-ppto-estado">PresupuestoEstado</th>
-            <th class="col-accion text-center">Acción</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr 
-            *ngFor="let item of pagedCentros" 
-            (click)="openDetail(item)"
-            [class.row-selected]="selectedCentro?.CodCentroCto === item.CodCentroCto"
-            class="table-row-clickable"
-          >
-            <!-- Empresa -->
-            <td class="col-empresa" [title]="item.Empresa || item.CodEmpresa || ''">
-              {{ item.Empresa || item.CodEmpresa || '-' }}
-            </td>
-
-            <!-- IdPeriodo -->
-            <td class="col-periodo">{{ item.IdPeriodo || '-' }}</td>
-
-            <!-- CodCliente (Muestra el NOMBRE del cliente tal como se solicitó) -->
-            <td class="col-cliente font-client" [title]="item.Cliente || item.CodCliente || ''">
-              {{ item.Cliente || item.CodCliente || '-' }}
-            </td>
-
-            <!-- Centro de costo Principal -->
-            <td class="col-principal" [title]="item.CentroCostoPrincipal || item.CodCentroCtoPrincipal || ''">
-              {{ item.CentroCostoPrincipal || item.CodCentroCtoPrincipal || '-' }}
-            </td>
-
-            <!-- Codigo CTO -->
-            <td class="col-codigo">
-              <span class="code-pill">{{ item.CodCentroCto }}</span>
-            </td>
-
-            <!-- CentroCosto -->
-            <td class="col-nombre font-medium" [title]="item.CentroCosto">
-              {{ item.CentroCosto }}
-            </td>
-
-            <!-- Estado -->
-            <td class="col-estado">
-              <span 
-                class="badge" 
-                [class.badge-abierto]="item.Estado === 'ABIERTO' || item.Estado === 'Activo'"
-                [class.badge-cerrado]="item.Estado === 'CERRADO' || item.Estado === 'Liquidado'"
-                [class.badge-proceso]="item.Estado === 'En Proceso' || item.Estado === 'POR LIQUIDAR'"
-              >
-                {{ item.Estado || 'ABIERTO' }}
-              </span>
-            </td>
-
-            <!-- PresupuestoEstado -->
-            <td class="col-ppto-estado">
-              <span 
-                *ngIf="item.PresupuestoEstado" 
-                class="badge badge-ppto"
-                [class.badge-aprobado]="item.PresupuestoEstado === 'Aprobado'"
-              >
-                {{ item.PresupuestoEstado }}
-              </span>
-              <span *ngIf="!item.PresupuestoEstado" class="text-muted">-</span>
-            </td>
-
-            <!-- Acción -->
-            <td class="col-accion text-center">
-              <button class="btn-icon-view" title="Ver análisis financiero" (click)="openDetail(item); $event.stopPropagation()">
-                <span class="arrow-icon">›</span>
-              </button>
-            </td>
-          </tr>
-
-          <!-- Estado Vacío -->
-          <tr *ngIf="centros.length === 0 && !loadingCentros">
-            <td colspan="9" class="empty-cell">
-              <div class="empty-state">
-                <p class="empty-title">No se encontraron centros de costos con los filtros seleccionados</p>
-                <p class="empty-sub">Prueba ajustando los filtros de empresa, periodo, cliente o estado.</p>
-              </div>
-            </td>
-          </tr>
-
-          <!-- Estado Cargando -->
-          <tr *ngIf="loadingCentros">
-            <td colspan="9" class="loading-cell">
-              <div class="table-loading">
-                <div class="spinner"></div>
-                <span>Cargando centros de costos...</span>
-              </div>
-            </td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-
-    <!-- Paginación Inferior -->
-    <div class="table-footer-flex" *ngIf="centros.length > 0">
-      <div class="footer-left">
-        <div class="footer-page-size">
-          <span>Registros por página:</span>
-          <select (change)="onPageSizeChange($event)" [value]="pageSize" class="select-page-size">
-            <option value="20">20</option>
-            <option value="50">50</option>
-            <option value="100">100</option>
-          </select>
-        </div>
-        <span class="tip-text">💡 Haz clic en cualquier fila para ver el análisis financiero (ppto.Sub Total en adelante)</span>
-      </div>
-      <div class="pagination-controls" *ngIf="totalPages > 1">
-        <button class="btn-page" [disabled]="currentPage === 1" (click)="changePage(currentPage - 1)">‹ Anterior</button>
-        <span class="page-indicator">{{ currentPage }} / {{ totalPages }}</span>
-        <button class="btn-page" [disabled]="currentPage === totalPages" (click)="changePage(currentPage + 1)">Siguiente ›</button>
-      </div>
-    </div>
-  </div>
+  <ng-template #rowTpl let-item>
+    <tr 
+      (click)="openDetail(item)"
+      [class.row-selected]="selectedCentro?.CodCentroCto === item.CodCentroCto"
+      class="table-row-clickable"
+    >
+      <td class="col-empresa" [title]="item.Empresa || item.CodEmpresa || ''">
+        {{ item.Empresa || item.CodEmpresa || '-' }}
+      </td>
+      <td class="col-periodo">{{ item.IdPeriodo || '-' }}</td>
+      <td class="col-cliente font-client" [title]="item.Cliente || item.CodCliente || ''">
+        {{ item.Cliente || item.CodCliente || '-' }}
+      </td>
+      <td class="col-principal" [title]="item.CentroCostoPrincipal || item.CodCentroCtoPrincipal || ''">
+        {{ item.CentroCostoPrincipal || item.CodCentroCtoPrincipal || '-' }}
+      </td>
+      <td class="col-codigo">
+        <span class="code-pill">{{ item.CodCentroCto }}</span>
+      </td>
+      <td class="col-nombre font-medium" [title]="item.CentroCosto">
+        {{ item.CentroCosto }}
+      </td>
+      <td class="col-estado">
+        <span 
+          class="badge" 
+          [class.badge-abierto]="item.Estado === 'ABIERTO' || item.Estado === 'Activo'"
+          [class.badge-cerrado]="item.Estado === 'CERRADO' || item.Estado === 'Liquidado'"
+          [class.badge-proceso]="item.Estado === 'En Proceso' || item.Estado === 'POR LIQUIDAR'"
+        >
+          {{ item.Estado || 'ABIERTO' }}
+        </span>
+      </td>
+      <td class="col-ppto-estado">
+        <span 
+          *ngIf="item.PresupuestoEstado" 
+          class="badge badge-ppto"
+          [class.badge-aprobado]="item.PresupuestoEstado === 'Aprobado'"
+        >
+          {{ item.PresupuestoEstado }}
+        </span>
+        <span *ngIf="!item.PresupuestoEstado" class="text-muted">-</span>
+      </td>
+      <td class="col-accion text-center">
+        <button class="btn-icon-view" title="Ver análisis financiero" (click)="openDetail(item); $event.stopPropagation()">
+          <span class="arrow-icon">›</span>
+        </button>
+      </td>
+    </tr>
+  </ng-template>
 
   <!-- MODAL DETALLE FINANCIERO (Imagen 3: ppto.Sub Total en adelante) -->
   <div class="modal-backdrop" *ngIf="isDetailOpen && selectedCentro" (click)="closeDetail()">
