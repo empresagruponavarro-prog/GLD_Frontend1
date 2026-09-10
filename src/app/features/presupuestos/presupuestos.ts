@@ -4,8 +4,8 @@ import { FormsModule } from '@angular/forms';
 import { DataTableComponent } from '../../shared/components/data-table/data-table';
 import { ModalComponent } from '../../shared/components/modal/modal';
 import { DataTable } from '../../shared/interfaces';
-import { PresupuestosService, PresupuestoPrincipal, PaginatedResponse } from './presupuestos.service';
-
+import { PresupuestosService } from './presupuestos.service';
+import { PresupuestoPrincipal, PaginatedResponse} from './interfaces'
 @Component({
   selector: 'app-presupuestos',
   standalone: true,

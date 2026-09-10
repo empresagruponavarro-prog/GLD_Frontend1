@@ -2,7 +2,7 @@ import { Service, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { Incidencia } from './interfaces';
-import { environment } from '../../../environments/environment';
+import { environment } from '@env';
 
 @Service()
 export class IncidenciasService {

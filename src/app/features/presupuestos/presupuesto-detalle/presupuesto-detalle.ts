@@ -3,9 +3,12 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { 
-  PresupuestosService, 
-  PresupuestoCompleto, 
+  PresupuestosService 
 } from '../presupuestos.service';
+
+import {
+  PresupuestoCompleto
+} from '../interfaces'
 
 @Component({
   selector: 'app-presupuesto-detalle',

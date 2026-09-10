@@ -8,9 +8,7 @@ import {
   FiltrosCentrosCostos, 
   ResumenFinanciero 
 } from '../interfaces';
-import { environment } from '../../../../environments/environment';
-
-export * from '../interfaces';
+import { environment } from '@env';
 
 @Service()
 export class CentrosCostosDashboardService {
