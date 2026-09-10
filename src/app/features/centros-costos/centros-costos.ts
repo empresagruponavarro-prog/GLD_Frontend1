@@ -6,20 +6,7 @@ import { HttpClient } from '@angular/common/http';
 import { DataTableComponent } from '../../shared/components/data-table/data-table';
 import { ModalComponent } from '../../shared/components/modal/modal';
 import { DataTable } from '../../shared/interfaces';
-interface CentroCosto {
-  CodCentroCto: string;
-  CodCentroCtoPrincipal?: string;
-  CentroCostoPrincipal?: string;
-  CentroCosto: string;
-  Estado?: string;
-  CodEmpresa?: string;
-  Empresa?: string;
-  IdPeriodo?: string;
-  CodCliente?: string;
-  Cliente?: string;
-  PresupuestoEstado?: string;
-  PresupuestoMonto?: string | number;
-}
+import { CentroCosto } from './interfaces';
 
 @Component({
   selector: 'app-centros-costos',

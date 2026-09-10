@@ -13,6 +13,8 @@ export interface CentroCostoItem {
   PresupuestoMonto?: string | number;
 }
 
+export type CentroCosto = CentroCostoItem;
+
 export interface ConteoEstados {
   total: number;
   abiertos: number;
