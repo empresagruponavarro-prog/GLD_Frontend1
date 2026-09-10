@@ -11,6 +11,9 @@ export interface CentroCostoItem {
   Cliente?: string;
   PresupuestoEstado?: string;
   PresupuestoMonto?: string | number;
+  FechaIncio?: string;
+  FechaFinProg?: string;
+  FechaFinReal?: string;
 }
 
 export type CentroCosto = CentroCostoItem;

@@ -116,13 +116,31 @@ export class PresupuestosComponent {
   }
 
   badgeClass(estado?: string): string {
-    if (!estado) return 'badge-secondary';
-    const s = estado.toUpperCase();
-    if (s === 'APROBADO' || s === 'ACTIVO') return 'badge-success';
-    if (s === 'PENDIENTE') return 'badge-warning';
-    if (s === 'RECHAZADO' || s === 'ANULADO') return 'badge-danger';
-    if (s === 'EN REVISIÓN' || s === 'EN REVISION') return 'badge-info';
-    return 'badge-secondary';
+    if (!estado) return 'badge-pending';
+
+    const s = estado
+      .trim()
+      .toUpperCase()
+      .replace(/[_-]+/g, ' ')
+      .replace(/\s+/g, ' ');
+
+    if (s === 'APROBADO' || s === 'APROBADA' || s === 'ENTREGADO' || s === 'LIQUIDADO') {
+      return 'badge-completed';
+    }
+
+    if (s === 'PENDIENTE' || s === 'PENDIENTE DE APROBACION' || s === 'PENDIENTE DE APROBACIÓN') {
+      return 'badge-pending';
+    }
+
+    if (s.includes('RECHAZADO') || s === 'ANULADO' || s === 'CERRADO') {
+      return 'badge-danger';
+    }
+
+    if (s.includes('REVISION') || s.includes('DESARROLLO')) {
+      return 'badge-progress';
+    }
+
+    return 'badge-pending';
   }
 
   openModal() {

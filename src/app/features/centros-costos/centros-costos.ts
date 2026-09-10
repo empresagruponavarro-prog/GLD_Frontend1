@@ -1,6 +1,7 @@
 import { Component, inject, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { Router } from '@angular/router';
 
 import { DataTableComponent } from '../../shared/components/data-table/data-table';
 import { ModalComponent } from '../../shared/components/modal/modal';
@@ -15,12 +16,15 @@ import { CentrosCostosService } from './centros-costos.service';
   templateUrl: './centros-costos.html'
 })
 export class CentrosCostosComponent {
+  private readonly router = inject(Router);
+
   columns: DataTable[] = [
-    { label: 'Código' },
-    { label: 'Nombre' },
+    { label: 'Centro de Costo' },
     { label: 'Empresa' },
     { label: 'Cliente' },
-    { label: 'Periodo' },
+    { label: 'CC Principal' },
+    { label: 'Fecha Inicio' },
+    { label: 'Fin Programado' },
     { label: 'Estado' },
     { label: 'Ppto. Estado' },
     { label: 'Acciones' }
@@ -33,6 +37,23 @@ export class CentrosCostosComponent {
   editingCod = signal<string | null>(null);
   search = signal<string>('');
   catalogos = signal<{empresas: string[], clientes: string[]}>({ empresas: [], clientes: [] });
+
+  empresaFilter = signal<string>('');
+  clienteFilter = signal<string>('');
+  estadoFilter = signal<string>('');
+  pptoEstadoFilter = signal<string>('');
+  periodoFilter = signal<string>('');
+
+  estadoOptions = ['ABIERTO', 'CERRADO', 'POR LIQUIDAR'];
+  presupuestoEstadoOptions = [
+    'PENDIENTE',
+    'EN DESARROLLO',
+    'EN REVISION',
+    'APROBADO',
+    'LIQUIDADO',
+    'RECHAZADO PROPUESTA',
+    'RECHAZADO POR DEMORA'
+  ];
 
   empresasList = [
     { id: 'E1', nombre: 'Grupo Navarro SAC' },
@@ -66,15 +87,57 @@ export class CentrosCostosComponent {
 
   formData: CentroCosto = this.emptyForm();
 
+  periodOptions = computed(() => {
+    const periods = new Set<string>();
+
+    this.items().forEach((item) => {
+      if (item.IdPeriodo) {
+        periods.add(item.IdPeriodo);
+      }
+    });
+
+    return Array.from(periods).sort((a, b) => b.localeCompare(a));
+  });
+
+  activeFiltersCount = computed(() => {
+    return [
+      this.empresaFilter(),
+      this.clienteFilter(),
+      this.estadoFilter(),
+      this.pptoEstadoFilter(),
+      this.periodoFilter()
+    ].filter((value) => !!value).length;
+  });
+
   filteredItems = computed(() => {
     const q = this.search().toLowerCase().trim();
-    if (!q) return this.items();
-    return this.items().filter(c =>
-      (c.CodCentroCto || '').toLowerCase().includes(q) ||
-      (c.CentroCosto || '').toLowerCase().includes(q) ||
-      (c.Empresa || c.CodEmpresa || '').toLowerCase().includes(q) ||
-      (c.Cliente || c.CodCliente || '').toLowerCase().includes(q)
-    );
+    const selectedEmpresa = this.empresaFilter().trim().toLowerCase();
+    const selectedCliente = this.clienteFilter().trim().toLowerCase();
+    const selectedEstado = this.estadoFilter().trim().toUpperCase();
+    const selectedPptoEstado = this.normalizeEstado(this.pptoEstadoFilter());
+    const selectedPeriodo = this.periodoFilter().trim();
+
+    return this.items().filter((item) => {
+      const hayTexto = !q ||
+        (item.CodCentroCto || '').toLowerCase().includes(q) ||
+        (item.CentroCosto || '').toLowerCase().includes(q) ||
+        (item.Empresa || item.CodEmpresa || '').toLowerCase().includes(q) ||
+        (item.Cliente || item.CodCliente || '').toLowerCase().includes(q);
+
+      const empresaMatch = !selectedEmpresa ||
+        (item.CodEmpresa || '').toLowerCase() === selectedEmpresa ||
+        (item.Empresa || '').toLowerCase() === selectedEmpresa;
+
+      const clienteMatch = !selectedCliente ||
+        (item.CodCliente || '').toLowerCase() === selectedCliente ||
+        (item.Cliente || '').toLowerCase() === selectedCliente;
+
+      const estadoMatch = !selectedEstado || (item.Estado || '').toUpperCase() === selectedEstado;
+      const pptoEstadoMatch = !selectedPptoEstado || this.normalizeEstado(item.PresupuestoEstado) === selectedPptoEstado;
+      const periodoMatch = !selectedPeriodo || (item.IdPeriodo || '').toString() === selectedPeriodo;
+
+      return hayTexto && empresaMatch && clienteMatch && estadoMatch && pptoEstadoMatch && periodoMatch;
+    });
   });
 
   totalPages = computed(() => Math.ceil(this.filteredItems().length / this.pageSize()));
@@ -131,6 +194,39 @@ export class CentrosCostosComponent {
     this.currentPage.set(1);
   }
 
+  private normalizeEstado(value?: string): string {
+    return (value || '')
+      .trim()
+      .toUpperCase()
+      .replace(/[_\s]+/g, '');
+  }
+
+  getCentroCostoPrincipalLabel(item: CentroCosto): string {
+    const principalCode = item.CodCentroCtoPrincipal || item.CentroCostoPrincipal;
+
+    if (!principalCode) {
+      return '—';
+    }
+
+    const principal = this.items().find((centro) => centro.CodCentroCto === principalCode);
+
+    if (principal?.CentroCosto) {
+      return principal.CentroCosto;
+    }
+
+    return item.CentroCostoPrincipal || item.CodCentroCtoPrincipal || '—';
+  }
+
+  resetFilters() {
+    this.search.set('');
+    this.empresaFilter.set('');
+    this.clienteFilter.set('');
+    this.estadoFilter.set('');
+    this.pptoEstadoFilter.set('');
+    this.periodoFilter.set('');
+    this.currentPage.set(1);
+  }
+
   goToPage(page: number) {
     if (page >= 1 && page <= this.totalPages()) {
       this.currentPage.set(page);
@@ -174,12 +270,18 @@ export class CentrosCostosComponent {
     }
   }
 
-  delete(cod: string) {
-    if (confirm(`¿Eliminar el Centro de Costo "${cod}"? Esta acción no se puede deshacer.`)) {
-      this.centrosCostosService.delete(cod).subscribe({
+  delete(item: CentroCosto) {
+    const nombre = item.CentroCosto || item.CodCentroCto;
+
+    if (confirm(`¿Eliminar el Centro de Costo "${nombre}"? Esta acción no se puede deshacer.`)) {
+      this.centrosCostosService.delete(item.CodCentroCto).subscribe({
         next: () => this.load(),
         error: (err) => alert('Error al eliminar: ' + (err.error?.message || err.message))
       });
     }
+  }
+
+  goToPresupuestos() {
+    this.router.navigate(['/presupuestos']);
   }
 }
