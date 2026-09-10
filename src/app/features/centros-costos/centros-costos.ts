@@ -1,12 +1,12 @@
 import { Component, inject, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { HttpClient } from '@angular/common/http';
 
 import { DataTableComponent } from '../../shared/components/data-table/data-table';
 import { ModalComponent } from '../../shared/components/modal/modal';
 import { DataTable } from '../../shared/interfaces';
 import { CentroCosto } from './interfaces';
+import { CentrosCostosService } from './centros-costos.service';
 
 @Component({
   selector: 'app-centros-costos',
@@ -25,8 +25,7 @@ export class CentrosCostosComponent {
     { label: 'Ppto. Estado' },
     { label: 'Acciones' }
   ];
-  private http = inject(HttpClient);
-  private apiUrl = 'http://localhost:3000/centros-costos';
+  private centrosCostosService = inject(CentrosCostosService);
 
   items = signal<CentroCosto[]>([]);
   loading = signal<boolean>(false);
@@ -92,8 +91,9 @@ export class CentrosCostosComponent {
 
   constructor() {
     this.load();
-    this.http.get<any>(this.apiUrl + '/catalogos-filtros').subscribe(data => {
-      this.catalogos.set({ empresas: data.empresas || [], clientes: data.clientes || [] });
+    this.centrosCostosService.getCatalogosFiltros().subscribe({
+      next: (data) => this.catalogos.set({ empresas: data.empresas || [], clientes: data.clientes || [] }),
+      error: (err) => console.warn('Error al cargar catálogos:', err)
     });
   }
 
@@ -116,7 +116,7 @@ export class CentrosCostosComponent {
 
   load() {
     this.loading.set(true);
-    this.http.get<CentroCosto[]>(this.apiUrl).subscribe({
+    this.centrosCostosService.getAll().subscribe({
       next: (data) => {
         this.items.set(data);
         this.loading.set(false);
@@ -162,12 +162,12 @@ export class CentrosCostosComponent {
 
     const cod = this.editingCod();
     if (cod) {
-      this.http.patch<CentroCosto>(`${this.apiUrl}/${cod}`, this.formData).subscribe({
+      this.centrosCostosService.update(cod, this.formData).subscribe({
         next: () => { this.closeModal(); this.load(); },
         error: (err) => alert('Error al actualizar: ' + (err.error?.message || err.message))
       });
     } else {
-      this.http.post<CentroCosto>(this.apiUrl, this.formData).subscribe({
+      this.centrosCostosService.create(this.formData).subscribe({
         next: () => { this.closeModal(); this.load(); },
         error: (err) => alert('Error al crear: ' + (err.error?.message || err.message))
       });
@@ -176,7 +176,7 @@ export class CentrosCostosComponent {
 
   delete(cod: string) {
     if (confirm(`¿Eliminar el Centro de Costo "${cod}"? Esta acción no se puede deshacer.`)) {
-      this.http.delete(`${this.apiUrl}/${cod}`).subscribe({
+      this.centrosCostosService.delete(cod).subscribe({
         next: () => this.load(),
         error: (err) => alert('Error al eliminar: ' + (err.error?.message || err.message))
       });

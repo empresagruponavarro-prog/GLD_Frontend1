@@ -7,9 +7,9 @@ import {
   CatalogosFiltros, 
   FiltrosCentrosCostos, 
   ResumenFinanciero 
-} from './interfaces';
+} from '../interfaces';
 
-export * from './interfaces';
+export * from '../interfaces';
 
 @Service()
 export class CentrosCostosDashboardService {

@@ -6,14 +6,12 @@ import {
   ResumenFinanciero, 
   ConteoEstados, 
   CatalogosFiltros 
-} from './interfaces';
-import { DataTableComponent } from '../../shared/components/data-table/data-table';
-import { DataTable } from '../../shared/interfaces';
+} from '../interfaces';
+import { DataTableComponent } from '../../../shared/components/data-table/data-table';
+import { DataTable } from '../../../shared/interfaces';
 
-/* Componente Standalone Angular para el Dashboard de Centros de Costos */
 @Component({
   selector: 'app-centros-costos-dashboard',
-  standalone: true,
   imports: [CommonModule, DataTableComponent],
   templateUrl: './centros-costos-dashboard.html',
   styleUrl: './centros-costos-dashboard.css'

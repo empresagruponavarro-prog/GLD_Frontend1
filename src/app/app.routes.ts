@@ -5,7 +5,7 @@ import { UsuariosComponent } from './features/administration/usuarios/usuarios';
 import { MenusComponent } from './features/administration/menus/menus';
 import { EmpresasComponent } from './features/administration/empresas/empresas';
 import { MaestrosGeneralesComponent } from './features/maestros-generales/maestros-generales';
-import { CentrosCostosDashboardComponent } from './features/centros-costos/centros-costos-dashboard';
+import { CentrosCostosDashboardComponent } from './features/centros-costos/centro-costos-dashboard/centros-costos-dashboard';
 import { CentrosCostosComponent } from './features/centros-costos/centros-costos';
 import { PresupuestosComponent } from './features/presupuestos/presupuestos';
 
