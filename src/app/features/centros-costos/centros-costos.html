@@ -30,90 +30,55 @@
     </span>
   </div>
 
-  <!-- Tabla con scroll horizontal -->
-  <div class="table-card" style="overflow-x: auto; max-height: calc(100vh - 280px); overflow-y: auto;">
-    <table class="table" style="min-width: 900px;">
-      <thead>
-        <tr>
-          <th>Código</th>
-          <th>Nombre</th>
-          <th>Empresa</th>
-          <th>Cliente</th>
-          <th>Periodo</th>
-          <th>Estado</th>
-          <th>Ppto. Estado</th>
-          <th>Acciones</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr *ngFor="let item of pagedItems()">
-          <td><strong>{{ item.CodCentroCto }}</strong></td>
-          <td>{{ item.CentroCosto }}</td>
-          <td>{{ item.Empresa || item.CodEmpresa || '—' }}</td>
-          <td>{{ item.Cliente || item.CodCliente || '—' }}</td>
-          <td>{{ item.IdPeriodo || '—' }}</td>
-          <td>
-            <span class="badge" [ngClass]="item.Estado === 'ABIERTO' ? 'badge-progress' : 'badge-danger'">
-              {{ item.Estado || '—' }}
-            </span>
-          </td>
-          <td>
-            <span class="badge"
-              [ngClass]="{
-                'badge-completed': item.PresupuestoEstado === 'APROBADO',
-                'badge-progress': item.PresupuestoEstado === 'EN REVISION',
-                'badge-pending': item.PresupuestoEstado === 'PENDIENTE',
-                'badge-danger': item.PresupuestoEstado === 'RECHAZADO'
-              }">
-              {{ item.PresupuestoEstado || '—' }}
-            </span>
-          </td>
-          <td>
-            <button class="btn btn-secondary" style="padding: 0.25rem 0.5rem; margin-right: 0.25rem;" (click)="editModal(item)" title="Editar">
-              <i class="fa-solid fa-pen-to-square"></i>
-            </button>
-            <button class="btn btn-danger" style="padding: 0.25rem 0.5rem;" (click)="delete(item.CodCentroCto)" title="Eliminar">
-              <i class="fa-solid fa-trash"></i>
-            </button>
-          </td>
-        </tr>
-        <tr *ngIf="pagedItems().length === 0 && !loading()">
-          <td colspan="8" style="text-align: center; padding: 2.5rem; color: var(--text-muted);">
-            <i class="fa-solid fa-building-flag" style="font-size: 2rem; display: block; margin-bottom: 0.5rem;"></i>
-            No hay centros de costos registrados.
-          </td>
-        </tr>
-      </tbody>
-    </table>
-  </div>
+  <!-- Tabla reutilizable dumb -->
+  <app-data-table
+    [columns]="columns"
+    [items]="pagedItems()"
+    [loading]="loading()"
+    [totalItems]="filteredItems().length"
+    [currentPage]="currentPage()"
+    [pageSize]="pageSize()"
+    [pageSizeOptions]="[10, 15, 20, 50]"
+    emptyMessage="No hay centros de costos registrados."
+    emptyIcon="fa-solid fa-building-flag"
+    [rowTemplate]="centroRow"
+    (pageChange)="goToPage($event)"
+    (pageSizeChange)="pageSize.set($event); currentPage.set(1)">
+  </app-data-table>
 
-  <!-- Paginación -->
-  <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 1rem; padding: 0.5rem 1rem; background: #f8fafc; border: 1px solid var(--border-color); border-radius: 8px;">
-    
-    <div style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.875rem; color: #475569;">
-      <span>Registros por página:</span>
-      <select class="form-control" style="width: auto; padding: 0.2rem 0.5rem; border-color: #cbd5e1; height: auto;" [ngModel]="pageSize()" (ngModelChange)="pageSize.set($event); currentPage.set(1)">
-        <option [value]="10">10</option>
-        <option [value]="15">15</option>
-        <option [value]="20">20</option>
-        <option [value]="50">50</option>
-      </select>
-    </div>
-
-    <div *ngIf="totalPages() > 1" style="display: flex; align-items: center; gap: 0.35rem;">
-      <button class="btn btn-secondary" style="padding: 0.2rem 0.5rem; background: #fff; border-color: #cbd5e1; color: #475569;" (click)="goToPage(currentPage() - 1)" [disabled]="currentPage() === 1">
-        <i class="fa-solid fa-chevron-left"></i> Anterior
-      </button>
-
-      <span style="font-size: 0.875rem; margin: 0 0.5rem; color: #475569;">
-        Página <strong>{{ currentPage() }}</strong> de {{ totalPages() }}
-      </span>
-
-      <button class="btn btn-secondary" style="padding: 0.2rem 0.5rem; background: #fff; border-color: #cbd5e1; color: #475569;" (click)="goToPage(currentPage() + 1)" [disabled]="currentPage() === totalPages()">
-        Siguiente <i class="fa-solid fa-chevron-right"></i>
-      </button>
-    </div>
-  </div>
+  <ng-template #centroRow let-item>
+    <tr>
+      <td><strong>{{ item.CodCentroCto }}</strong></td>
+      <td>{{ item.CentroCosto }}</td>
+      <td>{{ item.Empresa || item.CodEmpresa || '—' }}</td>
+      <td>{{ item.Cliente || item.CodCliente || '—' }}</td>
+      <td>{{ item.IdPeriodo || '—' }}</td>
+      <td>
+        <span class="badge" [ngClass]="item.Estado === 'ABIERTO' ? 'badge-progress' : 'badge-danger'">
+          {{ item.Estado || '—' }}
+        </span>
+      </td>
+      <td>
+        <span class="badge"
+          [ngClass]="{
+            'badge-completed': item.PresupuestoEstado === 'APROBADO',
+            'badge-progress': item.PresupuestoEstado === 'EN REVISION',
+            'badge-pending': item.PresupuestoEstado === 'PENDIENTE',
+            'badge-danger': item.PresupuestoEstado === 'RECHAZADO'
+          }">
+          {{ item.PresupuestoEstado || '—' }}
+        </span>
+      </td>
+      <td>
+        <button class="btn btn-secondary" style="padding: 0.25rem 0.5rem; margin-right: 0.25rem;" (click)="editModal(item)" title="Editar">
+          <i class="fa-solid fa-pen-to-square"></i>
+        </button>
+        <button class="btn btn-danger" style="padding: 0.25rem 0.5rem;" (click)="delete(item.CodCentroCto)" title="Eliminar">
+          <i class="fa-solid fa-trash"></i>
+        </button>
+      </td>
+    </tr>
+  </ng-template>
 </div>
 
 <!-- Modal -->

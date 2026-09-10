@@ -3,6 +3,8 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 
+import { DataTableComponent } from '../../shared/components/data-table/data-table';
+import { DataTable } from '../../shared/interfaces';
 interface CentroCosto {
   CodCentroCto: string;
   CodCentroCtoPrincipal?: string;
@@ -21,10 +23,20 @@ interface CentroCosto {
 @Component({
   selector: 'app-centros-costos',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, DataTableComponent],
   templateUrl: './centros-costos.html'
 })
 export class CentrosCostosComponent {
+  columns: DataTable[] = [
+    { label: 'Código' },
+    { label: 'Nombre' },
+    { label: 'Empresa' },
+    { label: 'Cliente' },
+    { label: 'Periodo' },
+    { label: 'Estado' },
+    { label: 'Ppto. Estado' },
+    { label: 'Acciones' }
+  ];
   private http = inject(HttpClient);
   private apiUrl = 'http://localhost:3000/centros-costos';
 

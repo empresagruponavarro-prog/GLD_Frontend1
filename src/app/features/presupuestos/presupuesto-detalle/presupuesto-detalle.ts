@@ -1,70 +1,11 @@
 import { Component, inject, signal, computed, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { HttpClient } from '@angular/common/http';
 import { ActivatedRoute, Router } from '@angular/router';
-
-interface PresupuestoCompleto {
-  id: number;
-  IdPresupuesto: string;
-  CodCentroCto?: string;
-  CodEmpresa?: string;
-  IdPeriodo?: string;
-  Version?: string;
-  TipoPpto?: string;
-  Proyecto?: string;
-  Concepto?: string;
-  CodCentroCtoPrincipal?: string;
-  FechaRequerimiento?: string;
-  FechaEntrega?: string;
-  CostoDirecto?: string | number;
-  GGPorcentaje?: string | number;
-  GastosGenerales?: string | number;
-  UtiliPorcentaje?: string | number;
-  Utilidad?: string | number;
-  Viaticos?: string | number;
-  DsctoComercial?: string | number;
-  SubTotalSinIGV?: string | number;
-  IGV?: string | number;
-  Total?: string | number;
-  Estado?: string;
-  Comentarios?: string;
-  Usuario?: string;
-  FechaCreacion?: string;
-  centroCosto?: { NomCC?: string; CodCentroCto?: string } | null;
-  fases?: DetalleFase[];
-  historiales?: Historial[];
-}
-
-interface DetalleFase {
-  id: number;
-  IdPresupuestoDetalle: string;
-  IdPresupuesto: string;
-  IdpptoFase?: string;
-  CodEmpresa?: string;
-  CodCentroCto?: string;
-  CostoDirecto?: string | number;
-  Usuario?: string;
-  FechaCreacion?: string;
-  categorias?: DetalleFaseCate[];
-}
-
-interface DetalleFaseCate {
-  id: number;
-  IdPresupuestoDetalle?: string;
-  IdPresupuesto?: string;
-  CategoriaInsumo?: string;
-  SubTotalCategoria?: string | number;
-}
-
-interface Historial {
-  id: number;
-  IdPresupuesto?: string;
-  Version?: string;
-  Descripcion?: string;
-  Usuario?: string;
-  FechaCreacion?: string;
-}
+import { 
+  PresupuestosService, 
+  PresupuestoCompleto, 
+} from '../presupuestos.service';
 
 @Component({
   selector: 'app-presupuesto-detalle',
@@ -76,10 +17,10 @@ interface Historial {
 export class PresupuestoDetalleComponent implements OnInit {
   protected readonly Number = Number;
   protected readonly Math = Math;
-  private http = inject(HttpClient);
+
+  private presupuestosService = inject(PresupuestosService);
   private route = inject(ActivatedRoute);
   private router = inject(Router);
-  private apiUrl = 'http://localhost:3000/presupuestos';
 
   isNew = signal<boolean>(false);
   loading = signal<boolean>(false);
@@ -120,14 +61,25 @@ export class PresupuestoDetalleComponent implements OnInit {
 
   loadPresupuesto(id: string) {
     this.loading.set(true);
-    this.http.get<PresupuestoCompleto>(`${this.apiUrl}/${id}/completo`).subscribe({
-      next: (res) => { this.presupuesto.set(res); this.loading.set(false); },
-      error: (err) => { console.error(err); this.loading.set(false); }
+    this.presupuestosService.getPresupuestoCompleto(id).subscribe({
+      next: (res) => { 
+        this.presupuesto.set(res); 
+        this.loading.set(false); 
+      },
+      error: (err) => { 
+        console.error('Error al cargar presupuesto completo:', err); 
+        this.loading.set(false); 
+      }
     });
   }
 
-  setTab(tab: 'general' | 'fases' | 'liquidacion' | 'historial') { this.activeTab.set(tab); }
-  volver() { this.router.navigate(['/presupuestos']); }
+  setTab(tab: 'general' | 'fases' | 'liquidacion' | 'historial') { 
+    this.activeTab.set(tab); 
+  }
+
+  volver() { 
+    this.router.navigate(['/presupuestos']); 
+  }
 
   estadoBadgeClass(estado?: string) {
     const s = (estado || '').toUpperCase();

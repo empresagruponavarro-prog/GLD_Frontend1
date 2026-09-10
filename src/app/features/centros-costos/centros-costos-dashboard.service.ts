@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { Service, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { 
@@ -7,17 +7,14 @@ import {
   CatalogosFiltros, 
   FiltrosCentrosCostos, 
   ResumenFinanciero 
-} from './centros-costos-dashboard.interface';
+} from './interfaces';
 
-export * from './centros-costos-dashboard.interface';
+export * from './interfaces';
 
-@Injectable({
-  providedIn: 'root',
-})
+@Service()
 export class CentrosCostosDashboardService {
+  private http = inject(HttpClient);
   private apiUrl = 'http://localhost:3000/centros-costos';
-
-  constructor(private http: HttpClient) {}
 
   getCentrosCostos(filtros?: FiltrosCentrosCostos): Observable<CentroCostoItem[]> {
     let params = new HttpParams();

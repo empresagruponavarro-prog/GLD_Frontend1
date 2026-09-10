@@ -1,17 +1,14 @@
-import { Injectable } from '@angular/core';
+import { Service, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { Usuario } from './usuarios.interface';
+import { Usuario } from './interfaces';
 
-export * from './usuarios.interface';
+export * from './interfaces';
 
-@Injectable({
-  providedIn: 'root',
-})
+@Service()
 export class UsuariosService {
+  private http = inject(HttpClient);
   private apiUrl = 'http://localhost:3000/administration/usuarios';
-
-  constructor(private http: HttpClient) {}
 
   getAll(): Observable<Usuario[]> {
     return this.http.get<Usuario[]>(this.apiUrl);

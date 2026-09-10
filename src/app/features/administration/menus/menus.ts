@@ -2,7 +2,7 @@ import { Component, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MenusService } from './menus.service';
-import { MenuRoot, SubMenu } from './menus.interface';
+import { MenuRoot, SubMenu } from './interfaces';
 
 @Component({
   selector: 'app-menus',

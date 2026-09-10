@@ -6,7 +6,7 @@ import {
   ResumenFinanciero, 
   ConteoEstados, 
   CatalogosFiltros 
-} from './centros-costos-dashboard.interface';
+} from './interfaces';
 
 /* Componente Standalone Angular para el Dashboard de Centros de Costos */
 @Component({

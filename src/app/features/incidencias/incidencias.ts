@@ -1,8 +1,8 @@
 import { Component, inject, signal, AfterViewChecked } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { IncidenciasService, Incidencia } from './incidencias.service';
-
+import { IncidenciasService } from './incidencias.service';
+import { Incidencia } from './interfaces';
 declare var L: any; // Leaflet global JS library
 
 @Component({

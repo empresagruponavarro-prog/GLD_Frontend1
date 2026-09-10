@@ -2,7 +2,7 @@ import { Component, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { UsuariosService } from './usuarios.service';
-import { Usuario } from './usuarios.interface';
+import { Usuario } from './interfaces';
 
 @Component({
   selector: 'app-usuarios',

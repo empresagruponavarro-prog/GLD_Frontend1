@@ -1,17 +1,14 @@
-import { Injectable } from '@angular/core';
+import { Service, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { MenuRoot, SubMenu } from './menus.interface';
+import { MenuRoot, SubMenu } from './interfaces';
 
-export * from './menus.interface';
+export * from './interfaces';
 
-@Injectable({
-  providedIn: 'root',
-})
+@Service()
 export class MenusService {
+  private http = inject(HttpClient);
   private apiUrl = 'http://localhost:3000/administration/menus';
-
-  constructor(private http: HttpClient) {}
 
   getTree(): Observable<MenuRoot[]> {
     return this.http.get<MenuRoot[]>(`${this.apiUrl}/tree`);

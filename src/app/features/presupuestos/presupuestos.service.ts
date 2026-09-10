@@ -1,23 +1,46 @@
-import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { Service, inject } from '@angular/core';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { PresupuestoPrincipal, CategoriaFaseMaestra, FaseAsignada, HistorialVersion } from './presupuestos.interface';
+import { 
+  PresupuestoPrincipal, 
+  CategoriaFaseMaestra, 
+  FaseAsignada, 
+  Historial,
+  PaginatedResponse,
+  PresupuestoCompleto
+} from './interfaces';
 
-@Injectable({
-  providedIn: 'root',
-})
+export * from './interfaces';
+
+@Service()
 export class PresupuestosService {
+  private http = inject(HttpClient);
   private apiUrl = 'http://localhost:3000/presupuestos';
 
-  constructor(private http: HttpClient) {}
-
   // Presupuestos Principales
-  getPresupuestos(): Observable<PresupuestoPrincipal[]> {
-    return this.http.get<PresupuestoPrincipal[]>(this.apiUrl);
+  getPresupuestos(page?: number, pageSize?: number, search?: string): Observable<PaginatedResponse | PresupuestoPrincipal[]> {
+    let params = new HttpParams();
+    if (page) params = params.set('page', page.toString());
+    if (pageSize) params = params.set('pageSize', pageSize.toString());
+    if (search?.trim()) params = params.set('search', search.trim());
+
+    return this.http.get<PaginatedResponse | PresupuestoPrincipal[]>(this.apiUrl, { params });
+  }
+
+  getPresupuestoCompleto(id: string): Observable<PresupuestoCompleto> {
+    return this.http.get<PresupuestoCompleto>(`${this.apiUrl}/${id}/completo`);
   }
 
   createPresupuesto(data: Partial<PresupuestoPrincipal>): Observable<PresupuestoPrincipal> {
     return this.http.post<PresupuestoPrincipal>(this.apiUrl, data);
+  }
+
+  updatePresupuesto(id: string, data: Partial<PresupuestoPrincipal>): Observable<PresupuestoPrincipal> {
+    return this.http.patch<PresupuestoPrincipal>(`${this.apiUrl}/${id}`, data);
+  }
+
+  deletePresupuesto(id: string): Observable<void> {
+    return this.http.delete<void>(`${this.apiUrl}/${id}`);
   }
 
   // Fases Maestras
@@ -39,11 +62,11 @@ export class PresupuestosService {
   }
 
   // Historial Versiones
-  getHistorial(): Observable<HistorialVersion[]> {
-    return this.http.get<HistorialVersion[]>(`${this.apiUrl}/historial-versiones`);
+  getHistorial(): Observable<Historial[]> {
+    return this.http.get<Historial[]>(`${this.apiUrl}/historial-versiones`);
   }
 
-  createHistorial(data: Partial<HistorialVersion>): Observable<HistorialVersion> {
-    return this.http.post<HistorialVersion>(`${this.apiUrl}/historial-versiones`, data);
+  createHistorial(data: Partial<Historial>): Observable<Historial> {
+    return this.http.post<Historial>(`${this.apiUrl}/historial-versiones`, data);
   }
 }

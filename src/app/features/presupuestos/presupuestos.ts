@@ -1,54 +1,30 @@
-import { Component, inject, signal, computed } from '@angular/core';
+import { Component, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { HttpClient } from '@angular/common/http';
-
-interface PresupuestoPrincipal {
-  id: number;
-  IdPresupuesto: string;
-  CodCentroCto?: string;
-  CodEmpresa?: string;
-  IdPeriodo?: string;
-  Version?: string;
-  TipoPpto?: string;
-  Proyecto?: string;
-  Concepto?: string;
-  CodCentroCtoPrincipal?: string;
-  FechaRequerimiento?: string;
-  FechaEntrega?: string;
-  CostoDirecto?: number;
-  GGPorcentaje?: number;
-  GastosGenerales?: number;
-  UtiliPorcentaje?: number;
-  Utilidad?: number;
-  Viaticos?: number;
-  DsctoComercial?: number;
-  SubTotalSinIGV?: number;
-  IGV?: number;
-  Total?: number;
-  Estado?: string;
-  Comentarios?: string;
-  Usuario?: string;
-  FechaCreacion?: string;
-}
-
-interface PaginatedResponse {
-  data: PresupuestoPrincipal[];
-  total: number;
-  page: number;
-  pageSize: number;
-  totalPages: number;
-}
+import { DataTableComponent } from '../../shared/components/data-table/data-table';
+import { DataTable } from '../../shared/interfaces';
+import { PresupuestosService, PresupuestoPrincipal, PaginatedResponse } from './presupuestos.service';
 
 @Component({
   selector: 'app-presupuestos',
-  standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, DataTableComponent],
   templateUrl: './presupuestos.html'
 })
 export class PresupuestosComponent {
-  private http = inject(HttpClient);
-  private apiUrl = 'http://localhost:3000/presupuestos';
+  private presupuestosService = inject(PresupuestosService);
+
+  columns: DataTable[] = [
+    { label: 'ID Presupuesto' },
+    { label: 'Proyecto' },
+    { label: 'Centro Costo' },
+    { label: 'Empresa' },
+    { label: 'Tipo' },
+    { label: 'Costo Directo' },
+    { label: 'Total' },
+    { label: 'Periodo' },
+    { label: 'Estado' },
+    { label: 'Acciones' }
+  ];
 
   presupuestos = signal<PresupuestoPrincipal[]>([]);
   loading = signal<boolean>(false);
@@ -64,36 +40,6 @@ export class PresupuestosComponent {
   currentPage = signal<number>(1);
   pageSize = signal<number>(10);
   totalRecords = signal<number>(0);
-
-  totalPages = computed(() => Math.max(1, Math.ceil(this.totalRecords() / this.pageSize())));
-
-  pages = computed(() => {
-    const total = this.totalPages();
-    const current = this.currentPage();
-    const delta = 2;
-    const range: number[] = [];
-
-    for (let i = Math.max(2, current - delta); i <= Math.min(total - 1, current + delta); i++) {
-      range.push(i);
-    }
-
-    if (current - delta > 2) range.unshift(-1);
-    if (current + delta < total - 1) range.push(-1);
-
-    if (total > 1) {
-      range.unshift(1);
-      if (total > 1) range.push(total);
-    } else if (total === 1) {
-      return [1];
-    }
-
-    // Simplify: just show nearby pages
-    const nearby: number[] = [];
-    for (let i = Math.max(1, current - 2); i <= Math.min(total, current + 2); i++) {
-      nearby.push(i);
-    }
-    return nearby;
-  });
 
   constructor() {
     this.loadData();
@@ -119,29 +65,25 @@ export class PresupuestosComponent {
 
   loadData() {
     this.loading.set(true);
-    const params: any = {
-      page: this.currentPage().toString(),
-      pageSize: this.pageSize().toString(),
-    };
 
-    const searchVal = this.search();
-    if (searchVal) {
-      params.search = searchVal;
-    }
-
-    this.http.get<PaginatedResponse>(this.apiUrl, { params }).subscribe({
+    this.presupuestosService.getPresupuestos(
+      this.currentPage(),
+      this.pageSize(),
+      this.search()
+    ).subscribe({
       next: (res) => {
-        this.presupuestos.set(res.data || []);
-        this.totalRecords.set(res.total || 0);
+        if ('data' in res) {
+          const paginated = res as PaginatedResponse;
+          this.presupuestos.set(paginated.data || []);
+          this.totalRecords.set(paginated.total || 0);
+        } else if (Array.isArray(res)) {
+          this.presupuestos.set(res);
+          this.totalRecords.set(res.length);
+        }
         this.loading.set(false);
       },
       error: (err) => {
         console.error('Error al cargar presupuestos:', err);
-        // Fallback: maybe API returns array directly
-        if (Array.isArray(err)) {
-          this.presupuestos.set(err);
-          this.totalRecords.set(err.length);
-        }
         this.loading.set(false);
       }
     });
@@ -161,10 +103,8 @@ export class PresupuestosComponent {
   }
 
   goToPage(page: number) {
-    if (page >= 1 && page <= this.totalPages()) {
-      this.currentPage.set(page);
-      this.loadData();
-    }
+    this.currentPage.set(page);
+    this.loadData();
   }
 
   onPageSizeChange(newSize: any) {
@@ -190,7 +130,7 @@ export class PresupuestosComponent {
   }
 
   editModal(item: PresupuestoPrincipal) {
-    this.editingId.set(item.IdPresupuesto);
+    this.editingId.set(String(item.IdPresupuesto));
     this.formData = { ...item };
     this.showModal.set(true);
   }
@@ -208,21 +148,22 @@ export class PresupuestosComponent {
 
     const id = this.editingId();
     if (id) {
-      this.http.patch<PresupuestoPrincipal>(`${this.apiUrl}/${id}`, this.formData).subscribe({
+      this.presupuestosService.updatePresupuesto(id, this.formData).subscribe({
         next: () => { this.closeModal(); this.loadData(); },
         error: (err) => alert('Error al actualizar: ' + (err.error?.message || err.message))
       });
     } else {
-      this.http.post<PresupuestoPrincipal>(this.apiUrl, this.formData).subscribe({
+      this.presupuestosService.createPresupuesto(this.formData).subscribe({
         next: () => { this.closeModal(); this.loadData(); },
         error: (err) => alert('Error al crear: ' + (err.error?.message || err.message))
       });
     }
   }
 
-  delete(id: string) {
-    if (confirm(`¿Eliminar el Presupuesto "${id}"? Esta acción no se puede deshacer.`)) {
-      this.http.delete(`${this.apiUrl}/${id}`).subscribe({
+  delete(id: string | number) {
+    const idStr = String(id);
+    if (confirm(`¿Eliminar el Presupuesto "${idStr}"? Esta acción no se puede deshacer.`)) {
+      this.presupuestosService.deletePresupuesto(idStr).subscribe({
         next: () => this.loadData(),
         error: (err) => alert('Error al eliminar: ' + (err.error?.message || err.message))
       });

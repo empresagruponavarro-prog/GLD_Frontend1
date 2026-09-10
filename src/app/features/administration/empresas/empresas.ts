@@ -2,7 +2,7 @@ import { Component, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { EmpresasService } from './empresas.service';
-import { Empresa } from './empresas.interface';
+import { Empresa } from './interfaces';
 
 @Component({
   selector: 'app-empresas',

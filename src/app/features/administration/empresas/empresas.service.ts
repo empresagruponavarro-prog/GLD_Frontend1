@@ -1,17 +1,12 @@
-import { Injectable } from '@angular/core';
+import { Service, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { Empresa } from './empresas.interface';
+import { Empresa } from './interfaces';
 
-export * from './empresas.interface';
-
-@Injectable({
-  providedIn: 'root',
-})
+@Service()
 export class EmpresasService {
+  private http = inject(HttpClient);
   private apiUrl = 'http://localhost:3000/administration/empresas';
-
-  constructor(private http: HttpClient) {}
 
   getAll(): Observable<Empresa[]> {
     return this.http.get<Empresa[]>(this.apiUrl);
