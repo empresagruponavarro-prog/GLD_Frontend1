@@ -1,6 +1,6 @@
 @if (isOpen()) {
   <div class="modal-overlay" (click)="onClose()">
-    <div class="modal-content" [style.max-width]="maxWidth()" (click)="$event.stopPropagation()">
+    <div class="modal-content" [style.max-width]="maxWidth()" [style.height]="height()" (click)="$event.stopPropagation()">
       <div class="modal-header">
         <div class="modal-header-content">
           <span class="modal-header-icon">

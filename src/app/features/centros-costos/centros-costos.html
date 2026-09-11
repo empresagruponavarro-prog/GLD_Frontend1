@@ -157,317 +157,193 @@
 <app-modal
   [isOpen]="showModal()"
   [title]="editingCod() ? 'Editar Centro de Costo' : 'Nuevo Centro de Costo'"
-  maxWidth="1100px"
+  maxWidth="600px"
+  height="750px"
   [submitText]="editingCod() ? 'Guardar Cambios' : 'Crear Centro'"
+  [showDefaultFooter]="false"
   (closed)="closeModal()"
   (saved)="save()"
 >
-<div modal-body class="bg-slate-50 text-slate-800 font-sans p-6">
-  <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
-    <!-- Column Left: Identificación, Jerarquía & Cronograma (7 Cols) -->
-    <div class="lg:col-span-7 space-y-6">
-      <!-- BEGIN: CardIdentificacion -->
-      <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-        <div class="border-b border-slate-100 bg-slate-50/70 px-5 py-3.5 flex items-center justify-between">
-          <div class="flex items-center gap-2">
-            <span class="flex items-center justify-center w-7 h-7 rounded-lg bg-indigo-50 text-indigo-600 text-sm">
-              <i class="fa-solid fa-fingerprint"></i>
-            </span>
-            <h2 class="text-sm font-semibold text-slate-900 uppercase tracking-wide">Identificación & General</h2>
+  <div modal-body class="cc-form-shell">
+    <div class="cc-form-page">
+      <div class="cc-form-header">
+        <div class="cc-form-header-left">
+          <button class="cc-back-button" type="button" (click)="closeModal()">
+            <lucide-icon [img]="ArrowLeft" size="14"></lucide-icon>
+          </button>
+          <div class="cc-form-header-copy">
+            <h4>Centro de Costos</h4>
+            <p class="cc-form-kicker">ID: {{ formData.CodCentroCto || '—' }}</p>
           </div>
-          <span class="text-xs text-slate-400 font-medium">* Campos obligatorios</span>
+          <span class="cc-form-pill">
+            <span class="cc-form-status-dot"></span>
+            {{ formData.Estado || 'ABIERTO' }}
+          </span>
         </div>
-        <div class="p-5 grid grid-cols-1 md:grid-cols-2 gap-4">
-          <!-- Codigo CTO -->
-          <div>
-            <label class="block text-xs font-semibold uppercase tracking-wider text-slate-700 mb-1">
-              Código CTO <span class="text-rose-500">*</span>
-            </label>
-            <div class="relative rounded-lg shadow-sm">
-              <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
-                <i class="fa-solid fa-barcode text-slate-400 text-sm"></i>
+        <div class="cc-form-head-actions">
+          <button class="cc-action-btn" type="button" (click)="duplicar()">Duplicar</button>
+          <button class="cc-action-btn" type="button" (click)="descartar()">Cancelar</button>
+          <button class="cc-save-btn" type="button" (click)="guardar()">
+            <lucide-icon [img]="Check" size="11"></lucide-icon>
+            Guardar Cambios
+          </button>
+        </div>
+      </div>
+
+      <div class="cc-form-scroll">
+        <section class="cc-form-card">
+          <div class="cc-form-card-head">
+            <div class="cc-card-title-wrap">
+              <lucide-icon [img]="Hash" size="15" class="cc-card-icon"></lucide-icon>
+              <span class="cc-card-title">Identificación &amp; General</span>
+            </div>
+            <span class="cc-card-note">* Campos obligatorios</span>
+          </div>
+
+          <div class="cc-form-card-body">
+            <div class="cc-form-row">
+              <div class="cc-form-field">
+                <label class="cc-label">Código CTO <span class="cc-required">*</span></label>
+                <div class="cc-input-with-icon">
+                  <span class="cc-input-icon"><lucide-icon [img]="Hash" size="13"></lucide-icon></span>
+                  <input type="text" [ngModel]="formData.CodCentroCto" readonly>
+                </div>
+                <small class="cc-field-help">Identificador hash del sistema ERP</small>
               </div>
-              <input 
-                type="text" 
-                class="block w-full rounded-lg border-slate-300 pl-9 font-mono text-sm font-semibold text-slate-900 focus:border-brand-600 focus:ring-brand-600 bg-slate-50/50" 
-                [(ngModel)]="formData.CodCentroCto" 
-                [disabled]="!!editingCod()"
-                [style.cursor]="editingCod() ? 'not-allowed' : 'auto'"
-                required>
-            </div>
-            <p class="mt-1 text-[11px] text-slate-400">Identificador único del sistema ERP</p>
-          </div>
-          <!-- Nombre del Centro de Costo -->
-          <div>
-            <label class="block text-xs font-semibold uppercase tracking-wider text-slate-700 mb-1">
-              Nombre Centro de Costo <span class="text-rose-500">*</span>
-            </label>
-            <input 
-              type="text" 
-              class="block w-full rounded-lg border-slate-300 text-sm text-slate-900 focus:border-brand-600 focus:ring-brand-600 placeholder:text-slate-400" 
-              [(ngModel)]="formData.CentroCosto" 
-              placeholder="Ej. Remodelación Oficinas Torre Central" 
-              required>
-          </div>
-          <!-- Empresa Selector -->
-          <div class="md:col-span-1">
-            <label class="block text-xs font-semibold uppercase tracking-wider text-slate-700 mb-1">
-              Empresa <span class="text-rose-500">*</span>
-            </label>
-            <div class="relative">
-              <select 
-                class="block w-full rounded-lg border-slate-300 text-sm text-slate-900 focus:border-brand-600 focus:ring-brand-600" 
-                [(ngModel)]="formData.CodEmpresa" 
-                (change)="onEmpresaChange()">
-                <option value="">Seleccione Empresa...</option>
-                <option *ngFor="let e of catalogos().empresas" [value]="e">{{ e }}</option>
-                <option *ngFor="let e of empresasList" [value]="e.id">{{ e.nombre }}</option>
-              </select>
-            </div>
-          </div>
-          <!-- Cliente Selector -->
-          <div class="md:col-span-1">
-            <label class="block text-xs font-semibold uppercase tracking-wider text-slate-700 mb-1">
-              Cliente <span class="text-rose-500">*</span>
-            </label>
-            <select 
-              class="block w-full rounded-lg border-slate-300 text-sm text-slate-900 focus:border-brand-600 focus:ring-brand-600" 
-              [(ngModel)]="formData.CodCliente" 
-              (change)="onClienteChange()">
-              <option value="">Seleccione Cliente...</option>
-              <option *ngFor="let c of catalogos().clientes" [value]="c">{{ c }}</option>
-              <option *ngFor="let c of clientesList" [value]="c.id">{{ c.nombre }}</option>
-            </select>
-          </div>
-          <!-- Centro de Costo Principal (Jerarquía) -->
-          <div class="md:col-span-2">
-            <label class="block text-xs font-semibold uppercase tracking-wider text-slate-700 mb-1">
-              Centro de Costo Principal <span class="text-slate-400 font-normal normal-case">(Opcional / Jerarquía Padre)</span>
-            </label>
-            <div class="relative rounded-lg shadow-sm">
-              <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
-                <i class="fa-solid fa-sitemap text-slate-400 text-sm"></i>
+
+              <div class="cc-form-field">
+                <label class="cc-label">Nombre Centro de Costo <span class="cc-required">*</span></label>
+                <div class="cc-input-only">
+                  <input type="text" [(ngModel)]="formData.CentroCosto" placeholder="Ej. Obra Norte">
+                </div>
               </div>
-              <input 
-                type="text" 
-                class="block w-full rounded-lg border-slate-300 pl-9 text-sm text-slate-900 focus:border-brand-600 focus:ring-brand-600" 
-                [(ngModel)]="formData.CodCentroCtoPrincipal" 
-                placeholder="Cód. Centro Principal (Ej. CC-CORP-2024)">
             </div>
-          </div>
-          <!-- Periodo / Año Fiscal (Segmented Control) -->
-          <div class="md:col-span-1">
-            <label class="block text-xs font-semibold uppercase tracking-wider text-slate-700 mb-1.5">
-              Periodo Fiscal <span class="text-rose-500">*</span>
-            </label>
-            <div class="grid grid-cols-3 p-1 bg-slate-100 rounded-lg border border-slate-200 gap-1 text-center" role="radiogroup">
-              <label class="cursor-pointer">
-                <input type="radio" name="periodo" value="2024" [(ngModel)]="formData.IdPeriodo" class="sr-only peer">
-                <div class="text-xs font-semibold py-1.5 rounded-md text-slate-600 hover:text-slate-900 peer-checked:bg-white peer-checked:text-slate-900 peer-checked:shadow-sm transition-all">2024</div>
-              </label>
-              <label class="cursor-pointer">
-                <input type="radio" name="periodo" value="2025" [(ngModel)]="formData.IdPeriodo" class="sr-only peer">
-                <div class="text-xs font-semibold py-1.5 rounded-md text-slate-600 hover:text-slate-900 peer-checked:bg-white peer-checked:text-slate-900 peer-checked:shadow-sm transition-all">2025</div>
-              </label>
-              <label class="cursor-pointer">
-                <input type="radio" name="periodo" value="2026" [(ngModel)]="formData.IdPeriodo" class="sr-only peer">
-                <div class="text-xs font-semibold py-1.5 rounded-md text-slate-600 hover:text-slate-900 peer-checked:bg-white peer-checked:text-slate-900 peer-checked:shadow-sm transition-all">2026</div>
-              </label>
-            </div>
-            <div class="mt-2 text-xs">
-              <input type="text" class="block w-full rounded-lg border-slate-300 text-xs text-slate-900" placeholder="Otro periodo..." [(ngModel)]="formData.IdPeriodo" *ngIf="formData.IdPeriodo !== '2024' && formData.IdPeriodo !== '2025' && formData.IdPeriodo !== '2026' && !!formData.IdPeriodo">
-            </div>
-          </div>
-          <!-- Estado Operativo (Segmented Control) -->
-          <div class="md:col-span-1">
-            <label class="block text-xs font-semibold uppercase tracking-wider text-slate-700 mb-1.5">
-              Estado Operativo <span class="text-rose-500">*</span>
-            </label>
-            <div class="grid grid-cols-3 p-1 bg-slate-100 rounded-lg border border-slate-200 gap-1 text-center" role="radiogroup">
-              <label class="cursor-pointer">
-                <input type="radio" name="estado_operativo" value="ABIERTO" [(ngModel)]="formData.Estado" class="sr-only peer">
-                <div class="text-[11px] uppercase font-bold py-1.5 rounded-md text-slate-600 peer-checked:bg-emerald-600 peer-checked:text-white peer-checked:shadow-sm transition-all">Abierto</div>
-              </label>
-              <label class="cursor-pointer">
-                <input type="radio" name="estado_operativo" value="CERRADO" [(ngModel)]="formData.Estado" class="sr-only peer">
-                <div class="text-[11px] uppercase font-bold py-1.5 rounded-md text-slate-600 peer-checked:bg-slate-700 peer-checked:text-white peer-checked:shadow-sm transition-all">Cerrado</div>
-              </label>
-              <label class="cursor-pointer">
-                <input type="radio" name="estado_operativo" value="POR LIQUIDAR" [(ngModel)]="formData.Estado" class="sr-only peer">
-                <div class="text-[11px] uppercase font-bold py-1.5 rounded-md text-slate-600 peer-checked:bg-amber-600 peer-checked:text-white peer-checked:shadow-sm transition-all">Liquidar</div>
-              </label>
-            </div>
-          </div>
-        </div>
-      </div>
-      <!-- END: CardIdentificacion -->
-      <!-- BEGIN: CardCronograma -->
-      <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-        <div class="border-b border-slate-100 bg-slate-50/70 px-5 py-3.5 flex items-center justify-between">
-          <div class="flex items-center gap-2">
-            <span class="flex items-center justify-center w-7 h-7 rounded-lg bg-blue-50 text-blue-600 text-sm">
-              <i class="fa-regular fa-calendar-days"></i>
-            </span>
-            <h2 class="text-sm font-semibold text-slate-900 uppercase tracking-wide">Cronograma & Plazos</h2>
-          </div>
-          <span class="text-xs text-slate-400"><i class="fa-regular fa-clock mr-1"></i> Vigencia de ejecución</span>
-        </div>
-        <div class="p-5 grid grid-cols-1 md:grid-cols-3 gap-4">
-          <!-- Fecha Inicio -->
-          <div>
-            <label class="block text-xs font-semibold uppercase tracking-wider text-slate-700 mb-1">Fecha Inicio</label>
-            <input type="date" class="block w-full rounded-lg border-slate-300 text-sm text-slate-900 focus:border-brand-600 focus:ring-brand-600" [(ngModel)]="formData.FechaIncio">
-          </div>
-          <!-- Fecha Fin Programada -->
-          <div>
-            <label class="block text-xs font-semibold uppercase tracking-wider text-slate-700 mb-1">Fecha Fin Prog.</label>
-            <input type="date" class="block w-full rounded-lg border-slate-300 text-sm text-slate-900 focus:border-brand-600 focus:ring-brand-600" [(ngModel)]="formData.FechaFinProg">
-          </div>
-          <!-- Fecha Fin Real -->
-          <div>
-            <label class="block text-xs font-semibold uppercase tracking-wider text-slate-700 mb-1">Fecha Fin Real</label>
-            <input type="date" class="block w-full rounded-lg border-slate-300 text-sm text-slate-900 focus:border-brand-600 focus:ring-brand-600" [(ngModel)]="formData.FechaFinReal">
-          </div>
-        </div>
-      </div>
-      <!-- END: CardCronograma -->
-    </div>
-    <!-- Column Right: Presupuesto & Desglose Financiero (5 Cols) -->
-    <div class="lg:col-span-5 space-y-6">
-      <!-- BEGIN: CardPresupuesto -->
-      <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-        <div class="border-b border-slate-100 bg-slate-50/70 px-5 py-3.5 flex items-center justify-between">
-          <div class="flex items-center gap-2">
-            <span class="flex items-center justify-center w-7 h-7 rounded-lg bg-emerald-50 text-emerald-600 text-sm">
-              <i class="fa-solid fa-coins"></i>
-            </span>
-            <h2 class="text-sm font-semibold text-slate-900 uppercase tracking-wide">Presupuesto Inicial</h2>
-          </div>
-          <span class="text-xs font-semibold px-2 py-0.5 rounded bg-slate-100 text-slate-700">PEN (S/.)</span>
-        </div>
-        <div class="p-5 space-y-4">
-          <!-- Estado del Presupuesto (Pills) -->
-          <div>
-            <label class="block text-xs font-semibold uppercase tracking-wider text-slate-700 mb-1.5">Estado del Presupuesto</label>
-            <div class="grid grid-cols-4 p-1 bg-slate-100 rounded-lg border border-slate-200 gap-1 text-center" role="radiogroup">
-              <label class="cursor-pointer">
-                <input type="radio" name="ppto_estado" value="PENDIENTE" [(ngModel)]="formData.PresupuestoEstado" class="sr-only peer">
-                <div class="text-[10px] font-semibold py-1.5 rounded-md text-slate-600 peer-checked:bg-white peer-checked:text-slate-900 peer-checked:shadow-sm transition-all truncate">Pendiente</div>
-              </label>
-              <label class="cursor-pointer">
-                <input type="radio" name="ppto_estado" value="EN DESARROLLO" [(ngModel)]="formData.PresupuestoEstado" class="sr-only peer">
-                <div class="text-[10px] font-semibold py-1.5 rounded-md text-slate-600 peer-checked:bg-white peer-checked:text-slate-900 peer-checked:shadow-sm transition-all truncate">Desarrollo</div>
-              </label>
-              <label class="cursor-pointer">
-                <input type="radio" name="ppto_estado" value="EN REVISION" [(ngModel)]="formData.PresupuestoEstado" class="sr-only peer">
-                <div class="text-[10px] font-semibold py-1.5 rounded-md text-slate-600 peer-checked:bg-white peer-checked:text-slate-900 peer-checked:shadow-sm transition-all truncate">Revisión</div>
-              </label>
-              <label class="cursor-pointer">
-                <input type="radio" name="ppto_estado" value="APROBADO" [(ngModel)]="formData.PresupuestoEstado" class="sr-only peer">
-                <div class="text-[10px] font-bold py-1.5 rounded-md text-slate-600 peer-checked:bg-brand-700 peer-checked:text-white peer-checked:shadow-sm transition-all truncate">Aprobado</div>
-              </label>
-            </div>
-            <div class="grid grid-cols-3 p-1 bg-slate-100 rounded-lg border border-slate-200 gap-1 text-center mt-1" role="radiogroup">
-               <label class="cursor-pointer">
-                <input type="radio" name="ppto_estado" value="LIQUIDADO" [(ngModel)]="formData.PresupuestoEstado" class="sr-only peer">
-                <div class="text-[10px] font-semibold py-1.5 rounded-md text-slate-600 peer-checked:bg-white peer-checked:text-slate-900 peer-checked:shadow-sm transition-all truncate">Liquidado</div>
-              </label>
-              <label class="cursor-pointer">
-                <input type="radio" name="ppto_estado" value="RECHAZADO PROPUESTA" [(ngModel)]="formData.PresupuestoEstado" class="sr-only peer">
-                <div class="text-[10px] font-semibold py-1.5 rounded-md text-slate-600 peer-checked:bg-rose-600 peer-checked:text-white peer-checked:shadow-sm transition-all truncate">R. Propuesta</div>
-              </label>
-              <label class="cursor-pointer">
-                <input type="radio" name="ppto_estado" value="RECHAZADO POR DEMORA" [(ngModel)]="formData.PresupuestoEstado" class="sr-only peer">
-                <div class="text-[10px] font-semibold py-1.5 rounded-md text-slate-600 peer-checked:bg-rose-600 peer-checked:text-white peer-checked:shadow-sm transition-all truncate">R. Demora</div>
-              </label>
-            </div>
-          </div>
-          <!-- Monto Presupuesto Principal -->
-          <div>
-            <label class="block text-xs font-semibold uppercase tracking-wider text-slate-700 mb-1">
-              Monto Presupuesto Total <span class="text-rose-500">*</span>
-            </label>
-            <div class="relative rounded-lg shadow-sm">
-              <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
-                <span class="text-slate-500 sm:text-sm font-semibold">S/.</span>
+
+            <div class="cc-form-row">
+              <div class="cc-form-field">
+                <label class="cc-label">Empresa <span class="cc-required">*</span></label>
+                <div class="cc-select-wrapper">
+                  <select [(ngModel)]="formData.CodEmpresa" (change)="onEmpresaChange()">
+                    <option value="">Seleccione Empresa...</option>
+                    <option *ngFor="let e of catalogos().empresas" [value]="e">{{ e }}</option>
+                    <option *ngFor="let e of empresasList" [value]="e.id">{{ e.nombre }}</option>
+                  </select>
+                  <svg class="cc-select-icon" viewBox="0 0 14 14" fill="none">
+                    <path d="M3.5 5.25L7 8.75L10.5 5.25" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+                  </svg>
+                </div>
               </div>
-              <input type="number" class="block w-full rounded-lg border-slate-300 pl-10 pr-3 py-2.5 text-base font-bold text-slate-900 focus:border-brand-600 focus:ring-brand-600" [(ngModel)]="formData.PresupuestoMonto" placeholder="Ej. 150000">
+
+              <div class="cc-form-field">
+                <label class="cc-label">Cliente <span class="cc-required">*</span></label>
+                <div class="cc-select-wrapper">
+                  <select [(ngModel)]="formData.CodCliente" (change)="onClienteChange()">
+                    <option value="">Seleccione Cliente...</option>
+                    <option *ngFor="let c of catalogos().clientes" [value]="c">{{ c }}</option>
+                    <option *ngFor="let c of clientesList" [value]="c.id">{{ c.nombre }}</option>
+                  </select>
+                  <svg class="cc-select-icon" viewBox="0 0 14 14" fill="none">
+                    <path d="M3.5 5.25L7 8.75L10.5 5.25" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+                  </svg>
+                </div>
+              </div>
+            </div>
+
+            <div class="cc-form-field cc-form-field-full">
+              <label class="cc-label">Centro de Costo Principal <span class="cc-muted-label">(opcional / jerarquía padre)</span></label>
+              <div class="cc-input-with-icon">
+                <span class="cc-input-icon"><lucide-icon [img]="Lock" size="13"></lucide-icon></span>
+                <input type="text" [ngModel]="formData.CodCentroCtoPrincipal" placeholder="CC-001-ADMIN-CORP">
+              </div>
+            </div>
+
+            <div class="cc-form-row">
+              <div class="cc-form-field">
+                <label class="cc-label">Periodo Fiscal <span class="cc-required">*</span></label>
+                <div class="cc-segmented">
+                  <button type="button" class="cc-segment" [class.active]="formData.IdPeriodo === '2024'" (click)="formData.IdPeriodo = '2024'">2024</button>
+                  <button type="button" class="cc-segment" [class.active]="formData.IdPeriodo === '2025'" (click)="formData.IdPeriodo = '2025'">2025</button>
+                  <button type="button" class="cc-segment" [class.active]="formData.IdPeriodo === '2026'" (click)="formData.IdPeriodo = '2026'">2026</button>
+                </div>
+              </div>
+
+              <div class="cc-form-field">
+                <label class="cc-label">Estado Operativo <span class="cc-required">*</span></label>
+                <div class="cc-segmented cc-segmented-state">
+                  <button type="button" class="cc-segment" [class.active]="formData.Estado === 'ABIERTO'" (click)="formData.Estado = 'ABIERTO'">ABIERTO</button>
+                  <button type="button" class="cc-segment" [class.active]="formData.Estado === 'CERRADO'" (click)="formData.Estado = 'CERRADO'">CERRADO</button>
+                  <button type="button" class="cc-segment" [class.active]="formData.Estado === 'POR LIQUIDAR'" (click)="formData.Estado = 'POR LIQUIDAR'">LIQUIDAR</button>
+                </div>
+              </div>
             </div>
           </div>
-        </div>
+        </section>
+
+        <section class="cc-form-card">
+          <div class="cc-form-card-head">
+            <div class="cc-card-title-wrap">
+              <lucide-icon [img]="Calendar" size="15" class="cc-card-icon"></lucide-icon>
+              <span class="cc-card-title">Cronograma &amp; Plazos</span>
+            </div>
+            <span class="cc-card-note">Vigencia de ejecución</span>
+          </div>
+
+          <div class="cc-form-card-body">
+            <div class="cc-form-row cc-date-grid">
+              <div class="cc-form-field">
+                <label class="cc-label">Fecha Inicio</label>
+                <div class="cc-date-input">
+                  <input type="date" [(ngModel)]="formData.FechaIncio">
+                  <span class="cc-date-icon"><lucide-icon [img]="Calendar" size="13"></lucide-icon></span>
+                </div>
+              </div>
+
+              <div class="cc-form-field">
+                <label class="cc-label">Fecha Fin Prog.</label>
+                <div class="cc-date-input">
+                  <input type="date" [(ngModel)]="formData.FechaFinProg">
+                  <span class="cc-date-icon"><lucide-icon [img]="Calendar" size="13"></lucide-icon></span>
+                </div>
+              </div>
+
+              <div class="cc-form-field">
+                <label class="cc-label">Fecha Fin Real</label>
+                <div class="cc-date-input">
+                  <input type="date" [(ngModel)]="formData.FechaFinReal">
+                  <span class="cc-date-icon"><lucide-icon [img]="Calendar" size="13"></lucide-icon></span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="cc-form-card">
+          <div class="cc-form-card-head">
+            <div class="cc-card-title-wrap">
+              <lucide-icon [img]="FileText" size="15" class="cc-card-icon"></lucide-icon>
+              <span class="cc-card-title">Acta de Entrega / Documento Contractual</span>
+            </div>
+            <span class="cc-card-note">PDF, DOCX hasta 15MB</span>
+          </div>
+
+          <div class="cc-form-card-body">
+            <div class="cc-dropzone">
+              <span class="cc-dropzone-icon"><lucide-icon [img]="CloudUpload" size="24"></lucide-icon></span>
+              <span class="cc-dropzone-text">Haz clic para cargar el acta o arrastra y suelta aquí</span>
+              <span class="cc-dropzone-file">Acta_recepcion_obra_firmada_v2.pdf (1.8 MB adjunto)</span>
+            </div>
+          </div>
+        </section>
       </div>
-      <!-- END: CardPresupuesto -->
-      
-      <!-- BEGIN: CardControlCostos (Solo Lectura - Visible en edición) -->
-      <div *ngIf="editingCod()" class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-        <div class="border-b border-slate-100 bg-slate-50/70 px-5 py-3.5 flex items-center justify-between">
-          <div class="flex items-center gap-2">
-            <span class="flex items-center justify-center w-7 h-7 rounded-lg bg-amber-50 text-amber-600 text-sm">
-              <i class="fa-solid fa-chart-line"></i>
-            </span>
-            <h2 class="text-sm font-semibold text-slate-900 uppercase tracking-wide">Ejecución & Costos Reales</h2>
-          </div>
-          <span class="text-xs text-slate-400">Valores sin IGV</span>
-        </div>
-        
-        <div class="p-5" *ngIf="resumenLoading()">
-          <div class="flex justify-center p-4">
-             <i class="fa-solid fa-spinner fa-spin text-2xl text-slate-400"></i>
-          </div>
-        </div>
-        
-        <div class="p-5 space-y-3" *ngIf="!resumenLoading()">
-          <!-- Total Compras Sin IGV -->
-          <div class="flex items-center justify-between gap-4">
-            <label class="text-xs text-slate-600 font-medium">Gastos en Facturas</label>
-            <div class="w-44 relative">
-              <span class="absolute inset-y-0 left-0 pl-2.5 flex items-center text-xs text-slate-400">S/.</span>
-              <input type="text" class="block w-full rounded-md border-slate-300 bg-slate-50 pl-8 pr-2 py-1 text-right text-xs font-medium text-slate-800" [value]="resumen()?.gastosFacturas | number:'1.2-2'" readonly disabled>
-            </div>
-          </div>
-          <!-- Egresos Caja -->
-          <div class="flex items-center justify-between gap-4">
-            <label class="text-xs text-slate-600 font-medium">Egresos Caja Chica</label>
-            <div class="w-44 relative">
-              <span class="absolute inset-y-0 left-0 pl-2.5 flex items-center text-xs text-slate-400">S/.</span>
-              <input type="text" class="block w-full rounded-md border-slate-300 bg-slate-50 pl-8 pr-2 py-1 text-right text-xs font-medium text-slate-800" [value]="resumen()?.gastosCajaChica | number:'1.2-2'" readonly disabled>
-            </div>
-          </div>
-          <!-- Planillas -->
-          <div class="flex items-center justify-between gap-4">
-            <label class="text-xs text-slate-600 font-medium">Pagos Planillas</label>
-            <div class="w-44 relative">
-              <span class="absolute inset-y-0 left-0 pl-2.5 flex items-center text-xs text-slate-400">S/.</span>
-              <input type="text" class="block w-full rounded-md border-slate-300 bg-slate-50 pl-8 pr-2 py-1 text-right text-xs font-medium text-slate-800" [value]="resumen()?.pagosPlanillas | number:'1.2-2'" readonly disabled>
-            </div>
-          </div>
-          
-          <!-- Metas & Rentabilidad (Sub-card) -->
-          <div class="bg-slate-50/80 rounded-lg p-3 border border-slate-200 mt-3 space-y-2">
-            <div class="flex justify-between items-center text-xs">
-              <span class="text-slate-600">Presupuesto Comercial:</span>
-              <span class="font-bold text-slate-900">S/. {{ resumen()?.presupuestoComercial | number:'1.2-2' }}</span>
-            </div>
-            <div class="flex justify-between items-center text-xs">
-              <span class="text-slate-600">Gastos Acumulados:</span>
-              <span class="font-bold text-rose-600">S/. {{ resumen()?.gastosAcumulados | number:'1.2-2' }}</span>
-            </div>
-            <div class="flex justify-between items-center text-xs">
-              <span class="text-slate-600">Saldo Actual:</span>
-              <span class="font-bold text-emerald-600">S/. {{ resumen()?.saldoActual | number:'1.2-2' }}</span>
-            </div>
-            <div class="flex justify-between items-center text-xs pt-1 border-t border-slate-200/60">
-              <span class="text-slate-600">Ejecución del Presupuesto:</span>
-              <span class="font-semibold" [ngClass]="(resumen()?.porcentajeEjecucion || 0) > 100 ? 'text-rose-600' : 'text-indigo-700'">
-                {{ resumen()?.porcentajeEjecucion | number:'1.2-2' }} %
-              </span>
-            </div>
-          </div>
-        </div>
-      </div>
-      <!-- END: CardControlCostos -->
     </div>
   </div>
-</div>
-
-</app-modal>
+  <div modal-footer class="cc-modal-footer">
+    <span class="cc-modal-live">Todos los cálculos y subtotales se actualizan en tiempo real</span>
+    <div class="cc-modal-footer-actions">
+      <button class="cc-footer-cancel" type="button" (click)="descartar()">Descartar</button>
+      <button class="cc-footer-save" type="button" (click)="guardar()">
+        <lucide-icon [img]="Check" size="12"></lucide-icon>
+        Guardar Centro de Costo
+      </button>
+    </div>
+  </div></app-modal>

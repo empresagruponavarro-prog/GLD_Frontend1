@@ -2,6 +2,7 @@ import { Component, inject, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
+import { LucideAngularModule, ArrowLeft, Copy, X, Check, Hash, Lock, Calendar, CloudUpload, FileText, CircleCheck } from 'lucide-angular';
 
 import { DataTableComponent } from '../../shared/components/data-table/data-table';
 import { ModalComponent } from '../../shared/components/modal/modal';
@@ -12,10 +13,21 @@ import { CentrosCostosService } from './centros-costos.service';
 @Component({
   selector: 'app-centros-costos',
   standalone: true,
-  imports: [CommonModule, FormsModule, DataTableComponent, ModalComponent],
+  imports: [CommonModule, FormsModule, DataTableComponent, ModalComponent, LucideAngularModule],
   templateUrl: './centros-costos.html'
 })
 export class CentrosCostosComponent {
+  readonly ArrowLeft = ArrowLeft;
+  readonly Copy = Copy;
+  readonly X = X;
+  readonly Check = Check;
+  readonly Hash = Hash;
+  readonly Lock = Lock;
+  readonly Calendar = Calendar;
+  readonly CloudUpload = CloudUpload;
+  readonly FileText = FileText;
+  readonly CircleCheck = CircleCheck;
+
   private readonly router = inject(Router);
 
   columns: DataTable[] = [
@@ -47,6 +59,11 @@ export class CentrosCostosComponent {
   estadoFilter = signal<string>('');
   pptoEstadoFilter = signal<string>('');
   periodoFilter = signal<string>('');
+
+  periodosDisponibles = ['2024', '2025', '2026'];
+  periodoFiscal = signal('2025');
+  estadosDisponibles = ['ABIERTO', 'CERRADO', 'LIQUIDAR'];
+  estadoOperativo = signal('ABIERTO');
 
   estadoOptions = ['ABIERTO', 'CERRADO', 'POR LIQUIDAR'];
   presupuestoEstadoOptions = [
@@ -280,6 +297,36 @@ export class CentrosCostosComponent {
         error: (err) => alert('Error al crear: ' + (err.error?.message || err.message))
       });
     }
+  }
+
+  setPeriodo(p: string) {
+    this.periodoFiscal.set(p);
+    this.formData.IdPeriodo = p;
+  }
+
+  setEstado(e: string) {
+    this.estadoOperativo.set(e);
+    this.formData.Estado = e;
+  }
+
+  estadoClase(e: string): string {
+    const active = this.formData.Estado === e || this.estadoOperativo() === e;
+    if (!active) return 'cc-state-neutral';
+    if (e === 'ABIERTO') return 'cc-state-open';
+    if (e === 'CERRADO') return 'cc-state-closed';
+    return 'cc-state-liquidar';
+  }
+
+  duplicar() {
+    this.openModal();
+  }
+
+  descartar() {
+    this.closeModal();
+  }
+
+  guardar() {
+    this.save();
   }
 
   delete(item: CentroCosto) {
