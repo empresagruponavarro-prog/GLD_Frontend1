@@ -38,6 +38,10 @@ export class CentrosCostosComponent {
   search = signal<string>('');
   catalogos = signal<{empresas: string[], clientes: string[]}>({ empresas: [], clientes: [] });
 
+  // Resumen financiero (solo en edición)
+  resumen = signal<any>(null);
+  resumenLoading = signal<boolean>(false);
+
   empresaFilter = signal<string>('');
   clienteFilter = signal<string>('');
   estadoFilter = signal<string>('');
@@ -243,11 +247,19 @@ export class CentrosCostosComponent {
     this.editingCod.set(item.CodCentroCto);
     this.formData = { ...item };
     this.showModal.set(true);
+    // Cargar resumen financiero al editar
+    this.resumen.set(null);
+    this.resumenLoading.set(true);
+    this.centrosCostosService.getResumenFinanciero(item.CodCentroCto).subscribe({
+      next: (data) => { this.resumen.set(data); this.resumenLoading.set(false); },
+      error: () => { this.resumenLoading.set(false); }
+    });
   }
 
   closeModal() {
     this.showModal.set(false);
     this.editingCod.set(null);
+    this.resumen.set(null);
   }
 
   save() {

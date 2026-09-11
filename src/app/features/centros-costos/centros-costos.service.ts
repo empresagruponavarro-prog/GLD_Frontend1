@@ -28,4 +28,8 @@ export class CentrosCostosService {
   delete(cod: string): Observable<void> {
     return this.http.delete<void>(`${this.apiUrl}/${cod}`);
   }
+
+  getResumenFinanciero(cod: string): Observable<any> {
+    return this.http.get<any>(`${this.apiUrl}/${cod}/resumen-financiero`);
+  }
 }
