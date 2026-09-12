@@ -1,18 +1,20 @@
 @if (isOpen()) {
   <div class="modal-overlay" (click)="onClose()">
     <div class="modal-content" [style.max-width]="maxWidth()" [style.height]="height()" (click)="$event.stopPropagation()">
-      <div class="modal-header">
-        <div class="modal-header-content">
-          <span class="modal-header-icon">
-            <i class="fa-solid fa-building-flag"></i>
-          </span>
-          <h3>{{ title() }}</h3>
+      @if (showHeader()) {
+        <div class="modal-header">
+          <div class="modal-header-content">
+            <span class="modal-header-icon">
+              <i class="fa-solid fa-building-flag"></i>
+            </span>
+            <h3>{{ title() }}</h3>
+          </div>
+          <button class="modal-close-btn" (click)="onClose()" type="button" aria-label="Cerrar modal">
+            ✕
+          </button>
         </div>
-        <button class="modal-close-btn" (click)="onClose()" type="button" aria-label="Cerrar modal">
-          ✕
-        </button>
-      </div>
-      <div class="modal-body">
+      }
+      <div class="modal-body" [style.padding]="showHeader() ? '1.25rem' : '10px'">
         <ng-content select="[modal-body]"></ng-content>
         <ng-content></ng-content>
       </div>

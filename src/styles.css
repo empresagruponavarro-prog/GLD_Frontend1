@@ -731,12 +731,14 @@ app-sidebar, .app-sidebar {
   border-radius: 14px;
   box-shadow: 0 26px 80px rgba(15, 23, 42, 0.34);
   border: 1px solid #d9e4dd;
-  overflow: hidden;
+  overflow-y: auto;
+  overflow-x: hidden;
+  max-height: 95vh;
 }
 
 /* Replaced by the clean formulario reference styling block. */
 .cc-form-shell {
-  background: #eef4f1;
+  background: #ffffff;
   min-height: 100%;
 }
 
@@ -744,7 +746,8 @@ app-sidebar, .app-sidebar {
   min-height: 100%;
   display: flex;
   flex-direction: column;
-  background: #eef4f1;
+  background: #f8fafc;
+  padding-bottom: 2rem;
   font-family: Inter, "Segoe UI", Roboto, Arial, sans-serif;
   color: #334155;
 }
@@ -756,7 +759,7 @@ app-sidebar, .app-sidebar {
   gap: 1rem;
   padding: 0.9rem 1rem;
   background: #ffffff;
-  border-bottom: 1px solid #d9e4dd;
+  border-bottom: none;
   border-radius: 14px 14px 0 0;
 }
 
@@ -770,8 +773,8 @@ app-sidebar, .app-sidebar {
 .cc-back-button {
   width: 36px;
   height: 36px;
-  border-radius: 10px;
-  background: #eef4f1;
+  border-radius: 8px;
+  background: #ffffff;
   color: #6b7280;
   border: 1px solid #d1d5db;
   display: flex;
@@ -870,18 +873,17 @@ app-sidebar, .app-sidebar {
 
 .cc-form-scroll {
   flex: 1;
-  overflow-y: auto;
   display: flex;
   flex-direction: column;
   gap: 1rem;
   padding: 1rem;
-  background: #eef4f1;
+  background: #f8fafc;
 }
 
 .cc-form-card {
   background: #ffffff;
   border-radius: 12px;
-  border: 1px solid #d4ddeb;
+  border: 1px solid #e2e8f0;
   box-shadow: 0 10px 22px -12px rgba(15, 23, 42, 0.22);
   overflow: hidden;
 }
@@ -892,8 +894,8 @@ app-sidebar, .app-sidebar {
   align-items: center;
   gap: 0.75rem;
   padding: 0.8rem 1rem;
-  background: linear-gradient(135deg, #eef6ee, #f8faf8);
-  border-bottom: 1px solid #dce8dc;
+  background: #ffffff;
+  border-bottom: 1px solid #e2e8f0;
 }
 
 .cc-card-title-wrap {
@@ -1037,9 +1039,9 @@ app-sidebar, .app-sidebar {
 .cc-segmented {
   display: flex;
   align-items: center;
-  background: #eef4f1;
+  background: #ffffff;
   border-radius: 8px;
-  border: 1px solid #d1d5db;
+  border: 1px solid #e2e8f0;
   overflow: hidden;
 }
 
@@ -1105,8 +1107,8 @@ app-sidebar, .app-sidebar {
   align-items: center;
   justify-content: center;
   border-radius: 50%;
-  background: #eaf7ee;
-  color: #16a34a;
+  background: #f1f5f9;
+  color: #64748b;
 }
 
 .cc-dropzone-text {
@@ -1127,7 +1129,7 @@ app-sidebar, .app-sidebar {
   gap: 1rem;
   padding: 0.85rem 1rem;
   background: #ffffff;
-  border-top: 1px solid #dce8dc;
+  border-top: 1px solid #e2e8f0;
 }
 
 .cc-modal-live {

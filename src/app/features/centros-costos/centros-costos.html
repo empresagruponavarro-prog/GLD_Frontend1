@@ -142,6 +142,13 @@
             <span>Ppto</span>
           </button>
           <button
+            class="table-action-btn"
+            (click)="editModal(item)"
+            title="Editar"
+          >
+            <i class="fa-solid fa-pen"></i>
+          </button>
+          <button
             class="table-action-btn table-action-btn--danger"
             (click)="delete(item)"
             title="Eliminar"
@@ -157,9 +164,10 @@
 <app-modal
   [isOpen]="showModal()"
   [title]="editingCod() ? 'Editar Centro de Costo' : 'Nuevo Centro de Costo'"
-  maxWidth="600px"
+  [showHeader]="false"
+  maxWidth="750px"
   height="750px"
-  [submitText]="editingCod() ? 'Guardar Cambios' : 'Crear Centro'"
+  [submitText]="editingCod() ? 'Guardar Centro de Costo' : 'Crear Centro'"
   [showDefaultFooter]="false"
   (closed)="closeModal()"
   (saved)="save()"
@@ -175,17 +183,13 @@
             <h4>Centro de Costos</h4>
             <p class="cc-form-kicker">ID: {{ formData.CodCentroCto || '—' }}</p>
           </div>
-          <span class="cc-form-pill">
-            <span class="cc-form-status-dot"></span>
-            {{ formData.Estado || 'ABIERTO' }}
-          </span>
         </div>
         <div class="cc-form-head-actions">
           <button class="cc-action-btn" type="button" (click)="duplicar()">Duplicar</button>
           <button class="cc-action-btn" type="button" (click)="descartar()">Cancelar</button>
           <button class="cc-save-btn" type="button" (click)="guardar()">
             <lucide-icon [img]="Check" size="11"></lucide-icon>
-            Guardar Cambios
+            Guardar Centro de Costo
           </button>
         </div>
       </div>
@@ -194,7 +198,7 @@
         <section class="cc-form-card">
           <div class="cc-form-card-head">
             <div class="cc-card-title-wrap">
-              <lucide-icon [img]="Hash" size="15" class="cc-card-icon"></lucide-icon>
+              <lucide-icon [img]="Contact" size="15" class="cc-card-icon"></lucide-icon>
               <span class="cc-card-title">Identificación &amp; General</span>
             </div>
             <span class="cc-card-note">* Campos obligatorios</span>
@@ -206,9 +210,8 @@
                 <label class="cc-label">Código CTO <span class="cc-required">*</span></label>
                 <div class="cc-input-with-icon">
                   <span class="cc-input-icon"><lucide-icon [img]="Hash" size="13"></lucide-icon></span>
-                  <input type="text" [ngModel]="formData.CodCentroCto" readonly>
+                  <input type="text" [(ngModel)]="formData.CodCentroCto" readonly>
                 </div>
-                <small class="cc-field-help">Identificador hash del sistema ERP</small>
               </div>
 
               <div class="cc-form-field">
@@ -250,14 +253,14 @@
             </div>
 
             <div class="cc-form-field cc-form-field-full">
-              <label class="cc-label">Centro de Costo Principal <span class="cc-muted-label">(opcional / jerarquía padre)</span></label>
+              <label class="cc-label">Centro de Costo Principal</label>
               <div class="cc-input-with-icon">
                 <span class="cc-input-icon"><lucide-icon [img]="Lock" size="13"></lucide-icon></span>
                 <input type="text" [ngModel]="formData.CodCentroCtoPrincipal" placeholder="CC-001-ADMIN-CORP">
               </div>
             </div>
 
-            <div class="cc-form-row">
+            <div class="cc-form-row" style="margin-top: 0.6rem;">
               <div class="cc-form-field">
                 <label class="cc-label">Periodo Fiscal <span class="cc-required">*</span></label>
                 <div class="cc-segmented">
@@ -282,7 +285,7 @@
         <section class="cc-form-card">
           <div class="cc-form-card-head">
             <div class="cc-card-title-wrap">
-              <lucide-icon [img]="Calendar" size="15" class="cc-card-icon"></lucide-icon>
+              <lucide-icon [img]="Clock" size="15" class="cc-card-icon"></lucide-icon>
               <span class="cc-card-title">Cronograma &amp; Plazos</span>
             </div>
             <span class="cc-card-note">Vigencia de ejecución</span>
@@ -294,7 +297,6 @@
                 <label class="cc-label">Fecha Inicio</label>
                 <div class="cc-date-input">
                   <input type="date" [(ngModel)]="formData.FechaIncio">
-                  <span class="cc-date-icon"><lucide-icon [img]="Calendar" size="13"></lucide-icon></span>
                 </div>
               </div>
 
@@ -302,7 +304,6 @@
                 <label class="cc-label">Fecha Fin Prog.</label>
                 <div class="cc-date-input">
                   <input type="date" [(ngModel)]="formData.FechaFinProg">
-                  <span class="cc-date-icon"><lucide-icon [img]="Calendar" size="13"></lucide-icon></span>
                 </div>
               </div>
 
@@ -310,7 +311,6 @@
                 <label class="cc-label">Fecha Fin Real</label>
                 <div class="cc-date-input">
                   <input type="date" [(ngModel)]="formData.FechaFinReal">
-                  <span class="cc-date-icon"><lucide-icon [img]="Calendar" size="13"></lucide-icon></span>
                 </div>
               </div>
             </div>
@@ -337,13 +337,4 @@
       </div>
     </div>
   </div>
-  <div modal-footer class="cc-modal-footer">
-    <span class="cc-modal-live">Todos los cálculos y subtotales se actualizan en tiempo real</span>
-    <div class="cc-modal-footer-actions">
-      <button class="cc-footer-cancel" type="button" (click)="descartar()">Descartar</button>
-      <button class="cc-footer-save" type="button" (click)="guardar()">
-        <lucide-icon [img]="Check" size="12"></lucide-icon>
-        Guardar Centro de Costo
-      </button>
-    </div>
-  </div></app-modal>
+  </app-modal>

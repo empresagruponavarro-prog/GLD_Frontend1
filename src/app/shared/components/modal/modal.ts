@@ -10,6 +10,7 @@ import { CommonModule } from '@angular/common';
 export class ModalComponent {
   isOpen = input<boolean>(false);
   title = input<string>('');
+  showHeader = input<boolean>(true);
   maxWidth = input<string>('600px');
   height = input<string>('auto');
   showDefaultFooter = input<boolean>(true);

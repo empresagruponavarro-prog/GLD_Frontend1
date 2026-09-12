@@ -2,7 +2,7 @@ import { Component, inject, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
-import { LucideAngularModule, ArrowLeft, Copy, X, Check, Hash, Lock, Calendar, CloudUpload, FileText, CircleCheck } from 'lucide-angular';
+import { LucideAngularModule, ArrowLeft, Copy, X, Check, Hash, Lock, Calendar, CloudUpload, FileText, CircleCheck, Contact, Clock } from 'lucide-angular';
 
 import { DataTableComponent } from '../../shared/components/data-table/data-table';
 import { ModalComponent } from '../../shared/components/modal/modal';
@@ -27,6 +27,8 @@ export class CentrosCostosComponent {
   readonly CloudUpload = CloudUpload;
   readonly FileText = FileText;
   readonly CircleCheck = CircleCheck;
+  readonly Contact = Contact;
+  readonly Clock = Clock;
 
   private readonly router = inject(Router);
 
@@ -190,7 +192,7 @@ export class CentrosCostosComponent {
       Estado: 'ABIERTO',
       CodEmpresa: '',
       Empresa: '',
-      IdPeriodo: '',
+      IdPeriodo: '2026',
       CodCliente: '',
       Cliente: '',
       PresupuestoEstado: 'PENDIENTE',
