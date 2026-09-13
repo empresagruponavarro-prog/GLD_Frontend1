@@ -1,7 +1,7 @@
 import { Service, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { CentroCosto } from './interfaces';
+import { CentroCosto, CatalogosFiltros } from './interfaces';
 import { environment } from '@env';
 
 @Service()
@@ -13,8 +13,8 @@ export class CentrosCostosService {
     return this.http.get<CentroCosto[]>(this.apiUrl);
   }
 
-  getCatalogosFiltros(): Observable<{ empresas: string[]; clientes: string[] }> {
-    return this.http.get<{ empresas: string[]; clientes: string[] }>(`${this.apiUrl}/catalogos-filtros`);
+  getCatalogosFiltros(): Observable<CatalogosFiltros> {
+    return this.http.get<CatalogosFiltros>(`${this.apiUrl}/catalogos-filtros`);
   }
 
   create(data: CentroCosto): Observable<CentroCosto> {

@@ -19,11 +19,12 @@ export class PresupuestosService {
   private apiUrl = `${environment.apiUrl}/presupuestos`;
 
   // Presupuestos Principales
-  getPresupuestos(page?: number, pageSize?: number, search?: string): Observable<PaginatedResponse | PresupuestoPrincipal[]> {
+  getPresupuestos(page?: number, pageSize?: number, search?: string, codCentroCto?: string): Observable<PaginatedResponse | PresupuestoPrincipal[]> {
     let params = new HttpParams();
     if (page) params = params.set('page', page.toString());
     if (pageSize) params = params.set('pageSize', pageSize.toString());
     if (search?.trim()) params = params.set('search', search.trim());
+    if (codCentroCto?.trim()) params = params.set('CodCentroCto', codCentroCto.trim());
 
     return this.http.get<PaginatedResponse | PresupuestoPrincipal[]>(this.apiUrl, { params });
   }

@@ -84,6 +84,7 @@ export interface DetalleFase {
   CostoDirecto?: string | number;
   Usuario?: string;
   FechaCreacion?: string;
+  NombreFase?: string;
   categorias?: DetalleFaseCate[];
 }
 
