@@ -123,7 +123,7 @@
   <!-- Lista scrolleable de Centros de Costos -->
   <div class="flex-1 overflow-y-auto divide-y divide-slate-100 p-2 space-y-1">
     
-    @for (cc of centrosCostosFiltrados(); track cc.CodCentroCto) {
+    @for (cc of centrosCostosFiltrados; track cc.CodCentroCto) {
       <div 
         (click)="onSelectCC(cc)"
         class="p-2.5 rounded-md cursor-pointer transition shadow-2xs"
@@ -333,17 +333,17 @@
   <!-- Filtro de Categoría Rápida -->
   <div class="flex items-center gap-1">
   <span class="text-[12px] text-slate-500 mr-1 font-medium">Filtrar:</span>
-  <button (click)="filterCategoria.set('Todos')" 
-          [ngClass]="filterCategoria() === 'Todos' ? 'bg-[#529b7b] text-white shadow-2xs' : 'bg-white hover:bg-slate-100 text-slate-600 border border-slate-200'"
+  <button (click)="filterCategoria = 'Todos'" 
+          [ngClass]="filterCategoria === 'Todos' ? 'bg-[#529b7b] text-white shadow-2xs' : 'bg-white hover:bg-slate-100 text-slate-600 border border-slate-200'"
           class="px-2 py-0.5 rounded text-[12px] font-semibold transition-colors">Todos</button>
-  <button (click)="filterCategoria.set('Materiales')" 
-          [ngClass]="filterCategoria() === 'Materiales' ? 'bg-[#529b7b] text-white shadow-2xs' : 'bg-white hover:bg-slate-100 text-slate-600 border border-slate-200'"
+  <button (click)="filterCategoria = 'Materiales'" 
+          [ngClass]="filterCategoria === 'Materiales' ? 'bg-[#529b7b] text-white shadow-2xs' : 'bg-white hover:bg-slate-100 text-slate-600 border border-slate-200'"
           class="px-2 py-0.5 rounded text-[12px] font-medium transition-colors">Materiales</button>
-  <button (click)="filterCategoria.set('Mano de Obra')" 
-          [ngClass]="filterCategoria() === 'Mano de Obra' ? 'bg-[#529b7b] text-white shadow-2xs' : 'bg-white hover:bg-slate-100 text-slate-600 border border-slate-200'"
+  <button (click)="filterCategoria = 'Mano de Obra'" 
+          [ngClass]="filterCategoria === 'Mano de Obra' ? 'bg-[#529b7b] text-white shadow-2xs' : 'bg-white hover:bg-slate-100 text-slate-600 border border-slate-200'"
           class="px-2 py-0.5 rounded text-[12px] font-medium transition-colors">Mano de Obra</button>
-  <button (click)="filterCategoria.set('Equipos & Subc.')" 
-          [ngClass]="filterCategoria() === 'Equipos & Subc.' ? 'bg-[#529b7b] text-white shadow-2xs' : 'bg-white hover:bg-slate-100 text-slate-600 border border-slate-200'"
+  <button (click)="filterCategoria = 'Equipos &amp; Subc.'" 
+          [ngClass]="filterCategoria === 'Equipos &amp; Subc.' ? 'bg-[#529b7b] text-white shadow-2xs' : 'bg-white hover:bg-slate-100 text-slate-600 border border-slate-200'"
           class="px-2 py-0.5 rounded text-[12px] font-medium transition-colors">Equipos &amp; Subc.</button>
   </div>
   </div>
@@ -365,7 +365,7 @@
   </thead>
   <tbody class="divide-y divide-slate-100 text-[13px]">
   @if (selectedFase()) {
-    @for (cat of categoriasFiltradas(); track cat.id; let i = $index) {
+    @for (cat of categoriasFiltradas; track cat.id; let i = $index) {
       <tr class="hover:bg-slate-50/80 transition">
         <td class="p-2 text-center">
           <input class="rounded bg-white border-slate-300 text-[#529b7b] focus:ring-0 w-3.5 h-3.5" type="checkbox">
@@ -451,6 +451,124 @@
   </main>
   <!-- END: MainContentGrid -->
 
-</div>
+</div><!-- END: main wrapper -->
 
+<!-- ============================================================
+     MODAL FLOTANTE — Nuevo / Editar Presupuesto
+     ============================================================ -->
+<app-modal
+  [isOpen]="showModal()"
+  [title]="editingId() ? 'Editar Presupuesto' : 'Nuevo Presupuesto'"
+  maxWidth="860px"
+  [submitText]="editingId() ? 'Guardar Cambios' : 'Crear Presupuesto'"
+  (closed)="closeModal()"
+  (saved)="save()">
 
+  <div modal-body style="display:flex; flex-direction:column; gap:18px; padding:4px 0;">
+
+    <!-- Fila 1: ID Presupuesto + Proyecto -->
+    <div style="display:grid; grid-template-columns:1fr 2fr; gap:14px;">
+      <div>
+        <label style="display:block;font-size:12px;font-weight:700;color:#475569;margin-bottom:5px;">ID Presupuesto *</label>
+        <input [(ngModel)]="formData.IdPresupuesto"
+               placeholder="Ej. PP-2024-001"
+               style="width:100%;padding:7px 10px;border:1px solid #cbd5e1;border-radius:7px;font-size:13px;color:#1e293b;outline:none;">
+      </div>
+      <div>
+        <label style="display:block;font-size:12px;font-weight:700;color:#475569;margin-bottom:5px;">Proyecto / Concepto</label>
+        <input [(ngModel)]="formData.Proyecto"
+               placeholder="Descripción del proyecto"
+               style="width:100%;padding:7px 10px;border:1px solid #cbd5e1;border-radius:7px;font-size:13px;color:#1e293b;outline:none;">
+      </div>
+    </div>
+
+    <!-- Fila 2: Empresa + CC + Periodo -->
+    <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:14px;">
+      <div>
+        <label style="display:block;font-size:12px;font-weight:700;color:#475569;margin-bottom:5px;">Empresa</label>
+        <select [(ngModel)]="formData.CodEmpresa"
+                style="width:100%;padding:7px 10px;border:1px solid #cbd5e1;border-radius:7px;font-size:13px;color:#1e293b;outline:none;background:#fff;">
+          <option value="">Seleccionar...</option>
+          @for (e of catalogos()?.empresas; track e) {
+            <option [value]="e">{{ e }}</option>
+          }
+        </select>
+      </div>
+      <div>
+        <label style="display:block;font-size:12px;font-weight:700;color:#475569;margin-bottom:5px;">Centro de Costo</label>
+        <input [(ngModel)]="formData.CodCentroCto"
+               placeholder="Ej. CC-001"
+               style="width:100%;padding:7px 10px;border:1px solid #cbd5e1;border-radius:7px;font-size:13px;color:#1e293b;outline:none;">
+      </div>
+      <div>
+        <label style="display:block;font-size:12px;font-weight:700;color:#475569;margin-bottom:5px;">Período</label>
+        <select [(ngModel)]="formData.IdPeriodo"
+                style="width:100%;padding:7px 10px;border:1px solid #cbd5e1;border-radius:7px;font-size:13px;color:#1e293b;outline:none;background:#fff;">
+          <option value="">Seleccionar...</option>
+          @for (p of catalogos()?.periodos; track p) {
+            <option [value]="p">{{ p }}</option>
+          }
+        </select>
+      </div>
+    </div>
+
+    <!-- Fila 3: Tipo Ppto + Estado -->
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px;">
+      <div>
+        <label style="display:block;font-size:12px;font-weight:700;color:#475569;margin-bottom:5px;">Tipo Presupuesto</label>
+        <select [(ngModel)]="formData.TipoPpto"
+                style="width:100%;padding:7px 10px;border:1px solid #cbd5e1;border-radius:7px;font-size:13px;color:#1e293b;outline:none;background:#fff;">
+          <option value="OBRA">Obra</option>
+          <option value="ADICIONAL">Adicional</option>
+          <option value="SERVICIO">Servicio</option>
+        </select>
+      </div>
+      <div>
+        <label style="display:block;font-size:12px;font-weight:700;color:#475569;margin-bottom:5px;">Estado</label>
+        <select [(ngModel)]="formData.Estado"
+                style="width:100%;padding:7px 10px;border:1px solid #cbd5e1;border-radius:7px;font-size:13px;color:#1e293b;outline:none;background:#fff;">
+          <option value="PENDIENTE">Pendiente</option>
+          <option value="ABIERTO">Abierto</option>
+          <option value="EN CIERRE">En Cierre</option>
+          <option value="CERRADO">Cerrado</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Fila 4: Costo Directo + GG% + Utilidad% + Viáticos -->
+    <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:14px;">
+      <p style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:0.08em;margin:0 0 12px;">Parámetros Financieros</p>
+      <div style="display:grid; grid-template-columns:repeat(4,1fr); gap:12px;">
+        <div>
+          <label style="display:block;font-size:12px;font-weight:700;color:#475569;margin-bottom:5px;">Costo Directo (S/)</label>
+          <input type="number" [(ngModel)]="formData.CostoDirecto" min="0"
+                 style="width:100%;padding:7px 10px;border:1px solid #cbd5e1;border-radius:7px;font-size:13px;color:#1e293b;outline:none;">
+        </div>
+        <div>
+          <label style="display:block;font-size:12px;font-weight:700;color:#475569;margin-bottom:5px;">GG (%)</label>
+          <input type="number" [(ngModel)]="formData.GGPorcentaje" min="0" max="100"
+                 style="width:100%;padding:7px 10px;border:1px solid #cbd5e1;border-radius:7px;font-size:13px;color:#1e293b;outline:none;">
+        </div>
+        <div>
+          <label style="display:block;font-size:12px;font-weight:700;color:#475569;margin-bottom:5px;">Utilidad (%)</label>
+          <input type="number" [(ngModel)]="formData.UtiliPorcentaje" min="0" max="100"
+                 style="width:100%;padding:7px 10px;border:1px solid #cbd5e1;border-radius:7px;font-size:13px;color:#1e293b;outline:none;">
+        </div>
+        <div>
+          <label style="display:block;font-size:12px;font-weight:700;color:#475569;margin-bottom:5px;">Viáticos (S/)</label>
+          <input type="number" [(ngModel)]="formData.Viaticos" min="0"
+                 style="width:100%;padding:7px 10px;border:1px solid #cbd5e1;border-radius:7px;font-size:13px;color:#1e293b;outline:none;">
+        </div>
+      </div>
+    </div>
+
+    <!-- Fila 5: Comentarios -->
+    <div>
+      <label style="display:block;font-size:12px;font-weight:700;color:#475569;margin-bottom:5px;">Comentarios</label>
+      <textarea [(ngModel)]="formData.Comentarios" rows="3"
+                placeholder="Notas u observaciones adicionales..."
+                style="width:100%;padding:7px 10px;border:1px solid #cbd5e1;border-radius:7px;font-size:13px;color:#1e293b;outline:none;resize:vertical;"></textarea>
+    </div>
+
+  </div>
+</app-modal>

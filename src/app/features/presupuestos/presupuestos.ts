@@ -1,9 +1,8 @@
-import { Component, inject, signal, computed, OnInit } from '@angular/core';
+import { Component, inject, signal, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { DataTableComponent } from '../../shared/components/data-table/data-table';
 import { ModalComponent } from '../../shared/components/modal/modal';
-import { DataTable } from '../../shared/interfaces';
+
 import { PresupuestosService } from './presupuestos.service';
 import { PresupuestoPrincipal, PaginatedResponse, DetalleFase, PresupuestoCompleto } from './interfaces';
 import { CentrosCostosService } from '../centros-costos/centros-costos.service';
@@ -12,11 +11,11 @@ import { CentroCosto, CatalogosFiltros } from '../centros-costos/interfaces/cent
 @Component({
   selector: 'app-presupuestos',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, ModalComponent],
   templateUrl: './presupuestos.html',
   styleUrls: ['./presupuestos.css']
 })
-export class PresupuestosComponent {
+export class PresupuestosComponent implements OnInit {
   private presupuestosService = inject(PresupuestosService);
   private centrosCostosService = inject(CentrosCostosService);
 
@@ -25,28 +24,29 @@ export class PresupuestosComponent {
   search = signal<string>('');
   searchInput = '';
 
-  // Filtros
+  // Filtros — propiedades planas para compatibilidad con [(ngModel)]
   catalogos = signal<CatalogosFiltros | null>(null);
-  filterSearch = signal<string>('');
-  filterEmpresa = signal<string>('');
-  filterPeriodo = signal<string>('');
-  filterCliente = signal<string>('');
-  filterEstado = signal<string>('');
-  filterCategoria = signal<string>('Todos'); // 'Todos' | 'Materiales' | 'Mano de Obra' | 'Equipos & Subc.'
+  filterSearch = '';
+  filterEmpresa = '';
+  filterPeriodo = '';
+  filterCliente = '';
+  filterEstado = '';
+  filterCategoria = 'Todos'; // 'Todos' | 'Materiales' | 'Mano de Obra' | 'Equipos & Subc.'
 
   // Estado del layout Maestro-Detalle Múltiple
   centrosCostos = signal<CentroCosto[]>([]);
-  
-  centrosCostosFiltrados = computed(() => {
+
+  // Getters en vez de computed() — se recalculan con el change detection normal de Angular
+  get centrosCostosFiltrados(): CentroCosto[] {
     let list = this.centrosCostos();
-    const s = this.filterSearch().toLowerCase();
-    const emp = this.filterEmpresa();
-    const per = this.filterPeriodo();
-    const cli = this.filterCliente();
-    const est = this.filterEstado();
+    const s = (this.filterSearch || '').toLowerCase();
+    const emp = this.filterEmpresa;
+    const per = this.filterPeriodo;
+    const cli = this.filterCliente;
+    const est = this.filterEstado;
 
     if (s) {
-      list = list.filter(cc => 
+      list = list.filter(cc =>
         (cc.CodCentroCto && cc.CodCentroCto.toLowerCase().includes(s)) ||
         (cc.CentroCosto && cc.CentroCosto.toLowerCase().includes(s))
       );
@@ -57,23 +57,23 @@ export class PresupuestosComponent {
     if (est) list = list.filter(cc => (cc.PresupuestoEstado || cc.Estado) === est);
 
     return list;
-  });
+  }
 
   selectedCC = signal<CentroCosto | null>(null);
-  
+
   presupuestoActivo = signal<PresupuestoCompleto | null>(null);
   selectedFase = signal<DetalleFase | null>(null);
 
-  categoriasFiltradas = computed(() => {
+  get categoriasFiltradas() {
     const f = this.selectedFase();
     if (!f || !f.categorias) return [];
-    const cat = this.filterCategoria();
+    const cat = this.filterCategoria;
     if (cat === 'Todos') return f.categorias;
-    if (cat === 'Materiales') return f.categorias.filter(c => c.CategoriaInsumo === 'MATERIALES');
-    if (cat === 'Mano de Obra') return f.categorias.filter(c => c.CategoriaInsumo === 'MANO DE OBRA');
-    if (cat === 'Equipos & Subc.') return f.categorias.filter(c => c.CategoriaInsumo !== 'MATERIALES' && c.CategoriaInsumo !== 'MANO DE OBRA');
+    if (cat === 'Materiales') return f.categorias.filter((c: any) => (c.CategoriaInsumo || '').toUpperCase().includes('MATERIAL'));
+    if (cat === 'Mano de Obra') return f.categorias.filter((c: any) => (c.CategoriaInsumo || '').toUpperCase().includes('MANO'));
+    if (cat === 'Equipos & Subc.') return f.categorias.filter((c: any) => !(c.CategoriaInsumo || '').toUpperCase().includes('MATERIAL') && !(c.CategoriaInsumo || '').toUpperCase().includes('MANO'));
     return f.categorias;
-  });
+  }
 
   // Modal y formulario (legacy, se mantendrá para la funcionalidad anterior)
   showModal = signal<boolean>(false);
@@ -103,11 +103,11 @@ export class PresupuestosComponent {
   }
 
   limpiarFiltros() {
-    this.filterSearch.set('');
-    this.filterEmpresa.set('');
-    this.filterPeriodo.set('');
-    this.filterCliente.set('');
-    this.filterEstado.set('');
+    this.filterSearch = '';
+    this.filterEmpresa = '';
+    this.filterPeriodo = '';
+    this.filterCliente = '';
+    this.filterEstado = '';
   }
 
   emptyForm(): Partial<PresupuestoPrincipal> {
@@ -203,18 +203,18 @@ export class PresupuestosComponent {
   // ==========================================
 
   get totalCCs() {
-    return this.centrosCostosFiltrados().length;
+    return this.centrosCostosFiltrados.length;
   }
 
   get totalPortafolio() {
-    return this.centrosCostosFiltrados().reduce((acc, cc) => {
+    return this.centrosCostosFiltrados.reduce((acc, cc) => {
       const monto = Number(cc.PresupuestoMonto) || 0;
       return acc + monto;
     }, 0);
   }
 
   get conteoEstados() {
-    const ccs = this.centrosCostosFiltrados();
+    const ccs = this.centrosCostosFiltrados;
     const abiertas = ccs.filter(c => {
       const e = (c.PresupuestoEstado || c.Estado || '').toUpperCase();
       return e === 'ABIERTO' || e === 'ACTIVO';
@@ -325,6 +325,11 @@ export class PresupuestosComponent {
   openModal() {
     this.editingId.set(null);
     this.formData = this.emptyForm();
+    // Pre-rellenar con el CC activo si hay uno seleccionado
+    if (this.selectedCC()) {
+      this.formData.CodCentroCto = this.selectedCC()!.CodCentroCto;
+      this.formData.CodEmpresa = this.selectedCC()!.CodEmpresa;
+    }
     this.showModal.set(true);
   }
 
@@ -348,12 +353,12 @@ export class PresupuestosComponent {
     const id = this.editingId();
     if (id) {
       this.presupuestosService.updatePresupuesto(id, this.formData).subscribe({
-        next: () => { this.closeModal(); this.loadData(); },
+        next: () => { this.closeModal(); if (this.selectedCC()) this.onSelectCC(this.selectedCC()!); else this.loadData(); },
         error: (err) => alert('Error al actualizar: ' + (err.error?.message || err.message))
       });
     } else {
       this.presupuestosService.createPresupuesto(this.formData).subscribe({
-        next: () => { this.closeModal(); this.loadData(); },
+        next: () => { this.closeModal(); if (this.selectedCC()) this.onSelectCC(this.selectedCC()!); else this.loadData(); },
         error: (err) => alert('Error al crear: ' + (err.error?.message || err.message))
       });
     }
@@ -363,7 +368,7 @@ export class PresupuestosComponent {
     const idStr = String(id);
     if (confirm(`¿Eliminar el Presupuesto "${idStr}"? Esta acción no se puede deshacer.`)) {
       this.presupuestosService.deletePresupuesto(idStr).subscribe({
-        next: () => this.loadData(),
+        next: () => { if (this.selectedCC()) this.onSelectCC(this.selectedCC()!); else this.loadData(); },
         error: (err) => alert('Error al eliminar: ' + (err.error?.message || err.message))
       });
     }
