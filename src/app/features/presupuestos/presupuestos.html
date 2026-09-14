@@ -123,18 +123,18 @@
   <!-- Lista scrolleable de Centros de Costos -->
   <div class="flex-1 overflow-y-auto divide-y divide-slate-100 p-2 space-y-1">
     
-    @for (cc of centrosCostosFiltrados; track cc.CodCentroCto) {
+    @for (cc of centrosCostosFiltrados; track cc.id) {
       <div 
         (click)="onSelectCC(cc)"
         class="p-2.5 rounded-md cursor-pointer transition shadow-2xs"
         [ngClass]="{
-          'bg-[#529b7b]/10 border-l-4 border-[#529b7b] border-r border-t border-b border-[#529b7b]/30': selectedCC()?.CodCentroCto === cc.CodCentroCto,
-          'hover:bg-slate-50 border border-slate-200/60 bg-white': selectedCC()?.CodCentroCto !== cc.CodCentroCto
+          'bg-[#529b7b]/10 border-l-4 border-[#529b7b] border-r border-t border-b border-[#529b7b]/30': selectedCC()?.id === cc.id,
+          'hover:bg-slate-50 border border-slate-200/60 bg-white': selectedCC()?.id !== cc.id
         }">
         <div class="flex items-center justify-between mb-1">
           <span class="font-mono text-[13px]" 
-                [ngClass]="selectedCC()?.CodCentroCto === cc.CodCentroCto ? 'font-bold text-[#2d634d]' : 'font-semibold text-slate-500'">
-            {{ cc.CodCentroCto }}
+                [ngClass]="selectedCC()?.id === cc.id ? 'font-bold text-[#2d634d]' : 'font-semibold text-slate-500'">
+            CC-{{ cc.id }}
           </span>
           <span class="px-1.5 py-0.2 text-[11px] rounded font-bold uppercase"
                 [ngClass]="badgeClass(cc.PresupuestoEstado || cc.Estado)">
@@ -142,19 +142,19 @@
           </span>
         </div>
         <div class="text-[13px] truncate"
-             [ngClass]="selectedCC()?.CodCentroCto === cc.CodCentroCto ? 'font-bold text-slate-900' : 'font-semibold text-slate-800'">
+             [ngClass]="selectedCC()?.id === cc.id ? 'font-bold text-slate-900' : 'font-semibold text-slate-800'">
           {{ cc.CentroCosto }}
         </div>
         <div class="text-[13px] mt-1 flex justify-between items-end"
-             [ngClass]="selectedCC()?.CodCentroCto === cc.CodCentroCto ? 'text-slate-600' : 'text-slate-500'">
+             [ngClass]="selectedCC()?.id === cc.id ? 'text-slate-600' : 'text-slate-500'">
           <span class="">Ppto Base Directo:</span>
           <span class="font-mono font-bold tabular-nums"
-                [ngClass]="selectedCC()?.CodCentroCto === cc.CodCentroCto ? 'text-slate-900' : 'text-slate-800'">
+                [ngClass]="selectedCC()?.id === cc.id ? 'text-slate-900' : 'text-slate-800'">
             {{ (cc.PresupuestoMonto | currency:'PEN':'S/ ') || 'S/ 0.00' }}
           </span>
         </div>
         <div class="mt-1 flex items-center justify-between text-[12px]"
-             [ngClass]="selectedCC()?.CodCentroCto === cc.CodCentroCto ? 'text-slate-500 border-t border-[#529b7b]/20 pt-1 mt-1.5' : 'text-slate-400'">
+             [ngClass]="selectedCC()?.id === cc.id ? 'text-slate-500 border-t border-[#529b7b]/20 pt-1 mt-1.5' : 'text-slate-400'">
           <span class="">Cliente: {{ cc.Cliente || 'N/A' }}</span>
         </div>
       </div>
@@ -181,7 +181,7 @@
                 </h2>
   <span class="text-slate-500 text-[13px]">| Presupuesto asignado a: 
     @if (selectedCC()) {
-      <strong class="text-[#2d634d] font-mono">{{ selectedCC()?.CodCentroCto }} - {{ selectedCC()?.CentroCosto }}</strong>
+      <strong class="text-[#2d634d] font-mono">CC-{{ selectedCC()?.id }} - {{ selectedCC()?.CentroCosto }}</strong>
     } @else {
       <strong class="text-slate-400 font-mono">Ninguno</strong>
     }

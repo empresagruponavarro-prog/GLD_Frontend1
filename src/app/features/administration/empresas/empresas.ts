@@ -30,17 +30,21 @@ export class EmpresasComponent {
   loading = signal<boolean>(false);
   editingId = signal<number | string | null>(null);
 
-  formData: Empresa = {
-    CodEmpresa: '',
-    RUC: '',
-    RazonSocial: '',
-    DomicilioFiscal: '',
-    DireccionEntrega: '',
-    CorreoCompras: '',
-  };
+  formData: Empresa = this.emptyForm();
 
   constructor() {
     this.loadEmpresas();
+  }
+
+  emptyForm(): Empresa {
+    return {
+      CodEmpresa: '',
+      RUC: '',
+      RazonSocial: '',
+      DomicilioFiscal: '',
+      DireccionEntrega: '',
+      CorreoCompras: '',
+    };
   }
 
   loadEmpresas() {
@@ -51,7 +55,7 @@ export class EmpresasComponent {
         this.loading.set(false);
       },
       error: (err) => {
-        console.error(err);
+        console.error('Error al cargar empresas:', err);
         this.loading.set(false);
       },
     });
@@ -59,14 +63,22 @@ export class EmpresasComponent {
 
   openModal() {
     this.editingId.set(null);
-    this.formData = { CodEmpresa: '', RUC: '', RazonSocial: '', DomicilioFiscal: '', DireccionEntrega: '', CorreoCompras: '' };
+    this.formData = this.emptyForm();
     this.showModal.set(true);
   }
 
   editModal(item: Empresa) {
     const id = item.id ?? item.id_empresa ?? item.CodEmpresa;
-    this.editingId.set(id);
-    this.formData = { ...item };
+    this.editingId.set(id ?? null);
+    this.formData = {
+      ...item,
+      CodEmpresa: item.CodEmpresa || (item.id_empresa ? `EMP-${String(item.id_empresa).padStart(3, '0')}` : ''),
+      RUC: item.RUC || item.ruc || '',
+      RazonSocial: item.RazonSocial || item.razon_social || '',
+      DomicilioFiscal: item.DomicilioFiscal || item.domicilio_fiscal || '',
+      DireccionEntrega: item.DireccionEntrega || item.direccion_entrega || '',
+      CorreoCompras: item.CorreoCompras || item.correo_compras || '',
+    };
     this.showModal.set(true);
   }
 
@@ -76,8 +88,9 @@ export class EmpresasComponent {
   }
 
   saveEmpresa() {
-    if (!this.formData.CodEmpresa) {
-      alert('El Código de Empresa es obligatorio.');
+    const razonSocial = (this.formData.RazonSocial || this.formData.razon_social || '').trim();
+    if (!razonSocial) {
+      alert('La Razón Social es obligatoria.');
       return;
     }
 
@@ -96,8 +109,9 @@ export class EmpresasComponent {
   }
 
   deleteEmpresa(item: Empresa) {
-    const targetId = item.id ?? item.id_empresa ?? item.CodEmpresa;
-    const label = item.RazonSocial || item.CodEmpresa;
+    const targetId = item.id ?? item.id_empresa;
+    if (!targetId) return;
+    const label = item.RazonSocial || item.razon_social || item.CodEmpresa || `ID ${targetId}`;
     if (confirm(`¿Eliminar la empresa "${label}"? Esta acción no se puede deshacer.`)) {
       this.empresasService.delete(targetId).subscribe({
         next: () => this.loadEmpresas(),

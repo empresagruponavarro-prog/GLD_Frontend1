@@ -122,10 +122,10 @@
         <span
           class="badge"
           [ngClass]="{
-            'badge-completed': item.PresupuestoEstado === 'APROBADO',
-            'badge-progress': item.PresupuestoEstado === 'EN REVISION',
-            'badge-pending': item.PresupuestoEstado === 'PENDIENTE',
-            'badge-danger': item.PresupuestoEstado === 'RECHAZADO'
+            'badge-completed': item.PresupuestoEstado?.toUpperCase() === 'APROBADO',
+            'badge-progress': item.PresupuestoEstado?.toUpperCase()?.includes('REVISION') || item.PresupuestoEstado?.toUpperCase()?.includes('DESARROLLO'),
+            'badge-pending': item.PresupuestoEstado?.toUpperCase() === 'PENDIENTE',
+            'badge-danger': item.PresupuestoEstado?.toUpperCase()?.includes('RECHAZADO')
           }"
         >
           {{ item.PresupuestoEstado || '—' }}

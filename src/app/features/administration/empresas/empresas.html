@@ -26,12 +26,12 @@
 
   <ng-template #empresaRow let-item>
     <tr>
-      <td><strong>{{ item.CodEmpresa }}</strong></td>
-      <td>{{ item.RUC || '—' }}</td>
-      <td>{{ item.RazonSocial || '—' }}</td>
-      <td>{{ item.DomicilioFiscal || '—' }}</td>
-      <td>{{ item.DireccionEntrega || '—' }}</td>
-      <td>{{ item.CorreoCompras || '—' }}</td>
+      <td><strong>{{ item.CodEmpresa || ('EMP-' + item.id_empresa) }}</strong></td>
+      <td>{{ item.RUC || item.ruc || '—' }}</td>
+      <td><span class="font-semibold text-slate-800">{{ item.RazonSocial || item.razon_social || '—' }}</span></td>
+      <td>{{ item.DomicilioFiscal || item.domicilio_fiscal || '—' }}</td>
+      <td>{{ item.DireccionEntrega || item.direccion_entrega || '—' }}</td>
+      <td>{{ item.CorreoCompras || item.correo_compras || '—' }}</td>
       <td>
         <button class="btn btn-secondary" style="padding: 0.25rem 0.5rem; margin-right: 0.25rem;" (click)="editModal(item)" title="Editar">
           <i class="fa-solid fa-pen-to-square"></i>
@@ -56,12 +56,12 @@
     </div>
     <div class="modal-body">
       <div class="form-group">
-        <label>Código de Empresa *</label>
-        <input type="text" class="form-control" [(ngModel)]="formData.CodEmpresa"
-          placeholder="Ej. EMP001" [disabled]="editingId() !== null"
-          [style.background]="editingId() !== null ? '#f1f5f9' : ''">
-        <small *ngIf="editingId() !== null" style="color: var(--text-muted); font-size: 0.75rem;">
-          El código no se puede modificar una vez creado.
+        <label>Código de Empresa</label>
+        <input type="text" class="form-control" [ngModel]="formData.CodEmpresa || (formData.id_empresa ? 'EMP-' + formData.id_empresa : 'Automático')"
+          placeholder="Automático" disabled
+          style="background: #f1f5f9; cursor: not-allowed;">
+        <small style="color: var(--text-muted); font-size: 0.75rem;">
+          El código se asigna automáticamente según el identificador de la empresa.
         </small>
       </div>
       <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
@@ -75,7 +75,7 @@
         </div>
       </div>
       <div class="form-group">
-        <label>Razón Social</label>
+        <label>Razón Social *</label>
         <input type="text" class="form-control" [(ngModel)]="formData.RazonSocial" placeholder="Nombre legal de la empresa">
       </div>
       <div class="form-group">

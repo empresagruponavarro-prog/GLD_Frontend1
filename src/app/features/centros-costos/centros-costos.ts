@@ -64,13 +64,9 @@ export class CentrosCostosComponent {
 
   estadoOptions = ['ABIERTO', 'CERRADO', 'POR LIQUIDAR'];
   presupuestoEstadoOptions = [
-    'PENDIENTE',
     'EN DESARROLLO',
     'EN REVISION',
     'APROBADO',
-    'LIQUIDADO',
-    'RECHAZADO PROPUESTA',
-    'RECHAZADO POR DEMORA'
   ];
 
   clientesList = [

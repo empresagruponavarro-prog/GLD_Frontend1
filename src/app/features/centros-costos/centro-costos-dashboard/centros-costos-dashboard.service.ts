@@ -1,6 +1,6 @@
 import { Service, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import { Observable, map } from 'rxjs';
 import { 
   CentroCostoItem, 
   ConteoEstados, 
@@ -31,7 +31,38 @@ export class CentrosCostosDashboardService {
       if (filtros.pptoEstado?.trim() && filtros.pptoEstado !== 'TODOS') params = params.set('pptoEstado', filtros.pptoEstado.trim());
     }
 
-    return this.http.get<PaginatedCentrosCostos>(this.apiUrl, { params });
+    return this.http.get<any>(this.apiUrl, { params }).pipe(
+      map((res: any): PaginatedCentrosCostos => {
+        if (Array.isArray(res)) {
+          const total = res.length;
+          const start = (page - 1) * pageSize;
+          const pagedData = res.slice(start, start + pageSize);
+          return {
+            data: pagedData,
+            total,
+            page,
+            pageSize,
+            totalPages: Math.ceil(total / pageSize) || 1,
+          };
+        }
+        if (res && Array.isArray(res.data)) {
+          return {
+            data: res.data,
+            total: res.total ?? res.data.length,
+            page: res.page ?? page,
+            pageSize: res.pageSize ?? pageSize,
+            totalPages: res.totalPages ?? (Math.ceil((res.total ?? res.data.length) / pageSize) || 1),
+          };
+        }
+        return {
+          data: [],
+          total: 0,
+          page,
+          pageSize,
+          totalPages: 1,
+        };
+      })
+    );
   }
 
   getConteoEstados(): Observable<ConteoEstados> {

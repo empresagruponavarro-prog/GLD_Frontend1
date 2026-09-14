@@ -44,7 +44,7 @@ export class CentrosCostosDashboardComponent implements OnInit {
   };
 
   // Valores de los filtros
-  filtroEstado: string = 'ABIERTO'; // Por defecto ABIERTO según imagen 1
+  filtroEstado: string = 'TODOS'; // Por defecto ABIERTO según imagen 1
   filtroEmpresa: string = 'TODOS';
   filtroPeriodo: string = 'TODOS';
   filtroCliente: string = 'TODOS';

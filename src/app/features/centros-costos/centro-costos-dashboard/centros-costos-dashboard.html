@@ -184,8 +184,8 @@
             Estado Operativo: <strong>{{ selectedCentro.Estado || 'ABIERTO' }}</strong>
             <span *ngIf="selectedCentro.PresupuestoEstado" class="substatus-sep">|</span>
             <span *ngIf="selectedCentro.PresupuestoEstado">Presupuesto: <strong>{{ selectedCentro.PresupuestoEstado }}</strong></span>
-            <span *ngIf="selectedCentro.IdPeriodo" class="substatus-sep">|</span>
-            <span *ngIf="selectedCentro.IdPeriodo">Periodo: <strong>{{ selectedCentro.IdPeriodo }}</strong></span>
+            <span *ngIf="selectedCentro.periodo || selectedCentro.IdPeriodo" class="substatus-sep">|</span>
+            <span *ngIf="selectedCentro.periodo || selectedCentro.IdPeriodo">Periodo: <strong>{{ selectedCentro.periodo || selectedCentro.IdPeriodo }}</strong></span>
           </div>
         </div>
         <div class="detail-header-right">
