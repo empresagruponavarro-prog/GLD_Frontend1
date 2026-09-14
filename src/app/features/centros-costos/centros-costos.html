@@ -163,11 +163,11 @@
 
 <app-modal
   [isOpen]="showModal()"
-  [title]="editingCod() ? 'Editar Centro de Costo' : 'Nuevo Centro de Costo'"
+  [title]="editingId() !== null ? 'Editar Centro de Costo' : 'Nuevo Centro de Costo'"
   [showHeader]="false"
   maxWidth="750px"
   height="750px"
-  [submitText]="editingCod() ? 'Guardar Centro de Costo' : 'Crear Centro'"
+  [submitText]="editingId() !== null ? 'Guardar Centro de Costo' : 'Crear Centro'"
   [showDefaultFooter]="false"
   (closed)="closeModal()"
   (saved)="save()"

@@ -39,7 +39,7 @@ export class CentrosCostosDashboardService {
     return this.http.get<CatalogosFiltros>(`${this.apiUrl}/catalogos-filtros`);
   }
 
-  getResumenFinanciero(id: string): Observable<ResumenFinanciero> {
+  getResumenFinanciero(id: number | string): Observable<ResumenFinanciero> {
     return this.http.get<ResumenFinanciero>(`${this.apiUrl}/${id}/resumen-financiero`);
   }
 }

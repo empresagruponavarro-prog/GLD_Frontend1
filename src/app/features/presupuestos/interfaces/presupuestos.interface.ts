@@ -1,6 +1,9 @@
 export interface PresupuestoPrincipal {
   id?: number;
   IdPresupuesto: string | number;
+  id_centro_costo?: number;
+  id_empresa?: number;
+  periodo?: string;
   CodCentroCto?: string;
   CodEmpresa?: string;
   IdPeriodo?: string;
@@ -49,21 +52,41 @@ export interface PaginatedResponse {
 }
 
 export interface CategoriaFaseMaestra {
+  id?: number;
+  id_empresa?: number;
   IdCategoriaFase: number;
   CodigoFaseMaestra: string;
   NombreFaseMaestra: string;
   ClasificacionTipo?: string;
   EsActiva: boolean;
+  CodEmpresa?: string;
 }
 
 export interface FaseAsignada {
+  id?: number;
   IdFaseAsignada: number;
   IdPresupuesto: number;
   IdCategoriaFase: number;
+  id_empresa?: number;
+  id_centro_costo?: number;
+  CodEmpresa?: string;
+  CodCentroCto?: string;
   MontoAsignadoBase?: number;
   MontoAsignadoActual?: number;
   FechaAsignacion?: string;
   NotasAdicionales?: string;
+}
+
+export interface CategoriaAsignada {
+  id?: number;
+  id_empresa?: number;
+  id_centro_costo?: number;
+  IdPresupuesto?: number | string;
+  IdCategoriaFase?: number | string;
+  CodEmpresa?: string;
+  CodCentroCto?: string;
+  CategoriaInsumo?: string;
+  [key: string]: any;
 }
 
 export interface DetalleFaseCate {
@@ -78,6 +101,8 @@ export interface DetalleFase {
   id: number;
   IdPresupuestoDetalle: string;
   IdPresupuesto: string;
+  id_empresa?: number;
+  id_centro_costo?: number;
   IdpptoFase?: string;
   CodEmpresa?: string;
   CodCentroCto?: string;

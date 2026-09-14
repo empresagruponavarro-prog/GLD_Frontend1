@@ -117,6 +117,9 @@ export class PresupuestosComponent implements OnInit {
       CodEmpresa: '',
       CodCentroCto: '',
       IdPeriodo: '',
+      id_empresa: undefined,
+      id_centro_costo: undefined,
+      periodo: '',
       TipoPpto: 'OBRA',
       CostoDirecto: 0,
       GGPorcentaje: 0,
@@ -154,8 +157,9 @@ export class PresupuestosComponent implements OnInit {
     this.selectedPresupuestoId.set(null);
     this.loading.set(true);
 
-    // Buscar todos los presupuestos por CodCentroCto (hasta 100)
-    this.presupuestosService.getPresupuestos(1, 100, '', cc.CodCentroCto).subscribe({
+    const ccNumericId = cc.id ?? cc.id_centro_costo;
+    // Buscar todos los presupuestos por CodCentroCto e id_centro_costo (hasta 100)
+    this.presupuestosService.getPresupuestos(1, 100, '', cc.CodCentroCto, ccNumericId).subscribe({
       next: (res) => {
         let pptos: PresupuestoPrincipal[] = [];
         if ('data' in res && res.data.length > 0) pptos = res.data;
@@ -327,8 +331,13 @@ export class PresupuestosComponent implements OnInit {
     this.formData = this.emptyForm();
     // Pre-rellenar con el CC activo si hay uno seleccionado
     if (this.selectedCC()) {
-      this.formData.CodCentroCto = this.selectedCC()!.CodCentroCto;
-      this.formData.CodEmpresa = this.selectedCC()!.CodEmpresa;
+      const cc = this.selectedCC()!;
+      this.formData.CodCentroCto = cc.CodCentroCto;
+      this.formData.CodEmpresa = cc.CodEmpresa;
+      this.formData.IdPeriodo = cc.IdPeriodo;
+      this.formData.id_centro_costo = cc.id ?? cc.id_centro_costo;
+      this.formData.id_empresa = cc.id_empresa;
+      this.formData.periodo = cc.periodo || cc.IdPeriodo;
     }
     this.showModal.set(true);
   }

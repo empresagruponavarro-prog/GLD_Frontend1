@@ -28,7 +28,7 @@ export class EmpresasComponent {
   empresas = signal<Empresa[]>([]);
   showModal = signal<boolean>(false);
   loading = signal<boolean>(false);
-  editingCod = signal<string | null>(null);
+  editingId = signal<number | string | null>(null);
 
   formData: Empresa = {
     CodEmpresa: '',
@@ -58,20 +58,21 @@ export class EmpresasComponent {
   }
 
   openModal() {
-    this.editingCod.set(null);
+    this.editingId.set(null);
     this.formData = { CodEmpresa: '', RUC: '', RazonSocial: '', DomicilioFiscal: '', DireccionEntrega: '', CorreoCompras: '' };
     this.showModal.set(true);
   }
 
   editModal(item: Empresa) {
-    this.editingCod.set(item.CodEmpresa);
+    const id = item.id ?? item.id_empresa ?? item.CodEmpresa;
+    this.editingId.set(id);
     this.formData = { ...item };
     this.showModal.set(true);
   }
 
   closeModal() {
     this.showModal.set(false);
-    this.editingCod.set(null);
+    this.editingId.set(null);
   }
 
   saveEmpresa() {
@@ -80,25 +81,27 @@ export class EmpresasComponent {
       return;
     }
 
-    const cod = this.editingCod();
-    if (cod) {
-      this.empresasService.update(cod, this.formData).subscribe({
+    const id = this.editingId();
+    if (id !== null) {
+      this.empresasService.update(id, this.formData).subscribe({
         next: () => { this.closeModal(); this.loadEmpresas(); },
-        error: (err) => alert('Error al actualizar: ' + err.error?.message),
+        error: (err) => alert('Error al actualizar: ' + (err.error?.message || err.message)),
       });
     } else {
       this.empresasService.create(this.formData).subscribe({
         next: () => { this.closeModal(); this.loadEmpresas(); },
-        error: (err) => alert('Error al crear: ' + err.error?.message),
+        error: (err) => alert('Error al crear: ' + (err.error?.message || err.message)),
       });
     }
   }
 
-  deleteEmpresa(cod: string) {
-    if (confirm(`¿Eliminar la empresa "${cod}"? Esta acción no se puede deshacer.`)) {
-      this.empresasService.delete(cod).subscribe({
+  deleteEmpresa(item: Empresa) {
+    const targetId = item.id ?? item.id_empresa ?? item.CodEmpresa;
+    const label = item.RazonSocial || item.CodEmpresa;
+    if (confirm(`¿Eliminar la empresa "${label}"? Esta acción no se puede deshacer.`)) {
+      this.empresasService.delete(targetId).subscribe({
         next: () => this.loadEmpresas(),
-        error: (err) => alert('Error al eliminar: ' + err.error?.message),
+        error: (err) => alert('Error al eliminar: ' + (err.error?.message || err.message)),
       });
     }
   }

@@ -17,19 +17,27 @@ export class CentrosCostosService {
     return this.http.get<CatalogosFiltros>(`${this.apiUrl}/catalogos-filtros`);
   }
 
+  getById(id: number | string): Observable<CentroCosto> {
+    return this.http.get<CentroCosto>(`${this.apiUrl}/${id}`);
+  }
+
   create(data: CentroCosto): Observable<CentroCosto> {
     return this.http.post<CentroCosto>(this.apiUrl, data);
   }
 
-  update(cod: string, data: Partial<CentroCosto>): Observable<CentroCosto> {
-    return this.http.patch<CentroCosto>(`${this.apiUrl}/${cod}`, data);
+  update(id: number | string, data: Partial<CentroCosto>): Observable<CentroCosto> {
+    return this.http.patch<CentroCosto>(`${this.apiUrl}/${id}`, data);
   }
 
-  delete(cod: string): Observable<void> {
-    return this.http.delete<void>(`${this.apiUrl}/${cod}`);
+  delete(id: number | string): Observable<void> {
+    return this.http.delete<void>(`${this.apiUrl}/${id}`);
   }
 
-  getResumenFinanciero(cod: string): Observable<any> {
-    return this.http.get<any>(`${this.apiUrl}/${cod}/resumen-financiero`);
+  getResumenFinanciero(id: number | string): Observable<any> {
+    return this.http.get<any>(`${this.apiUrl}/${id}/resumen-financiero`);
+  }
+
+  getPresupuestosByCentroCosto(id: number | string): Observable<any> {
+    return this.http.get<any>(`${this.apiUrl}/${id}/presupuestos`);
   }
 }

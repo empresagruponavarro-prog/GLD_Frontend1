@@ -1,4 +1,7 @@
 export interface CentroCostoItem {
+  id?: number;
+  id_empresa?: number;
+  id_centro_costo?: number;
   CodCentroCto: string;
   CodCentroCtoPrincipal?: string;
   CentroCostoPrincipal?: string;
@@ -7,6 +10,7 @@ export interface CentroCostoItem {
   CodEmpresa?: string;
   Empresa?: string;
   IdPeriodo?: string;
+  periodo?: string;
   CodCliente?: string;
   Cliente?: string;
   PresupuestoEstado?: string;

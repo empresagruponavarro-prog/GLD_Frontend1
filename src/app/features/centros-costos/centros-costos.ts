@@ -48,7 +48,7 @@ export class CentrosCostosComponent {
   items = signal<CentroCosto[]>([]);
   loading = signal<boolean>(false);
   showModal = signal<boolean>(false);
-  editingCod = signal<string | null>(null);
+  editingId = signal<number | string | null>(null);
   search = signal<string>('');
   catalogos = signal<{empresas: string[], clientes: string[]}>({ empresas: [], clientes: [] });
 
@@ -257,19 +257,20 @@ export class CentrosCostosComponent {
   }
 
   openModal() {
-    this.editingCod.set(null);
+    this.editingId.set(null);
     this.formData = this.emptyForm();
     this.showModal.set(true);
   }
 
   editModal(item: CentroCosto) {
-    this.editingCod.set(item.CodCentroCto);
+    const id = item.id ?? item.id_centro_costo ?? item.CodCentroCto;
+    this.editingId.set(id);
     this.formData = { ...item };
     this.showModal.set(true);
     // Cargar resumen financiero al editar
     this.resumen.set(null);
     this.resumenLoading.set(true);
-    this.centrosCostosService.getResumenFinanciero(item.CodCentroCto).subscribe({
+    this.centrosCostosService.getResumenFinanciero(id).subscribe({
       next: (data) => { this.resumen.set(data); this.resumenLoading.set(false); },
       error: () => { this.resumenLoading.set(false); }
     });
@@ -277,7 +278,7 @@ export class CentrosCostosComponent {
 
   closeModal() {
     this.showModal.set(false);
-    this.editingCod.set(null);
+    this.editingId.set(null);
     this.resumen.set(null);
   }
 
@@ -287,9 +288,9 @@ export class CentrosCostosComponent {
       return;
     }
 
-    const cod = this.editingCod();
-    if (cod) {
-      this.centrosCostosService.update(cod, this.formData).subscribe({
+    const id = this.editingId();
+    if (id !== null) {
+      this.centrosCostosService.update(id, this.formData).subscribe({
         next: () => { this.closeModal(); this.load(); },
         error: (err) => alert('Error al actualizar: ' + (err.error?.message || err.message))
       });
@@ -333,9 +334,10 @@ export class CentrosCostosComponent {
 
   delete(item: CentroCosto) {
     const nombre = item.CentroCosto || item.CodCentroCto;
+    const targetId = item.id ?? item.id_centro_costo ?? item.CodCentroCto;
 
     if (confirm(`¿Eliminar el Centro de Costo "${nombre}"? Esta acción no se puede deshacer.`)) {
-      this.centrosCostosService.delete(item.CodCentroCto).subscribe({
+      this.centrosCostosService.delete(targetId).subscribe({
         next: () => this.load(),
         error: (err) => alert('Error al eliminar: ' + (err.error?.message || err.message))
       });

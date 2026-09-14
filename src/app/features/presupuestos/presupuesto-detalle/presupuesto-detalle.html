@@ -33,12 +33,12 @@
         <div class="det-meta">
           <div class="det-meta-item">
             <span class="det-meta-label">Empresa</span>
-            <span class="det-meta-value" style="color:#15803d">{{ presupuesto()!.CodEmpresa || '—' }}</span>
+            <span class="det-meta-value" style="color:#15803d">{{ presupuesto()!.CodEmpresa || presupuesto()!.id_empresa || '—' }}</span>
           </div>
           <div class="det-meta-sep"></div>
           <div class="det-meta-item">
             <span class="det-meta-label">Centro Costo</span>
-            <span class="det-meta-value">{{ presupuesto()!.CodCentroCto || '—' }}</span>
+            <span class="det-meta-value">{{ presupuesto()!.CodCentroCto || presupuesto()!.id_centro_costo || '—' }}</span>
           </div>
           <div class="det-meta-sep"></div>
           <div class="det-meta-item">
@@ -226,8 +226,8 @@
               @for (fase of fases(); track fase.IdPresupuestoDetalle) {
                 <tr>
                   <td style="font-weight:600;color:#0d9488;font-size:0.68rem">{{ fase.IdPresupuestoDetalle }}</td>
-                  <td style="font-weight:500;color:#0f172a">{{ fase.IdpptoFase || '—' }}</td>
-                  <td style="color:#64748b;font-size:0.68rem">{{ fase.CodCentroCto || '—' }}</td>
+                  <td style="font-weight:500;color:#0f172a">{{ fase.NombreFase || fase.IdpptoFase || '—' }}</td>
+                  <td style="color:#64748b;font-size:0.68rem">{{ fase.CodCentroCto || fase.id_centro_costo || '—' }}</td>
                   <td class="right" style="font-weight:600;color:#d97706">S/. {{ (fase.CostoDirecto || 0) | number:'1.2-2' }}</td>
                   <td>
                     <div class="incidencia-bar-wrapper">

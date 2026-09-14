@@ -13,15 +13,19 @@ export class EmpresasService {
     return this.http.get<Empresa[]>(this.apiUrl);
   }
 
+  getById(id: number | string): Observable<Empresa> {
+    return this.http.get<Empresa>(`${this.apiUrl}/${id}`);
+  }
+
   create(data: Empresa): Observable<Empresa> {
     return this.http.post<Empresa>(this.apiUrl, data);
   }
 
-  update(codEmpresa: string, data: Partial<Empresa>): Observable<Empresa> {
-    return this.http.patch<Empresa>(`${this.apiUrl}/${codEmpresa}`, data);
+  update(id: number | string, data: Partial<Empresa>): Observable<Empresa> {
+    return this.http.patch<Empresa>(`${this.apiUrl}/${id}`, data);
   }
 
-  delete(codEmpresa: string): Observable<void> {
-    return this.http.delete<void>(`${this.apiUrl}/${codEmpresa}`);
+  delete(id: number | string): Observable<void> {
+    return this.http.delete<void>(`${this.apiUrl}/${id}`);
   }
 }
