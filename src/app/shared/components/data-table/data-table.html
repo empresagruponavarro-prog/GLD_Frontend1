@@ -57,7 +57,7 @@
   
   <div style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.875rem; color: #475569;">
     <span>Registros por página:</span>
-    <select class="form-control" style="width: auto; padding: 0.2rem 0.5rem; border-color: #cbd5e1; height: auto;"
+    <select class="form-control" style="width: auto; min-width: 0; padding: 0.2rem 1.4rem 0.2rem 0.5rem; border: 1px solid #cbd5e1; height: auto; cursor: pointer; border-radius: 6px; font-size: 0.85rem; background: #fff; font-weight: 500; appearance: auto; -webkit-appearance: auto;"
       [value]="pageSize()"
       (change)="onPageSizeSelect($event)">
       @for (opt of pageSizeOptions(); track opt) {
