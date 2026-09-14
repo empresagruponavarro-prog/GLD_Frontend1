@@ -138,8 +138,8 @@ export class PresupuestosComponent implements OnInit {
   loadCentrosCostos() {
     this.loading.set(true);
     this.centrosCostosService.getAll().subscribe({
-      next: (data) => {
-        this.centrosCostos.set(data || []);
+      next: (res) => {
+        this.centrosCostos.set(res.data || []);
         this.loading.set(false);
       },
       error: (err) => {
@@ -337,7 +337,7 @@ export class PresupuestosComponent implements OnInit {
       this.formData.IdPeriodo = cc.IdPeriodo;
       this.formData.id_centro_costo = cc.id ?? cc.id_centro_costo;
       this.formData.id_empresa = cc.id_empresa;
-      this.formData.periodo = cc.periodo || cc.IdPeriodo;
+      this.formData.periodo = String(cc.periodo ?? cc.IdPeriodo ?? '');
     }
     this.showModal.set(true);
   }

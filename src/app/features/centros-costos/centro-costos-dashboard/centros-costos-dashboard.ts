@@ -30,6 +30,7 @@ export class CentrosCostosDashboardComponent implements OnInit {
   ];
 
   centros: CentroCostoItem[] = [];
+  totalCentros: number = 0;
   selectedCentro: CentroCostoItem | null = null;
   resumen: ResumenFinanciero | null = null;
 
@@ -103,11 +104,11 @@ export class CentrosCostosDashboardComponent implements OnInit {
       cliente: this.filtroCliente,
       centroCosto: this.filtroCentroCosto,
       pptoEstado: this.filtroPptoEstado
-    }).subscribe({
-      next: (data) => {
-        this.centros = data;
+    }, this.currentPage, this.pageSize).subscribe({
+      next: (res) => {
+        this.centros = res.data;
+        this.totalCentros = res.total;
         this.loadingCentros = false;
-        this.currentPage = 1;
         this.cdr.detectChanges();
       },
       error: (err) => {
@@ -120,6 +121,7 @@ export class CentrosCostosDashboardComponent implements OnInit {
 
   onFilterChange(tipo: string, valor: string): void {
     if (tipo === 'estado') this.filtroEstado = valor;
+    this.currentPage = 1;
     this.loadCentros();
   }
 
@@ -130,6 +132,7 @@ export class CentrosCostosDashboardComponent implements OnInit {
     if (tipo === 'cliente') this.filtroCliente = val;
     if (tipo === 'estado') this.filtroEstado = val;
     if (tipo === 'pptoEstado') this.filtroPptoEstado = val;
+    this.currentPage = 1;
     this.loadCentros();
   }
 
@@ -137,6 +140,7 @@ export class CentrosCostosDashboardComponent implements OnInit {
     this.filtroSearch = (event.target as HTMLInputElement).value;
     clearTimeout(this.searchDebounceTimer);
     this.searchDebounceTimer = setTimeout(() => {
+      this.currentPage = 1;
       this.loadCentros();
     }, 350);
   }
@@ -145,12 +149,14 @@ export class CentrosCostosDashboardComponent implements OnInit {
     this.filtroCentroCosto = (event.target as HTMLInputElement).value;
     clearTimeout(this.ctoDebounceTimer);
     this.ctoDebounceTimer = setTimeout(() => {
+      this.currentPage = 1;
       this.loadCentros();
     }, 350);
   }
 
   clearSearch(): void {
     this.filtroSearch = '';
+    this.currentPage = 1;
     this.loadCentros();
   }
 
@@ -162,6 +168,7 @@ export class CentrosCostosDashboardComponent implements OnInit {
     this.filtroCentroCosto = '';
     this.filtroPptoEstado = 'TODOS';
     this.filtroSearch = '';
+    this.currentPage = 1;
     this.loadCentros();
   }
 
@@ -171,26 +178,26 @@ export class CentrosCostosDashboardComponent implements OnInit {
     this.loadCentros();
   }
 
-  // Paginación calculada
+  // Paginación (server-side)
   get totalPages(): number {
-    return Math.ceil(this.centros.length / this.pageSize) || 1;
+    return Math.max(1, Math.ceil(this.totalCentros / this.pageSize));
   }
 
   get pagedCentros(): CentroCostoItem[] {
-    const start = (this.currentPage - 1) * this.pageSize;
-    return this.centros.slice(start, start + this.pageSize);
+    return this.centros;
   }
 
   changePage(page: number): void {
     if (page >= 1 && page <= this.totalPages) {
       this.currentPage = page;
+      this.loadCentros();
     }
   }
 
-  onPageSizeChange(event: Event): void {
-    const size = parseInt((event.target as HTMLSelectElement).value, 10);
+  onPageSizeChange(size: number): void {
     this.pageSize = size;
     this.currentPage = 1;
+    this.loadCentros();
   }
 
   // Interacción al hacer click en una fila
@@ -228,10 +235,10 @@ export class CentrosCostosDashboardComponent implements OnInit {
     const headers = ['Empresa', 'IdPeriodo', 'CodCliente (Nombre)', 'Centro de costo Principal', 'Codigo CTO', 'CentroCosto', 'Estado', 'PresupuestoEstado'];
     const rows = this.centros.map(c => [
       `"${(c.Empresa || c.CodEmpresa || '').replace(/"/g, '""')}"`,
-      c.IdPeriodo || '',
+      c.periodo ?? c.IdPeriodo ?? '',
       `"${(c.Cliente || c.CodCliente || '').replace(/"/g, '""')}"`,
       `"${(c.CentroCostoPrincipal || c.CodCentroCtoPrincipal || '').replace(/"/g, '""')}"`,
-      c.CodCentroCto,
+      c.CodCentroCto || c.id || '',
       `"${(c.CentroCosto || '').replace(/"/g, '""')}"`,
       c.Estado || '',
       c.PresupuestoEstado || ''
@@ -258,11 +265,11 @@ export class CentrosCostosDashboardComponent implements OnInit {
       ['Sistema GLD Arquitectura'],
       ['Fecha de Emisión', new Date().toLocaleString('es-PE')],
       [''],
-      ['CÓDIGO DE CENTRO', c.CodCentroCto],
+      ['CÓDIGO DE CENTRO', c.CodCentroCto || c.id],
       ['CENTRO DE COSTO', `"${c.CentroCosto.replace(/"/g, '""')}"`],
       ['CLIENTE', `"${(c.Cliente || c.CodCliente || 'General').replace(/"/g, '""')}"`],
       ['EMPRESA', c.Empresa || c.CodEmpresa || 'E1'],
-      ['PERIODO', c.IdPeriodo || '-'],
+      ['PERIODO', c.periodo ?? c.IdPeriodo ?? '-'],
       ['ESTADO OPERATIVO', c.Estado || 'ABIERTO'],
       [''],
       ['MÉTRICA FINANCIERA', 'MONTO (S/)'],
@@ -284,7 +291,7 @@ export class CentrosCostosDashboardComponent implements OnInit {
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.download = `Resumen_Financiero_${c.CodCentroCto}.csv`;
+    link.download = `Resumen_Financiero_${c.CodCentroCto || c.id}.csv`;
     link.click();
     URL.revokeObjectURL(url);
   }

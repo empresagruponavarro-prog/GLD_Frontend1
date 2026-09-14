@@ -43,29 +43,29 @@
 
     <div class="toolbar-filters-row">
       <div class="toolbar-filters-left">
-        <select class="toolbar-select" [ngModel]="empresaFilter()" (ngModelChange)="empresaFilter.set($event)">
+        <select class="toolbar-select" [ngModel]="empresaFilter()" (ngModelChange)="onFilterChange('empresa', $event)">
           <option value="">Todas las Empresas</option>
           <option *ngFor="let empresa of catalogos().empresas" [value]="empresa">{{ empresa }}</option>
         </select>
 
-        <select class="toolbar-select" [ngModel]="clienteFilter()" (ngModelChange)="clienteFilter.set($event)">
+        <select class="toolbar-select" [ngModel]="clienteFilter()" (ngModelChange)="onFilterChange('cliente', $event)">
           <option value="">Todos los Clientes</option>
           <option *ngFor="let cliente of catalogos().clientes" [value]="cliente">{{ cliente }}</option>
         </select>
 
-        <select class="toolbar-select" [ngModel]="estadoFilter()" (ngModelChange)="estadoFilter.set($event)">
+        <select class="toolbar-select" [ngModel]="estadoFilter()" (ngModelChange)="onFilterChange('estado', $event)">
           <option value="">Estado Operativo: Todos</option>
           <option *ngFor="let estado of estadoOptions" [value]="estado">{{ estado }}</option>
         </select>
 
-        <select class="toolbar-select" [ngModel]="pptoEstadoFilter()" (ngModelChange)="pptoEstadoFilter.set($event)">
+        <select class="toolbar-select" [ngModel]="pptoEstadoFilter()" (ngModelChange)="onFilterChange('pptoEstado', $event)">
           <option value="">Estado Presupuesto: Todos</option>
           <option *ngFor="let estado of presupuestoEstadoOptions" [value]="estado">{{ estado }}</option>
         </select>
 
-        <select class="toolbar-select" [ngModel]="periodoFilter()" (ngModelChange)="periodoFilter.set($event)">
+        <select class="toolbar-select" [ngModel]="periodoFilter()" (ngModelChange)="onFilterChange('periodo', $event)">
           <option value="">Período: Todos los años</option>
-          <option *ngFor="let periodo of periodOptions()" [value]="periodo">{{ periodo }}</option>
+          <option *ngFor="let periodo of catalogos().periodos" [value]="periodo">{{ periodo }}</option>
         </select>
 
         <button class="toolbar-reset" type="button" (click)="resetFilters()">
@@ -76,7 +76,7 @@
 
       <div class="toolbar-meta">
         <span>Mostrando</span>
-        <strong>{{ filteredItems().length }}</strong>
+        <strong>{{ totalRecords() }}</strong>
         <span>registros</span>
       </div>
     </div>
@@ -84,9 +84,9 @@
 
   <app-data-table
     [columns]="columns"
-    [items]="pagedItems()"
+    [items]="items()"
     [loading]="loading()"
-    [totalItems]="filteredItems().length"
+    [totalItems]="totalRecords()"
     [currentPage]="currentPage()"
     [pageSize]="pageSize()"
     [pageSizeOptions]="[10, 15, 20, 50]"
@@ -94,7 +94,7 @@
     emptyIcon="fa-solid fa-building-flag"
     [rowTemplate]="centroRow"
     (pageChange)="goToPage($event)"
-    (pageSizeChange)="pageSize.set($event); currentPage.set(1)">
+    (pageSizeChange)="onPageSizeChange($event)">
   </app-data-table>
 
   <ng-template #centroRow let-item>
@@ -181,7 +181,6 @@
           </button>
           <div class="cc-form-header-copy">
             <h4>Centro de Costos</h4>
-            <p class="cc-form-kicker">ID: {{ formData.CodCentroCto || '—' }}</p>
           </div>
         </div>
         <div class="cc-form-head-actions">
@@ -205,35 +204,26 @@
           </div>
 
           <div class="cc-form-card-body">
-            <div class="cc-form-row">
-              <div class="cc-form-field">
-                <label class="cc-label">Código CTO <span class="cc-required">*</span></label>
-                <div class="cc-input-with-icon">
-                  <span class="cc-input-icon"><lucide-icon [img]="Hash" size="13"></lucide-icon></span>
-                  <input type="text" [(ngModel)]="formData.CodCentroCto" readonly>
-                </div>
-              </div>
-
-              <div class="cc-form-field">
-                <label class="cc-label">Nombre Centro de Costo <span class="cc-required">*</span></label>
-                <div class="cc-input-only">
-                  <input type="text" [(ngModel)]="formData.CentroCosto" placeholder="Ej. Obra Norte">
-                </div>
+            <div class="cc-form-field cc-form-field-full">
+              <label class="cc-label">Centro de Costo Principal <span class="cc-required">*</span></label>
+              <div class="cc-select-wrapper">
+                <select [(ngModel)]="formData.id_centro_costos_principal" (change)="onPrincipalChange()">
+                  <option [ngValue]="undefined">Seleccione Centro de Costo Principal...</option>
+                  <option *ngFor="let p of principales()" [ngValue]="p.id">
+                    {{ p.descripcion }}
+                  </option>
+                </select>
+                <svg class="cc-select-icon" viewBox="0 0 14 14" fill="none">
+                  <path d="M3.5 5.25L7 8.75L10.5 5.25" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+                </svg>
               </div>
             </div>
 
             <div class="cc-form-row">
               <div class="cc-form-field">
-                <label class="cc-label">Empresa <span class="cc-required">*</span></label>
-                <div class="cc-select-wrapper">
-                  <select [(ngModel)]="formData.CodEmpresa" (change)="onEmpresaChange()">
-                    <option value="">Seleccione Empresa...</option>
-                    <option *ngFor="let e of catalogos().empresas" [value]="e">{{ e }}</option>
-                    <option *ngFor="let e of empresasList" [value]="e.id">{{ e.nombre }}</option>
-                  </select>
-                  <svg class="cc-select-icon" viewBox="0 0 14 14" fill="none">
-                    <path d="M3.5 5.25L7 8.75L10.5 5.25" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
-                  </svg>
+                <label class="cc-label">Nombre Centro de Costo <span class="cc-required">*</span></label>
+                <div class="cc-input-only">
+                  <input type="text" [(ngModel)]="formData.CentroCosto" placeholder="Ej. Obra Norte">
                 </div>
               </div>
 
@@ -252,21 +242,13 @@
               </div>
             </div>
 
-            <div class="cc-form-field cc-form-field-full">
-              <label class="cc-label">Centro de Costo Principal</label>
-              <div class="cc-input-with-icon">
-                <span class="cc-input-icon"><lucide-icon [img]="Lock" size="13"></lucide-icon></span>
-                <input type="text" [ngModel]="formData.CodCentroCtoPrincipal" placeholder="CC-001-ADMIN-CORP">
-              </div>
-            </div>
-
             <div class="cc-form-row" style="margin-top: 0.6rem;">
               <div class="cc-form-field">
                 <label class="cc-label">Periodo Fiscal <span class="cc-required">*</span></label>
                 <div class="cc-segmented">
-                  <button type="button" class="cc-segment" [class.active]="formData.IdPeriodo === '2024'" (click)="formData.IdPeriodo = '2024'">2024</button>
-                  <button type="button" class="cc-segment" [class.active]="formData.IdPeriodo === '2025'" (click)="formData.IdPeriodo = '2025'">2025</button>
-                  <button type="button" class="cc-segment" [class.active]="formData.IdPeriodo === '2026'" (click)="formData.IdPeriodo = '2026'">2026</button>
+                  <button type="button" class="cc-segment" [class.active]="formData.periodo === 2024" (click)="formData.periodo = 2024">2024</button>
+                  <button type="button" class="cc-segment" [class.active]="formData.periodo === 2025" (click)="formData.periodo = 2025">2025</button>
+                  <button type="button" class="cc-segment" [class.active]="formData.periodo === 2026" (click)="formData.periodo = 2026">2026</button>
                 </div>
               </div>
 
@@ -294,7 +276,7 @@
           <div class="cc-form-card-body">
             <div class="cc-form-row cc-date-grid">
               <div class="cc-form-field">
-                <label class="cc-label">Fecha Inicio</label>
+                <label class="cc-label">Fecha Inicio <span class="cc-required">*</span></label>
                 <div class="cc-date-input">
                   <input type="date" [(ngModel)]="formData.FechaIncio">
                 </div>
@@ -321,17 +303,73 @@
           <div class="cc-form-card-head">
             <div class="cc-card-title-wrap">
               <lucide-icon [img]="FileText" size="15" class="cc-card-icon"></lucide-icon>
+              <span class="cc-card-title">Presupuesto</span>
+            </div>
+            <span class="cc-card-note">Montos en soles</span>
+          </div>
+
+          <div class="cc-form-card-body">
+            <div class="cc-form-row">
+              <div class="cc-form-field">
+                <label class="cc-label">Estado Presupuesto</label>
+                <div class="cc-select-wrapper">
+                  <select [(ngModel)]="formData.PresupuestoEstado">
+                    <option *ngFor="let e of presupuestoEstadoOptions" [value]="e">{{ e }}</option>
+                  </select>
+                  <svg class="cc-select-icon" viewBox="0 0 14 14" fill="none">
+                    <path d="M3.5 5.25L7 8.75L10.5 5.25" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+                  </svg>
+                </div>
+              </div>
+
+              <div class="cc-form-field">
+                <label class="cc-label">Presupuesto Monto</label>
+                <div class="cc-input-only">
+                  <input type="number" [(ngModel)]="formData.PresupuestoMonto">
+                </div>
+              </div>
+            </div>
+
+            <div class="cc-form-row">
+              <div class="cc-form-field">
+                <label class="cc-label">Costo Directo</label>
+                <div class="cc-input-only">
+                  <input type="number" [(ngModel)]="formData.PresupuestoCostoDirecto">
+                </div>
+              </div>
+
+              <div class="cc-form-field">
+                <label class="cc-label">Gastos Generales</label>
+                <div class="cc-input-only">
+                  <input type="number" [(ngModel)]="formData.PresupuestoGastosGenerales">
+                </div>
+              </div>
+
+              <div class="cc-form-field">
+                <label class="cc-label">Viáticos</label>
+                <div class="cc-input-only">
+                  <input type="number" [(ngModel)]="formData.PresupuestoViaticos">
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="cc-form-card">
+          <div class="cc-form-card-head">
+            <div class="cc-card-title-wrap">
+              <lucide-icon [img]="FileText" size="15" class="cc-card-icon"></lucide-icon>
               <span class="cc-card-title">Acta de Entrega / Documento Contractual</span>
             </div>
             <span class="cc-card-note">PDF, DOCX hasta 15MB</span>
           </div>
 
           <div class="cc-form-card-body">
-            <div class="cc-dropzone">
+            <label class="cc-dropzone" for="cc-oc-file">
               <span class="cc-dropzone-icon"><lucide-icon [img]="CloudUpload" size="24"></lucide-icon></span>
-              <span class="cc-dropzone-text">Haz clic para cargar el acta o arrastra y suelta aquí</span>
-              <span class="cc-dropzone-file">Acta_recepcion_obra_firmada_v2.pdf (1.8 MB adjunto)</span>
-            </div>
+              <span class="cc-dropzone-text">{{ formData.OCFile ? formData.OCFile : 'Haz clic para cargar el acta o arrastra y suelta aquí' }}</span>
+            </label>
+            <input id="cc-oc-file" type="file" accept=".pdf,.doc,.docx" style="display: none" (change)="onOCFileChange($event)">
           </div>
         </section>
       </div>

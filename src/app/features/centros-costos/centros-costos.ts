@@ -2,12 +2,12 @@ import { Component, inject, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
-import { LucideAngularModule, ArrowLeft, Copy, X, Check, Hash, Lock, Calendar, CloudUpload, FileText, CircleCheck, Contact, Clock } from 'lucide-angular';
+import { LucideAngularModule, ArrowLeft, Copy, X, Check, Lock, Calendar, CloudUpload, FileText, CircleCheck, Contact, Clock } from 'lucide-angular';
 
 import { DataTableComponent } from '../../shared/components/data-table/data-table';
 import { ModalComponent } from '../../shared/components/modal/modal';
 import { DataTable } from '../../shared/interfaces';
-import { CentroCosto } from './interfaces';
+import { CentroCosto, CentroCostoPrincipal, CreateCentroCostoDto, CatalogosFiltros, FiltrosCentrosCostos } from './interfaces';
 import { CentrosCostosService } from './centros-costos.service';
 
 @Component({
@@ -21,7 +21,6 @@ export class CentrosCostosComponent {
   readonly Copy = Copy;
   readonly X = X;
   readonly Check = Check;
-  readonly Hash = Hash;
   readonly Lock = Lock;
   readonly Calendar = Calendar;
   readonly CloudUpload = CloudUpload;
@@ -50,7 +49,8 @@ export class CentrosCostosComponent {
   showModal = signal<boolean>(false);
   editingId = signal<number | string | null>(null);
   search = signal<string>('');
-  catalogos = signal<{empresas: string[], clientes: string[]}>({ empresas: [], clientes: [] });
+  catalogos = signal<CatalogosFiltros>({ empresas: [], clientes: [], periodos: [], estados: [], pptoEstados: [] });
+  principales = signal<CentroCostoPrincipal[]>([]);
 
   // Resumen financiero (solo en edición)
   resumen = signal<any>(null);
@@ -61,11 +61,6 @@ export class CentrosCostosComponent {
   estadoFilter = signal<string>('');
   pptoEstadoFilter = signal<string>('');
   periodoFilter = signal<string>('');
-
-  periodosDisponibles = ['2024', '2025', '2026'];
-  periodoFiscal = signal('2025');
-  estadosDisponibles = ['ABIERTO', 'CERRADO', 'LIQUIDAR'];
-  estadoOperativo = signal('ABIERTO');
 
   estadoOptions = ['ABIERTO', 'CERRADO', 'POR LIQUIDAR'];
   presupuestoEstadoOptions = [
@@ -78,13 +73,6 @@ export class CentrosCostosComponent {
     'RECHAZADO POR DEMORA'
   ];
 
-  empresasList = [
-    { id: 'E1', nombre: 'Grupo Navarro SAC' },
-    { id: 'E2', nombre: 'Hermes' },
-    { id: 'E3', nombre: 'GLD Servicios Generales EIRL' },
-    { id: 'E4', nombre: 'Consorcio Aruma' }
-  ];
-
   clientesList = [
     { id: 'CLI-001', nombre: 'SEDAPAL' },
     { id: '5ef24aa7', nombre: 'Cliente Retail SA' },
@@ -93,34 +81,32 @@ export class CentrosCostosComponent {
     { id: '5fa9c9b0', nombre: 'Proyectos Urbanos' }
   ];
 
-  onEmpresaChange() {
-    const found = this.empresasList.find(e => e.id === this.formData.CodEmpresa);
-    this.formData.Empresa = found ? found.nombre : '';
-  }
-
   onClienteChange() {
     const found = this.clientesList.find(c => c.id === this.formData.CodCliente);
     this.formData.Cliente = found ? found.nombre : '';
+  }
+
+  onPrincipalChange() {
+    const idPrincipal = this.formData.id_centro_costos_principal;
+    const found = this.principales().find(p => p.id === idPrincipal || p.id === Number(idPrincipal));
+    if (found) {
+      this.formData.id_centro_costos_principal = found.id;
+      this.formData.CodCentroCtoPrincipal = found.centro_costo_principal;
+      this.formData.CentroCostoPrincipal = found.descripcion;
+    } else {
+      this.formData.id_centro_costos_principal = undefined;
+      this.formData.CodCentroCtoPrincipal = '';
+      this.formData.CentroCostoPrincipal = '';
+    }
   }
 
 
   // Paginación
   currentPage = signal<number>(1);
   pageSize = signal<number>(15);
+  totalRecords = signal<number>(0);
 
   formData: CentroCosto = this.emptyForm();
-
-  periodOptions = computed(() => {
-    const periods = new Set<string>();
-
-    this.items().forEach((item) => {
-      if (item.IdPeriodo) {
-        periods.add(item.IdPeriodo);
-      }
-    });
-
-    return Array.from(periods).sort((a, b) => b.localeCompare(a));
-  });
 
   activeFiltersCount = computed(() => {
     return [
@@ -132,81 +118,63 @@ export class CentrosCostosComponent {
     ].filter((value) => !!value).length;
   });
 
-  filteredItems = computed(() => {
-    const q = this.search().toLowerCase().trim();
-    const selectedEmpresa = this.empresaFilter().trim().toLowerCase();
-    const selectedCliente = this.clienteFilter().trim().toLowerCase();
-    const selectedEstado = this.estadoFilter().trim().toUpperCase();
-    const selectedPptoEstado = this.normalizeEstado(this.pptoEstadoFilter());
-    const selectedPeriodo = this.periodoFilter().trim();
+  totalPages = computed(() => Math.max(1, Math.ceil(this.totalRecords() / this.pageSize())));
 
-    return this.items().filter((item) => {
-      const hayTexto = !q ||
-        (item.CodCentroCto || '').toLowerCase().includes(q) ||
-        (item.CentroCosto || '').toLowerCase().includes(q) ||
-        (item.Empresa || item.CodEmpresa || '').toLowerCase().includes(q) ||
-        (item.Cliente || item.CodCliente || '').toLowerCase().includes(q);
-
-      const empresaMatch = !selectedEmpresa ||
-        (item.CodEmpresa || '').toLowerCase() === selectedEmpresa ||
-        (item.Empresa || '').toLowerCase() === selectedEmpresa;
-
-      const clienteMatch = !selectedCliente ||
-        (item.CodCliente || '').toLowerCase() === selectedCliente ||
-        (item.Cliente || '').toLowerCase() === selectedCliente;
-
-      const estadoMatch = !selectedEstado || (item.Estado || '').toUpperCase() === selectedEstado;
-      const pptoEstadoMatch = !selectedPptoEstado || this.normalizeEstado(item.PresupuestoEstado) === selectedPptoEstado;
-      const periodoMatch = !selectedPeriodo || (item.IdPeriodo || '').toString() === selectedPeriodo;
-
-      return hayTexto && empresaMatch && clienteMatch && estadoMatch && pptoEstadoMatch && periodoMatch;
-    });
-  });
-
-  totalPages = computed(() => Math.ceil(this.filteredItems().length / this.pageSize()));
-
-  pagedItems = computed(() => {
-    const start = (this.currentPage() - 1) * this.pageSize();
-    return this.filteredItems().slice(start, start + this.pageSize());
-  });
-
-  pages = computed(() => {
-    const total = this.totalPages();
-    return Array.from({ length: total }, (_, i) => i + 1);
-  });
+  private searchDebounceTimer: any;
 
   constructor() {
     this.load();
     this.centrosCostosService.getCatalogosFiltros().subscribe({
-      next: (data) => this.catalogos.set({ empresas: data.empresas || [], clientes: data.clientes || [] }),
+      next: (data) => this.catalogos.set(data || { empresas: [], clientes: [], periodos: [], estados: [], pptoEstados: [] }),
       error: (err) => console.warn('Error al cargar catálogos:', err)
+    });
+    this.centrosCostosService.getPrincipales().subscribe({
+      next: (data) => this.principales.set(data || []),
+      error: (err) => console.warn('Error al cargar CC principales:', err)
     });
   }
 
   emptyForm(): CentroCosto {
     return {
-      CodCentroCto: Math.random().toString(16).substring(2, 10),
+      id_centro_costos_principal: undefined,
       CodCentroCtoPrincipal: '',
       CentroCostoPrincipal: '',
       CentroCosto: '',
       Estado: 'ABIERTO',
-      CodEmpresa: '',
-      Empresa: '',
-      IdPeriodo: '2026',
+      periodo: 2026,
       CodCliente: '',
       Cliente: '',
       PresupuestoEstado: 'PENDIENTE',
-      PresupuestoMonto: '',
+      PresupuestoCostoDirecto: 0,
+      PresupuestoGastosGenerales: 0,
+      PresupuestoViaticos: 0,
+      PresupuestoMonto: 0,
+      OCFile: '',
+      FechaIncio: '',
+      FechaFinProg: '',
+      FechaFinReal: '',
+    };
+  }
+
+  buildFiltros(): FiltrosCentrosCostos {
+    return {
+      search: this.search() || undefined,
+      estado: this.estadoFilter() || undefined,
+      empresa: this.empresaFilter() || undefined,
+      periodo: this.periodoFilter() || undefined,
+      cliente: this.clienteFilter() || undefined,
+      pptoEstado: this.pptoEstadoFilter() || undefined,
     };
   }
 
   load() {
     this.loading.set(true);
-    this.centrosCostosService.getAll().subscribe({
-      next: (data) => {
-        this.items.set(data);
+    this.centrosCostosService.getAll(this.currentPage(), this.pageSize(), this.buildFiltros()).subscribe({
+      next: (res) => {
+        this.items.set(res.data);
+        this.totalRecords.set(res.total);
+        this.currentPage.set(res.page);
         this.loading.set(false);
-        this.currentPage.set(1);
       },
       error: (err) => { console.error(err); this.loading.set(false); }
     });
@@ -214,17 +182,41 @@ export class CentrosCostosComponent {
 
   onSearch(value: string) {
     this.search.set(value);
-    this.currentPage.set(1);
+    clearTimeout(this.searchDebounceTimer);
+    this.searchDebounceTimer = setTimeout(() => {
+      this.currentPage.set(1);
+      this.load();
+    }, 350);
   }
 
-  private normalizeEstado(value?: string): string {
-    return (value || '')
-      .trim()
-      .toUpperCase()
-      .replace(/[_\s]+/g, '');
+  onFilterChange(filter: 'empresa' | 'cliente' | 'estado' | 'periodo' | 'pptoEstado', value: string) {
+    const setter: Record<string, (v: string) => void> = {
+      empresa: (v) => this.empresaFilter.set(v),
+      cliente: (v) => this.clienteFilter.set(v),
+      estado: (v) => this.estadoFilter.set(v),
+      periodo: (v) => this.periodoFilter.set(v),
+      pptoEstado: (v) => this.pptoEstadoFilter.set(v),
+    };
+    setter[filter](value);
+    this.currentPage.set(1);
+    this.load();
+  }
+
+  onPageSizeChange(size: number) {
+    this.pageSize.set(size);
+    this.currentPage.set(1);
+    this.load();
   }
 
   getCentroCostoPrincipalLabel(item: CentroCosto): string {
+    const idPrincipal = item.idCentroCostosPrincipal ?? item.id_centro_costos_principal ?? item.id_centro_costo_principal;
+    if (idPrincipal) {
+      const principalById = this.principales().find(p => p.id === idPrincipal);
+      if (principalById) {
+        return principalById.descripcion;
+      }
+    }
+
     const principalCode = item.CodCentroCtoPrincipal || item.CentroCostoPrincipal;
 
     if (!principalCode) {
@@ -232,9 +224,15 @@ export class CentrosCostosComponent {
     }
 
     const principal = this.items().find((centro) => centro.CodCentroCto === principalCode);
-
     if (principal?.CentroCosto) {
       return principal.CentroCosto;
+    }
+
+    const principalFromList = this.principales().find(
+      (p) => p.centro_costo_principal === principalCode || p.descripcion === principalCode
+    );
+    if (principalFromList?.descripcion) {
+      return principalFromList.descripcion;
     }
 
     return item.CentroCostoPrincipal || item.CodCentroCtoPrincipal || '—';
@@ -248,11 +246,13 @@ export class CentrosCostosComponent {
     this.pptoEstadoFilter.set('');
     this.periodoFilter.set('');
     this.currentPage.set(1);
+    this.load();
   }
 
   goToPage(page: number) {
     if (page >= 1 && page <= this.totalPages()) {
       this.currentPage.set(page);
+      this.load();
     }
   }
 
@@ -265,7 +265,21 @@ export class CentrosCostosComponent {
   editModal(item: CentroCosto) {
     const id = item.id ?? item.id_centro_costo ?? item.CodCentroCto;
     this.editingId.set(id);
-    this.formData = { ...item };
+    this.formData = {
+      ...item,
+      periodo: item.periodo ?? (item.IdPeriodo ? Number(item.IdPeriodo) : undefined),
+      id_centro_costos_principal: item.idCentroCostosPrincipal ?? item.id_centro_costos_principal ?? item.id_centro_costo_principal,
+    };
+
+    if (!this.formData.id_centro_costos_principal && (this.formData.CodCentroCtoPrincipal || this.formData.CentroCostoPrincipal)) {
+      const match = this.principales().find(
+        p => p.centro_costo_principal === this.formData.CodCentroCtoPrincipal || p.descripcion === this.formData.CentroCostoPrincipal
+      );
+      if (match) {
+        this.formData.id_centro_costos_principal = match.id;
+      }
+    }
+
     this.showModal.set(true);
     // Cargar resumen financiero al editar
     this.resumen.set(null);
@@ -282,42 +296,63 @@ export class CentrosCostosComponent {
     this.resumen.set(null);
   }
 
+  buildPayload(): CreateCentroCostoDto {
+    const d = this.formData;
+    return {
+      periodo: Number(d.periodo),
+      CodCliente: d.CodCliente,
+      id_centro_costos_principal: d.id_centro_costos_principal as number,
+      CentroCosto: d.CentroCosto,
+      FechaIncio: d.FechaIncio ?? '',
+      Estado: d.Estado,
+      FechaFinProg: d.FechaFinProg,
+      FechaFinReal: d.FechaFinReal,
+      PresupuestoEstado: d.PresupuestoEstado,
+      PresupuestoCostoDirecto: d.PresupuestoCostoDirecto,
+      PresupuestoGastosGenerales: d.PresupuestoGastosGenerales,
+      PresupuestoViaticos: d.PresupuestoViaticos,
+      PresupuestoMonto: d.PresupuestoMonto ? Number(d.PresupuestoMonto) : undefined,
+      OCFile: d.OCFile,
+    };
+  }
+
   save() {
-    if (!this.formData.CodCentroCto || !this.formData.CentroCosto) {
-      alert('El Código y Nombre del Centro de Costo son obligatorios.');
+    const obligatorios = [
+      { campo: 'Periodo', ok: !!this.formData.periodo },
+      { campo: 'Cliente', ok: !!this.formData.CodCliente },
+      { campo: 'Centro de Costo Principal', ok: !!this.formData.id_centro_costos_principal },
+      { campo: 'Nombre del Centro de Costo', ok: !!this.formData.CentroCosto },
+      { campo: 'Fecha de Inicio', ok: !!this.formData.FechaIncio }
+    ];
+    const faltantes = obligatorios.filter(o => !o.ok).map(o => o.campo);
+
+    if (faltantes.length > 0) {
+      alert('Campos obligatorios: ' + faltantes.join(', '));
       return;
     }
 
+    const payload = this.buildPayload();
     const id = this.editingId();
     if (id !== null) {
-      this.centrosCostosService.update(id, this.formData).subscribe({
+      this.centrosCostosService.update(id, payload).subscribe({
         next: () => { this.closeModal(); this.load(); },
         error: (err) => alert('Error al actualizar: ' + (err.error?.message || err.message))
       });
     } else {
-      this.centrosCostosService.create(this.formData).subscribe({
+      this.centrosCostosService.create(payload).subscribe({
         next: () => { this.closeModal(); this.load(); },
         error: (err) => alert('Error al crear: ' + (err.error?.message || err.message))
       });
     }
   }
 
-  setPeriodo(p: string) {
-    this.periodoFiscal.set(p);
-    this.formData.IdPeriodo = p;
+  setPeriodo(p: number) {
+    this.formData.periodo = p;
   }
 
-  setEstado(e: string) {
-    this.estadoOperativo.set(e);
-    this.formData.Estado = e;
-  }
-
-  estadoClase(e: string): string {
-    const active = this.formData.Estado === e || this.estadoOperativo() === e;
-    if (!active) return 'cc-state-neutral';
-    if (e === 'ABIERTO') return 'cc-state-open';
-    if (e === 'CERRADO') return 'cc-state-closed';
-    return 'cc-state-liquidar';
+  onOCFileChange(event: Event) {
+    const input = event.target as HTMLInputElement;
+    this.formData.OCFile = input.files?.[0]?.name ?? '';
   }
 
   duplicar() {

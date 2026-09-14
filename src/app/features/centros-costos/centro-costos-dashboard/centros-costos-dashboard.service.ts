@@ -6,7 +6,8 @@ import {
   ConteoEstados, 
   CatalogosFiltros, 
   FiltrosCentrosCostos, 
-  ResumenFinanciero 
+  ResumenFinanciero,
+  PaginatedCentrosCostos
 } from '../interfaces';
 import { environment } from '@env';
 
@@ -15,8 +16,10 @@ export class CentrosCostosDashboardService {
   private http = inject(HttpClient);
   private apiUrl = `${environment.apiUrl}/centros-costos`;
 
-  getCentrosCostos(filtros?: FiltrosCentrosCostos): Observable<CentroCostoItem[]> {
-    let params = new HttpParams();
+  getCentrosCostos(filtros?: FiltrosCentrosCostos, page = 1, pageSize = 20): Observable<PaginatedCentrosCostos> {
+    let params = new HttpParams()
+      .set('page', page.toString())
+      .set('pageSize', pageSize.toString());
 
     if (filtros) {
       if (filtros.search?.trim()) params = params.set('search', filtros.search.trim());
@@ -28,7 +31,7 @@ export class CentrosCostosDashboardService {
       if (filtros.pptoEstado?.trim() && filtros.pptoEstado !== 'TODOS') params = params.set('pptoEstado', filtros.pptoEstado.trim());
     }
 
-    return this.http.get<CentroCostoItem[]>(this.apiUrl, { params });
+    return this.http.get<PaginatedCentrosCostos>(this.apiUrl, { params });
   }
 
   getConteoEstados(): Observable<ConteoEstados> {

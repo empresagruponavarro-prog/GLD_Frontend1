@@ -106,27 +106,27 @@
     [columns]="tableColumns"
     [items]="pagedCentros"
     [loading]="loadingCentros"
-    [totalItems]="centros.length"
+    [totalItems]="totalCentros"
     [currentPage]="currentPage"
     [pageSize]="pageSize"
     [pageSizeOptions]="[20, 50, 100]"
     emptyMessage="No se encontraron centros de costos con los filtros seleccionados."
     emptyIcon="fa-solid fa-folder-open"
     [rowTemplate]="rowTpl"
-    (pageChange)="currentPage = $event"
-    (pageSizeChange)="pageSize = $event; currentPage = 1">
+    (pageChange)="changePage($event)"
+    (pageSizeChange)="onPageSizeChange($event)">
   </app-data-table>
 
   <ng-template #rowTpl let-item>
     <tr 
       (click)="openDetail(item)"
-      [class.row-selected]="selectedCentro?.CodCentroCto === item.CodCentroCto"
+      [class.row-selected]="(selectedCentro?.CodCentroCto || selectedCentro?.id) === (item.CodCentroCto || item.id)"
       class="table-row-clickable"
     >
       <td class="col-empresa" [title]="item.Empresa || item.CodEmpresa || ''">
         {{ item.Empresa || item.CodEmpresa || '-' }}
       </td>
-      <td class="col-periodo">{{ item.IdPeriodo || '-' }}</td>
+      <td class="col-periodo">{{ item.periodo || item.IdPeriodo || '-' }}</td>
       <td class="col-cliente font-client" [title]="item.Cliente || item.CodCliente || ''">
         {{ item.Cliente || item.CodCliente || '-' }}
       </td>
@@ -134,7 +134,7 @@
         {{ item.CentroCostoPrincipal || item.CodCentroCtoPrincipal || '-' }}
       </td>
       <td class="col-codigo">
-        <span class="code-pill">{{ item.CodCentroCto }}</span>
+        <span class="code-pill">{{ item.CodCentroCto || item.id }}</span>
       </td>
       <td class="col-nombre font-medium" [title]="item.CentroCosto">
         {{ item.CentroCosto }}
@@ -175,7 +175,7 @@
       <div class="detail-header-dark">
         <div class="detail-header-left">
           <div class="header-tags">
-            <span class="tag-hash">{{ selectedCentro.CodCentroCto }}</span>
+            <span class="tag-hash">{{ selectedCentro.CodCentroCto || selectedCentro.id }}</span>
             <span class="tag-client">Cliente: {{ selectedCentro.Cliente || selectedCentro.CodCliente || 'CLI-001' }}</span>
             <span class="tag-company" *ngIf="selectedCentro.Empresa">{{ selectedCentro.Empresa }}</span>
           </div>
