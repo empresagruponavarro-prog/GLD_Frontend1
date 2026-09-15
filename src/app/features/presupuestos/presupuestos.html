@@ -562,8 +562,8 @@
             <select [(ngModel)]="formData.id_empresa"
                     class="w-full border border-slate-300 rounded-lg px-3 py-2.5 text-[13px] text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#529b7b]/40 focus:border-[#529b7b] bg-white">
               <option [ngValue]="null">— Seleccione empresa —</option>
-              @for (emp of (catalogos()?.empresas || []); track emp) {
-                <option [ngValue]="emp">{{ emp }}</option>
+              @for (emp of empresas(); track emp.id_empresa) {
+                <option [ngValue]="emp.id_empresa">{{ emp.RazonSocial || emp.razon_social || emp.CodEmpresa }}</option>
               }
             </select>
           </div>
@@ -787,9 +787,9 @@
             </div>
             <div class="flex items-center gap-3">
               <div class="flex items-center gap-1">
-                <button (click)="adjustNumeric('gg', -0.5)" class="w-7 h-7 rounded-full border border-slate-200 bg-slate-50 hover:bg-red-50 hover:border-red-200 text-slate-600 hover:text-red-600 text-[16px] font-bold flex items-center justify-center transition">−</button>
+                <button (click)="adjustNumeric('gg', -0.01)" class="w-7 h-7 rounded-full border border-slate-200 bg-slate-50 hover:bg-red-50 hover:border-red-200 text-slate-600 hover:text-red-600 text-[16px] font-bold flex items-center justify-center transition">−</button>
                 <span class="w-16 text-center font-mono font-bold text-[14px] text-slate-800">{{ pctGG() | number:'1.2-2' }}%</span>
-                <button (click)="adjustNumeric('gg', 0.5)" class="w-7 h-7 rounded-full border border-slate-200 bg-slate-50 hover:bg-green-50 hover:border-green-200 text-slate-600 hover:text-green-600 text-[16px] font-bold flex items-center justify-center transition">+</button>
+                <button (click)="adjustNumeric('gg', 0.01)" class="w-7 h-7 rounded-full border border-slate-200 bg-slate-50 hover:bg-green-50 hover:border-green-200 text-slate-600 hover:text-green-600 text-[16px] font-bold flex items-center justify-center transition">+</button>
               </div>
               <span class="font-mono font-bold text-slate-900 text-[14px] min-w-[110px] text-right">{{ formMontoGG | currency:'PEN':'S/ ' }}</span>
             </div>
@@ -803,9 +803,9 @@
             </div>
             <div class="flex items-center gap-3">
               <div class="flex items-center gap-1">
-                <button (click)="adjustNumeric('utilidad', -0.5)" class="w-7 h-7 rounded-full border border-slate-200 bg-slate-50 hover:bg-red-50 hover:border-red-200 text-slate-600 hover:text-red-600 text-[16px] font-bold flex items-center justify-center transition">−</button>
+                <button (click)="adjustNumeric('utilidad', -0.01)" class="w-7 h-7 rounded-full border border-slate-200 bg-slate-50 hover:bg-red-50 hover:border-red-200 text-slate-600 hover:text-red-600 text-[16px] font-bold flex items-center justify-center transition">−</button>
                 <span class="w-16 text-center font-mono font-bold text-[14px] text-slate-800">{{ pctUtilidad() | number:'1.2-2' }}%</span>
-                <button (click)="adjustNumeric('utilidad', 0.5)" class="w-7 h-7 rounded-full border border-slate-200 bg-slate-50 hover:bg-green-50 hover:border-green-200 text-slate-600 hover:text-green-600 text-[16px] font-bold flex items-center justify-center transition">+</button>
+                <button (click)="adjustNumeric('utilidad', 0.01)" class="w-7 h-7 rounded-full border border-slate-200 bg-slate-50 hover:bg-green-50 hover:border-green-200 text-slate-600 hover:text-green-600 text-[16px] font-bold flex items-center justify-center transition">+</button>
               </div>
               <span class="font-mono font-bold text-slate-900 text-[14px] min-w-[110px] text-right">{{ formMontoUtilidad | currency:'PEN':'S/ ' }}</span>
             </div>
@@ -819,8 +819,8 @@
             </div>
             <div class="flex items-center gap-3">
               <div class="flex items-center gap-1">
-                <button (click)="adjustNumeric('viaticos', -500)" class="w-7 h-7 rounded-full border border-slate-200 bg-slate-50 hover:bg-red-50 hover:border-red-200 text-slate-600 hover:text-red-600 text-[16px] font-bold flex items-center justify-center transition">−</button>
-                <button (click)="adjustNumeric('viaticos', 500)" class="w-7 h-7 rounded-full border border-slate-200 bg-slate-50 hover:bg-green-50 hover:border-green-200 text-slate-600 hover:text-green-600 text-[16px] font-bold flex items-center justify-center transition">+</button>
+                <button (click)="adjustNumeric('viaticos', 0.01)" class="w-7 h-7 rounded-full border border-slate-200 bg-slate-50 hover:bg-red-50 hover:border-red-200 text-slate-600 hover:text-red-600 text-[16px] font-bold flex items-center justify-center transition">−</button>
+                <button (click)="adjustNumeric('viaticos', 0.01)" class="w-7 h-7 rounded-full border border-slate-200 bg-slate-50 hover:bg-green-50 hover:border-green-200 text-slate-600 hover:text-green-600 text-[16px] font-bold flex items-center justify-center transition">+</button>
               </div>
               <span class="font-mono font-bold text-slate-900 text-[14px] min-w-[110px] text-right">{{ viaticos() | currency:'PEN':'S/ ' }}</span>
             </div>
@@ -834,8 +834,8 @@
             </div>
             <div class="flex items-center gap-3">
               <div class="flex items-center gap-1">
-                <button (click)="adjustNumeric('descuento', -500)" class="w-7 h-7 rounded-full border border-amber-200 bg-white hover:bg-red-50 hover:border-red-200 text-amber-700 text-[16px] font-bold flex items-center justify-center transition">−</button>
-                <button (click)="adjustNumeric('descuento', 500)" class="w-7 h-7 rounded-full border border-amber-200 bg-white hover:bg-green-50 hover:border-green-200 text-amber-700 text-[16px] font-bold flex items-center justify-center transition">+</button>
+                <button (click)="adjustNumeric('descuento', 0.01)" class="w-7 h-7 rounded-full border border-amber-200 bg-white hover:bg-red-50 hover:border-red-200 text-amber-700 text-[16px] font-bold flex items-center justify-center transition">−</button>
+                <button (click)="adjustNumeric('descuento', 0.01)" class="w-7 h-7 rounded-full border border-amber-200 bg-white hover:bg-green-50 hover:border-green-200 text-amber-700 text-[16px] font-bold flex items-center justify-center transition">+</button>
               </div>
               <span class="font-mono font-bold text-amber-900 text-[14px] min-w-[110px] text-right">− {{ descuento() | currency:'PEN':'S/ ' }}</span>
             </div>

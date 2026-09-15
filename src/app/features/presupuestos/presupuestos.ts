@@ -3,6 +3,8 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 
 import { Router } from '@angular/router';
+import { EmpresasService } from '../administration/empresas/empresas.service';
+import { Empresa } from '../administration/empresas/interfaces';
 import { PresupuestosService } from './presupuestos.service';
 import { PresupuestoPrincipal, PaginatedResponse, DetalleFase, PresupuestoCompleto } from './interfaces';
 import { CentrosCostosService } from '../centros-costos/centros-costos.service';
@@ -19,6 +21,8 @@ import { CentroCosto, CatalogosFiltros } from '../centros-costos/interfaces/cent
 export class PresupuestosComponent implements OnInit {
   private presupuestosService = inject(PresupuestosService);
   private centrosCostosService = inject(CentrosCostosService);
+  private empresasService = inject(EmpresasService);
+  private router = inject(Router);
 
   // Estado general
   loading = signal<boolean>(false);
@@ -27,6 +31,7 @@ export class PresupuestosComponent implements OnInit {
 
   // Filtros — propiedades planas para compatibilidad con [(ngModel)]
   catalogos = signal<CatalogosFiltros | null>(null);
+  empresas = signal<Empresa[]>([]);
   filterSearch = '';
   filterEmpresa = '';
   filterPeriodo = '';
@@ -125,9 +130,9 @@ export class PresupuestosComponent implements OnInit {
   newFaseSubtotal: number | null = null;
 
   // Parámetros Financieros para Paso 3
-  pctGG = signal<number>(10.00);
-  pctUtilidad = signal<number>(8.00);
-  viaticos = signal<number>(5000.00);
+  pctGG = signal<number>(0.00);
+  pctUtilidad = signal<number>(0.00);
+  viaticos = signal<number>(0.00);
   descuento = signal<number>(0.00);
 
   // Archivos para Paso 4
@@ -243,13 +248,11 @@ export class PresupuestosComponent implements OnInit {
     this.formFases.update(items => items.filter((_, i) => i !== index));
   }
 
-  openNewPresupuestoForm() {
+  openNewPresupuestoForm(centroCosto?: CentroCosto) {
     this.editingId.set(null);
     this.formData = this.emptyForm();
     this.formStep.set(1);
 
-    const anio = new Date().getFullYear();
-    this.formData.periodo = String(anio);
     this.formData.Estado = 'PENDIENTE';
 
     // Reset completo de todas las signals (formulario en blanco para crear)
@@ -263,6 +266,27 @@ export class PresupuestosComponent implements OnInit {
     this.filePresupuestoInfo.set(null);
     this.fileOCName.set(null);
     this.fileOCInfo.set(null);
+
+    if (centroCosto) {
+      this.selectedCC.set(centroCosto);
+      this.formData = {
+        ...this.formData,
+        Proyecto: centroCosto.CentroCosto || '',
+        CodCentroCto: centroCosto.CodCentroCto || '',
+        id_centro_costo: centroCosto.id ?? centroCosto.id_centro_costo,
+        Concepto: centroCosto.Cliente || centroCosto.CodCliente || '',
+        periodo: centroCosto.periodo != null
+          ? String(centroCosto.periodo)
+          : (centroCosto.IdPeriodo || ''),
+        IdPeriodo: centroCosto.periodo != null
+          ? String(centroCosto.periodo)
+          : (centroCosto.IdPeriodo || ''),
+        id_empresa: centroCosto.id_empresa,
+        CodEmpresa: centroCosto.CodEmpresa || centroCosto.Empresa || '',
+      };
+    } else {
+      this.selectedCC.set(null);
+    }
 
     this.showForm.set(true);
   }
@@ -412,13 +436,27 @@ export class PresupuestosComponent implements OnInit {
 
   ngOnInit() {
     this.loadCatalogos();
+    this.loadEmpresas();
     this.loadCentrosCostos();
+
+    const navigationState = this.router.getCurrentNavigation()?.extras.state ?? history.state;
+    const fromCC = navigationState?.['fromCC'] as CentroCosto | undefined;
+    if (fromCC) {
+      this.openNewPresupuestoForm(fromCC);
+    }
   }
 
   loadCatalogos() {
     this.centrosCostosService.getCatalogosFiltros().subscribe({
       next: (cat) => this.catalogos.set(cat),
       error: (e) => console.error('Error al cargar catálogos', e)
+    });
+  }
+
+  loadEmpresas() {
+    this.empresasService.getAll().subscribe({
+      next: (empresas) => this.empresas.set(empresas),
+      error: (error) => console.error('Error al cargar empresas', error),
     });
   }
 
