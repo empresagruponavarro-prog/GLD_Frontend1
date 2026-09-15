@@ -351,6 +351,18 @@ export class CentrosCostosComponent {
     this.formData.OCFile = input.files?.[0]?.name ?? '';
   }
 
+  removeOCFile(event?: Event) {
+    if (event) {
+      event.stopPropagation();
+      event.preventDefault();
+    }
+    this.formData.OCFile = '';
+    const fileInput = document.getElementById('cc-oc-file') as HTMLInputElement | null;
+    if (fileInput) {
+      fileInput.value = '';
+    }
+  }
+
   duplicar() {
     this.openModal();
   }

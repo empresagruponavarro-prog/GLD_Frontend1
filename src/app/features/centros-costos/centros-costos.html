@@ -365,10 +365,32 @@
           </div>
 
           <div class="cc-form-card-body">
-            <label class="cc-dropzone" for="cc-oc-file">
-              <span class="cc-dropzone-icon"><lucide-icon [img]="CloudUpload" size="24"></lucide-icon></span>
-              <span class="cc-dropzone-text">{{ formData.OCFile ? formData.OCFile : 'Haz clic para cargar el acta o arrastra y suelta aquí' }}</span>
-            </label>
+            @if (!formData.OCFile) {
+              <label class="cc-dropzone" for="cc-oc-file">
+                <span class="cc-dropzone-icon"><lucide-icon [img]="CloudUpload" size="24"></lucide-icon></span>
+                <span class="cc-dropzone-text">Haz clic para cargar el acta o arrastra y suelta aquí</span>
+              </label>
+            } @else {
+              <div class="cc-uploaded-file-container">
+                <div class="cc-uploaded-file-info">
+                  <div class="cc-uploaded-file-icon">
+                    <lucide-icon [img]="FileText" size="22"></lucide-icon>
+                  </div>
+                  <div class="cc-uploaded-file-details">
+                    <span class="cc-uploaded-file-name" [title]="formData.OCFile">{{ formData.OCFile }}</span>
+                    <span class="cc-uploaded-file-sub">Documento adjuntado</span>
+                  </div>
+                </div>
+                <div class="cc-uploaded-file-actions">
+                  <label for="cc-oc-file" class="cc-btn-change-file" title="Cambiar archivo">
+                    <i class="fa-solid fa-arrows-rotate"></i> Cambiar
+                  </label>
+                  <button type="button" class="cc-btn-remove-file" (click)="removeOCFile($event)" title="Quitar archivo">
+                    <lucide-icon [img]="X" size="14"></lucide-icon> Quitar
+                  </button>
+                </div>
+              </div>
+            }
             <input id="cc-oc-file" type="file" accept=".pdf,.doc,.docx" style="display: none" (change)="onOCFileChange($event)">
           </div>
         </section>
