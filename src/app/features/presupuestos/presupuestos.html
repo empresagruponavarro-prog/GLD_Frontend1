@@ -61,7 +61,7 @@
 
       <button (click)="limpiarFiltros()" class="ml-1 text-[12px] text-slate-400 hover:text-slate-600 underline underline-offset-2 transition-colors">Limpiar</button>
       <div class="flex-1"></div>
-      <button class="flex items-center gap-1.5 bg-green-600 hover:bg-green-700 active:bg-green-800 text-white text-[13px] font-bold px-4 py-2 rounded-md transition-colors whitespace-nowrap shadow-sm shadow-green-900/20" type="button" (click)="openModal()">
+      <button class="flex items-center gap-1.5 bg-green-600 hover:bg-green-700 active:bg-green-800 text-white text-[13px] font-bold px-4 py-2 rounded-md transition-colors whitespace-nowrap shadow-sm shadow-green-900/20" type="button" (click)="openNewPresupuestoForm()">
         <svg class="w-4 h-4" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M8 3v10M3 8h10" stroke-linecap="round" /></svg>
         Presupuesto
       </button>
@@ -447,119 +447,675 @@
 <!-- ============================================================
      MODAL FLOTANTE — Nuevo / Editar Presupuesto
      ============================================================ -->
-<app-modal
-  [isOpen]="showModal()"
-  [title]="editingId() ? 'Editar Presupuesto' : 'Nuevo Presupuesto'"
-  maxWidth="860px"
-  [submitText]="editingId() ? 'Guardar Cambios' : 'Crear Presupuesto'"
-  (closed)="closeModal()"
-  (saved)="save()">
 
-  <div modal-body style="display:flex; flex-direction:column; gap:18px; padding:4px 0;">
+@if (showForm()) {
+<!-- BACKDROP OVERLAY FLOTANTE -->
+<div class="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-sm flex items-center justify-center p-3 sm:p-5 md:p-6"
+     (click)="closeForm()">
 
-    <!-- Fila 1: ID Presupuesto + Proyecto -->
-    <div style="display:grid; grid-template-columns:1fr 2fr; gap:14px;">
-      <div>
-        <label style="display:block;font-size:12px;font-weight:700;color:#475569;margin-bottom:5px;">ID Presupuesto *</label>
-        <input [(ngModel)]="formData.IdPresupuesto"
-               placeholder="Ej. PP-2024-001"
-               style="width:100%;padding:7px 10px;border:1px solid #cbd5e1;border-radius:7px;font-size:13px;color:#1e293b;outline:none;">
-      </div>
-      <div>
-        <label style="display:block;font-size:12px;font-weight:700;color:#475569;margin-bottom:5px;">Proyecto / Concepto</label>
-        <input [(ngModel)]="formData.Proyecto"
-               placeholder="Descripción del proyecto"
-               style="width:100%;padding:7px 10px;border:1px solid #cbd5e1;border-radius:7px;font-size:13px;color:#1e293b;outline:none;">
-      </div>
-    </div>
+  <!-- CONTENEDOR MODAL FLOTANTE -->
+  <div class="relative w-full max-w-6xl h-[90vh] max-h-[880px] flex flex-col bg-slate-100 rounded-2xl shadow-2xl overflow-hidden border border-slate-700/30 ring-1 ring-black/10"
+       style="font-family: 'Inter', system-ui, sans-serif;"
+       (click)="$event.stopPropagation()">
 
-    <!-- Fila 2: Empresa + CC + Periodo -->
-    <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:14px;">
-      <div>
-        <label style="display:block;font-size:12px;font-weight:700;color:#475569;margin-bottom:5px;">Empresa</label>
-        <select [(ngModel)]="formData.CodEmpresa"
-                style="width:100%;padding:7px 10px;border:1px solid #cbd5e1;border-radius:7px;font-size:13px;color:#1e293b;outline:none;background:#fff;">
-          <option value="">Seleccionar...</option>
-          @for (e of catalogos()?.empresas; track e) {
-            <option [value]="e">{{ e }}</option>
-          }
-        </select>
-      </div>
-      <div>
-        <label style="display:block;font-size:12px;font-weight:700;color:#475569;margin-bottom:5px;">Centro de Costo</label>
-        <input [(ngModel)]="formData.CodCentroCto"
-               placeholder="Ej. CC-001"
-               style="width:100%;padding:7px 10px;border:1px solid #cbd5e1;border-radius:7px;font-size:13px;color:#1e293b;outline:none;">
-      </div>
-      <div>
-        <label style="display:block;font-size:12px;font-weight:700;color:#475569;margin-bottom:5px;">Período</label>
-        <select [(ngModel)]="formData.IdPeriodo"
-                style="width:100%;padding:7px 10px;border:1px solid #cbd5e1;border-radius:7px;font-size:13px;color:#1e293b;outline:none;background:#fff;">
-          <option value="">Seleccionar...</option>
-          @for (p of catalogos()?.periodos; track p) {
-            <option [value]="p">{{ p }}</option>
-          }
-        </select>
-      </div>
-    </div>
-
-    <!-- Fila 3: Tipo Ppto + Estado -->
-    <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px;">
-      <div>
-        <label style="display:block;font-size:12px;font-weight:700;color:#475569;margin-bottom:5px;">Tipo Presupuesto</label>
-        <select [(ngModel)]="formData.TipoPpto"
-                style="width:100%;padding:7px 10px;border:1px solid #cbd5e1;border-radius:7px;font-size:13px;color:#1e293b;outline:none;background:#fff;">
-          <option value="OBRA">Obra</option>
-          <option value="ADICIONAL">Adicional</option>
-          <option value="SERVICIO">Servicio</option>
-        </select>
-      </div>
-      <div>
-        <label style="display:block;font-size:12px;font-weight:700;color:#475569;margin-bottom:5px;">Estado</label>
-        <select [(ngModel)]="formData.Estado"
-                style="width:100%;padding:7px 10px;border:1px solid #cbd5e1;border-radius:7px;font-size:13px;color:#1e293b;outline:none;background:#fff;">
-          <option value="PENDIENTE">Pendiente</option>
-          <option value="ABIERTO">Abierto</option>
-          <option value="EN CIERRE">En Cierre</option>
-          <option value="CERRADO">Cerrado</option>
-        </select>
-      </div>
-    </div>
-
-    <!-- Fila 4: Costo Directo + GG% + Utilidad% + Viáticos -->
-    <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:14px;">
-      <p style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:0.08em;margin:0 0 12px;">Parámetros Financieros</p>
-      <div style="display:grid; grid-template-columns:repeat(4,1fr); gap:12px;">
-        <div>
-          <label style="display:block;font-size:12px;font-weight:700;color:#475569;margin-bottom:5px;">Costo Directo (S/)</label>
-          <input type="number" [(ngModel)]="formData.CostoDirecto" min="0"
-                 style="width:100%;padding:7px 10px;border:1px solid #cbd5e1;border-radius:7px;font-size:13px;color:#1e293b;outline:none;">
-        </div>
-        <div>
-          <label style="display:block;font-size:12px;font-weight:700;color:#475569;margin-bottom:5px;">GG (%)</label>
-          <input type="number" [(ngModel)]="formData.GGPorcentaje" min="0" max="100"
-                 style="width:100%;padding:7px 10px;border:1px solid #cbd5e1;border-radius:7px;font-size:13px;color:#1e293b;outline:none;">
-        </div>
-        <div>
-          <label style="display:block;font-size:12px;font-weight:700;color:#475569;margin-bottom:5px;">Utilidad (%)</label>
-          <input type="number" [(ngModel)]="formData.UtiliPorcentaje" min="0" max="100"
-                 style="width:100%;padding:7px 10px;border:1px solid #cbd5e1;border-radius:7px;font-size:13px;color:#1e293b;outline:none;">
-        </div>
-        <div>
-          <label style="display:block;font-size:12px;font-weight:700;color:#475569;margin-bottom:5px;">Viáticos (S/)</label>
-          <input type="number" [(ngModel)]="formData.Viaticos" min="0"
-                 style="width:100%;padding:7px 10px;border:1px solid #cbd5e1;border-radius:7px;font-size:13px;color:#1e293b;outline:none;">
-        </div>
-      </div>
-    </div>
-
-    <!-- Fila 5: Comentarios -->
+  <!-- CABECERA CORPORATIVA -->
+  <header class="bg-[#0f1e17] text-white shrink-0 px-5 py-3 flex items-center justify-between shadow-lg">
     <div>
-      <label style="display:block;font-size:12px;font-weight:700;color:#475569;margin-bottom:5px;">Comentarios</label>
-      <textarea [(ngModel)]="formData.Comentarios" rows="3"
-                placeholder="Notas u observaciones adicionales..."
-                style="width:100%;padding:7px 10px;border:1px solid #cbd5e1;border-radius:7px;font-size:13px;color:#1e293b;outline:none;resize:vertical;"></textarea>
+      <div class="flex items-center gap-2 text-[12px] text-slate-400 mb-0.5">
+        <span>Sistema GLD 2026</span>
+        <span class="text-slate-600">›</span>
+        <span>Presupuestos</span>
+        <span class="text-slate-600">›</span>
+        <span class="text-white font-semibold">{{ formData.IdPresupuesto || 'Nuevo Presupuesto' }}</span>
+      </div>
+      <p class="text-[11px] text-[#529b7b]">{{ editingId() ? 'Edición Estructurada de Obra' : 'Creación de Nuevo Presupuesto' }}</p>
     </div>
+    <div class="flex items-center gap-3">
+      <span class="inline-flex items-center gap-1.5 bg-amber-400/20 text-amber-300 border border-amber-400/40 px-3 py-1 rounded-full text-[12px] font-semibold">
+        <span class="w-1.5 h-1.5 rounded-full bg-amber-400 inline-block animate-pulse"></span>
+        PENDIENTE DE APROBACIÓN
+      </span>
+      <button (click)="closeForm()"
+              class="bg-slate-700/80 hover:bg-slate-600 text-white px-3.5 py-1.5 rounded-lg text-[12px] font-semibold transition-colors border border-slate-600/60 shadow-sm">
+        Cancelar
+      </button>
+      <button (click)="closeForm()"
+              title="Cerrar ventana"
+              class="text-slate-400 hover:text-white hover:bg-white/10 p-1.5 rounded-lg transition-colors ml-1">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+        </svg>
+      </button>
+    </div>
+  </header>
 
-  </div>
-</app-modal>
+  <!-- STEPPER DE NAVEGACIÓN -->
+  <nav class="bg-white border-b border-slate-200 shrink-0 px-5 py-3 flex items-center gap-2 overflow-x-auto shadow-sm">
+    @for (step of [1,2,3,4,5]; track step) {
+      <button
+        (click)="switchStep(step)"
+        class="flex items-center gap-2.5 px-4 py-2 rounded-lg text-[13px] font-semibold transition-all shrink-0 border"
+        [ngClass]="formStep() === step
+          ? 'bg-[#1e4838] text-white border-[#1e4838] shadow-sm'
+          : 'bg-slate-50 text-slate-600 border-slate-200 hover:border-[#529b7b]/50 hover:text-[#2d634d]'">
+        <span class="w-6 h-6 rounded-full flex items-center justify-center text-[12px] font-bold shrink-0"
+              [ngClass]="formStep() === step ? 'bg-[#529b7b] text-white' : 'bg-slate-200 text-slate-600'">
+          {{ step }}
+        </span>
+        @if (step === 1) { <span>Datos Generales</span> }
+        @if (step === 2) { <span>Fases &amp; Costos</span> }
+        @if (step === 3) { <span>Liquidación Financiera</span> }
+        @if (step === 4) { <span>Docs &amp; Versiones</span> }
+        @if (step === 5) { <span>Control &amp; Aprobación</span> }
+      </button>
+      @if (step < 5) {
+        <svg class="w-4 h-4 text-slate-300 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path d="M9 5l7 7-7 7" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"/>
+        </svg>
+      }
+    }
+  </nav>
+
+  <!-- CONTENIDO PRINCIPAL -->
+  <div class="flex-1 flex overflow-hidden">
+
+    <!-- PANEL CENTRAL -->
+    <main class="flex-1 overflow-y-auto p-5" style="scrollbar-width:thin;">
+
+      <!-- PASO 1: DATOS GENERALES -->
+      @if (formStep() === 1) {
+      <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-6 max-w-4xl">
+        <div class="flex items-start gap-3 mb-6">
+          <span class="w-8 h-8 rounded-full bg-[#1e4838] text-white flex items-center justify-center text-[14px] font-bold shrink-0">1</span>
+          <div>
+            <h2 class="font-bold text-slate-800 text-[16px]">Datos Generales &amp; Vinculación del Proyecto</h2>
+            <p class="text-slate-400 text-[13px]">Parámetros corporativos, cliente, centro de costo y período de ejecución</p>
+          </div>
+          <span class="ml-auto text-[12px] text-red-400 font-medium">* Campos mandatorios</span>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+          <!-- ID Presupuesto -->
+          <div>
+            <label class="block text-[12px] font-bold text-slate-500 mb-1.5 uppercase tracking-wide">ID Presupuesto *</label>
+            <div class="relative">
+              <input [(ngModel)]="formData.IdPresupuesto" type="text" placeholder="PPTO-2026-001"
+                     class="w-full border border-slate-300 rounded-lg px-3 py-2.5 text-[13px] text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#529b7b]/40 focus:border-[#529b7b] bg-white pr-10">
+              @if (formData.IdPresupuesto) {
+                <svg class="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#529b7b]" fill="currentColor" viewBox="0 0 20 20">
+                  <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+                </svg>
+              }
+            </div>
+          </div>
+
+          <!-- Proyecto / Obra -->
+          <div>
+            <label class="block text-[12px] font-bold text-slate-500 mb-1.5 uppercase tracking-wide">Proyecto / Obra *</label>
+            <input [(ngModel)]="formData.Proyecto" type="text" placeholder="Nombre descriptivo de la obra..."
+                   class="w-full border border-slate-300 rounded-lg px-3 py-2.5 text-[13px] text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#529b7b]/40 focus:border-[#529b7b]">
+          </div>
+
+          <!-- Empresa Emisora -->
+          <div class="md:col-span-2">
+            <label class="block text-[12px] font-bold text-slate-500 mb-1.5 uppercase tracking-wide">Empresa Emisora *</label>
+            <select [(ngModel)]="formData.id_empresa"
+                    class="w-full border border-slate-300 rounded-lg px-3 py-2.5 text-[13px] text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#529b7b]/40 focus:border-[#529b7b] bg-white">
+              <option [ngValue]="null">— Seleccione empresa —</option>
+              @for (emp of (catalogos()?.empresas || []); track emp) {
+                <option [ngValue]="emp">{{ emp }}</option>
+              }
+            </select>
+          </div>
+
+          <!-- Centro de Costo -->
+          <div>
+            <label class="block text-[12px] font-bold text-slate-500 mb-1.5 uppercase tracking-wide">Centro de Costo Principal *</label>
+            <div class="w-full border border-[#529b7b] bg-[#529b7b]/5 rounded-lg px-3 py-2.5 text-[13px] text-[#1e4838] font-semibold flex items-center gap-2">
+              <svg class="w-4 h-4 text-[#529b7b] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-2 10v-5a1 1 0 00-1-1h-2a1 1 0 00-1 1v5m4 0H9" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"/>
+              </svg>
+              @if (selectedCC()) {
+                <span>CC-{{ selectedCC()?.id }} — {{ selectedCC()?.CentroCosto }}</span>
+              } @else {
+                <span class="text-slate-400 font-normal">Sin Centro de Costo seleccionado</span>
+              }
+            </div>
+          </div>
+
+          <!-- Cliente -->
+          <div>
+            <label class="block text-[12px] font-bold text-slate-500 mb-1.5 uppercase tracking-wide">Cliente *</label>
+            <select [(ngModel)]="formData.Concepto"
+                    class="w-full border border-slate-300 rounded-lg px-3 py-2.5 text-[13px] text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#529b7b]/40 focus:border-[#529b7b] bg-white">
+              <option value="">— Seleccione cliente —</option>
+              @for (cli of (catalogos()?.clientes || []); track cli) {
+                <option [value]="cli">{{ cli }}</option>
+              }
+            </select>
+          </div>
+
+          <!-- Período Fiscal -->
+          <div>
+            <label class="block text-[12px] font-bold text-slate-500 mb-1.5 uppercase tracking-wide">Período Fiscal *</label>
+            <div class="flex gap-2">
+              @for (yr of ['2024','2025','2026']; track yr) {
+                <button (click)="formData.periodo = yr"
+                        class="flex-1 py-2 rounded-lg text-[13px] font-bold border transition-all"
+                        [ngClass]="formData.periodo === yr
+                          ? 'bg-[#1e4838] text-white border-[#1e4838] shadow-sm'
+                          : 'bg-white text-slate-600 border-slate-200 hover:border-[#529b7b]/50'">
+                  {{ yr }}
+                </button>
+              }
+            </div>
+          </div>
+
+          <!-- Tipo de Presupuesto -->
+          <div>
+            <label class="block text-[12px] font-bold text-slate-500 mb-1.5 uppercase tracking-wide">Tipo de Presupuesto *</label>
+            <div class="flex gap-2">
+              @for (tipo of ['Principal','Adicional']; track tipo) {
+                <button (click)="formData.TipoPpto = tipo"
+                        class="flex-1 py-2 rounded-lg text-[13px] font-bold border transition-all"
+                        [ngClass]="formData.TipoPpto === tipo
+                          ? 'bg-[#1e4838] text-white border-[#1e4838] shadow-sm'
+                          : 'bg-white text-slate-600 border-slate-200 hover:border-[#529b7b]/50'">
+                  {{ tipo }}
+                </button>
+              }
+            </div>
+          </div>
+
+          <!-- Fecha de Requerimiento -->
+          <div>
+            <label class="block text-[12px] font-bold text-slate-500 mb-1.5 uppercase tracking-wide">Fecha de Requerimiento</label>
+            <input [(ngModel)]="formData.FechaRequerimiento" type="datetime-local"
+                   class="w-full border border-slate-300 rounded-lg px-3 py-2.5 text-[13px] text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#529b7b]/40 focus:border-[#529b7b]">
+          </div>
+
+          <!-- Fecha Compromiso / Entrega -->
+          <div>
+            <label class="block text-[12px] font-bold text-slate-500 mb-1.5 uppercase tracking-wide">Fecha Compromiso / Entrega</label>
+            <input [(ngModel)]="formData.FechaEntrega" type="datetime-local"
+                   class="w-full border border-slate-300 rounded-lg px-3 py-2.5 text-[13px] text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#529b7b]/40 focus:border-[#529b7b]">
+          </div>
+
+          <!-- Concepto/Versión -->
+          <div class="md:col-span-2">
+            <label class="block text-[12px] font-bold text-slate-500 mb-1.5 uppercase tracking-wide">Concepto / Versión</label>
+            <input [(ngModel)]="formData.Concepto" type="text" placeholder="Ej. PPTO CONTRACTUAL, Adicional #1..."
+                   class="w-full border border-slate-300 rounded-lg px-3 py-2.5 text-[13px] text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#529b7b]/40 focus:border-[#529b7b]">
+          </div>
+        </div>
+      </div>
+      }
+
+      <!-- PASO 2: FASES & COSTOS -->
+      @if (formStep() === 2) {
+      <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-6 max-w-4xl">
+        <div class="flex items-start gap-3 mb-6">
+          <span class="w-8 h-8 rounded-full bg-[#1e4838] text-white flex items-center justify-center text-[14px] font-bold shrink-0">2</span>
+          <div>
+            <h2 class="font-bold text-slate-800 text-[16px]">Fases &amp; Costos — Costo Directo APU</h2>
+            <p class="text-slate-400 text-[13px]">Desglose de partidas por fase. Los montos alimentan la liquidación financiera.</p>
+          </div>
+          <span class="ml-auto bg-[#529b7b]/10 text-[#1e4838] border border-[#529b7b]/30 px-3 py-1 rounded-full text-[12px] font-bold">
+            {{ formFases().length }} items
+          </span>
+        </div>
+
+        <!-- Tabla de Fases -->
+        <div class="rounded-lg border border-slate-200 overflow-hidden mb-5">
+          <table class="w-full text-left border-collapse">
+            <thead class="bg-slate-50 text-slate-500 text-[11px] uppercase font-semibold border-b border-slate-200">
+              <tr>
+                <th class="py-2 px-3 w-8">#</th>
+                <th class="py-2 px-3">Fase / Partida</th>
+                <th class="py-2 px-3 w-44">Categoría APU</th>
+                <th class="py-2 px-3 text-right w-36">Subtotal CD (S/)</th>
+                <th class="py-2 px-3 text-right w-16">% Inc.</th>
+                <th class="py-2 px-3 text-center w-12">Quitar</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-100 text-[13px]">
+              @for (fase of formFases(); track fase; let i = $index) {
+                <tr class="hover:bg-slate-50 transition">
+                  <td class="py-2 px-3 font-mono text-[#2d634d] font-bold text-[12px]">{{ (i+1) < 10 ? '0'+(i+1) : (i+1) }}</td>
+                  <td class="py-2 px-3 font-medium text-slate-800">{{ fase.nombre }}</td>
+                  <td class="py-2 px-3">
+                    <span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium bg-[#529b7b]/10 text-[#2d634d] border border-[#529b7b]/25">
+                      {{ fase.categoria }}
+                    </span>
+                  </td>
+                  <td class="py-2 px-3 text-right font-mono font-bold text-slate-900 tabular-nums">
+                    {{ fase.subtotal | currency:'PEN':'S/ ' }}
+                  </td>
+                  <td class="py-2 px-3 text-right font-mono text-[#2d634d] font-semibold tabular-nums">
+                    {{ formCostoDirecto > 0 ? ((fase.subtotal / formCostoDirecto) * 100).toFixed(1) + '%' : '0.0%' }}
+                  </td>
+                  <td class="py-2 px-3 text-center">
+                    <button (click)="removeFormFase(i)" title="Quitar fase"
+                            class="w-6 h-6 rounded-full flex items-center justify-center text-slate-400 hover:bg-red-50 hover:text-red-500 transition mx-auto">
+                      <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path d="M6 18L18 6M6 6l12 12" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"/>
+                      </svg>
+                    </button>
+                  </td>
+                </tr>
+              }
+              @empty {
+                <tr>
+                  <td colspan="6" class="p-8 text-center text-slate-400">
+                    <svg class="w-10 h-10 text-slate-200 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path d="M12 6v6m0 0v6m0-6h6m-6 0H6" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"/>
+                    </svg>
+                    Aún no hay fases. Agrega la primera partida de costo directo.
+                  </td>
+                </tr>
+              }
+            </tbody>
+            <tfoot class="bg-[#1e4838]/5 border-t-2 border-[#529b7b]/30">
+              <tr>
+                <td colspan="3" class="py-2.5 px-3 font-bold text-[#1e4838] text-[13px] uppercase tracking-wide">
+                  Total Costo Directo
+                </td>
+                <td class="py-2.5 px-3 text-right font-mono font-extrabold text-[#1e4838] text-[15px] tabular-nums">
+                  {{ formCostoDirecto | currency:'PEN':'S/ ' }}
+                </td>
+                <td colspan="2"></td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+
+        <!-- Inserción Rápida -->
+        <div class="bg-slate-50 rounded-lg border border-slate-200 p-4">
+          <p class="text-[12px] font-bold text-slate-500 uppercase tracking-wide mb-3">+ Añadir nueva fase / partida</p>
+          <div class="grid grid-cols-1 sm:grid-cols-12 gap-2.5 items-center">
+            <div class="sm:col-span-5">
+              <input [(ngModel)]="newFaseNombre" type="text" placeholder="Nombre de la fase o partida *"
+                     class="w-full border border-slate-300 rounded-lg px-3 py-2 text-[13px] focus:outline-none focus:ring-2 focus:ring-[#529b7b]/40 focus:border-[#529b7b] bg-white">
+            </div>
+            <div class="sm:col-span-3">
+              <input [(ngModel)]="newFaseCategoria" type="text" placeholder="Categoría APU (ej. Materiales)"
+                     class="w-full border border-slate-300 rounded-lg px-3 py-2 text-[13px] focus:outline-none focus:ring-2 focus:ring-[#529b7b]/40 focus:border-[#529b7b] bg-white">
+            </div>
+            <div class="sm:col-span-2">
+              <input [(ngModel)]="newFaseSubtotal" type="number" placeholder="Monto S/."
+                     class="w-full border border-slate-300 rounded-lg px-3 py-2 text-[13px] focus:outline-none focus:ring-2 focus:ring-[#529b7b]/40 focus:border-[#529b7b] bg-white">
+            </div>
+            <div class="sm:col-span-2">
+              <button (click)="addFormFase()"
+                      type="button"
+                      class="w-full bg-[#1e4838] hover:bg-[#2d634d] text-white px-2.5 py-2 rounded-lg text-[13px] font-bold transition-colors flex items-center justify-center gap-1.5 shadow-sm whitespace-nowrap">
+                <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path d="M12 6v6m0 0v6m0-6h6m-6 0H6" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"/>
+                </svg>
+                <span>Agregar</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+      }
+
+      <!-- PASO 3: LIQUIDACIÓN FINANCIERA -->
+      @if (formStep() === 3) {
+      <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-6 max-w-3xl">
+        <div class="flex items-start gap-3 mb-6">
+          <span class="w-8 h-8 rounded-full bg-[#1e4838] text-white flex items-center justify-center text-[14px] font-bold shrink-0">3</span>
+          <div>
+            <h2 class="font-bold text-slate-800 text-[16px]">Liquidación Financiera</h2>
+            <p class="text-slate-400 text-[13px]">GG, Utilidad, Viáticos y totales con impuestos.</p>
+          </div>
+        </div>
+
+        <!-- Costo Directo Base -->
+        <div class="bg-slate-50 border border-slate-200 rounded-lg p-4 mb-4 flex items-center justify-between">
+          <span class="text-[13px] font-semibold text-slate-600">Costo Directo Acumulado (de Paso 2)</span>
+          <span class="font-mono font-extrabold text-[#1e4838] text-[18px]">{{ formCostoDirecto | currency:'PEN':'S/ ' }}</span>
+        </div>
+
+        <!-- Ajustes -->
+        <div class="space-y-3 mb-5">
+          <!-- GG -->
+          <div class="flex items-center justify-between border border-slate-200 rounded-lg px-4 py-3 bg-white">
+            <div class="flex-1">
+              <p class="text-[13px] font-semibold text-slate-700">Gastos Generales (GG)</p>
+              <p class="text-[11px] text-slate-400">Porcentaje sobre Costo Directo</p>
+            </div>
+            <div class="flex items-center gap-3">
+              <div class="flex items-center gap-1">
+                <button (click)="adjustNumeric('gg', -0.5)" class="w-7 h-7 rounded-full border border-slate-200 bg-slate-50 hover:bg-red-50 hover:border-red-200 text-slate-600 hover:text-red-600 text-[16px] font-bold flex items-center justify-center transition">−</button>
+                <span class="w-16 text-center font-mono font-bold text-[14px] text-slate-800">{{ pctGG() | number:'1.2-2' }}%</span>
+                <button (click)="adjustNumeric('gg', 0.5)" class="w-7 h-7 rounded-full border border-slate-200 bg-slate-50 hover:bg-green-50 hover:border-green-200 text-slate-600 hover:text-green-600 text-[16px] font-bold flex items-center justify-center transition">+</button>
+              </div>
+              <span class="font-mono font-bold text-slate-900 text-[14px] min-w-[110px] text-right">{{ formMontoGG | currency:'PEN':'S/ ' }}</span>
+            </div>
+          </div>
+
+          <!-- Utilidad -->
+          <div class="flex items-center justify-between border border-slate-200 rounded-lg px-4 py-3 bg-white">
+            <div class="flex-1">
+              <p class="text-[13px] font-semibold text-slate-700">Utilidad</p>
+              <p class="text-[11px] text-slate-400">Margen sobre Costo Directo</p>
+            </div>
+            <div class="flex items-center gap-3">
+              <div class="flex items-center gap-1">
+                <button (click)="adjustNumeric('utilidad', -0.5)" class="w-7 h-7 rounded-full border border-slate-200 bg-slate-50 hover:bg-red-50 hover:border-red-200 text-slate-600 hover:text-red-600 text-[16px] font-bold flex items-center justify-center transition">−</button>
+                <span class="w-16 text-center font-mono font-bold text-[14px] text-slate-800">{{ pctUtilidad() | number:'1.2-2' }}%</span>
+                <button (click)="adjustNumeric('utilidad', 0.5)" class="w-7 h-7 rounded-full border border-slate-200 bg-slate-50 hover:bg-green-50 hover:border-green-200 text-slate-600 hover:text-green-600 text-[16px] font-bold flex items-center justify-center transition">+</button>
+              </div>
+              <span class="font-mono font-bold text-slate-900 text-[14px] min-w-[110px] text-right">{{ formMontoUtilidad | currency:'PEN':'S/ ' }}</span>
+            </div>
+          </div>
+
+          <!-- Viáticos -->
+          <div class="flex items-center justify-between border border-slate-200 rounded-lg px-4 py-3 bg-white">
+            <div class="flex-1">
+              <p class="text-[13px] font-semibold text-slate-700">Viáticos</p>
+              <p class="text-[11px] text-slate-400">Gastos de viaje, alojamiento y movilidad</p>
+            </div>
+            <div class="flex items-center gap-3">
+              <div class="flex items-center gap-1">
+                <button (click)="adjustNumeric('viaticos', -500)" class="w-7 h-7 rounded-full border border-slate-200 bg-slate-50 hover:bg-red-50 hover:border-red-200 text-slate-600 hover:text-red-600 text-[16px] font-bold flex items-center justify-center transition">−</button>
+                <button (click)="adjustNumeric('viaticos', 500)" class="w-7 h-7 rounded-full border border-slate-200 bg-slate-50 hover:bg-green-50 hover:border-green-200 text-slate-600 hover:text-green-600 text-[16px] font-bold flex items-center justify-center transition">+</button>
+              </div>
+              <span class="font-mono font-bold text-slate-900 text-[14px] min-w-[110px] text-right">{{ viaticos() | currency:'PEN':'S/ ' }}</span>
+            </div>
+          </div>
+
+          <!-- Descuento Comercial -->
+          <div class="flex items-center justify-between border border-amber-200 rounded-lg px-4 py-3 bg-amber-50">
+            <div class="flex-1">
+              <p class="text-[13px] font-semibold text-amber-800">Descuento Comercial</p>
+              <p class="text-[11px] text-amber-600">Reducción sobre el monto total</p>
+            </div>
+            <div class="flex items-center gap-3">
+              <div class="flex items-center gap-1">
+                <button (click)="adjustNumeric('descuento', -500)" class="w-7 h-7 rounded-full border border-amber-200 bg-white hover:bg-red-50 hover:border-red-200 text-amber-700 text-[16px] font-bold flex items-center justify-center transition">−</button>
+                <button (click)="adjustNumeric('descuento', 500)" class="w-7 h-7 rounded-full border border-amber-200 bg-white hover:bg-green-50 hover:border-green-200 text-amber-700 text-[16px] font-bold flex items-center justify-center transition">+</button>
+              </div>
+              <span class="font-mono font-bold text-amber-900 text-[14px] min-w-[110px] text-right">− {{ descuento() | currency:'PEN':'S/ ' }}</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Desglose Final -->
+        <div class="border-t-2 border-slate-200 pt-4 space-y-2">
+          <div class="flex justify-between text-[13px] text-slate-600">
+            <span>SubTotal sin IGV</span>
+            <span class="font-mono font-semibold">{{ formSubtotal | currency:'PEN':'S/ ' }}</span>
+          </div>
+          <div class="flex justify-between text-[13px] text-slate-500">
+            <span>IGV (18%)</span>
+            <span class="font-mono">{{ formIGV | currency:'PEN':'S/ ' }}</span>
+          </div>
+          <div class="flex justify-between text-[15px] font-extrabold text-[#1e4838] border-t border-slate-200 pt-2 mt-1">
+            <span>TOTAL LIQUIDACIÓN ECONÓMICA</span>
+            <span class="font-mono text-[18px]">{{ formTotalGeneral | currency:'PEN':'S/ ' }}</span>
+          </div>
+        </div>
+      </div>
+      }
+
+      <!-- PASO 4: DOCS & VERSIONES -->
+      @if (formStep() === 4) {
+      <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-6 max-w-3xl">
+        <div class="flex items-start gap-3 mb-6">
+          <span class="w-8 h-8 rounded-full bg-[#1e4838] text-white flex items-center justify-center text-[14px] font-bold shrink-0">4</span>
+          <div>
+            <h2 class="font-bold text-slate-800 text-[16px]">Documentación &amp; Versiones</h2>
+            <p class="text-slate-400 text-[13px]">Expediente técnico, archivos adjuntos y registro de revisiones.</p>
+          </div>
+          <span class="ml-auto text-[12px] font-semibold text-[#2d634d] border border-[#529b7b]/30 bg-[#529b7b]/10 px-2.5 py-0.5 rounded-full">v1.0</span>
+        </div>
+
+        <!-- File Presupuesto -->
+        <div class="mb-5">
+          <label class="block text-[12px] font-bold text-slate-500 mb-2 uppercase tracking-wide">
+            Archivo de Presupuesto (PDF / Excel)
+          </label>
+          <input #filePptoInput type="file" accept=".pdf,.xlsx,.xls,.doc,.docx" (change)="onFilePresupuestoSelected($event)" class="hidden">
+
+          <div (click)="filePptoInput.click()"
+               (dragover)="$event.preventDefault()"
+               (drop)="onFilePresupuestoDrop($event)"
+               class="border-2 border-dashed border-slate-300 rounded-xl p-5 bg-slate-50 text-center hover:border-[#529b7b] hover:bg-[#529b7b]/5 transition cursor-pointer">
+            @if (filePresupuestoName()) {
+              <div class="flex items-center gap-3 bg-white border border-slate-200 rounded-lg px-4 py-3 mx-auto max-w-md shadow-sm"
+                   (click)="$event.stopPropagation()">
+                <div class="w-10 h-10 rounded-lg bg-emerald-100 flex items-center justify-center shrink-0">
+                  <svg class="w-5 h-5 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"/>
+                  </svg>
+                </div>
+                <div class="text-left flex-1 min-w-0">
+                  <p class="text-[13px] font-semibold text-slate-800 truncate" [title]="filePresupuestoName()">{{ filePresupuestoName() }}</p>
+                  <p class="text-[11px] text-slate-400">{{ filePresupuestoInfo() }}</p>
+                </div>
+                <button (click)="removeFilePresupuesto($event)"
+                        type="button"
+                        title="Quitar PDF / Archivo"
+                        class="text-slate-400 hover:text-red-500 hover:bg-red-50 p-1.5 rounded-lg transition ml-2 shrink-0">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path d="M6 18L18 6M6 6l12 12" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"/>
+                  </svg>
+                </button>
+              </div>
+            } @else {
+              <svg class="w-9 h-9 text-slate-300 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"/>
+              </svg>
+              <p class="text-[13px] text-slate-500 font-medium">Haz clic o arrastra para subir el archivo de Presupuesto (PDF / Excel)</p>
+              <p class="text-[11px] text-slate-400 mt-0.5">Formatos admitidos: .pdf, .xlsx, .xls</p>
+            }
+          </div>
+        </div>
+
+        <!-- File OC -->
+        <div class="mb-5">
+          <label class="block text-[12px] font-bold text-slate-500 mb-2 uppercase tracking-wide">
+            Orden de Compra / Correo de Aprobación (Opcional)
+          </label>
+          <input #fileOCInput type="file" accept=".pdf,.msg,.eml,.jpg,.jpeg,.png,.docx,.doc" (change)="onFileOCSelected($event)" class="hidden">
+
+          <div (click)="fileOCInput.click()"
+               (dragover)="$event.preventDefault()"
+               (drop)="onFileOCDrop($event)"
+               class="border-2 border-dashed border-slate-300 rounded-xl p-5 bg-slate-50 text-center hover:border-[#529b7b] hover:bg-[#529b7b]/5 transition cursor-pointer">
+            @if (fileOCName()) {
+              <div class="flex items-center gap-3 bg-white border border-slate-200 rounded-lg px-4 py-3 mx-auto max-w-md shadow-sm"
+                   (click)="$event.stopPropagation()">
+                <div class="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center shrink-0">
+                  <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"/>
+                  </svg>
+                </div>
+                <div class="text-left flex-1 min-w-0">
+                  <p class="text-[13px] font-semibold text-slate-800 truncate" [title]="fileOCName()">{{ fileOCName() }}</p>
+                  <p class="text-[11px] text-slate-400">{{ fileOCInfo() || 'Archivo cargado' }}</p>
+                </div>
+                <button (click)="removeFileOC($event)"
+                        type="button"
+                        title="Quitar PDF / Archivo"
+                        class="text-slate-400 hover:text-red-500 hover:bg-red-50 p-1.5 rounded-lg transition ml-2 shrink-0">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path d="M6 18L18 6M6 6l12 12" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"/>
+                  </svg>
+                </button>
+              </div>
+            } @else {
+              <svg class="w-9 h-9 text-slate-300 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"/>
+              </svg>
+              <p class="text-[13px] text-slate-500 font-medium">Haz clic o arrastra para subir la Orden de Compra o Aprobación (PDF/MSG)</p>
+              <p class="text-[11px] text-slate-400 mt-0.5">Formatos admitidos: .pdf, .msg, .eml, imágenes</p>
+            }
+          </div>
+        </div>
+
+        <!-- Historial -->
+        <div>
+          <p class="text-[12px] font-bold text-slate-500 uppercase tracking-wide mb-3">Historial de Revisiones</p>
+          <div class="space-y-2">
+            <div class="flex items-center gap-3 bg-[#529b7b]/5 border border-[#529b7b]/20 rounded-lg px-4 py-2.5">
+              <span class="text-[12px] font-bold text-[#2d634d] font-mono w-10">v1.0</span>
+              <span class="text-[12px] text-slate-700 flex-1">Versión actual en edición</span>
+              <span class="text-[11px] text-slate-400">Hoy</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      }
+
+      <!-- PASO 5: CONTROL & APROBACIÓN -->
+      @if (formStep() === 5) {
+      <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-6 max-w-3xl">
+        <div class="flex items-start gap-3 mb-6">
+          <span class="w-8 h-8 rounded-full bg-[#1e4838] text-white flex items-center justify-center text-[14px] font-bold shrink-0">5</span>
+          <div>
+            <h2 class="font-bold text-slate-800 text-[16px]">Control &amp; Aprobación</h2>
+            <p class="text-slate-400 text-[13px]">Estado del workflow, especialista asignado y comentarios técnicos finales.</p>
+          </div>
+        </div>
+
+        <div class="space-y-5">
+          <!-- Estado -->
+          <div>
+            <label class="block text-[12px] font-bold text-slate-500 mb-2 uppercase tracking-wide">Estado de Aprobación</label>
+            <div class="flex flex-wrap gap-2">
+              @for (est of ['PENDIENTE','En_Revision','Aprobado','Observado']; track est) {
+                <button (click)="formData.Estado = est"
+                        class="px-4 py-2 rounded-lg text-[12px] font-bold border transition-all"
+                        [ngClass]="formData.Estado === est ? 'bg-[#1e4838] text-white border-[#1e4838]' : 'bg-white text-slate-600 border-slate-200 hover:border-[#529b7b]/50'">
+                  {{ est === 'PENDIENTE' ? 'Pendiente de Aprobación' : est === 'En_Revision' ? 'En Revisión' : est }}
+                </button>
+              }
+            </div>
+          </div>
+
+          <!-- Especialista -->
+          <div>
+            <label class="block text-[12px] font-bold text-slate-500 mb-2 uppercase tracking-wide">Especialista Responsable</label>
+            <div class="flex items-center gap-3 bg-slate-50 border border-slate-200 rounded-lg px-4 py-3">
+              <div class="w-8 h-8 rounded-full bg-[#1e4838] text-white flex items-center justify-center text-[12px] font-bold shrink-0">
+                {{ especialista().charAt(0) }}
+              </div>
+              <input [(ngModel)]="especialista" type="text"
+                     class="flex-1 bg-transparent text-[13px] font-semibold text-slate-700 focus:outline-none">
+            </div>
+          </div>
+
+          <!-- Comentarios -->
+          <div>
+            <label class="block text-[12px] font-bold text-slate-500 mb-2 uppercase tracking-wide">Comentarios Técnicos &amp; Observaciones</label>
+            <textarea [(ngModel)]="comentarios" rows="5"
+                      placeholder="Ingrese observaciones técnicas, condiciones especiales, restricciones de alcance o cualquier nota relevante para el equipo de aprobación..."
+                      class="w-full border border-slate-300 rounded-lg px-3 py-2.5 text-[13px] text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#529b7b]/40 focus:border-[#529b7b] resize-vertical"></textarea>
+          </div>
+        </div>
+      </div>
+      }
+
+    </main>
+
+    <!-- BARRA LATERAL RESUMEN EJECUTIVO -->
+    <aside class="w-64 bg-white border-l border-slate-200 shrink-0 flex flex-col overflow-y-auto" style="scrollbar-width:thin;">
+      <div class="px-4 py-3 border-b border-slate-200 flex items-center justify-between">
+        <p class="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Resumen Ejecutivo</p>
+        <span class="text-[10px] font-bold text-[#529b7b] bg-[#529b7b]/10 px-2 py-0.5 rounded-full">En vivo</span>
+      </div>
+
+      <div class="p-4 border-b border-slate-200">
+        <p class="text-[11px] text-slate-400 mb-1">Total Estimado con IGV:</p>
+        <p class="font-mono font-black text-[22px] text-[#1e4838] leading-none tabular-nums">
+          {{ formTotalGeneral | currency:'PEN':'S/ ' }}
+        </p>
+      </div>
+
+      <div class="p-4 border-b border-slate-200 space-y-2">
+        <div class="flex justify-between text-[12px]">
+          <span class="text-slate-500">Costo Directo:</span>
+          <span class="font-mono font-semibold text-slate-800">{{ formCostoDirecto | currency:'PEN':'S/ ' }}</span>
+        </div>
+        <div class="flex justify-between text-[12px]">
+          <span class="text-slate-500">GG + Utilidad:</span>
+          <span class="font-mono font-semibold text-slate-800">{{ formGGPlusUtilidad | currency:'PEN':'S/ ' }}</span>
+        </div>
+        <div class="flex justify-between text-[12px]">
+          <span class="text-slate-500">Viáticos:</span>
+          <span class="font-mono font-semibold text-slate-800">{{ viaticos() | currency:'PEN':'S/ ' }}</span>
+        </div>
+        <div class="flex justify-between text-[12px]">
+          <span class="text-slate-500">IGV (18%):</span>
+          <span class="font-mono font-semibold text-slate-800">{{ formIGV | currency:'PEN':'S/ ' }}</span>
+        </div>
+      </div>
+
+      <div class="p-4 border-b border-slate-200">
+        <p class="text-[11px] text-slate-400 mb-1">Estado Actual:</p>
+        <span class="inline-flex items-center gap-1.5 bg-amber-50 text-amber-800 border border-amber-200 px-2.5 py-1 rounded-full text-[11px] font-semibold">
+          <span class="w-1.5 h-1.5 rounded-full bg-amber-400 inline-block"></span>
+          {{ formData.Estado || 'PENDIENTE' }}
+        </span>
+      </div>
+
+      <div class="p-4">
+        <p class="text-[11px] text-slate-400 mb-2 uppercase tracking-wide font-bold">Etapa en Curso</p>
+        <p class="text-[12px] text-slate-600 mb-3">{{ stepIndicatorText }}</p>
+        <div class="w-full bg-slate-200 rounded-full h-1.5">
+          <div class="h-1.5 rounded-full bg-[#529b7b] transition-all duration-300"
+               [style.width]="stepProgressBarWidth"></div>
+        </div>
+        <p class="text-[11px] text-[#2d634d] font-bold mt-1 text-right">{{ (formStep() / 5 * 100).toFixed(0) }}%</p>
+      </div>
+    </aside>
+
+  </div><!-- FIN CONTENIDO PRINCIPAL -->
+
+  <!-- BARRA INFERIOR FLOTANTE -->
+  <footer class="bg-white border-t border-slate-200 shrink-0 px-5 py-3 flex items-center justify-between shadow-[0_-2px_8px_rgba(0,0,0,0.06)]">
+    <p class="text-[11px] text-slate-400 font-medium hidden sm:block">
+      Fórmulas validadas en tiempo real • Listo para emisión formal
+    </p>
+    <div class="flex items-center gap-3 ml-auto">
+      @if (formStep() > 1) {
+        <button (click)="prevStep()"
+                class="flex items-center gap-1.5 bg-white border border-slate-300 hover:border-slate-400 text-slate-700 px-4 py-2 rounded-lg text-[13px] font-semibold transition-colors">
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path d="M15 19l-7-7 7-7" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"/>
+          </svg>
+          Paso Anterior
+        </button>
+      }
+      @if (formStep() < 5) {
+        <button (click)="nextStep()"
+                class="flex items-center gap-1.5 bg-[#1e4838] hover:bg-[#2d634d] text-white px-4 py-2 rounded-lg text-[13px] font-semibold transition-colors">
+          Siguiente Paso
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path d="M9 5l7 7-7 7" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"/>
+          </svg>
+        </button>
+      }
+      <button (click)="savePresupuestoCompleto()" [disabled]="loading()"
+              class="flex items-center gap-2 bg-[#529b7b] hover:bg-[#2d634d] disabled:opacity-60 text-white px-5 py-2 rounded-lg text-[13px] font-bold transition-colors shadow-sm">
+        @if (loading()) {
+          <svg class="w-4 h-4 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" fill="currentColor"/>
+          </svg>
+          Guardando...
+        } @else {
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"/>
+          </svg>
+          GUARDAR PRESUPUESTO
+        }
+      </button>
+    </div>
+  </footer>
+
+  </div><!-- FIN CONTENEDOR MODAL FLOTANTE -->
+</div><!-- FIN BACKDROP OVERLAY FLOTANTE -->
+}

@@ -1,8 +1,8 @@
 import { Component, inject, signal, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { ModalComponent } from '../../shared/components/modal/modal';
 
+import { Router } from '@angular/router';
 import { PresupuestosService } from './presupuestos.service';
 import { PresupuestoPrincipal, PaginatedResponse, DetalleFase, PresupuestoCompleto } from './interfaces';
 import { CentrosCostosService } from '../centros-costos/centros-costos.service';
@@ -11,9 +11,10 @@ import { CentroCosto, CatalogosFiltros } from '../centros-costos/interfaces/cent
 @Component({
   selector: 'app-presupuestos',
   standalone: true,
-  imports: [CommonModule, FormsModule, ModalComponent],
+  imports: [CommonModule, FormsModule],
   templateUrl: './presupuestos.html',
   styleUrls: ['./presupuestos.css']
+  
 })
 export class PresupuestosComponent implements OnInit {
   private presupuestosService = inject(PresupuestosService);
@@ -130,9 +131,10 @@ export class PresupuestosComponent implements OnInit {
   descuento = signal<number>(0.00);
 
   // Archivos para Paso 4
-  filePresupuestoName = signal<string>('PPTO_Paracas_Rev1.xlsx');
-  filePresupuestoInfo = signal<string>('2.4 MB • 08 Sep 2026');
+  filePresupuestoName = signal<string | null>(null);
+  filePresupuestoInfo = signal<string | null>(null);
   fileOCName = signal<string | null>(null);
+  fileOCInfo = signal<string | null>(null);
 
   // Especialista y Control para Paso 5
   especialista = signal<string>('George Tavara');
@@ -247,24 +249,88 @@ export class PresupuestosComponent implements OnInit {
     this.formStep.set(1);
 
     const anio = new Date().getFullYear();
-    const randomSuffix = Math.floor(100 + Math.random() * 900);
-    this.formData.IdPresupuesto = `PPTO-${anio}-${randomSuffix}`;
-    this.formData.Proyecto = '';
     this.formData.periodo = String(anio);
-    this.formData.TipoPpto = 'Principal';
     this.formData.Estado = 'PENDIENTE';
 
-    if (this.selectedCC()) {
-      const cc = this.selectedCC()!;
-      this.formData.CodCentroCto = cc.CodCentroCto;
-      this.formData.id_centro_costo = cc.id ?? cc.id_centro_costo;
-      this.formData.id_empresa = cc.id_empresa;
-      this.formData.CodEmpresa = cc.CodEmpresa;
-      this.formData.Proyecto = cc.CentroCosto ? `Obra - ${cc.CentroCosto}` : '';
-      if (cc.periodo) this.formData.periodo = String(cc.periodo);
-    }
+    // Reset completo de todas las signals (formulario en blanco para crear)
+    this.formFases.set([]);
+    this.pctGG.set(0);
+    this.pctUtilidad.set(0);
+    this.viaticos.set(0);
+    this.descuento.set(0);
+    this.comentarios.set('');
+    this.filePresupuestoName.set(null);
+    this.filePresupuestoInfo.set(null);
+    this.fileOCName.set(null);
+    this.fileOCInfo.set(null);
 
     this.showForm.set(true);
+  }
+
+  // ── File: Archivo de Presupuesto ──────────────────────────────
+  onFilePresupuestoSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    if (input.files && input.files[0]) {
+      const file = input.files[0];
+      this.filePresupuestoName.set(file.name);
+      const kb = (file.size / 1024).toFixed(1);
+      const mb = (file.size / (1024 * 1024)).toFixed(1);
+      const size = file.size > 1024 * 1024 ? mb + ' MB' : kb + ' KB';
+      const date = new Date().toLocaleDateString('es-PE', { day:'2-digit', month:'short', year:'numeric' });
+      this.filePresupuestoInfo.set(size + ' · ' + date);
+    }
+  }
+
+  onFilePresupuestoDrop(event: DragEvent): void {
+    event.preventDefault();
+    const file = event.dataTransfer?.files?.[0];
+    if (file) {
+      this.filePresupuestoName.set(file.name);
+      const kb = (file.size / 1024).toFixed(1);
+      const mb = (file.size / (1024 * 1024)).toFixed(1);
+      const size = file.size > 1024 * 1024 ? mb + ' MB' : kb + ' KB';
+      const date = new Date().toLocaleDateString('es-PE', { day:'2-digit', month:'short', year:'numeric' });
+      this.filePresupuestoInfo.set(size + ' · ' + date);
+    }
+  }
+
+  removeFilePresupuesto(event: Event): void {
+    event.stopPropagation();
+    this.filePresupuestoName.set(null);
+    this.filePresupuestoInfo.set(null);
+  }
+
+  // ── File: Orden de Compra ──────────────────────────────────────
+  onFileOCSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    if (input.files && input.files[0]) {
+      const file = input.files[0];
+      this.fileOCName.set(file.name);
+      const kb = (file.size / 1024).toFixed(1);
+      const mb = (file.size / (1024 * 1024)).toFixed(1);
+      const size = file.size > 1024 * 1024 ? mb + ' MB' : kb + ' KB';
+      const date = new Date().toLocaleDateString('es-PE', { day:'2-digit', month:'short', year:'numeric' });
+      this.fileOCInfo.set(size + ' · ' + date);
+    }
+  }
+
+  onFileOCDrop(event: DragEvent): void {
+    event.preventDefault();
+    const file = event.dataTransfer?.files?.[0];
+    if (file) {
+      this.fileOCName.set(file.name);
+      const kb = (file.size / 1024).toFixed(1);
+      const mb = (file.size / (1024 * 1024)).toFixed(1);
+      const size = file.size > 1024 * 1024 ? mb + ' MB' : kb + ' KB';
+      const date = new Date().toLocaleDateString('es-PE', { day:'2-digit', month:'short', year:'numeric' });
+      this.fileOCInfo.set(size + ' · ' + date);
+    }
+  }
+
+  removeFileOC(event: Event): void {
+    event.stopPropagation();
+    this.fileOCName.set(null);
+    this.fileOCInfo.set(null);
   }
 
   closeForm() {

@@ -387,7 +387,9 @@ export class CentrosCostosComponent {
     }
   }
 
-  goToPresupuestos() {
-    this.router.navigate(['/presupuestos']);
+  goToPresupuestos(item: CentroCosto) {
+    this.router.navigate(['/presupuestos'], {
+      state: { fromCC: item }
+    }); 
   }
 }
