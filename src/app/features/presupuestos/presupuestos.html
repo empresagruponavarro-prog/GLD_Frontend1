@@ -233,7 +233,7 @@
   </thead>
   <tbody class="divide-y divide-slate-100 text-[13px]">
   @if (presupuestoActivo()) {
-    @for (fase of presupuestoActivo()?.fases; track fase.id) {
+    @for (fase of presupuestoActivo()?.fases; track fase.id; let i = $index) {
       <tr 
         (click)="onSelectFase(fase)"
         class="transition cursor-pointer"
@@ -251,8 +251,9 @@
         <td class="py-2 px-2.5 font-mono font-bold"
             [ngClass]="selectedFase()?.id === fase.id ? 'text-[#2d634d]' : 'text-slate-600 font-semibold'">
           <span class="px-1.5 py-0.5 rounded border shadow-2xs font-semibold"
+                [title]="'ID: ' + (fase.IdpptoFase || fase.id)"
                 [ngClass]="selectedFase()?.id === fase.id ? 'bg-white text-[#2d634d] border-[#529b7b]/40' : 'bg-slate-100 text-slate-700 border-slate-200'">
-            {{ fase.IdpptoFase || fase.id }}
+            F-{{ (i + 1) < 10 ? '0' + (i + 1) : (i + 1) }}
           </span>
         </td>
         <td class="py-2 px-2.5">
@@ -270,7 +271,7 @@
         </td>
         <td class="py-2 px-2.5 text-right font-mono tabular-nums"
             [ngClass]="selectedFase()?.id === fase.id ? 'font-bold text-[#2d634d]' : 'text-slate-600'">
-          N/A
+          {{ getPesoFase(fase) }}
         </td>
         <td class="py-2 px-2.5 text-right font-mono tabular-nums"
             [ngClass]="selectedFase()?.id === fase.id ? 'font-bold text-slate-900' : 'text-slate-800 font-semibold'">
@@ -279,12 +280,10 @@
         <td class="py-2 px-2.5">
           <div class="flex items-center gap-2">
             <div class="flex-1 h-1.5 bg-slate-200 rounded-full overflow-hidden">
-              <div class="h-full rounded-full" 
-                   [ngClass]="selectedFase()?.id === fase.id ? 'bg-[#529b7b]' : 'bg-slate-400'"
-                   style="width: 0%"></div>
+              <div class="h-full rounded-full bg-[#529b7b]" 
+                   style="width: 100%"></div>
             </div>
-            <span class="font-mono text-[12px] tabular-nums w-8 text-right"
-                  [ngClass]="selectedFase()?.id === fase.id ? 'font-bold text-[#2d634d]' : 'font-semibold text-slate-500'">0%</span>
+            <span class="font-mono text-[12px] tabular-nums w-8 text-right font-semibold text-[#2d634d]">100%</span>
           </div>
         </td>
         <td class="py-2 px-2.5 text-center font-mono"
@@ -330,21 +329,17 @@
     }
   </span>
   </div>
-  <!-- Filtro de Categoría Rápida -->
-  <div class="flex items-center gap-1">
+  <!-- Filtro de Categor?as -->
+  <div class="flex items-center gap-1 flex-wrap">
   <span class="text-[12px] text-slate-500 mr-1 font-medium">Filtrar:</span>
   <button (click)="filterCategoria = 'Todos'" 
           [ngClass]="filterCategoria === 'Todos' ? 'bg-[#529b7b] text-white shadow-2xs' : 'bg-white hover:bg-slate-100 text-slate-600 border border-slate-200'"
           class="px-2 py-0.5 rounded text-[12px] font-semibold transition-colors">Todos</button>
-  <button (click)="filterCategoria = 'Materiales'" 
-          [ngClass]="filterCategoria === 'Materiales' ? 'bg-[#529b7b] text-white shadow-2xs' : 'bg-white hover:bg-slate-100 text-slate-600 border border-slate-200'"
-          class="px-2 py-0.5 rounded text-[12px] font-medium transition-colors">Materiales</button>
-  <button (click)="filterCategoria = 'Mano de Obra'" 
-          [ngClass]="filterCategoria === 'Mano de Obra' ? 'bg-[#529b7b] text-white shadow-2xs' : 'bg-white hover:bg-slate-100 text-slate-600 border border-slate-200'"
-          class="px-2 py-0.5 rounded text-[12px] font-medium transition-colors">Mano de Obra</button>
-  <button (click)="filterCategoria = 'Equipos &amp; Subc.'" 
-          [ngClass]="filterCategoria === 'Equipos &amp; Subc.' ? 'bg-[#529b7b] text-white shadow-2xs' : 'bg-white hover:bg-slate-100 text-slate-600 border border-slate-200'"
-          class="px-2 py-0.5 rounded text-[12px] font-medium transition-colors">Equipos &amp; Subc.</button>
+  @for (catName of categoriasDeFase; track catName) {
+    <button (click)="filterCategoria = catName" 
+            [ngClass]="filterCategoria === catName ? 'bg-[#529b7b] text-white shadow-2xs' : 'bg-white hover:bg-slate-100 text-slate-600 border border-slate-200'"
+            class="px-2 py-0.5 rounded text-[12px] font-medium transition-colors">{{ catName }}</button>
+  }
   </div>
   </div>
   <!-- Tabla con Matriz de Partidas y Categorías asociadas a la Fase -->
@@ -356,8 +351,7 @@
   <th class="py-2 px-2.5 w-20">Ítem</th>
   <th class="py-2 px-2.5 min-w-[240px]">Descripción de la Partida / Insumo</th>
   <th class="py-2 px-2.5 w-32">Categoría APU</th>
-  <th class="py-2 px-2.5 text-right w-20">Metrado</th>
-  <th class="py-2 px-2.5 text-right w-24">P.U. (S/)</th>
+    <th class="py-2 px-2.5 text-right w-24">P.U. (S/)</th>
   <th class="py-2 px-2.5 text-right w-28">Subtotal CD (S/)</th>
   <th class="py-2 px-2.5 text-right w-16">% Inc.</th>
   <th class="py-2 px-2.5 text-center w-20">Estado</th>
@@ -370,30 +364,27 @@
         <td class="p-2 text-center">
           <input class="rounded bg-white border-slate-300 text-[#529b7b] focus:ring-0 w-3.5 h-3.5" type="checkbox">
         </td>
-        <td class="py-2 px-2.5 font-mono text-[#2d634d] font-bold">01.0{{ i + 1 }}</td>
-        <td class="py-2 px-2.5">
-          <div class="font-medium text-slate-900">{{ cat.CategoriaInsumo || 'Sin descripción' }}</div>
-          <div class="text-[12px] text-slate-500">ID Presupuesto Detalle: {{ cat.IdPresupuestoDetalle }}</div>
+        <td class="py-2 px-2.5 font-mono text-[#2d634d] font-bold">
+          {{ getFaseCode(selectedFase()) }}.{{ (i + 1) < 10 ? '0' + (i + 1) : (i + 1) }}
         </td>
         <td class="py-2 px-2.5">
-          <span class="inline-flex items-center px-2 py-0.5 rounded text-[12px] font-medium border"
-                [ngClass]="{
-                  'bg-blue-50 text-blue-700 border-blue-200': cat.CategoriaInsumo?.includes('Materiales'),
-                  'bg-amber-50 text-amber-800 border-amber-200': cat.CategoriaInsumo?.includes('Mano de Obra'),
-                  'bg-purple-50 text-purple-700 border-purple-200': cat.CategoriaInsumo?.includes('Equipos'),
-                  'bg-[#529b7b]/15 text-[#2d634d] border-[#529b7b]/30': !cat.CategoriaInsumo?.includes('Materiales') && !cat.CategoriaInsumo?.includes('Mano de Obra') && !cat.CategoriaInsumo?.includes('Equipos')
-                }">
+          <div class="font-medium text-slate-900">{{ cat.CategoriaInsumo || 'Sin descripci?n' }}</div>
+          <div class="text-[12px] text-slate-500 font-mono">ID Detalle: {{ cat.IdPresupuestoDetalle }}</div>
+        </td>
+        <td class="py-2 px-2.5">
+          <span class="inline-flex items-center px-2 py-0.5 rounded text-[12px] font-medium border bg-[#529b7b]/15 text-[#2d634d] border-[#529b7b]/30">
             {{ cat.CategoriaInsumo || 'General' }}
           </span>
         </td>
-        <td class="py-2 px-2.5 text-right font-mono tabular-nums text-slate-700">1.00 Glb</td>
         <td class="py-2 px-2.5 text-right font-mono tabular-nums text-slate-700">
-          {{ (cat.SubTotalCategoria | number:'1.2-2') || '0.00' }}
+          {{ ((cat.CostoDirecto ?? cat.SubTotalCategoria) | currency:'PEN':'S/ ') || 'S/ 0.00' }}
         </td>
         <td class="py-2 px-2.5 text-right font-mono font-bold tabular-nums text-slate-900">
-          {{ (cat.SubTotalCategoria | number:'1.2-2') || '0.00' }}
+          {{ ((cat.CostoDirecto ?? cat.SubTotalCategoria) | currency:'PEN':'S/ ') || 'S/ 0.00' }}
         </td>
-        <td class="py-2 px-2.5 text-right font-mono text-slate-500 tabular-nums">-</td>
+        <td class="py-2 px-2.5 text-right font-mono text-[#2d634d] font-semibold tabular-nums">
+          {{ getPesoCategoria(cat) }}
+        </td>
         <td class="py-2 px-2.5 text-center">
           <span class="inline-block px-1.5 py-0.2 rounded text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
             Validado
@@ -403,12 +394,12 @@
     }
     @empty {
       <tr>
-        <td colspan="9" class="p-8 text-center text-slate-500">No hay categorías para esta fase</td>
+        <td colspan="8" class="p-8 text-center text-slate-500">No hay categorías para esta fase</td>
       </tr>
     }
   } @else {
     <tr>
-      <td colspan="9" class="p-8 text-center text-slate-500">Seleccione una Fase de la tabla superior para ver sus detalles</td>
+      <td colspan="8" class="p-8 text-center text-slate-500">Seleccione una Fase de la tabla superior para ver sus detalles</td>
     </tr>
   }
   </tbody>

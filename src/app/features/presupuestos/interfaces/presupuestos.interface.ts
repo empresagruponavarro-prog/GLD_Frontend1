@@ -95,6 +95,7 @@ export interface DetalleFaseCate {
   IdPresupuesto?: string;
   CategoriaInsumo?: string;
   SubTotalCategoria?: string | number;
+  CostoDirecto?: string | number;
 }
 
 export interface DetalleFase {
