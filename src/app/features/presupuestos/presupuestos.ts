@@ -38,6 +38,8 @@ export class PresupuestosComponent implements OnInit {
   filterCliente = '';
   filterEstado = '';
   filterCategoria = 'Todos'; // 'Todos' | 'Materiales' | 'Mano de Obra' | 'Equipos & Subc.'
+  showNuevaCategoria = signal(false);
+  nuevaCategoriaDescripcion = '';
 
   // Estado del layout Maestro-Detalle Múltiple
   centrosCostos = signal<CentroCosto[]>([]);
@@ -125,6 +127,9 @@ export class PresupuestosComponent implements OnInit {
   newFaseId = '';
   newFaseCategoriaId = '';
   newFaseSubtotal: number | null = null;
+  faseFormMode: 'new-fase' | 'new-categoria' | 'edit-fase' | 'edit-categoria' = 'new-fase';
+  editingFaseAsignada: DetalleFase | null = null;
+  editingCategoriaAsignada: any | null = null;
 
   // Parámetros Financieros para Paso 3
   pctGG = signal<number>(0.00);
@@ -244,6 +249,188 @@ export class PresupuestosComponent implements OnInit {
     this.newFaseCategoriaId = '';
     this.categoriasFaseMaestra.set([]);
     this.newFaseSubtotal = null;
+  }
+
+  get faseActivaCodigo(): string | null {
+    return this.selectedFase()?.IdpptoFase || null;
+  }
+
+  abrirNuevaCategoria() {
+    const fase = this.selectedFase();
+    if (!fase) {
+      alert('Seleccione primero una fase.');
+      return;
+    }
+    this.openFasesForm('new-categoria', fase);
+  }
+
+  abrirNuevaFase() {
+    this.openFasesForm('new-fase');
+  }
+
+  editarFase(fase: DetalleFase, event: Event) {
+    event.stopPropagation();
+    this.openFasesForm('edit-fase', fase);
+  }
+
+  editarCategoria(categoria: any, event: Event) {
+    event.stopPropagation();
+    const fase = this.selectedFase();
+    if (!fase) return;
+    this.openFasesForm('edit-categoria', fase, categoria);
+  }
+
+  private openFasesForm(
+    mode: 'new-fase' | 'new-categoria' | 'edit-fase' | 'edit-categoria',
+    fase?: DetalleFase,
+    categoria?: any,
+  ) {
+    const presupuesto = this.presupuestoActivo();
+    if (!presupuesto) {
+      alert('Seleccione primero un presupuesto.');
+      return;
+    }
+
+    this.editingId.set(presupuesto.id ? String(presupuesto.id) : null);
+    this.formData = { ...presupuesto };
+    this.faseFormMode = mode;
+    this.editingFaseAsignada = mode === 'edit-fase' ? fase ?? null : null;
+    this.editingCategoriaAsignada = mode === 'edit-categoria' ? categoria ?? null : null;
+    this.formFases.set([]);
+    this.newFaseId = fase?.IdpptoFase || '';
+    this.newFaseCategoriaId = categoria?.IdpptoFaseCategoria || '';
+    this.newFaseSubtotal = Number(categoria?.CostoDirecto ?? categoria?.SubTotalCategoria ?? fase?.CostoDirecto ?? 0);
+    this.categoriasFaseMaestra.set([]);
+    if (this.newFaseId) this.onFaseMaestraChange();
+    this.formStep.set(2);
+    this.showForm.set(true);
+  }
+
+  guardarFaseCategoria() {
+    const presupuesto = this.presupuestoActivo();
+    const faseMaestra = this.fasesMaestras().find((item) => item.IdpptoFase === this.newFaseId);
+    const categoriaMaestra = this.categoriasFaseMaestra().find((item) => item.IdpptoFaseCategoria === this.newFaseCategoriaId);
+    const requiereCategoria = this.faseFormMode !== 'edit-fase';
+    if (!presupuesto || !faseMaestra || (requiereCategoria && !categoriaMaestra)) {
+      alert(requiereCategoria ? 'Seleccione una fase y su categoría.' : 'Seleccione una fase.');
+      return;
+    }
+
+    const monto = Number(this.newFaseSubtotal) || 0;
+    const contexto = {
+      IdPresupuesto: String(presupuesto.IdPresupuesto),
+      IdpptoFase: faseMaestra.IdpptoFase,
+      id_empresa: presupuesto.id_empresa,
+      CodCentroCto: presupuesto.CodCentroCto,
+      id_centro_costo: presupuesto.id_centro_costo,
+      CostoDirecto: monto,
+    };
+
+    if (this.faseFormMode === 'edit-fase' && this.editingFaseAsignada) {
+      this.presupuestosService.updateFaseAsignada(this.editingFaseAsignada.id, contexto).subscribe({
+        next: () => this.finalizarEdicionFaseCategoria(),
+        error: (error) => alert('Error al actualizar fase: ' + (error.error?.message || error.message)),
+      });
+      return;
+    }
+
+    if (this.faseFormMode === 'edit-categoria' && this.editingCategoriaAsignada) {
+      this.presupuestosService.updateCategoriaAsignada(this.editingCategoriaAsignada.id, {
+        ...contexto,
+        IdpptoFaseCategoria: categoriaMaestra.IdpptoFaseCategoria,
+      }).subscribe({
+        next: () => this.finalizarEdicionFaseCategoria(),
+        error: (error) => alert('Error al actualizar categoría: ' + (error.error?.message || error.message)),
+      });
+      return;
+    }
+
+    if (this.faseFormMode === 'new-categoria') {
+      const faseAsignada = this.selectedFase();
+      if (!faseAsignada?.IdPresupuestoDetalle) {
+        alert('Seleccione una fase válida para agregar la categoría.');
+        return;
+      }
+      this.presupuestosService.createCategoriaAsignada({
+        ...contexto,
+        IdPresupuestoDetalleCategoria: `DFC-${Date.now()}`,
+        IdPresupuestoDetalle: faseAsignada.IdPresupuestoDetalle,
+        IdpptoFaseCategoria: categoriaMaestra.IdpptoFaseCategoria,
+      }).subscribe({
+        next: () => this.finalizarEdicionFaseCategoria(),
+        error: (error) => alert('Error al crear categoría: ' + (error.error?.message || error.message)),
+      });
+      return;
+    }
+
+    const idDetalle = `DF-${Date.now()}`;
+    this.presupuestosService.createFaseAsignada({ ...contexto, IdPresupuestoDetalle: idDetalle }).subscribe({
+      next: () => this.presupuestosService.createCategoriaAsignada({
+        ...contexto,
+        IdPresupuestoDetalleCategoria: `DFC-${Date.now()}`,
+        IdPresupuestoDetalle: idDetalle,
+        IdpptoFaseCategoria: categoriaMaestra.IdpptoFaseCategoria,
+      }).subscribe({
+        next: () => this.finalizarEdicionFaseCategoria(),
+        error: (error) => alert('La fase fue creada, pero no se pudo crear su categoría: ' + (error.error?.message || error.message)),
+      }),
+      error: (error) => alert('Error al crear fase: ' + (error.error?.message || error.message)),
+    });
+  }
+
+  eliminarFase(fase: DetalleFase, event: Event) {
+    event.stopPropagation();
+    if (!confirm(`¿Eliminar la fase "${fase.NombreFase || fase.IdpptoFase}" y sus categorías?`)) return;
+    this.presupuestosService.deleteFaseAsignada(fase.id).subscribe({
+      next: () => this.recargarPresupuestoActivo(),
+      error: (error) => alert('Error al eliminar fase: ' + (error.error?.message || error.message)),
+    });
+  }
+
+  eliminarCategoria(categoria: any, event: Event) {
+    event.stopPropagation();
+    if (!confirm(`¿Eliminar la categoría "${categoria.CategoriaInsumo || categoria.IdpptoFaseCategoria}"?`)) return;
+    this.presupuestosService.deleteCategoriaAsignada(categoria.id).subscribe({
+      next: () => this.recargarPresupuestoActivo(),
+      error: (error) => alert('Error al eliminar categoría: ' + (error.error?.message || error.message)),
+    });
+  }
+
+  private finalizarEdicionFaseCategoria() {
+    this.closeForm();
+    this.recargarPresupuestoActivo();
+  }
+
+  private recargarPresupuestoActivo() {
+    const presupuesto = this.presupuestoActivo();
+    if (presupuesto?.id) this.cargarDetallePresupuesto(String(presupuesto.id));
+  }
+
+  cerrarNuevaCategoria() {
+    this.showNuevaCategoria.set(false);
+    this.nuevaCategoriaDescripcion = '';
+  }
+
+  guardarNuevaCategoria() {
+    const descripcion = this.nuevaCategoriaDescripcion.trim();
+    const idFase = this.faseActivaCodigo;
+    if (!idFase || !descripcion) {
+      alert('Ingrese la descripción de la categoría.');
+      return;
+    }
+
+    const codigo = `CAT-${Date.now()}`;
+    this.presupuestosService.createCategoriaFaseMaestra({
+      IdpptoFaseCategoria: codigo,
+      IdpptoFase: idFase,
+      Descripcion: descripcion,
+    }).subscribe({
+      next: () => {
+        this.cerrarNuevaCategoria();
+        this.loadFasesMaestras();
+      },
+      error: (error) => alert('Error al crear categoría: ' + (error.error?.message || error.message)),
+    });
   }
 
   onFaseMaestraChange() {

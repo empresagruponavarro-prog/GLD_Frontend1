@@ -105,8 +105,11 @@ export interface CategoriaAsignada {
 
 export interface DetalleFaseCate {
   id: number;
+  IdPresupuestoDetalleCategoria?: string;
   IdPresupuestoDetalle?: string;
   IdPresupuesto?: string;
+  IdpptoFase?: string;
+  IdpptoFaseCategoria?: string;
   CategoriaInsumo?: string;
   SubTotalCategoria?: string | number;
   CostoDirecto?: string | number;

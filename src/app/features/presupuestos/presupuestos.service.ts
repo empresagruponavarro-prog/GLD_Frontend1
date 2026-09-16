@@ -83,6 +83,10 @@ export class PresupuestosService {
     return this.http.get<any>(`${this.apiUrl}/fases-maestras/${encodeURIComponent(idFase)}/categorias`);
   }
 
+  createCategoriaFaseMaestra(data: { IdpptoFaseCategoria: string; IdpptoFase: string; Descripcion: string }): Observable<any> {
+    return this.http.post<any>(`${this.apiUrl}/categorias-fases-maestras`, data);
+  }
+
   createFaseMaestra(data: Partial<CategoriaFaseMaestra>): Observable<CategoriaFaseMaestra> {
     return this.http.post<CategoriaFaseMaestra>(`${this.apiUrl}/fases-maestras`, data);
   }
@@ -100,12 +104,12 @@ export class PresupuestosService {
     return this.http.get<FaseAsignada[]>(`${this.apiUrl}/fases-asignadas`);
   }
 
-  createFaseAsignada(data: Partial<FaseAsignada>): Observable<FaseAsignada> {
-    return this.http.post<FaseAsignada>(`${this.apiUrl}/fases-asignadas`, data);
+  createFaseAsignada(data: any): Observable<any> {
+    return this.http.post<any>(`${this.apiUrl}/fases-asignadas`, data);
   }
 
-  updateFaseAsignada(id: number | string, data: Partial<FaseAsignada>): Observable<FaseAsignada> {
-    return this.http.patch<FaseAsignada>(`${this.apiUrl}/fases-asignadas/${id}`, data);
+  updateFaseAsignada(id: number | string, data: any): Observable<any> {
+    return this.http.patch<any>(`${this.apiUrl}/fases-asignadas/${id}`, data);
   }
 
   deleteFaseAsignada(id: number | string): Observable<void> {
