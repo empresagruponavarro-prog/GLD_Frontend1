@@ -479,13 +479,6 @@
               class="bg-slate-700/80 hover:bg-slate-600 text-white px-3.5 py-1.5 rounded-lg text-[12px] font-semibold transition-colors border border-slate-600/60 shadow-sm">
         Cancelar
       </button>
-      <button (click)="closeForm()"
-              title="Cerrar ventana"
-              class="text-slate-400 hover:text-white hover:bg-white/10 p-1.5 rounded-lg transition-colors ml-1">
-        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-        </svg>
-      </button>
     </div>
   </header>
 
@@ -559,7 +552,7 @@
           <!-- Empresa Emisora -->
           <div class="md:col-span-2">
             <label class="block text-[12px] font-bold text-slate-500 mb-1.5 uppercase tracking-wide">Empresa Emisora *</label>
-            <select [(ngModel)]="formData.id_empresa"
+            <select [(ngModel)]="formData.id_empresa" (ngModelChange)="onEmpresaFormularioChange()"
                     class="w-full border border-slate-300 rounded-lg px-3 py-2.5 text-[13px] text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#529b7b]/40 focus:border-[#529b7b] bg-white">
               <option [ngValue]="null">— Seleccione empresa —</option>
               @for (emp of empresas(); track emp.id_empresa) {
@@ -570,17 +563,14 @@
 
           <!-- Centro de Costo -->
           <div>
-            <label class="block text-[12px] font-bold text-slate-500 mb-1.5 uppercase tracking-wide">Centro de Costo Principal *</label>
-            <div class="w-full border border-[#529b7b] bg-[#529b7b]/5 rounded-lg px-3 py-2.5 text-[13px] text-[#1e4838] font-semibold flex items-center gap-2">
-              <svg class="w-4 h-4 text-[#529b7b] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-2 10v-5a1 1 0 00-1-1h-2a1 1 0 00-1 1v5m4 0H9" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"/>
-              </svg>
-              @if (selectedCC()) {
-                <span>CC-{{ selectedCC()?.id }} — {{ selectedCC()?.CentroCosto }}</span>
-              } @else {
-                <span class="text-slate-400 font-normal">Sin Centro de Costo seleccionado</span>
+            <label class="block text-[12px] font-bold text-slate-500 mb-1.5 uppercase tracking-wide">Centro de Costo *</label>
+            <select [ngModel]="selectedCC()" (ngModelChange)="onCentroCostoFormChange($event)"
+                    class="w-full border border-[#529b7b] bg-[#529b7b]/5 rounded-lg px-3 py-2.5 text-[13px] text-[#1e4838] font-semibold focus:outline-none focus:ring-2 focus:ring-[#529b7b]/40 focus:border-[#529b7b]">
+              <option [ngValue]="null">{{ formData.id_empresa ? '— Seleccione Centro de Costo —' : '— Seleccione primero una Empresa —' }}</option>
+              @for (cc of centrosCostosFormulario; track cc.id ?? cc.id_centro_costo) {
+                <option [ngValue]="cc">{{ cc.CentroCosto }}</option>
               }
-            </div>
+            </select>
           </div>
 
           <!-- Cliente -->
@@ -734,12 +724,22 @@
           <p class="text-[12px] font-bold text-slate-500 uppercase tracking-wide mb-3">+ Añadir nueva fase / partida</p>
           <div class="grid grid-cols-1 sm:grid-cols-12 gap-2.5 items-center">
             <div class="sm:col-span-5">
-              <input [(ngModel)]="newFaseNombre" type="text" placeholder="Nombre de la fase o partida *"
-                     class="w-full border border-slate-300 rounded-lg px-3 py-2 text-[13px] focus:outline-none focus:ring-2 focus:ring-[#529b7b]/40 focus:border-[#529b7b] bg-white">
+              <select [(ngModel)]="newFaseId" (ngModelChange)="onFaseMaestraChange()"
+                      class="w-full border border-slate-300 rounded-lg px-3 py-2 text-[13px] focus:outline-none focus:ring-2 focus:ring-[#529b7b]/40 focus:border-[#529b7b] bg-white">
+                <option value="">Seleccione Fase *</option>
+                @for (fase of fasesMaestras(); track fase.id) {
+                  <option [value]="fase.IdpptoFase">{{ fase.FaseProyecto || fase.IdpptoFase }}</option>
+                }
+              </select>
             </div>
             <div class="sm:col-span-3">
-              <input [(ngModel)]="newFaseCategoria" type="text" placeholder="Categoría APU (ej. Materiales)"
-                     class="w-full border border-slate-300 rounded-lg px-3 py-2 text-[13px] focus:outline-none focus:ring-2 focus:ring-[#529b7b]/40 focus:border-[#529b7b] bg-white">
+              <select [(ngModel)]="newFaseCategoriaId" [disabled]="!newFaseId"
+                      class="w-full border border-slate-300 rounded-lg px-3 py-2 text-[13px] focus:outline-none focus:ring-2 focus:ring-[#529b7b]/40 focus:border-[#529b7b] bg-white disabled:bg-slate-100 disabled:text-slate-400">
+                <option value="">{{ newFaseId ? 'Seleccione Categoría *' : 'Seleccione primero una Fase' }}</option>
+                @for (categoria of categoriasFaseMaestra(); track categoria.id) {
+                  <option [value]="categoria.IdpptoFaseCategoria">{{ categoria.Descripcion || categoria.IdpptoFaseCategoria }}</option>
+                }
+              </select>
             </div>
             <div class="sm:col-span-2">
               <input [(ngModel)]="newFaseSubtotal" type="number" placeholder="Monto S/."
@@ -787,9 +787,11 @@
             </div>
             <div class="flex items-center gap-3">
               <div class="flex items-center gap-1">
-                <button (click)="adjustNumeric('gg', -0.01)" class="w-7 h-7 rounded-full border border-slate-200 bg-slate-50 hover:bg-red-50 hover:border-red-200 text-slate-600 hover:text-red-600 text-[16px] font-bold flex items-center justify-center transition">−</button>
-                <span class="w-16 text-center font-mono font-bold text-[14px] text-slate-800">{{ pctGG() | number:'1.2-2' }}%</span>
-                <button (click)="adjustNumeric('gg', 0.01)" class="w-7 h-7 rounded-full border border-slate-200 bg-slate-50 hover:bg-green-50 hover:border-green-200 text-slate-600 hover:text-green-600 text-[16px] font-bold flex items-center justify-center transition">+</button>
+                <input type="number" min="0" step="0.01"
+                       [ngModel]="pctGG()" (ngModelChange)="pctGG.set(+$event || 0)"
+                       aria-label="Porcentaje de gastos generales"
+                       class="w-20 text-center font-mono font-bold text-[14px] text-slate-800 border border-slate-200 rounded-md py-1 focus:outline-none focus:ring-2 focus:ring-[#529b7b]/40">
+                <span class="text-[#1e4838] text-xl font-extrabold leading-none">%</span>
               </div>
               <span class="font-mono font-bold text-slate-900 text-[14px] min-w-[110px] text-right">{{ formMontoGG | currency:'PEN':'S/ ' }}</span>
             </div>
@@ -803,9 +805,11 @@
             </div>
             <div class="flex items-center gap-3">
               <div class="flex items-center gap-1">
-                <button (click)="adjustNumeric('utilidad', -0.01)" class="w-7 h-7 rounded-full border border-slate-200 bg-slate-50 hover:bg-red-50 hover:border-red-200 text-slate-600 hover:text-red-600 text-[16px] font-bold flex items-center justify-center transition">−</button>
-                <span class="w-16 text-center font-mono font-bold text-[14px] text-slate-800">{{ pctUtilidad() | number:'1.2-2' }}%</span>
-                <button (click)="adjustNumeric('utilidad', 0.01)" class="w-7 h-7 rounded-full border border-slate-200 bg-slate-50 hover:bg-green-50 hover:border-green-200 text-slate-600 hover:text-green-600 text-[16px] font-bold flex items-center justify-center transition">+</button>
+                <input type="number" min="0" step="0.01"
+                       [ngModel]="pctUtilidad()" (ngModelChange)="pctUtilidad.set(+$event || 0)"
+                       aria-label="Porcentaje de utilidad"
+                       class="w-20 text-center font-mono font-bold text-[14px] text-slate-800 border border-slate-200 rounded-md py-1 focus:outline-none focus:ring-2 focus:ring-[#529b7b]/40">
+                <span class="text-[#1e4838] text-xl font-extrabold leading-none">%</span>
               </div>
               <span class="font-mono font-bold text-slate-900 text-[14px] min-w-[110px] text-right">{{ formMontoUtilidad | currency:'PEN':'S/ ' }}</span>
             </div>
@@ -818,11 +822,10 @@
               <p class="text-[11px] text-slate-400">Gastos de viaje, alojamiento y movilidad</p>
             </div>
             <div class="flex items-center gap-3">
-              <div class="flex items-center gap-1">
-                <button (click)="adjustNumeric('viaticos', 0.01)" class="w-7 h-7 rounded-full border border-slate-200 bg-slate-50 hover:bg-red-50 hover:border-red-200 text-slate-600 hover:text-red-600 text-[16px] font-bold flex items-center justify-center transition">−</button>
-                <button (click)="adjustNumeric('viaticos', 0.01)" class="w-7 h-7 rounded-full border border-slate-200 bg-slate-50 hover:bg-green-50 hover:border-green-200 text-slate-600 hover:text-green-600 text-[16px] font-bold flex items-center justify-center transition">+</button>
-              </div>
-              <span class="font-mono font-bold text-slate-900 text-[14px] min-w-[110px] text-right">{{ viaticos() | currency:'PEN':'S/ ' }}</span>
+              <input type="number" min="0" step="0.01"
+                     [ngModel]="viaticos()" (ngModelChange)="viaticos.set(+$event || 0)"
+                     aria-label="Monto de viáticos"
+                     class="w-28 text-right font-mono font-bold text-slate-900 text-[14px] border border-slate-200 rounded-md px-2 py-1 focus:outline-none focus:ring-2 focus:ring-[#529b7b]/40">
             </div>
           </div>
 
@@ -833,11 +836,10 @@
               <p class="text-[11px] text-amber-600">Reducción sobre el monto total</p>
             </div>
             <div class="flex items-center gap-3">
-              <div class="flex items-center gap-1">
-                <button (click)="adjustNumeric('descuento', 0.01)" class="w-7 h-7 rounded-full border border-amber-200 bg-white hover:bg-red-50 hover:border-red-200 text-amber-700 text-[16px] font-bold flex items-center justify-center transition">−</button>
-                <button (click)="adjustNumeric('descuento', 0.01)" class="w-7 h-7 rounded-full border border-amber-200 bg-white hover:bg-green-50 hover:border-green-200 text-amber-700 text-[16px] font-bold flex items-center justify-center transition">+</button>
-              </div>
-              <span class="font-mono font-bold text-amber-900 text-[14px] min-w-[110px] text-right">− {{ descuento() | currency:'PEN':'S/ ' }}</span>
+              <input type="number" min="0" step="0.01"
+                     [ngModel]="descuento()" (ngModelChange)="descuento.set(+$event || 0)"
+                     aria-label="Monto de descuento comercial"
+                     class="w-28 text-right font-mono font-bold text-amber-900 text-[14px] border border-amber-200 rounded-md px-2 py-1 bg-white focus:outline-none focus:ring-2 focus:ring-amber-300">
             </div>
           </div>
         </div>

@@ -204,12 +204,28 @@
           </div>
 
           <div class="cc-form-card-body">
-            <div class="cc-form-field cc-form-field-full">
+            <div class="cc-form-row">
+            <div class="cc-form-field">
+              <label class="cc-label">Empresa <span class="cc-required">*</span></label>
+              <div class="cc-select-wrapper">
+                <select [(ngModel)]="formData.id_empresa" (change)="onEmpresaChange()">
+                  <option [ngValue]="undefined">Seleccione Empresa...</option>
+                  <option *ngFor="let empresa of empresas()" [ngValue]="empresa.id_empresa">
+                    {{ empresa.RazonSocial || empresa.razon_social || empresa.CodEmpresa }}
+                  </option>
+                </select>
+                <svg class="cc-select-icon" viewBox="0 0 14 14" fill="none">
+                  <path d="M3.5 5.25L7 8.75L10.5 5.25" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+                </svg>
+              </div>
+            </div>
+
+            <div class="cc-form-field">
               <label class="cc-label">Centro de Costo Principal <span class="cc-required">*</span></label>
               <div class="cc-select-wrapper">
                 <select [(ngModel)]="formData.id_centro_costos_principal" (change)="onPrincipalChange()">
-                  <option [ngValue]="undefined">Seleccione Centro de Costo Principal...</option>
-                  <option *ngFor="let p of principales()" [ngValue]="p.id">
+                  <option [ngValue]="undefined">{{ formData.id_empresa ? 'Seleccione Centro de Costo Principal...' : 'Seleccione primero una Empresa...' }}</option>
+                  <option *ngFor="let p of principalesFiltrados" [ngValue]="p.id">
                     {{ p.descripcion }}
                   </option>
                 </select>
@@ -217,6 +233,7 @@
                   <path d="M3.5 5.25L7 8.75L10.5 5.25" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
                 </svg>
               </div>
+            </div>
             </div>
 
             <div class="cc-form-row">

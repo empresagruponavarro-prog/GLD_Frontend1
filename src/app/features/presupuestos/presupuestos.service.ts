@@ -75,8 +75,12 @@ export class PresupuestosService {
   }
 
   // Fases Maestras
-  getFasesMaestras(): Observable<CategoriaFaseMaestra[]> {
-    return this.http.get<CategoriaFaseMaestra[]>(`${this.apiUrl}/fases-maestras`);
+  getFasesMaestras(): Observable<any> {
+    return this.http.get<any>(`${this.apiUrl}/fases-maestras`);
+  }
+
+  getCategoriasDeFase(idFase: string): Observable<any> {
+    return this.http.get<any>(`${this.apiUrl}/fases-maestras/${encodeURIComponent(idFase)}/categorias`);
   }
 
   createFaseMaestra(data: Partial<CategoriaFaseMaestra>): Observable<CategoriaFaseMaestra> {

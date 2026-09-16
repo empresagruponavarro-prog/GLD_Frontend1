@@ -62,6 +62,20 @@ export interface CategoriaFaseMaestra {
   CodEmpresa?: string;
 }
 
+export interface FaseMaestra {
+  id: number;
+  IdpptoFase: string;
+  id_empresa?: number | null;
+  FaseProyecto?: string | null;
+}
+
+export interface FaseCategoriaMaestra {
+  id: number;
+  IdpptoFaseCategoria: string;
+  IdpptoFase?: string | null;
+  Descripcion?: string | null;
+}
+
 export interface FaseAsignada {
   id?: number;
   IdFaseAsignada: number;

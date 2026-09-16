@@ -9,6 +9,8 @@ import { ModalComponent } from '../../shared/components/modal/modal';
 import { DataTable } from '../../shared/interfaces';
 import { CentroCosto, CentroCostoPrincipal, CreateCentroCostoDto, CatalogosFiltros, FiltrosCentrosCostos } from './interfaces';
 import { CentrosCostosService } from './centros-costos.service';
+import { EmpresasService } from '../administration/empresas/empresas.service';
+import { Empresa } from '../administration/empresas/interfaces';
 
 @Component({
   selector: 'app-centros-costos',
@@ -43,6 +45,7 @@ export class CentrosCostosComponent {
     { label: 'Acciones' }
   ];
   private centrosCostosService = inject(CentrosCostosService);
+  private empresasService = inject(EmpresasService);
 
   items = signal<CentroCosto[]>([]);
   loading = signal<boolean>(false);
@@ -51,6 +54,7 @@ export class CentrosCostosComponent {
   search = signal<string>('');
   catalogos = signal<CatalogosFiltros>({ empresas: [], clientes: [], periodos: [], estados: [], pptoEstados: [] });
   principales = signal<CentroCostoPrincipal[]>([]);
+  empresas = signal<Empresa[]>([]);
 
   // Resumen financiero (solo en edición)
   resumen = signal<any>(null);
@@ -89,11 +93,24 @@ export class CentrosCostosComponent {
       this.formData.id_centro_costos_principal = found.id;
       this.formData.CodCentroCtoPrincipal = found.centro_costo_principal;
       this.formData.CentroCostoPrincipal = found.descripcion;
+      this.formData.id_empresa = found.id_empresa;
     } else {
       this.formData.id_centro_costos_principal = undefined;
       this.formData.CodCentroCtoPrincipal = '';
       this.formData.CentroCostoPrincipal = '';
     }
+  }
+
+  get principalesFiltrados(): CentroCostoPrincipal[] {
+    const empresaId = this.formData.id_empresa;
+    if (empresaId == null) return [];
+    return this.principales().filter((principal) => principal.id_empresa === Number(empresaId));
+  }
+
+  onEmpresaChange() {
+    this.formData.id_centro_costos_principal = undefined;
+    this.formData.CodCentroCtoPrincipal = '';
+    this.formData.CentroCostoPrincipal = '';
   }
 
 
@@ -127,6 +144,10 @@ export class CentrosCostosComponent {
     this.centrosCostosService.getPrincipales().subscribe({
       next: (data) => this.principales.set(data || []),
       error: (err) => console.warn('Error al cargar CC principales:', err)
+    });
+    this.empresasService.getAll().subscribe({
+      next: (data) => this.empresas.set(data || []),
+      error: (err) => console.warn('Error al cargar empresas:', err)
     });
   }
 
@@ -315,6 +336,7 @@ export class CentrosCostosComponent {
   save() {
     const obligatorios = [
       { campo: 'Periodo', ok: !!this.formData.periodo },
+      { campo: 'Empresa', ok: !!this.formData.id_empresa },
       { campo: 'Cliente', ok: !!this.formData.CodCliente },
       { campo: 'Centro de Costo Principal', ok: !!this.formData.id_centro_costos_principal },
       { campo: 'Nombre del Centro de Costo', ok: !!this.formData.CentroCosto },

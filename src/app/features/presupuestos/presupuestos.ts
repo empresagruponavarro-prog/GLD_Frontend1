@@ -6,7 +6,7 @@ import { Router } from '@angular/router';
 import { EmpresasService } from '../administration/empresas/empresas.service';
 import { Empresa } from '../administration/empresas/interfaces';
 import { PresupuestosService } from './presupuestos.service';
-import { PresupuestoPrincipal, PaginatedResponse, DetalleFase, PresupuestoCompleto } from './interfaces';
+import { PresupuestoPrincipal, PaginatedResponse, DetalleFase, PresupuestoCompleto, FaseMaestra, FaseCategoriaMaestra } from './interfaces';
 import { CentrosCostosService } from '../centros-costos/centros-costos.service';
 import { CentroCosto, CatalogosFiltros } from '../centros-costos/interfaces/centros-costos.interface';
 
@@ -117,16 +117,13 @@ export class PresupuestosComponent implements OnInit {
   formStep = signal<number>(1);
 
   // Modelo de Fases dinámicas para Paso 2
-  formFases = signal<{ id?: number; nombre: string; categoria: string; subtotal: number }[]>([
-    { nombre: '01. Movimiento de Tierras & Excavaciones', categoria: 'Maquinaria y Equipos', subtotal: 48500 },
-    { nombre: '02. Obras de Concreto Armado (Cimentaciones)', categoria: 'Materiales & Acero', subtotal: 124000 },
-    { nombre: '03. Albañilería y Muros de Contención', categoria: 'Mano de Obra Calificada', subtotal: 62000 },
-    { nombre: '04. Instalaciones Sanitarias & Redes de Desagüe', categoria: 'Subcontratos Especiales', subtotal: 50000 }
-  ]);
+  formFases = signal<{ id?: number; idFase: string; nombre: string; idCategoria: string; categoria: string; subtotal: number }[]>([]);
+  fasesMaestras = signal<FaseMaestra[]>([]);
+  categoriasFaseMaestra = signal<FaseCategoriaMaestra[]>([]);
 
   // Quick Add para Fases
-  newFaseNombre = '';
-  newFaseCategoria = '';
+  newFaseId = '';
+  newFaseCategoriaId = '';
   newFaseSubtotal: number | null = null;
 
   // Parámetros Financieros para Paso 3
@@ -226,22 +223,38 @@ export class PresupuestosComponent implements OnInit {
   }
 
   addFormFase() {
-    if (!this.newFaseNombre.trim()) {
-      alert('Por favor ingrese el nombre de la fase o tarea.');
+    const fase = this.fasesMaestras().find((item) => item.IdpptoFase === this.newFaseId);
+    const categoria = this.categoriasFaseMaestra().find((item) => item.IdpptoFaseCategoria === this.newFaseCategoriaId);
+    if (!fase || !categoria) {
+      alert('Seleccione una fase y su categoría.');
       return;
     }
     const monto = Number(this.newFaseSubtotal) || 0;
     this.formFases.update(items => [
       ...items,
       {
-        nombre: this.newFaseNombre.trim(),
-        categoria: this.newFaseCategoria || 'General',
+        idFase: fase.IdpptoFase,
+        nombre: fase.FaseProyecto || fase.IdpptoFase,
+        idCategoria: categoria.IdpptoFaseCategoria,
+        categoria: categoria.Descripcion || categoria.IdpptoFaseCategoria,
         subtotal: monto
       }
     ]);
-    this.newFaseNombre = '';
-    this.newFaseCategoria = '';
+    this.newFaseId = '';
+    this.newFaseCategoriaId = '';
+    this.categoriasFaseMaestra.set([]);
     this.newFaseSubtotal = null;
+  }
+
+  onFaseMaestraChange() {
+    this.newFaseCategoriaId = '';
+    this.categoriasFaseMaestra.set([]);
+    if (!this.newFaseId) return;
+
+    this.presupuestosService.getCategoriasDeFase(this.newFaseId).subscribe({
+      next: (response) => this.categoriasFaseMaestra.set(Array.isArray(response) ? response : response.data || []),
+      error: (error) => console.error('Error al cargar categorías de la fase', error),
+    });
   }
 
   removeFormFase(index: number) {
@@ -268,27 +281,48 @@ export class PresupuestosComponent implements OnInit {
     this.fileOCInfo.set(null);
 
     if (centroCosto) {
-      this.selectedCC.set(centroCosto);
-      this.formData = {
-        ...this.formData,
-        Proyecto: centroCosto.CentroCosto || '',
-        CodCentroCto: centroCosto.CodCentroCto || '',
-        id_centro_costo: centroCosto.id ?? centroCosto.id_centro_costo,
-        Concepto: centroCosto.Cliente || centroCosto.CodCliente || '',
-        periodo: centroCosto.periodo != null
-          ? String(centroCosto.periodo)
-          : (centroCosto.IdPeriodo || ''),
-        IdPeriodo: centroCosto.periodo != null
-          ? String(centroCosto.periodo)
-          : (centroCosto.IdPeriodo || ''),
-        id_empresa: centroCosto.id_empresa,
-        CodEmpresa: centroCosto.CodEmpresa || centroCosto.Empresa || '',
-      };
+      this.onCentroCostoFormChange(centroCosto);
     } else {
       this.selectedCC.set(null);
     }
 
     this.showForm.set(true);
+  }
+
+  get centrosCostosFormulario(): CentroCosto[] {
+    const empresaId = this.formData.id_empresa;
+    if (empresaId == null) return [];
+    return this.centrosCostos().filter((centroCosto) => centroCosto.id_empresa === Number(empresaId));
+  }
+
+  onCentroCostoFormChange(centroCosto: CentroCosto | null) {
+    this.selectedCC.set(centroCosto);
+
+    if (!centroCosto) {
+      this.formData.id_centro_costo = undefined;
+      this.formData.CodCentroCto = '';
+      return;
+    }
+
+    this.formData = {
+      ...this.formData,
+      Proyecto: centroCosto.CentroCosto || '',
+      CodCentroCto: centroCosto.CodCentroCto || '',
+      id_centro_costo: centroCosto.id ?? centroCosto.id_centro_costo,
+      Concepto: centroCosto.Cliente || centroCosto.CodCliente || '',
+      periodo: centroCosto.periodo != null
+        ? String(centroCosto.periodo)
+        : (centroCosto.IdPeriodo || ''),
+      IdPeriodo: centroCosto.periodo != null
+        ? String(centroCosto.periodo)
+        : (centroCosto.IdPeriodo || ''),
+      id_empresa: centroCosto.id_empresa,
+      CodEmpresa: centroCosto.CodEmpresa || centroCosto.Empresa || '',
+    };
+  }
+
+  onEmpresaFormularioChange() {
+    this.onCentroCostoFormChange(null);
   }
 
   // ── File: Archivo de Presupuesto ──────────────────────────────
@@ -437,6 +471,7 @@ export class PresupuestosComponent implements OnInit {
   ngOnInit() {
     this.loadCatalogos();
     this.loadEmpresas();
+    this.loadFasesMaestras();
     this.loadCentrosCostos();
 
     const navigationState = this.router.getCurrentNavigation()?.extras.state ?? history.state;
@@ -457,6 +492,13 @@ export class PresupuestosComponent implements OnInit {
     this.empresasService.getAll().subscribe({
       next: (empresas) => this.empresas.set(empresas),
       error: (error) => console.error('Error al cargar empresas', error),
+    });
+  }
+
+  loadFasesMaestras() {
+    this.presupuestosService.getFasesMaestras().subscribe({
+      next: (response) => this.fasesMaestras.set(Array.isArray(response) ? response : response.data || []),
+      error: (error) => console.error('Error al cargar fases maestras', error),
     });
   }
 
