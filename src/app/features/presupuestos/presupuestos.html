@@ -1,4 +1,4 @@
-<div class="flex flex-col min-w-0 bg-slate-50 overflow-hidden" style="height: 100%; font-family: 'Inter', system-ui, sans-serif;">
+﻿<div class="flex flex-col min-w-0 bg-slate-50 overflow-hidden" style="height: 100%; font-family: 'Inter', system-ui, sans-serif;">
   <!-- BEGIN: TopControlHeader -->
   <header class="bg-white border-b border-slate-200 shrink-0" data-purpose="top-control-bar">
     <!-- Row 1 — filters + CTA -->
@@ -555,9 +555,19 @@
         <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
           <!-- ID Presupuesto -->
           <div>
-            <label class="block text-[12px] font-bold text-slate-500 mb-1.5 uppercase tracking-wide">ID Presupuesto *</label>
+            <div class="flex items-center justify-between mb-1.5">
+              <label class="block text-[12px] font-bold text-slate-500 uppercase tracking-wide">ID Presupuesto</label>
+              @if (!editingId()) {
+                <span class="text-[11px] font-semibold text-[#529b7b] bg-[#529b7b]/10 border border-[#529b7b]/20 px-2 py-0.5 rounded-full">Autogenerado</span>
+              }
+            </div>
             <div class="relative">
-              <input [(ngModel)]="formData.IdPresupuesto" type="text" placeholder="PPTO-2026-001"
+              <input [(ngModel)]="formData.IdPresupuesto" type="text"
+                     [placeholder]="editingId() ? 'PPTO-2026-001' : 'Se generará automáticamente (ej. PPTO-2026-001)'"
+                     [readonly]="!editingId()"
+                     [class.bg-slate-50]="!editingId()"
+                     [class.text-slate-600]="!editingId()"
+                     [class.cursor-not-allowed]="!editingId()"
                      class="w-full border border-slate-300 rounded-lg px-3 py-2.5 text-[13px] text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#529b7b]/40 focus:border-[#529b7b] bg-white pr-10">
               @if (formData.IdPresupuesto) {
                 <svg class="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#529b7b]" fill="currentColor" viewBox="0 0 20 20">
@@ -744,15 +754,38 @@
           </table>
         </div>
 
-        <!-- Inserción Rápida -->
-        <div class="bg-slate-50 rounded-lg border border-slate-200 p-4">
-          <p class="text-[12px] font-bold text-slate-500 uppercase tracking-wide mb-3">+ Añadir nueva fase / partida</p>
+        <!-- Inserción Rápida / Edición -->
+        <div class="bg-slate-50 rounded-lg border border-slate-200 p-4 transition-all"
+             [class.border-emerald-500]="faseFormMode === 'edit-fase' || faseFormMode === 'edit-categoria'"
+             [class.bg-emerald-50/30]="faseFormMode === 'edit-fase' || faseFormMode === 'edit-categoria'">
+          
+          <div class="flex items-center justify-between mb-3">
+            <p class="text-[12px] uppercase tracking-wide flex items-center gap-2">
+              @if (faseFormMode === 'edit-fase' || faseFormMode === 'edit-categoria') {
+                <span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-black bg-emerald-100 text-emerald-900 border border-emerald-300 shadow-2xs">
+                  ✏️ MODO EDICIÓN
+                </span>
+                <span class="text-slate-900 font-extrabold text-[13px]">
+                  Editando {{ faseFormMode === 'edit-fase' ? 'Fase: ' + (editingFaseAsignada?.NombreFase || '') : 'Categoría' }}
+                </span>
+              } @else {
+                <span class="font-bold text-slate-600">+ Añadir nueva fase / partida</span>
+              }
+            </p>
+            @if (faseFormMode === 'edit-fase' || faseFormMode === 'edit-categoria') {
+              <button (click)="cancelarEdicionFase()" type="button" 
+                      class="text-[12px] font-bold text-slate-500 hover:text-red-600 underline cursor-pointer transition">
+                ✕ Cancelar edición
+              </button>
+            }
+          </div>
+
           <div class="grid grid-cols-1 sm:grid-cols-12 gap-2.5 items-center">
-            <div class="sm:col-span-5">
+            <div class="sm:col-span-4">
               <select [(ngModel)]="newFaseId" (ngModelChange)="onFaseMaestraChange()"
                       class="w-full border border-slate-300 rounded-lg px-3 py-2 text-[13px] focus:outline-none focus:ring-2 focus:ring-[#529b7b]/40 focus:border-[#529b7b] bg-white">
                 <option value="">Seleccione Fase *</option>
-                @for (fase of fasesMaestras(); track fase.id) {
+                @for (fase of fasesMaestras(); track fase.id || fase.IdpptoFase) {
                   <option [value]="fase.IdpptoFase">{{ fase.FaseProyecto || fase.IdpptoFase }}</option>
                 }
               </select>
@@ -761,7 +794,7 @@
               <select [(ngModel)]="newFaseCategoriaId" [disabled]="!newFaseId"
                       class="w-full border border-slate-300 rounded-lg px-3 py-2 text-[13px] focus:outline-none focus:ring-2 focus:ring-[#529b7b]/40 focus:border-[#529b7b] bg-white disabled:bg-slate-100 disabled:text-slate-400">
                 <option value="">{{ newFaseId ? 'Seleccione Categoría *' : 'Seleccione primero una Fase' }}</option>
-                @for (categoria of categoriasFaseMaestra(); track categoria.id) {
+                @for (categoria of categoriasFaseMaestra(); track categoria.id || categoria.IdpptoFaseCategoria) {
                   <option [value]="categoria.IdpptoFaseCategoria">{{ categoria.Descripcion || categoria.IdpptoFaseCategoria }}</option>
                 }
               </select>
@@ -770,14 +803,24 @@
               <input [(ngModel)]="newFaseSubtotal" type="number" placeholder="Monto S/."
                      class="w-full border border-slate-300 rounded-lg px-3 py-2 text-[13px] focus:outline-none focus:ring-2 focus:ring-[#529b7b]/40 focus:border-[#529b7b] bg-white">
             </div>
-            <div class="sm:col-span-2">
+            <div class="sm:col-span-3">
               <button (click)="guardarFaseCategoria()"
                       type="button"
-                      class="w-full bg-[#1e4838] hover:bg-[#2d634d] text-white px-2.5 py-2 rounded-lg text-[13px] font-bold transition-colors flex items-center justify-center gap-1.5 shadow-sm whitespace-nowrap">
-                <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path d="M12 6v6m0 0v6m0-6h6m-6 0H6" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"/>
-                </svg>
-                <span>{{ faseFormMode === 'edit-fase' || faseFormMode === 'edit-categoria' ? 'Guardar cambios' : 'Agregar' }}</span>
+                      [ngClass]="(faseFormMode === 'edit-fase' || faseFormMode === 'edit-categoria') 
+                        ? 'bg-[#153a2d] hover:bg-[#0c241c] text-white font-extrabold ring-2 ring-emerald-500 shadow-md' 
+                        : 'bg-[#1e4838] hover:bg-[#2d634d] text-white font-bold shadow-sm'"
+                      class="w-full px-3 py-2.5 rounded-lg text-[13px] transition-all flex items-center justify-center gap-1.5 whitespace-nowrap cursor-pointer">
+                @if (faseFormMode === 'edit-fase' || faseFormMode === 'edit-categoria') {
+                  <svg class="w-4 h-4 shrink-0 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path d="M5 13l4 4L19 7" stroke-linecap="round" stroke-linejoin="round" stroke-width="3"/>
+                  </svg>
+                  <span class="font-black tracking-wide text-[13px]">Guardar cambios</span>
+                } @else {
+                  <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path d="M12 6v6m0 0v6m0-6h6m-6 0H6" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"/>
+                  </svg>
+                  <span class="font-bold">Agregar</span>
+                }
               </button>
             </div>
           </div>

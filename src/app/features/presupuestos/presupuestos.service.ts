@@ -1,4 +1,4 @@
-import { Service, inject } from '@angular/core';
+﻿import { Service, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { 
@@ -76,7 +76,11 @@ export class PresupuestosService {
 
   // Fases Maestras
   getFasesMaestras(): Observable<any> {
-    return this.http.get<any>(`${this.apiUrl}/fases-maestras`);
+    return this.http.get<any>(`${this.apiUrl}/fases-maestras?pageSize=100`);
+  }
+
+    getCategoriasFasesMaestras(page: number = 1): Observable<any> {
+    return this.http.get<any>(`${this.apiUrl}/categorias-fases-maestras?page=${page}&pageSize=100`);
   }
 
   getCategoriasDeFase(idFase: string): Observable<any> {

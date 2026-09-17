@@ -1,4 +1,4 @@
-import { Component, inject, signal, OnInit } from '@angular/core';
+﻿import { Component, inject, signal, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 
@@ -307,6 +307,10 @@ export class PresupuestosComponent implements OnInit {
   }
 
   guardarFaseCategoria() {
+    if (!this.editingFaseAsignada && !this.editingCategoriaAsignada && (!this.editingId() || !this.presupuestoActivo())) {
+      this.addFormFase();
+      return;
+    }
     const presupuesto = this.presupuestoActivo();
     const faseMaestra = this.fasesMaestras().find((item) => item.IdpptoFase === this.newFaseId);
     const categoriaMaestra = this.categoriasFaseMaestra().find((item) => item.IdpptoFaseCategoria === this.newFaseCategoriaId);
@@ -397,6 +401,9 @@ export class PresupuestosComponent implements OnInit {
   }
 
   private finalizarEdicionFaseCategoria() {
+    this.faseFormMode = 'new-fase';
+    this.editingFaseAsignada = null;
+    this.editingCategoriaAsignada = null;
     this.closeForm();
     this.recargarPresupuestoActivo();
   }
@@ -433,15 +440,52 @@ export class PresupuestosComponent implements OnInit {
     });
   }
 
-  onFaseMaestraChange() {
-    this.newFaseCategoriaId = '';
+    onFaseMaestraChange(preserveCategoriaId?: string) {
+    if (!preserveCategoriaId) {
+      this.newFaseCategoriaId = '';
+    }
     this.categoriasFaseMaestra.set([]);
     if (!this.newFaseId) return;
 
     this.presupuestosService.getCategoriasDeFase(this.newFaseId).subscribe({
-      next: (response) => this.categoriasFaseMaestra.set(Array.isArray(response) ? response : response.data || []),
-      error: (error) => console.error('Error al cargar categorías de la fase', error),
+      next: (response: any) => {
+        let list: any[] = Array.isArray(response) ? response : (response?.data || response?.value || []);
+        if (preserveCategoriaId && !list.some((item) => String(item.IdpptoFaseCategoria) === String(preserveCategoriaId))) {
+          if (this.editingCategoriaAsignada) {
+            list = [{
+              IdpptoFaseCategoria: this.editingCategoriaAsignada.IdpptoFaseCategoria,
+              Descripcion: this.editingCategoriaAsignada.CategoriaInsumo || this.editingCategoriaAsignada.Descripcion || this.editingCategoriaAsignada.IdpptoFaseCategoria,
+              id: this.editingCategoriaAsignada.id
+            }, ...list];
+          }
+        }
+        this.categoriasFaseMaestra.set(list);
+        if (preserveCategoriaId) {
+          this.newFaseCategoriaId = preserveCategoriaId;
+        }
+      },
+      error: () => {
+        if (preserveCategoriaId && this.editingCategoriaAsignada) {
+          this.categoriasFaseMaestra.set([{
+            IdpptoFaseCategoria: this.editingCategoriaAsignada.IdpptoFaseCategoria,
+            Descripcion: this.editingCategoriaAsignada.CategoriaInsumo || this.editingCategoriaAsignada.Descripcion,
+            id: this.editingCategoriaAsignada.id
+          }]);
+          this.newFaseCategoriaId = preserveCategoriaId;
+        }
+      }
     });
+  }
+
+  cancelarEdicionFase() {
+    this.faseFormMode = 'new-fase';
+    this.editingFaseAsignada = null;
+    this.editingCategoriaAsignada = null;
+    this.newFaseId = '';
+    this.newFaseCategoriaId = '';
+    this.newFaseSubtotal = null;
+    this.categoriasFaseMaestra.set([]);
+    this.closeForm();
   }
 
   removeFormFase(index: number) {
@@ -608,6 +652,9 @@ export class PresupuestosComponent implements OnInit {
       Total: this.formTotalGeneral,
       Comentarios: this.comentarios()
     };
+    if (!this.editingId() && !String(payload.IdPresupuesto ?? '').trim()) {
+      delete payload.IdPresupuesto;
+    }
 
     this.loading.set(true);
     const id = this.editingId();
@@ -626,10 +673,38 @@ export class PresupuestosComponent implements OnInit {
       });
     } else {
       this.presupuestosService.createPresupuesto(payload).subscribe({
-        next: () => {
+        next: (created: any) => {
           this.loading.set(false);
           this.closeForm();
-          alert(`✅ Presupuesto ${payload.IdPresupuesto} guardado y emitido con éxito.`);
+          const pptoCode = created?.IdPresupuesto || payload.IdPresupuesto || '';
+
+          const fasesAGuardar = [...this.formFases()];
+          if (fasesAGuardar.length > 0) {
+            fasesAGuardar.forEach((item, index) => {
+              const idDetalle = `DF-${Date.now()}-${index}`;
+              const faseData = {
+                IdPresupuesto: pptoCode,
+                IdpptoFase: item.idFase,
+                IdPresupuestoDetalle: idDetalle,
+                id_empresa: created.id_empresa ?? payload.id_empresa,
+                CodCentroCto: created.CodCentroCto ?? payload.CodCentroCto,
+                id_centro_costo: created.id_centro_costo ?? payload.id_centro_costo,
+                CostoDirecto: item.subtotal
+              };
+              this.presupuestosService.createFaseAsignada(faseData).subscribe({
+                next: () => {
+                  this.presupuestosService.createCategoriaAsignada({
+                    ...faseData,
+                    IdPresupuestoDetalleCategoria: `DFC-${Date.now()}-${index}`,
+                    IdpptoFaseCategoria: item.idCategoria,
+                    SubTotalCategoria: item.subtotal
+                  }).subscribe();
+                }
+              });
+            });
+          }
+
+          alert(`Presupuesto ${pptoCode} guardado y emitido con éxito.`);
           this.loadCentrosCostos();
         },
         error: (err) => {
