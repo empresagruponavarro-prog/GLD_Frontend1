@@ -599,7 +599,7 @@
           <!-- Centro de Costo -->
           <div>
             <label class="block text-[12px] font-bold text-slate-500 mb-1.5 uppercase tracking-wide">Centro de Costo *</label>
-            <select [ngModel]="selectedCC()" (ngModelChange)="onCentroCostoFormChange($event)"
+            <select [ngModel]="selectedCC()" [compareWith]="compareCentrosCostos" (ngModelChange)="onCentroCostoFormChange($event)"
                     class="w-full border border-[#529b7b] bg-[#529b7b]/5 rounded-lg px-3 py-2.5 text-[13px] text-[#1e4838] font-semibold focus:outline-none focus:ring-2 focus:ring-[#529b7b]/40 focus:border-[#529b7b]">
               <option [ngValue]="null">{{ formData.id_empresa ? '— Seleccione Centro de Costo —' : '— Seleccione primero una Empresa —' }}</option>
               @for (cc of centrosCostosFormulario; track cc.id ?? cc.id_centro_costo) {
@@ -608,12 +608,15 @@
             </select>
           </div>
 
-          <!-- Cliente -->
+                    <!-- Cliente -->
           <div>
             <label class="block text-[12px] font-bold text-slate-500 mb-1.5 uppercase tracking-wide">Cliente *</label>
-            <select [(ngModel)]="formData.Concepto"
+            <select [(ngModel)]="formData.Cliente"
                     class="w-full border border-slate-300 rounded-lg px-3 py-2.5 text-[13px] text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#529b7b]/40 focus:border-[#529b7b] bg-white">
-              <option value="">— Seleccione cliente —</option>
+              <option value="">- Seleccione cliente -</option>
+              @if (formData.Cliente && !(catalogos()?.clientes || []).includes(formData.Cliente)) {
+                <option [value]="formData.Cliente">{{ formData.Cliente }}</option>
+              }
               @for (cli of (catalogos()?.clientes || []); track cli) {
                 <option [value]="cli">{{ cli }}</option>
               }

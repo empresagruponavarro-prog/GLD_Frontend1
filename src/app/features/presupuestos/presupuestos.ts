@@ -693,10 +693,35 @@ export class PresupuestosComponent implements OnInit {
     this.showForm.set(true);
   }
 
+  compareCentrosCostos = (c1: any, c2: any): boolean => {
+    if (!c1 || !c2) return c1 === c2;
+    const id1 = c1.id ?? c1.id_centro_costo;
+    const id2 = c2.id ?? c2.id_centro_costo;
+    if (id1 != null && id2 != null && Number(id1) === Number(id2)) return true;
+    const cod1 = c1.CodCentroCto;
+    const cod2 = c2.CodCentroCto;
+    if (cod1 && cod2 && cod1 === cod2) return true;
+    return false;
+  };
+
   get centrosCostosFormulario(): CentroCosto[] {
     const empresaId = this.formData.id_empresa;
-    if (empresaId == null) return [];
-    return this.centrosCostos().filter((centroCosto) => centroCosto.id_empresa === Number(empresaId));
+    let list = this.centrosCostos();
+    if (empresaId != null) {
+      list = list.filter((centroCosto) => Number(centroCosto.id_empresa) === Number(empresaId));
+    }
+    const current = this.selectedCC();
+    if (current) {
+      const currentId = current.id ?? current.id_centro_costo;
+      const exists = list.some(cc =>
+        (currentId != null && (cc.id ?? cc.id_centro_costo) === currentId) ||
+        (current.CodCentroCto && cc.CodCentroCto === current.CodCentroCto)
+      );
+      if (!exists) {
+        list = [current, ...list];
+      }
+    }
+    return list;
   }
 
   onCentroCostoFormChange(centroCosto: CentroCosto | null) {
@@ -713,7 +738,8 @@ export class PresupuestosComponent implements OnInit {
       Proyecto: centroCosto.CentroCosto || '',
       CodCentroCto: centroCosto.CodCentroCto || '',
       id_centro_costo: centroCosto.id ?? centroCosto.id_centro_costo,
-      Concepto: centroCosto.Cliente || centroCosto.CodCliente || '',
+      Cliente: centroCosto.Cliente || centroCosto.CodCliente || '',
+      Concepto: this.formData.Concepto || 'PPTO CONTRACTUAL',
       periodo: centroCosto.periodo != null
         ? String(centroCosto.periodo)
         : (centroCosto.IdPeriodo || ''),
@@ -800,7 +826,7 @@ export class PresupuestosComponent implements OnInit {
   }
 
   savePresupuestoCompleto() {
-    if (!String(this.formData.IdPresupuesto ?? '').trim()) {
+    if (this.editingId() && !String(this.formData.IdPresupuesto ?? '').trim()) {
       alert('El ID de Presupuesto es obligatorio.');
       this.formStep.set(1);
       return;
@@ -949,6 +975,8 @@ export class PresupuestosComponent implements OnInit {
     return {
       IdPresupuesto: '',
       Proyecto: '',
+      Cliente: '',
+      Concepto: '',
       CodEmpresa: '',
       CodCentroCto: '',
       IdPeriodo: '',
@@ -978,7 +1006,20 @@ export class PresupuestosComponent implements OnInit {
         const list = res.data || [];
         this.centrosCostos.set(list);
         this.loading.set(false);
-        if (!this.selectedCC() && list.length > 0) {
+        if (this.selectedCC()) {
+          const current = this.selectedCC()!;
+          const currentId = current.id ?? current.id_centro_costo;
+          const matched = list.find((c: any) =>
+            (currentId != null && (c.id === currentId || c.id_centro_costo === currentId)) ||
+            (current.CodCentroCto && c.CodCentroCto === current.CodCentroCto)
+          );
+          if (matched) {
+            this.selectedCC.set(matched);
+            if (this.showForm()) {
+              this.onCentroCostoFormChange(matched);
+            }
+          }
+        } else if (list.length > 0) {
           // Buscamos el primer presupuesto existente para auto-seleccionar un CC que tenga presupuesto y fases reales
           this.presupuestosService.getPresupuestos(1, 10).subscribe({
             next: (pRes) => {
@@ -1225,19 +1266,24 @@ export class PresupuestosComponent implements OnInit {
   }
 
   save() {
-    if (!this.formData.IdPresupuesto) {
+    if (this.editingId() && !this.formData.IdPresupuesto) {
       alert('El ID de Presupuesto es obligatorio.');
       return;
     }
 
+    const payload = { ...this.formData };
+    if (!this.editingId() && !String(payload.IdPresupuesto ?? '').trim()) {
+      delete payload.IdPresupuesto;
+    }
+
     const id = this.editingId();
     if (id) {
-      this.presupuestosService.updatePresupuesto(id, this.formData).subscribe({
+      this.presupuestosService.updatePresupuesto(id, payload).subscribe({
         next: () => { this.closeModal(); if (this.selectedCC()) this.onSelectCC(this.selectedCC()!); else this.loadData(); },
         error: (err) => alert('Error al actualizar: ' + (err.error?.message || err.message))
       });
     } else {
-      this.presupuestosService.createPresupuesto(this.formData).subscribe({
+      this.presupuestosService.createPresupuesto(payload).subscribe({
         next: () => { this.closeModal(); if (this.selectedCC()) this.onSelectCC(this.selectedCC()!); else this.loadData(); },
         error: (err) => alert('Error al crear: ' + (err.error?.message || err.message))
       });
