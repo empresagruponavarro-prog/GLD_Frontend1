@@ -777,7 +777,7 @@
                 <label class="block text-[11px] font-bold text-slate-600 uppercase mb-1">Fase Maestra *</label>
                 <select [(ngModel)]="newFaseId" (ngModelChange)="onFaseMaestraChange()"
                         class="w-full border border-slate-300 rounded-lg px-3 py-2 text-[13px] focus:outline-none focus:ring-2 focus:ring-[#529b7b]/40 focus:border-[#529b7b] bg-white">
-                  <option value="">Seleccione Fase *</option>
+                  <option value="">{{ fasesMaestras().length ? 'Seleccione Fase *' : '-- Sin fases configuradas para esta obra --' }}</option>
                   @for (fase of fasesMaestras(); track fase.id || fase.IdpptoFase) {
                     <option [value]="fase.IdpptoFase">{{ fase.FaseProyecto || fase.IdpptoFase }}</option>
                   }
@@ -840,7 +840,7 @@
               <div class="sm:col-span-4">
                 <select [(ngModel)]="newFaseId" (ngModelChange)="onFaseMaestraChange()"
                         class="w-full border border-slate-300 rounded-lg px-3 py-2 text-[13px] focus:outline-none focus:ring-2 focus:ring-[#529b7b]/40 focus:border-[#529b7b] bg-white">
-                  <option value="">Seleccione Fase *</option>
+                  <option value="">{{ fasesMaestras().length ? 'Seleccione Fase *' : '-- Sin fases configuradas para esta obra --' }}</option>
                   @for (fase of fasesMaestras(); track fase.id || fase.IdpptoFase) {
                     <option [value]="fase.IdpptoFase">{{ fase.FaseProyecto || fase.IdpptoFase }}</option>
                   }
@@ -1269,7 +1269,7 @@
         </label>
         <select [(ngModel)]="modalFaseData.IdpptoFase"
                 class="w-full border border-slate-300 rounded-lg px-3 py-2.5 text-[13px] text-slate-800 bg-white focus:outline-none focus:ring-2 focus:ring-[#529b7b]/40 focus:border-[#529b7b]">
-          <option value="">-- Seleccione una Fase --</option>
+          <option value="">{{ fasesMaestras().length ? '-- Seleccione una Fase --' : '-- Sin fases configuradas para esta obra --' }}</option>
           @for (f of fasesMaestras(); track f.id || f.IdpptoFase) {
             <option [value]="f.IdpptoFase">{{ f.FaseProyecto || f.IdpptoFase }} ({{ f.IdpptoFase }})</option>
           }

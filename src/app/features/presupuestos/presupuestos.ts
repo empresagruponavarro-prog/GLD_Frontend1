@@ -374,6 +374,13 @@ export class PresupuestosComponent implements OnInit {
       alert('Seleccione primero un presupuesto.');
       return;
     }
+    if (this.selectedCC()) {
+      this.cargarFasesPorCentroCosto(this.selectedCC());
+    } else if (ppto.id_centro_costo) {
+      this.presupuestosService.getFasesMaestras({ id_centro_costo: ppto.id_centro_costo }).subscribe({
+        next: (res) => this.fasesMaestras.set(Array.isArray(res) ? res : res.data || []),
+      });
+    }
     this.modalFaseModo.set(modo);
     this.modalFaseData = {
       id: fase?.id ?? null,
@@ -544,6 +551,13 @@ export class PresupuestosComponent implements OnInit {
     this.newFaseCategoriaId = categoria?.IdpptoFaseCategoria || '';
     this.newFaseSubtotal = Number(categoria?.CostoDirecto ?? categoria?.SubTotalCategoria ?? fase?.CostoDirecto ?? 0);
     this.categoriasFaseMaestra.set([]);
+    if (this.selectedCC()) {
+      this.cargarFasesPorCentroCosto(this.selectedCC());
+    } else if (presupuesto.id_centro_costo) {
+      this.presupuestosService.getFasesMaestras({ id_centro_costo: presupuesto.id_centro_costo }).subscribe({
+        next: (res) => this.fasesMaestras.set(Array.isArray(res) ? res : res.data || []),
+      });
+    }
     if (this.newFaseId) this.onFaseMaestraChange();
     this.formStep.set(2);
     this.showForm.set(true);
@@ -796,6 +810,7 @@ export class PresupuestosComponent implements OnInit {
 
   onCentroCostoFormChange(centroCosto: CentroCosto | null) {
     this.selectedCC.set(centroCosto);
+    this.cargarFasesPorCentroCosto(centroCosto);
 
     if (!centroCosto) {
       this.formData.id_centro_costo = undefined;
@@ -1026,11 +1041,38 @@ export class PresupuestosComponent implements OnInit {
     });
   }
 
-  loadFasesMaestras() {
-    this.presupuestosService.getFasesMaestras().subscribe({
-      next: (response) => this.fasesMaestras.set(Array.isArray(response) ? response : response.data || []),
-      error: (error) => console.error('Error al cargar fases maestras', error),
+    cargarFasesPorCentroCosto(cc: CentroCosto | null) {
+    if (!cc) {
+      this.fasesMaestras.set([]);
+      this.categoriasFaseMaestra.set([]);
+      return;
+    }
+    const ccId = cc.id ?? (cc as any).id_centro_costo;
+    const ccpId = (cc as any).id_centro_costos_principal;
+    this.presupuestosService.getFasesMaestras({
+      id_centro_costo: ccId,
+      id_centro_costos_principal: ccpId,
+    }).subscribe({
+      next: (response) => {
+        const list = Array.isArray(response) ? response : (response?.data || []);
+        this.fasesMaestras.set(list);
+      },
+      error: (error) => {
+        console.error('Error al cargar fases maestras por centro de costo', error);
+        this.fasesMaestras.set([]);
+      },
     });
+  }
+
+  loadFasesMaestras() {
+    if (this.selectedCC()) {
+      this.cargarFasesPorCentroCosto(this.selectedCC());
+    } else {
+      this.presupuestosService.getFasesMaestras().subscribe({
+        next: (response) => this.fasesMaestras.set(Array.isArray(response) ? response : response.data || []),
+        error: (error) => console.error('Error al cargar fases maestras', error),
+      });
+    }
   }
 
   limpiarFiltros() {
@@ -1126,6 +1168,7 @@ export class PresupuestosComponent implements OnInit {
 
   onSelectCC(cc: CentroCosto) {
     this.selectedCC.set(cc);
+    this.cargarFasesPorCentroCosto(cc);
     this.presupuestoActivo.set(null);
     this.selectedFase.set(null);
     this.presupuestosDelCC.set([]);

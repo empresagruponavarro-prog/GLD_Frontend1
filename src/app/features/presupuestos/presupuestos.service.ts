@@ -75,8 +75,26 @@ export class PresupuestosService {
   }
 
   // Fases Maestras
-  getFasesMaestras(): Observable<any> {
-    return this.http.get<any>(`${this.apiUrl}/fases-maestras?pageSize=100`);
+  // Fases Maestras
+  getFasesMaestras(params?: {
+    id_centro_costo?: number;
+    id_centro_costos_principal?: number;
+    CodCentroCtoPrincipal?: string;
+    id_empresa?: number;
+    pageSize?: number;
+  }): Observable<any> {
+    let httpParams = new HttpParams();
+    if (params) {
+      if (params.id_centro_costo != null) httpParams = httpParams.set('id_centro_costo', params.id_centro_costo.toString());
+      if (params.id_centro_costos_principal != null) httpParams = httpParams.set('id_centro_costos_principal', params.id_centro_costos_principal.toString());
+      if (params.CodCentroCtoPrincipal) httpParams = httpParams.set('CodCentroCtoPrincipal', params.CodCentroCtoPrincipal);
+      if (params.id_empresa != null) httpParams = httpParams.set('id_empresa', params.id_empresa.toString());
+      if (params.pageSize != null) httpParams = httpParams.set('pageSize', params.pageSize.toString());
+    }
+    if (!httpParams.has('pageSize')) {
+      httpParams = httpParams.set('pageSize', '100');
+    }
+    return this.http.get<any>(`${this.apiUrl}/fases-maestras`, { params: httpParams });
   }
 
     getCategoriasFasesMaestras(page: number = 1): Observable<any> {
