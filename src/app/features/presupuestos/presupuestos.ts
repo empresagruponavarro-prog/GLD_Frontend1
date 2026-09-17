@@ -131,6 +131,26 @@ export class PresupuestosComponent implements OnInit {
   editingFaseAsignada: DetalleFase | null = null;
   editingCategoriaAsignada: any | null = null;
 
+  // Modales directos y rápidos para Fase y Categoría (Dashboard)
+  modalFaseOpen = signal<boolean>(false);
+  modalFaseModo = signal<'new' | 'edit'>('new');
+  modalFaseData = {
+    id: null as number | null,
+    IdpptoFase: '',
+    CostoDirecto: null as number | null,
+  };
+
+  modalCategoriaOpen = signal<boolean>(false);
+  modalCategoriaModo = signal<'new' | 'edit'>('new');
+  modalCategoriaData = {
+    id: null as number | null,
+    faseNombre: '',
+    IdpptoFase: '',
+    IdpptoFaseCategoria: '',
+    CostoDirecto: null as number | null,
+  };
+  categoriasDisponiblesModal = signal<FaseCategoriaMaestra[]>([]);
+
   // Parámetros Financieros para Paso 3
   pctGG = signal<number>(0.00);
   pctUtilidad = signal<number>(0.00);
@@ -258,26 +278,179 @@ export class PresupuestosComponent implements OnInit {
   abrirNuevaCategoria() {
     const fase = this.selectedFase();
     if (!fase) {
-      alert('Seleccione primero una fase.');
+      alert('Seleccione primero una fase en la tabla.');
       return;
     }
-    this.openFasesForm('new-categoria', fase);
+    this.abrirModalCategoria('new');
   }
 
   abrirNuevaFase() {
-    this.openFasesForm('new-fase');
+    this.abrirModalFase('new');
   }
 
   editarFase(fase: DetalleFase, event: Event) {
     event.stopPropagation();
-    this.openFasesForm('edit-fase', fase);
+    this.abrirModalFase('edit', fase);
   }
 
   editarCategoria(categoria: any, event: Event) {
     event.stopPropagation();
+    this.abrirModalCategoria('edit', categoria);
+  }
+
+  abrirModalFase(modo: 'new' | 'edit', fase?: DetalleFase) {
+    const ppto = this.presupuestoActivo();
+    if (!ppto) {
+      alert('Seleccione primero un presupuesto.');
+      return;
+    }
+    this.modalFaseModo.set(modo);
+    this.modalFaseData = {
+      id: fase?.id ?? null,
+      IdpptoFase: fase?.IdpptoFase || '',
+      CostoDirecto: fase?.CostoDirecto != null ? Number(fase.CostoDirecto) : null,
+    };
+    this.modalFaseOpen.set(true);
+  }
+
+  cerrarModalFase() {
+    this.modalFaseOpen.set(false);
+  }
+
+  guardarModalFase() {
+    const ppto = this.presupuestoActivo();
+    if (!ppto) return;
+    if (!this.modalFaseData.IdpptoFase) {
+      alert('Seleccione una fase maestra.');
+      return;
+    }
+
+    const monto = Number(this.modalFaseData.CostoDirecto) || 0;
+    const payload = {
+      IdPresupuesto: String(ppto.IdPresupuesto),
+      IdpptoFase: this.modalFaseData.IdpptoFase,
+      id_empresa: ppto.id_empresa,
+      CodCentroCto: ppto.CodCentroCto,
+      id_centro_costo: ppto.id_centro_costo,
+      CostoDirecto: monto,
+    };
+
+    if (this.modalFaseModo() === 'edit' && this.modalFaseData.id) {
+      this.presupuestosService.updateFaseAsignada(this.modalFaseData.id, payload).subscribe({
+        next: () => {
+          this.cerrarModalFase();
+          this.recargarPresupuestoActivo();
+        },
+        error: (err) => alert('Error al actualizar fase: ' + (err.error?.message || err.message)),
+      });
+    } else {
+      const idDetalle = `DF-${Date.now()}`;
+      this.presupuestosService.createFaseAsignada({
+        ...payload,
+        IdPresupuestoDetalle: idDetalle,
+      }).subscribe({
+        next: () => {
+          this.cerrarModalFase();
+          this.recargarPresupuestoActivo();
+        },
+        error: (err) => alert('Error al crear fase: ' + (err.error?.message || err.message)),
+      });
+    }
+  }
+
+  abrirModalCategoria(modo: 'new' | 'edit', cat?: any) {
+    const ppto = this.presupuestoActivo();
     const fase = this.selectedFase();
-    if (!fase) return;
-    this.openFasesForm('edit-categoria', fase, categoria);
+    if (!ppto || !fase) {
+      alert('Seleccione primero una fase en la tabla.');
+      return;
+    }
+
+    this.modalCategoriaModo.set(modo);
+    this.modalCategoriaData = {
+      id: cat?.id ?? null,
+      faseNombre: fase.NombreFase || fase.IdpptoFase,
+      IdpptoFase: fase.IdpptoFase,
+      IdpptoFaseCategoria: cat?.IdpptoFaseCategoria || '',
+      CostoDirecto: Number(cat?.CostoDirecto ?? cat?.SubTotalCategoria ?? 0) || null,
+    };
+
+    this.categoriasDisponiblesModal.set([]);
+    this.presupuestosService.getCategoriasDeFase(fase.IdpptoFase).subscribe({
+      next: (cats: any) => {
+        let list = Array.isArray(cats) ? cats : (cats.data || []);
+        if (cat?.IdpptoFaseCategoria && !list.some(c => c.IdpptoFaseCategoria === cat.IdpptoFaseCategoria)) {
+          list = [{
+            IdpptoFaseCategoria: cat.IdpptoFaseCategoria,
+            Descripcion: cat.CategoriaInsumo || cat.Descripcion || cat.IdpptoFaseCategoria,
+            id: cat.id,
+          }, ...list];
+        }
+        this.categoriasDisponiblesModal.set(list);
+      },
+      error: () => {
+        if (cat?.IdpptoFaseCategoria) {
+          this.categoriasDisponiblesModal.set([{
+            IdpptoFaseCategoria: cat.IdpptoFaseCategoria,
+            Descripcion: cat.CategoriaInsumo || cat.Descripcion || cat.IdpptoFaseCategoria,
+            id: cat.id,
+          }]);
+        }
+      }
+    });
+
+    this.modalCategoriaOpen.set(true);
+  }
+
+  cerrarModalCategoria() {
+    this.modalCategoriaOpen.set(false);
+  }
+
+  guardarModalCategoria() {
+    const ppto = this.presupuestoActivo();
+    const fase = this.selectedFase();
+    if (!ppto || !fase) return;
+    if (!this.modalCategoriaData.IdpptoFaseCategoria) {
+      alert('Seleccione una categoría.');
+      return;
+    }
+
+    const monto = Number(this.modalCategoriaData.CostoDirecto) || 0;
+    const payload = {
+      IdPresupuesto: String(ppto.IdPresupuesto),
+      IdpptoFase: fase.IdpptoFase,
+      id_empresa: ppto.id_empresa,
+      CodCentroCto: ppto.CodCentroCto,
+      id_centro_costo: ppto.id_centro_costo,
+      CostoDirecto: monto,
+      IdpptoFaseCategoria: this.modalCategoriaData.IdpptoFaseCategoria,
+    };
+
+    if (this.modalCategoriaModo() === 'edit' && this.modalCategoriaData.id) {
+      this.presupuestosService.updateCategoriaAsignada(this.modalCategoriaData.id, payload).subscribe({
+        next: () => {
+          this.cerrarModalCategoria();
+          this.recargarPresupuestoActivo();
+        },
+        error: (err) => alert('Error al actualizar categoría: ' + (err.error?.message || err.message)),
+      });
+    } else {
+      if (!fase.IdPresupuestoDetalle) {
+        alert('La fase seleccionada no tiene IdPresupuestoDetalle válido.');
+        return;
+      }
+      this.presupuestosService.createCategoriaAsignada({
+        ...payload,
+        IdPresupuestoDetalleCategoria: `DFC-${Date.now()}`,
+        IdPresupuestoDetalle: fase.IdPresupuestoDetalle,
+      }).subscribe({
+        next: () => {
+          this.cerrarModalCategoria();
+          this.recargarPresupuestoActivo();
+        },
+        error: (err) => alert('Error al crear categoría: ' + (err.error?.message || err.message)),
+      });
+    }
   }
 
   private openFasesForm(
