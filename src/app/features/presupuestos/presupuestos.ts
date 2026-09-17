@@ -37,7 +37,66 @@ export class PresupuestosComponent implements OnInit {
   filterPeriodo = '';
   filterCliente = '';
   filterEstado = '';
-  filterCategoria = 'Todos'; // 'Todos' | 'Materiales' | 'Mano de Obra' | 'Equipos & Subc.'
+  filterCategoria = 'Todos';
+  statusPillFilter = signal<string>('');
+  vistaActual = signal<'financiera' | 'operativa'>('financiera');
+
+  setStatusPill(st: string) {
+    if (this.statusPillFilter() === st) {
+      this.statusPillFilter.set('');
+    } else {
+      this.statusPillFilter.set(st);
+    }
+  }
+
+  setVista(v: 'financiera' | 'operativa') {
+    this.vistaActual.set(v);
+  }
+
+
+
+  get countAbiertos(): number {
+    return this.centrosCostos().filter(c => {
+      const st = (c.PresupuestoEstado || c.Estado || '').toUpperCase();
+      return st.includes('ABIERTO') || st.includes('APROBADO');
+    }).length;
+  }
+
+  get countEnCierre(): number {
+    return this.centrosCostos().filter(c => (c.PresupuestoEstado || c.Estado || '').toUpperCase().includes('CIERRE')).length;
+  }
+
+  get countCerrados(): number {
+    return this.centrosCostos().filter(c => (c.PresupuestoEstado || c.Estado || '').toUpperCase().includes('CERRADO')).length;
+  }
+
+  get totalPortafolioActivo(): number {
+    return this.centrosCostos().reduce((acc, c) => acc + (Number(c.PresupuestoMonto) || 0), 0);
+  }
+
+  
+  isPptoSelected(ppto: PresupuestoPrincipal): boolean {
+    const pptoId = String(ppto.IdPresupuesto ?? ppto.id ?? '');
+    return this.selectedPresupuestoId() === pptoId;
+  }
+
+  onSelectPresupuesto(ppto: PresupuestoPrincipal) {
+    const pptoId = String(ppto.IdPresupuesto ?? ppto.id ?? '');
+    this.selectedPresupuestoId.set(pptoId);
+    this.presupuestoActivo.set(null);
+    this.selectedFase.set(null);
+    this.cargarDetallePresupuesto(pptoId);
+  }
+
+  isBaseContractual(ppto: PresupuestoPrincipal): boolean {
+    const tipo = (ppto.TipoPpto || (ppto as any).Tipo || '').toUpperCase();
+    if (tipo.includes('ADICIONAL')) return false;
+    return true;
+  }
+
+  openEditPresupuesto(ppto: any) {
+    this.editModal(ppto);
+  } // 'Todos' | 'Materiales' | 'Mano de Obra' | 'Equipos & Subc.'
   showNuevaCategoria = signal(false);
   nuevaCategoriaDescripcion = '';
 
@@ -47,22 +106,33 @@ export class PresupuestosComponent implements OnInit {
   // Getters en vez de computed() — se recalculan con el change detection normal de Angular
   get centrosCostosFiltrados(): CentroCosto[] {
     let list = this.centrosCostos();
-    const s = (this.filterSearch || '').toLowerCase();
+    const s = (this.filterSearch || '').toLowerCase().trim();
     const emp = this.filterEmpresa;
     const per = this.filterPeriodo;
     const cli = this.filterCliente;
     const est = this.filterEstado;
+    const pill = this.statusPillFilter();
 
     if (s) {
       list = list.filter(cc =>
         (cc.CodCentroCto && cc.CodCentroCto.toLowerCase().includes(s)) ||
-        (cc.CentroCosto && cc.CentroCosto.toLowerCase().includes(s))
+        (cc.CentroCosto && cc.CentroCosto.toLowerCase().includes(s)) ||
+        (cc.Cliente && cc.Cliente.toLowerCase().includes(s))
       );
     }
     if (emp) list = list.filter(cc => cc.CodEmpresa === emp || cc.Empresa === emp);
-    if (per) list = list.filter(cc => cc.IdPeriodo === per);
+    if (per) list = list.filter(cc => String(cc.IdPeriodo) === String(per));
     if (cli) list = list.filter(cc => cc.CodCliente === cli || cc.Cliente === cli);
     if (est) list = list.filter(cc => (cc.PresupuestoEstado || cc.Estado) === est);
+    if (pill) {
+      list = list.filter(cc => {
+        const st = (cc.PresupuestoEstado || cc.Estado || '').toUpperCase();
+        if (pill === 'Abierto') return st.includes('ABIERTO') || st.includes('APROBADO');
+        if (pill === 'En Cierre') return st.includes('CIERRE');
+        if (pill === 'Cerrado') return st.includes('CERRADO');
+        return true;
+      });
+    }
 
     return list;
   }
@@ -555,8 +625,8 @@ export class PresupuestosComponent implements OnInit {
     });
   }
 
-  eliminarFase(fase: DetalleFase, event: Event) {
-    event.stopPropagation();
+  eliminarFase(fase: DetalleFase, event?: Event) {
+    event?.stopPropagation();
     if (!confirm(`¿Eliminar la fase "${fase.NombreFase || fase.IdpptoFase}" y sus categorías?`)) return;
     this.presupuestosService.deleteFaseAsignada(fase.id).subscribe({
       next: () => this.recargarPresupuestoActivo(),
@@ -564,8 +634,8 @@ export class PresupuestosComponent implements OnInit {
     });
   }
 
-  eliminarCategoria(categoria: any, event: Event) {
-    event.stopPropagation();
+  eliminarCategoria(categoria: any, event?: Event) {
+    event?.stopPropagation();
     if (!confirm(`¿Eliminar la categoría "${categoria.CategoriaInsumo || categoria.IdpptoFaseCategoria}"?`)) return;
     this.presupuestosService.deleteCategoriaAsignada(categoria.id).subscribe({
       next: () => this.recargarPresupuestoActivo(),
@@ -969,6 +1039,8 @@ export class PresupuestosComponent implements OnInit {
     this.filterPeriodo = '';
     this.filterCliente = '';
     this.filterEstado = '';
+    this.filterCategoria = 'Todos';
+    this.statusPillFilter.set('');
   }
 
   emptyForm(): Partial<PresupuestoPrincipal> {

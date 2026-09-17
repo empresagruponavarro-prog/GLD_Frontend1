@@ -1,21 +1,18 @@
-﻿<div class="flex flex-col min-w-0 bg-slate-50 overflow-hidden" style="height: 100%; font-family: 'Inter', system-ui, sans-serif;">
-  <!-- BEGIN: TopControlHeader -->
-  <header class="bg-white border-b border-slate-200 shrink-0" data-purpose="top-control-bar">
-    <!-- Row 1 — filters + CTA -->
-    <div class="px-4 pt-2.5 pb-2 flex items-center gap-2 border-b border-slate-100 flex-wrap">
-      <div class="flex items-center gap-1.5 text-[12px] font-bold text-slate-400 tracking-widest uppercase mr-1">
-        <svg class="w-3.5 h-3.5" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M2 4h12M4 8h8M6 12h4" stroke-linecap="round" />
+<div class="flex flex-col min-w-0 bg-slate-50 overflow-hidden" style="height: 100%; font-family: 'Inter', system-ui, sans-serif;">
+  <!-- BEGIN: GlobalFilterToolbar -->
+  <section class="bg-white border-b border-slate-200 px-3 py-1.5 flex flex-wrap items-center justify-between gap-2 shadow-xs text-xs shrink-0" data-purpose="top-filter-bar">
+    <div class="flex items-center space-x-2 flex-wrap gap-y-1">
+      <span class="erp-label text-slate-500 flex items-center">
+        <svg class="w-3.5 h-3.5 mr-1 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"/>
         </svg>
         Filtros
-      </div>
-      <span class="w-px h-5 bg-slate-200 mx-0.5"></span>
-      
-      <!-- Empresa -->
-      <div class="group flex items-center gap-1.5 px-2.5 py-1 rounded-md border text-[13px] transition-all border-slate-200 bg-white text-slate-700 hover:bg-slate-50 hover:border-slate-300">
-        <span class="text-[11px] font-bold tracking-wider uppercase text-slate-400">Empresa</span>
-        <span class="w-px h-3.5 bg-slate-200"></span>
-        <select class="bg-transparent border-none py-0 pl-0 pr-6 font-semibold focus:ring-0 cursor-pointer" [(ngModel)]="filterEmpresa">
+      </span>
+
+      <!-- Filter: Empresa -->
+      <div class="flex items-center space-x-1 border border-slate-200 rounded px-1.5 py-0.5 bg-slate-50">
+        <span class="text-[10px] uppercase font-semibold text-slate-400">Empresa</span>
+        <select [(ngModel)]="filterEmpresa" class="bg-transparent text-xs py-0 pl-1 pr-6 border-0 focus:ring-0 text-slate-700 font-medium cursor-pointer">
           <option value="">Todas</option>
           @for (e of catalogos()?.empresas; track e) {
             <option [value]="e">{{ e }}</option>
@@ -23,11 +20,10 @@
         </select>
       </div>
 
-      <!-- Periodo -->
-      <div class="group flex items-center gap-1.5 px-2.5 py-1 rounded-md border text-[13px] transition-all border-slate-200 bg-white text-slate-700 hover:bg-slate-50 hover:border-slate-300">
-        <span class="text-[11px] font-bold tracking-wider uppercase text-slate-400">Período</span>
-        <span class="w-px h-3.5 bg-slate-200"></span>
-        <select class="bg-transparent border-none py-0 pl-0 pr-6 font-semibold focus:ring-0 cursor-pointer" [(ngModel)]="filterPeriodo">
+      <!-- Filter: Periodo -->
+      <div class="flex items-center space-x-1 border border-slate-200 rounded px-1.5 py-0.5 bg-slate-50">
+        <span class="text-[10px] uppercase font-semibold text-slate-400">Período</span>
+        <select [(ngModel)]="filterPeriodo" class="bg-transparent text-xs py-0 pl-1 pr-6 border-0 focus:ring-0 text-slate-700 font-medium cursor-pointer">
           <option value="">Todo</option>
           @for (p of catalogos()?.periodos; track p) {
             <option [value]="p">{{ p }}</option>
@@ -35,11 +31,10 @@
         </select>
       </div>
 
-      <!-- Cliente -->
-      <div class="group flex items-center gap-1.5 px-2.5 py-1 rounded-md border text-[13px] transition-all border-slate-200 bg-white text-slate-700 hover:bg-slate-50 hover:border-slate-300">
-        <span class="text-[11px] font-bold tracking-wider uppercase text-slate-400">Cliente</span>
-        <span class="w-px h-3.5 bg-slate-200"></span>
-        <select class="bg-transparent border-none py-0 pl-0 pr-6 font-semibold focus:ring-0 cursor-pointer max-w-[150px] truncate" [(ngModel)]="filterCliente">
+      <!-- Filter: Cliente -->
+      <div class="flex items-center space-x-1 border border-slate-200 rounded px-1.5 py-0.5 bg-slate-50">
+        <span class="text-[10px] uppercase font-semibold text-slate-400">Cliente</span>
+        <select [(ngModel)]="filterCliente" class="bg-transparent text-xs py-0 pl-1 pr-6 border-0 focus:ring-0 text-slate-700 font-medium cursor-pointer max-w-[150px] truncate">
           <option value="">Todos</option>
           @for (c of catalogos()?.clientes; track c) {
             <option [value]="c">{{ c }}</option>
@@ -47,11 +42,10 @@
         </select>
       </div>
 
-      <!-- Estado -->
-      <div class="group flex items-center gap-1.5 px-2.5 py-1 rounded-md border text-[13px] transition-all border-slate-200 bg-white text-slate-700 hover:bg-slate-50 hover:border-slate-300">
-        <span class="text-[11px] font-bold tracking-wider uppercase text-slate-400">Estado</span>
-        <span class="w-px h-3.5 bg-slate-200"></span>
-        <select class="bg-transparent border-none py-0 pl-0 pr-6 font-semibold focus:ring-0 cursor-pointer" [(ngModel)]="filterEstado">
+      <!-- Filter: Estado -->
+      <div class="flex items-center space-x-1 border border-slate-200 rounded px-1.5 py-0.5 bg-slate-50">
+        <span class="text-[10px] uppercase font-semibold text-slate-400">Estado</span>
+        <select [(ngModel)]="filterEstado" class="bg-transparent text-xs py-0 pl-1 pr-6 border-0 focus:ring-0 text-slate-700 font-medium cursor-pointer">
           <option value="">Todos</option>
           @for (e of catalogos()?.pptoEstados; track e) {
             <option [value]="e">{{ e }}</option>
@@ -59,419 +53,412 @@
         </select>
       </div>
 
-      <button (click)="limpiarFiltros()" class="ml-1 text-[12px] text-slate-400 hover:text-slate-600 underline underline-offset-2 transition-colors">Limpiar</button>
-      <div class="flex-1"></div>
-      <button class="flex items-center gap-1.5 bg-green-600 hover:bg-green-700 active:bg-green-800 text-white text-[13px] font-bold px-4 py-2 rounded-md transition-colors whitespace-nowrap shadow-sm shadow-green-900/20" type="button" (click)="openNewPresupuestoForm()">
-        <svg class="w-4 h-4" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M8 3v10M3 8h10" stroke-linecap="round" /></svg>
-        Presupuesto
+      <button (click)="limpiarFiltros()" type="button" class="text-[11px] text-slate-500 hover:text-slate-800 underline font-medium px-1 cursor-pointer">
+        Limpiar
       </button>
     </div>
 
-    <!-- Row 2 — search + status pills + view toggle -->
-    <div class="px-4 py-2 flex items-center gap-3 flex-wrap">
-      <div class="relative flex-1 max-w-sm">
-        <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2">
-          <circle cx="6.5" cy="6.5" r="4" /><path d="M11 11l3 3" stroke-linecap="round" />
-        </svg>
-        <input class="w-full pl-9 pr-10 py-1.5 text-[13px] border border-slate-200 rounded-lg bg-slate-50 placeholder-slate-400 text-slate-700 focus:outline-none focus:ring-2 focus:ring-green-400/40 focus:border-green-400 transition-all" placeholder="Buscar por CC, código o partida…" [(ngModel)]="filterSearch" />
-        <kbd class="absolute right-2.5 top-1/2 -translate-y-1/2 text-[11px] font-mono text-slate-300 border border-slate-200 bg-white rounded px-1.5 py-0.5">⌘K</kbd>
+    <!-- Actions at toolbar right -->
+    <div class="flex items-center space-x-2">
+      <div class="inline-flex rounded-md shadow-2xs border border-slate-200 p-0.5 bg-slate-100">
+        <button type="button" (click)="setVista('financiera')" [class]="vistaActual() === 'financiera' ? 'bg-white text-slate-800 shadow-2xs border border-slate-200 font-medium' : 'text-slate-600 hover:text-slate-900'" class="px-2 py-0.5 text-xs rounded flex items-center space-x-1 cursor-pointer transition">
+          <svg class="w-3.5 h-3.5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z"/></svg>
+          <span>Vista financiera</span>
+        </button>
+        <button type="button" (click)="setVista('operativa')" [class]="vistaActual() === 'operativa' ? 'bg-white text-slate-800 shadow-2xs border border-slate-200 font-medium' : 'text-slate-600 hover:text-slate-900'" class="px-2 py-0.5 text-xs rounded flex items-center space-x-1 cursor-pointer transition">
+          <svg class="w-3.5 h-3.5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"/></svg>
+          <span>Vista operativa</span>
+        </button>
       </div>
-      <div class="flex items-center gap-2 text-[12px]">
-          <span class="bg-green-100 text-green-700 font-semibold px-2.5 py-0.5 rounded-full flex items-center gap-1.5">
-            <span class="tabular-nums">{{ conteoEstados.abiertas }}</span> Abiertos
-          </span>
-          <span class="bg-orange-100 text-orange-600 font-semibold px-2.5 py-0.5 rounded-full flex items-center gap-1.5">
-            <span class="tabular-nums">{{ conteoEstados.enCierre }}</span> En Cierre
-          </span>
-          <span class="bg-slate-100 text-slate-500 font-semibold px-2.5 py-0.5 rounded-full flex items-center gap-1.5">
-            <span class="tabular-nums">{{ conteoEstados.cerradas }}</span> Cerrados
-          </span>
-      </div>
-      <div class="flex-1"></div>
-      <div class="flex items-center bg-slate-100 rounded-lg p-0.5 gap-0.5">
-          <button type="button" class="flex items-center gap-1.5 text-[13px] font-medium px-3.5 py-1.5 rounded-md transition-all bg-white text-slate-800 shadow-sm ring-1 ring-slate-200">
-              <svg class="w-3.5 h-3.5" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="6" width="3" height="8" rx="0.5" /><rect x="6.5" y="3" width="3" height="11" rx="0.5" /><rect x="11" y="8" width="3" height="6" rx="0.5" /></svg>
-            Vista financiera
-          </button>
-          <button type="button" class="flex items-center gap-1.5 text-[13px] font-medium px-3.5 py-1.5 rounded-md transition-all text-slate-500 hover:text-slate-700">
-              <svg class="w-3.5 h-3.5" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 4h12M2 8h8M2 12h10" stroke-linecap="round" /></svg>
-            Vista operativa
-          </button>
-      </div>
+      <button (click)="openNewPresupuestoForm(selectedCC() || undefined)" type="button" class="bg-[#0e9f6e] hover:bg-[#057a55] text-white px-2.5 py-1 rounded text-xs font-semibold flex items-center space-x-1 shadow-2xs transition cursor-pointer">
+        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+        <span>Presupuesto</span>
+      </button>
     </div>
-  </header>
-  <!-- END: TopControlHeader -->
-  <!-- BEGIN: MainContentGrid -->
-  <main class="flex-1 grid grid-cols-12 overflow-hidden border-t border-slate-200">
-  <!-- BEGIN: LeftColumnCostCenters -->
-  <section class="col-span-12 md:col-span-4 xl:col-span-3 border-r border-slate-200 bg-white flex flex-col h-full overflow-hidden" data-purpose="centros-de-costos">
-  <!-- Header de Centros de Costos -->
-  <div class="p-3 border-b border-slate-200 flex items-center justify-between bg-slate-50/60 shrink-0">
-  <div>
-  <h2 class="font-bold text-slate-800 text-[13px] uppercase tracking-wider flex items-center gap-1.5">
-  <span class="h-2 w-2 rounded-full bg-[#529b7b] inline-block animate-pulse"></span>
-                Centros de costos
-              </h2>
-  <span class="text-[12px] text-slate-500">Seleccione un proyecto activo</span>
-  </div>
-  <span class="px-2 py-0.5 rounded text-[12px] font-mono bg-slate-100 text-slate-700 font-semibold border border-slate-200">{{ totalCCs }} CC Reg.</span>
-  </div>
-  <!-- Buscador interno de centros de costo -->
-  <div class="p-2 border-b border-slate-200 bg-slate-50/40 shrink-0">
-  <input class="w-full px-2.5 py-1 text-[13px] bg-white border border-slate-300 rounded text-slate-800 placeholder-slate-400 focus:outline-none focus:border-[#529b7b] focus:ring-1 focus:ring-[#529b7b] shadow-2xs" placeholder="Filtrar centros de costo..." type="text" [(ngModel)]="filterSearch">
-  </div>
-  <!-- Lista scrolleable de Centros de Costos -->
-  <div class="flex-1 overflow-y-auto divide-y divide-slate-100 p-2 space-y-1">
-    
-    @for (cc of centrosCostosFiltrados; track cc.id) {
-      <div 
-        (click)="onSelectCC(cc)"
-        class="p-2.5 rounded-md cursor-pointer transition shadow-2xs"
-        [ngClass]="{
-          'bg-[#529b7b]/10 border-l-4 border-[#529b7b] border-r border-t border-b border-[#529b7b]/30': selectedCC()?.id === cc.id,
-          'hover:bg-slate-50 border border-slate-200/60 bg-white': selectedCC()?.id !== cc.id
-        }">
-        <div class="flex items-center justify-between mb-1">
-          <span class="font-mono text-[13px]" 
-                [ngClass]="selectedCC()?.id === cc.id ? 'font-bold text-[#2d634d]' : 'font-semibold text-slate-500'">
-            CC-{{ cc.id }}
-          </span>
-          <span class="px-1.5 py-0.2 text-[11px] rounded font-bold uppercase"
-                [ngClass]="badgeClass(cc.PresupuestoEstado || cc.Estado)">
-            {{ cc.PresupuestoEstado || cc.Estado || 'ABIERTO' }}
-          </span>
-        </div>
-        <div class="text-[13px] truncate"
-             [ngClass]="selectedCC()?.id === cc.id ? 'font-bold text-slate-900' : 'font-semibold text-slate-800'">
-          {{ cc.CentroCosto }}
-        </div>
-        <div class="text-[13px] mt-1 flex justify-between items-end"
-             [ngClass]="selectedCC()?.id === cc.id ? 'text-slate-600' : 'text-slate-500'">
-          <span class="">Ppto Base Directo:</span>
-          <span class="font-mono font-bold tabular-nums"
-                [ngClass]="selectedCC()?.id === cc.id ? 'text-slate-900' : 'text-slate-800'">
-            {{ (cc.PresupuestoMonto | currency:'PEN':'S/ ') || 'S/ 0.00' }}
-          </span>
-        </div>
-        <div class="mt-1 flex items-center justify-between text-[12px]"
-             [ngClass]="selectedCC()?.id === cc.id ? 'text-slate-500 border-t border-[#529b7b]/20 pt-1 mt-1.5' : 'text-slate-400'">
-          <span class="">Cliente: {{ cc.Cliente || 'N/A' }}</span>
-        </div>
-      </div>
-    }
-
-  </div>
-  <!-- Footer Columna Izquierda con resumen acumulado -->
-  <div class="px-2.5 bg-slate-50 border-t border-slate-200 shrink-0 flex items-center justify-between text-[12px] h-[52px]">
-  <span class="text-slate-600 font-medium">Total Portafolio Activo:</span>
-  <span class="font-mono font-bold text-[#2d634d] tabular-nums text-[13px]">{{ totalPortafolio | currency:'PEN':'S/ ' }}</span>
-  </div>
   </section>
-  <!-- END: LeftColumnCostCenters -->
-  <!-- BEGIN: RightColumnWrapper -->
-  <section class="col-span-12 md:col-span-8 xl:col-span-9 flex flex-col h-full overflow-hidden bg-white" data-purpose="right-content-area">
-  <!-- BEGIN: PanelFases (Panel Superior Derecho: "Fases") -->
-  <div class="h-1/2 min-h-[190px] border-b border-slate-200 bg-white flex flex-col overflow-hidden" data-purpose="fases-panel">
-  <!-- Encabezado de Fases -->
-  <div class="px-3 py-2 border-b border-slate-200 bg-slate-50/70 flex items-center justify-between shrink-0">
-  <div class="flex items-center gap-3">
-  <h2 class="font-bold text-slate-800 text-[13px] uppercase tracking-wider flex items-center gap-1.5">
-  <svg class="w-3.5 h-3.5 text-[#529b7b]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
-                  Fases
-                </h2>
-  <span class="text-slate-500 text-[13px]">| Presupuesto asignado a: 
-    @if (selectedCC()) {
-      <strong class="text-[#2d634d] font-mono">CC-{{ selectedCC()?.id }} - {{ selectedCC()?.CentroCosto }}</strong>
-    } @else {
-      <strong class="text-slate-400 font-mono">Ninguno</strong>
-    }
-  </span>
-  
-  @if (presupuestosDelCC().length > 1) {
-    <div class="flex items-center gap-2 ml-4">
-      <span class="text-[12px] font-semibold text-slate-500 uppercase tracking-wider">TipoPpto:</span>
-      <select class="bg-white border border-slate-300 rounded px-2 py-0.5 text-[12px] font-semibold text-[#2d634d] shadow-2xs focus:ring-[#529b7b] focus:border-[#529b7b] cursor-pointer"
-              [ngModel]="selectedPresupuestoId()" (ngModelChange)="onSelectPresupuestoId($event)">
-        @for (p of presupuestosDelCC(); track p.IdPresupuesto) {
-          <option [value]="p.IdPresupuesto">{{ p.TipoPpto }} - {{ p.Concepto || 'Sin concepto' }}</option>
-        }
-      </select>
-    </div>
-  } @else if (presupuestosDelCC().length === 1) {
-    <div class="ml-4 px-2 py-0.5 bg-slate-100/80 rounded border border-slate-200 text-[11px] font-bold tracking-widest uppercase text-[#2d634d]">
-      {{ presupuestosDelCC()[0].TipoPpto }}
-    </div>
-  }
-  
-  </div>
-  <!-- Botón y acciones de Fase -->
-  <div class="flex items-center gap-2">
-  <div class="hidden sm:flex items-center gap-1 text-[12px] text-slate-500 mr-2 font-mono">
-  <span class="">Ponderación total:</span>
-  <span class="text-[#2d634d] font-bold">100%</span>
-  </div>
-  <button (click)="abrirNuevaFase()" class="px-2.5 py-1 text-[13px] font-semibold rounded bg-white hover:bg-slate-50 text-slate-700 border border-slate-300 transition flex items-center gap-1 shadow-2xs" type="button">
-  <svg class="w-3 h-3 text-[#529b7b]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M12 4v16m8-8H4" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
-                  Nueva Fase
-                </button>
-  </div>
-  </div>
-  <!-- Grid de Tarjetas / Tabla de Fases -->
-  <div class="flex-1 overflow-auto" style="scrollbar-width: thin;">
-  <table class="w-full text-left border-collapse">
-  <thead class="sticky top-0 bg-slate-50 text-slate-600 text-[12px] uppercase font-semibold border-b border-slate-200 z-10">
-  <tr>
-  <th class="p-2 w-8 text-center">Sel.</th>
-  <th class="py-2 px-2.5 w-16">Código</th>
-  <th class="py-2 px-2.5 min-w-[200px]">Descripción de la Fase</th>
-  <th class="py-2 px-2.5 text-right w-20">Peso (%)</th>
-  <th class="py-2 px-2.5 text-right w-28">Costo Directo (S/)</th>
-  <th class="py-2 px-2.5 min-w-[140px]">Avance Físico / Compras</th>
-  <th class="py-2 px-2.5 text-center w-20">N° Partidas</th>
-  <th class="py-2 px-2.5 text-center w-20">Estado</th>
-  <th class="py-2 px-2.5 text-center w-20">Acciones</th>
-  </tr>
-  </thead>
-  <tbody class="divide-y divide-slate-100 text-[13px]">
-  @if (presupuestoActivo()) {
-    @for (fase of presupuestoActivo()?.fases; track fase.id; let i = $index) {
-      <tr 
-        (click)="onSelectFase(fase)"
-        class="transition cursor-pointer"
-        [ngClass]="selectedFase()?.id === fase.id ? 'bg-[#529b7b]/10 border-l-4 border-[#529b7b] hover:bg-[#529b7b]/15' : 'hover:bg-slate-50/80'">
-        
-        <td class="p-2 text-center">
-          <span 
-            class="w-3.5 h-3.5 rounded-full bg-white inline-flex items-center justify-center"
-            [ngClass]="selectedFase()?.id === fase.id ? 'border-2 border-[#529b7b]' : 'border border-slate-400 hover:border-slate-600'">
-            @if (selectedFase()?.id === fase.id) {
-              <span class="w-1.5 h-1.5 rounded-full bg-[#529b7b]"></span>
-            }
-          </span>
-        </td>
-        <td class="py-2 px-2.5 font-mono font-bold"
-            [ngClass]="selectedFase()?.id === fase.id ? 'text-[#2d634d]' : 'text-slate-600 font-semibold'">
-          <span class="px-1.5 py-0.5 rounded border shadow-2xs font-semibold"
-                [title]="'ID: ' + (fase.IdpptoFase || fase.id)"
-                [ngClass]="selectedFase()?.id === fase.id ? 'bg-white text-[#2d634d] border-[#529b7b]/40' : 'bg-slate-100 text-slate-700 border-slate-200'">
-            F-{{ (i + 1) < 10 ? '0' + (i + 1) : (i + 1) }}
-          </span>
-        </td>
-        <td class="py-2 px-2.5">
-          <div class="flex items-center gap-1.5"
-               [ngClass]="selectedFase()?.id === fase.id ? 'font-bold text-slate-900' : 'font-medium text-slate-800'">
-            {{ fase.NombreFase || 'Fase ' + (fase.IdpptoFase || fase.id) }}
-            @if (selectedFase()?.id === fase.id) {
-              <span class="text-[11px] font-bold text-[#2d634d] uppercase tracking-wider bg-white px-1.5 py-0.2 rounded border border-[#529b7b]/40 shadow-2xs">Seleccionada</span>
-            }
-          </div>
-          <div class="text-[12px] truncate max-w-xs"
-               [ngClass]="selectedFase()?.id === fase.id ? 'text-slate-500' : 'text-slate-400'">
-            Creado por: {{ fase.Usuario || 'Sistema' }}
-          </div>
-        </td>
-        <td class="py-2 px-2.5 text-right font-mono tabular-nums"
-            [ngClass]="selectedFase()?.id === fase.id ? 'font-bold text-[#2d634d]' : 'text-slate-600'">
-          {{ getPesoFase(fase) }}
-        </td>
-        <td class="py-2 px-2.5 text-right font-mono tabular-nums"
-            [ngClass]="selectedFase()?.id === fase.id ? 'font-bold text-slate-900' : 'text-slate-800 font-semibold'">
-          {{ (fase.CostoDirecto | currency:'PEN':'S/ ') || 'S/ 0.00' }}
-        </td>
-        <td class="py-2 px-2.5">
-          <div class="flex items-center gap-2">
-            <div class="flex-1 h-1.5 bg-slate-200 rounded-full overflow-hidden">
-              <div class="h-full rounded-full bg-[#529b7b]" 
-                   style="width: 100%"></div>
+  <!-- END: GlobalFilterToolbar -->
+
+  <!-- Main Workspace: Divided into Top Grid (CC & Budget details) and Bottom Grid (Phases & Items) -->
+  <div class="flex-1 flex flex-col p-2 space-y-2 overflow-hidden min-h-0">
+    <!-- BEGIN: SectionSuperior (CC + Presupuestos de CC) -->
+    <section class="grid grid-cols-12 gap-2 flex-1 min-h-0 overflow-hidden" data-purpose="seccion-superior">
+      <!-- Left Column: Centros de Costos list -->
+      <div class="col-span-12 lg:col-span-4 xl:col-span-3 bg-white border border-slate-200 rounded shadow-xs flex flex-col h-full overflow-hidden">
+        <!-- CC Header & Badges -->
+        <div class="p-2 border-b border-slate-100">
+          <div class="flex items-center justify-between pb-1.5">
+            <div class="flex items-center space-x-1.5">
+              <span class="w-2 h-2 rounded-full bg-emerald-500 inline-block"></span>
+              <span class="erp-label text-slate-800 font-manrope">Centros de Costos</span>
             </div>
-            <span class="font-mono text-[12px] tabular-nums w-8 text-right font-semibold text-[#2d634d]">100%</span>
+            <span class="text-[10px] bg-slate-100 text-slate-600 px-1.5 py-0.2 rounded font-semibold border border-slate-200">{{ centrosCostosFiltrados.length }} CC Reg.</span>
           </div>
-        </td>
-        <td class="py-2 px-2.5 text-center font-mono"
-            [ngClass]="selectedFase()?.id === fase.id ? 'font-semibold text-slate-700' : 'text-slate-600'">
-          {{ fase.categorias?.length || 0 }}
-        </td>
-        <td class="py-2 px-2.5 text-center">
-          <span class="inline-block px-1.5 py-0.2 rounded text-[11px] font-semibold bg-slate-100 text-slate-600 border border-slate-200">
-            En Curso
-          </span>
-        </td>
-        <td class="py-2 px-2.5 text-center">
-          <div class="table-actions justify-center">
-            <button (click)="editarFase(fase, $event)" title="Editar fase" class="table-action-btn">
-              <i class="fa-solid fa-pen"></i>
+          <!-- Quick search bar in CC (WITHOUT ⌘K symbol as requested) -->
+          <div class="relative mt-1">
+            <svg class="w-3 h-3 absolute left-2 top-2 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+            <input [(ngModel)]="filterSearch" class="w-full pl-6 pr-3 py-1 text-xs bg-slate-50 border border-slate-200 rounded focus:border-emerald-500 focus:bg-white focus:ring-0 text-slate-800" placeholder="Buscar CC..." type="text">
+          </div>
+          <!-- Status counters pills -->
+          <div class="flex items-center space-x-1.5 mt-1.5 text-[10px]">
+            <button type="button" (click)="setStatusPill('Abierto')" [class]="statusPillFilter() === 'Abierto' ? 'ring-2 ring-emerald-600' : ''" class="bg-emerald-50 text-emerald-700 border border-emerald-200 px-1.5 py-0.5 rounded font-semibold cursor-pointer transition">
+              {{ countAbiertos }} Abiertos
             </button>
-            <button (click)="eliminarFase(fase, $event)" title="Eliminar fase" class="table-action-btn table-action-btn--danger">
-              <i class="fa-solid fa-trash"></i>
+            <button type="button" (click)="setStatusPill('En Cierre')" [class]="statusPillFilter() === 'En Cierre' ? 'ring-2 ring-amber-600' : ''" class="bg-amber-50 text-amber-700 border border-amber-200 px-1.5 py-0.5 rounded font-semibold cursor-pointer transition">
+              {{ countEnCierre }} En Cierre
+            </button>
+            <button type="button" (click)="setStatusPill('Cerrado')" [class]="statusPillFilter() === 'Cerrado' ? 'ring-2 ring-slate-600' : ''" class="bg-slate-100 text-slate-600 border border-slate-200 px-1.5 py-0.5 rounded font-semibold cursor-pointer transition">
+              {{ countCerrados }} Cerrados
             </button>
           </div>
-        </td>
-      </tr>
-    }
-    @empty {
-      <tr>
-        <td colspan="9" class="p-8 text-center text-slate-500">No hay fases para este presupuesto</td>
-      </tr>
-    }
-  } @else {
-    <tr>
-      <td colspan="9" class="p-8 text-center text-slate-500">Seleccione un Centro de Costo de la izquierda para ver su presupuesto</td>
-    </tr>
-  }
-  </tbody>
-  </table>
-  </div>
-  </div>
-  <!-- END: PanelFases -->
-  <!-- BEGIN: PanelFasesCategorias (Panel Inferior Derecho: "Fases categorias") -->
-  <div class="flex-1 flex flex-col overflow-hidden bg-white" data-purpose="fases-categorias-panel">
-  <!-- Barra superior de Fases Categorías -->
-  <div class="px-3 py-2 border-b border-slate-200 bg-slate-50/70 flex items-center justify-between gap-4 shrink-0">
-  <div class="flex flex-1 items-center gap-3 min-w-0">
-  <h2 class="font-bold text-slate-800 text-[13px] uppercase tracking-wider flex items-center gap-1.5">
-  <svg class="w-3.5 h-3.5 text-[#529b7b]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M4 7v10c0 2 1.5 3 3.5 3h9c2 0 3.5-1 3.5-3V7c0-2-1.5-3-3.5-3h-9C5.5 4 4 5 4 7zm0 4h16M9 4v16" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
-                  Fases categorias
-                </h2>
-  <span class="text-slate-500 text-[13px] truncate">Detalle por Categorías de Costo Directo APU en
-    @if (selectedFase()) {
-      <span class="text-slate-800 font-semibold">{{ selectedFase()?.NombreFase || 'Fase ' + (selectedFase()?.IdpptoFase || selectedFase()?.id) }}</span>
-    } @else {
-      <span class="text-slate-400 font-semibold">ninguna fase seleccionada</span>
-    }
-  </span>
-  </div>
-  <!-- Filtro de Categorías -->
-  <div class="flex items-center gap-2 shrink-0">
-  <span class="text-[12px] text-slate-500 font-medium">Filtrar:</span>
-  <select [(ngModel)]="filterCategoria"
-          class="h-9 w-72 shrink-0 bg-white border border-slate-300 rounded-md px-1 text-[12px] font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#529b7b]/40">
-    <option value="Todos">Todos</option>
-    @for (catName of categoriasDeFase; track catName) {
-      <option [value]="catName">{{ catName }}</option>
-    }
-  </select>
-  <button (click)="abrirNuevaCategoria()" [disabled]="!selectedFase()"
-          class="h-8 px-3 rounded-md border border-[#529b7b]/40 text-[#2d634d] bg-white hover:bg-[#529b7b]/10 disabled:opacity-50 disabled:cursor-not-allowed text-[12px] font-semibold whitespace-nowrap transition-colors">
-    + Nueva Categoría
-  </button>
-  </div>
-  </div>
-  <!-- Tabla con Matriz de Partidas y Categorías asociadas a la Fase -->
-  <div class="flex-1 overflow-auto" style="scrollbar-width: thin;">
-  <table class="w-full text-left border-collapse">
-  <thead class="sticky top-0 bg-slate-50 text-slate-600 text-[12px] uppercase font-semibold border-b border-slate-200 z-10">
-  <tr>
-  <th class="p-2 w-8 text-center"><input checked="" class="rounded bg-white border-slate-300 text-[#529b7b] focus:ring-0 w-3.5 h-3.5" type="checkbox"></th>
-  <th class="py-2 px-2.5 w-20">Ítem</th>
-  <th class="py-2 px-2.5 min-w-[240px]">Descripción de la Partida / Insumo</th>
-  <th class="py-2 px-2.5 w-32">Categoría APU</th>
-    <th class="py-2 px-2.5 text-right w-24">P.U. (S/)</th>
-  <th class="py-2 px-2.5 text-right w-28">Subtotal CD (S/)</th>
-  <th class="py-2 px-2.5 text-right w-16">% Inc.</th>
-  <th class="py-2 px-2.5 text-center w-20">Estado</th>
-  <th class="py-2 px-2.5 text-center w-20">Acciones</th>
-  </tr>
-  </thead>
-  <tbody class="divide-y divide-slate-100 text-[13px]">
-  @if (selectedFase()) {
-    @for (cat of categoriasFiltradas; track cat.id; let i = $index) {
-      <tr class="hover:bg-slate-50/80 transition">
-        <td class="p-2 text-center">
-          <input class="rounded bg-white border-slate-300 text-[#529b7b] focus:ring-0 w-3.5 h-3.5" type="checkbox">
-        </td>
-        <td class="py-2 px-2.5 font-mono text-[#2d634d] font-bold">
-          {{ getFaseCode(selectedFase()) }}.{{ (i + 1) < 10 ? '0' + (i + 1) : (i + 1) }}
-        </td>
-        <td class="py-2 px-2.5">
-          <div class="font-medium text-slate-900">{{ cat.CategoriaInsumo || 'Sin descripci?n' }}</div>
-          <div class="text-[12px] text-slate-500 font-mono">ID Detalle: {{ cat.IdPresupuestoDetalle }}</div>
-        </td>
-        <td class="py-2 px-2.5">
-          <span class="inline-flex items-center px-2 py-0.5 rounded text-[12px] font-medium border bg-[#529b7b]/15 text-[#2d634d] border-[#529b7b]/30">
-            {{ cat.CategoriaInsumo || 'General' }}
-          </span>
-        </td>
-        <td class="py-2 px-2.5 text-right font-mono tabular-nums text-slate-700">
-          {{ ((cat.CostoDirecto ?? cat.SubTotalCategoria) | currency:'PEN':'S/ ') || 'S/ 0.00' }}
-        </td>
-        <td class="py-2 px-2.5 text-right font-mono font-bold tabular-nums text-slate-900">
-          {{ ((cat.CostoDirecto ?? cat.SubTotalCategoria) | currency:'PEN':'S/ ') || 'S/ 0.00' }}
-        </td>
-        <td class="py-2 px-2.5 text-right font-mono text-[#2d634d] font-semibold tabular-nums">
-          {{ getPesoCategoria(cat) }}
-        </td>
-        <td class="py-2 px-2.5 text-center">
-          <span class="inline-block px-1.5 py-0.2 rounded text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
-            Validado
-          </span>
-        </td>
-        <td class="py-2 px-2.5 text-center">
-          <div class="table-actions justify-center">
-            <button (click)="editarCategoria(cat, $event)" title="Editar categoría" class="table-action-btn">
-              <i class="fa-solid fa-pen"></i>
-            </button>
-            <button (click)="eliminarCategoria(cat, $event)" title="Eliminar categoría" class="table-action-btn table-action-btn--danger">
-              <i class="fa-solid fa-trash"></i>
-            </button>
-          </div>
-        </td>
-      </tr>
-    }
-    @empty {
-      <tr>
-        <td colspan="9" class="p-8 text-center text-slate-500">No hay categorías para esta fase</td>
-      </tr>
-    }
-  } @else {
-    <tr>
-      <td colspan="9" class="p-8 text-center text-slate-500">Seleccione una Fase de la tabla superior para ver sus detalles</td>
-    </tr>
-  }
-  </tbody>
-  </table>
-  </div>
-  <!-- Resumen Financiero al Pie de "Fases categorias" -->
-  <div class="bg-slate-50 px-2.5 border-t border-slate-200 shrink-0 flex items-center h-[52px]" data-purpose="financial-summary-footer">
-  <div class="flex flex-wrap items-center justify-between gap-3 w-full">
-  <div class="flex items-center gap-4 text-slate-600 text-[13px]">
-  <div class="">Ítems en fase: <span class="font-mono text-slate-900 font-bold">{{ totalPartidas }} partidas</span></div>
-  <div class="">Categorías activas: <span class="font-mono text-[#2d634d] font-bold">{{ totalNaturalezas }} naturalezas</span></div>
-  </div>
-  <!-- Cifras de Cierre Financiero (CD, GG, Utilidad, Total Presupuesto) -->
-  @if (statsFase) {
-  <div class="flex flex-wrap items-center gap-5 text-[13px] font-mono">
-  <div class="flex items-baseline gap-1.5">
-  <span class="text-slate-500 text-[13px]">Costo Directo Fase:</span>
-  <span class="text-slate-800 font-bold tabular-nums">{{ statsFase.cd | currency:'PEN':'S/ ' }}</span>
-  </div>
-  <div class="flex items-baseline gap-1.5">
-  <span class="text-slate-500 text-[13px]">GG ({{ statsFase.ggPorcentaje }}%):</span>
-  <span class="text-slate-800 font-bold tabular-nums">{{ statsFase.gg | currency:'PEN':'S/ ' }}</span>
-  </div>
-  <div class="flex items-baseline gap-1.5">
-  <span class="text-slate-500 text-[13px]">Utilidad ({{ statsFase.utilPorcentaje }}%):</span>
-  <span class="text-slate-800 font-bold tabular-nums">{{ statsFase.util | currency:'PEN':'S/ ' }}</span>
-  </div>
-  <div class="flex items-baseline gap-2 pl-3 border-l border-slate-200 bg-[#529b7b]/15 py-1 px-2.5 rounded border border-[#529b7b]/30 shadow-2xs">
-  <span class="text-[#2d634d] font-bold text-[13px] uppercase">Total Ppto Fase:</span>
-  <span class="text-[#1e4838] font-extrabold text-sm tabular-nums">{{ statsFase.total | currency:'PEN':'S/ ' }}</span>
-  </div>
-  </div>
-  }
-  </div>
-  </div>
-  </div>
-  <!-- END: PanelFasesCategorias -->
-  </section>
-  <!-- END: RightColumnWrapper -->
-  </main>
-  <!-- END: MainContentGrid -->
+        </div>
 
+        <!-- CC Scrollable Cards List -->
+        <div class="overflow-y-auto flex-1 p-1.5 space-y-1">
+          @for (cc of centrosCostosFiltrados; track cc.id || cc.id_centro_costo) {
+            @let isSel = (selectedCC()?.id === cc.id || selectedCC()?.id_centro_costo === cc.id_centro_costo);
+            <div (click)="onSelectCC(cc)"
+                 [class]="isSel ? 'border-emerald-500 bg-emerald-50/50 shadow-2xs' : 'border-slate-200 bg-white hover:bg-slate-50'"
+                 class="border rounded p-1.5 text-xs transition relative cursor-pointer">
+              <div class="flex justify-between items-start">
+                <div class="truncate mr-2">
+                  <span class="text-[10px] font-bold text-slate-500 block font-mono">{{ cc.CodCentroCto || 'CC-' + (cc.id || cc.id_centro_costo) }}</span>
+                  <h4 class="font-bold text-slate-900 leading-tight truncate" [title]="cc.CentroCosto">{{ cc.CentroCosto }}</h4>
+                </div>
+                <span [class]="badgeClass(cc.PresupuestoEstado || cc.Estado)" class="text-[9px] font-bold px-1 rounded border uppercase shrink-0">
+                  {{ cc.PresupuestoEstado || cc.Estado || 'Abierto' }}
+                </span>
+              </div>
+              <div class="flex justify-between items-end mt-1.5 pt-1 border-t" [class]="isSel ? 'border-emerald-200/60' : 'border-slate-100'">
+                <span class="text-[10px] text-slate-500">Ppto Base Directo:</span>
+                <span class="font-bold text-slate-900 text-xs font-mono tabular-nums">{{ (cc.PresupuestoMonto | currency:'PEN':'S/ ') || 'S/ 0.00' }}</span>
+              </div>
+              <div class="text-[10px] text-slate-500 truncate mt-0.5">Cliente: {{ cc.Cliente || cc.Empresa || 'TIENDAS TAMBO S.A.C.' }}</div>
+            </div>
+          } @empty {
+            <div class="text-center py-6 text-slate-400 text-xs">
+              No se encontraron Centros de Costo.
+            </div>
+          }
+        </div>
+      </div>
+
+      <!-- Right Column: Presupuestos del Centro de Costo Seleccionado -->
+      <div class="col-span-12 lg:col-span-8 xl:col-span-9 bg-white border border-slate-200 rounded shadow-xs flex flex-col h-full overflow-hidden">
+        <!-- Header with Active CC and budget actions -->
+        <div class="px-3 py-2 border-b border-slate-200 flex items-center justify-between bg-slate-50/60 shrink-0">
+          <div class="flex items-center space-x-2">
+            <svg class="w-3.5 h-3.5 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"/></svg>
+            <h3 class="font-bold text-xs text-slate-800 font-manrope">
+              PRESUPUESTOS DEL PROYECTO: <span class="text-emerald-700 font-extrabold">{{ selectedCC()?.CodCentroCto || ('CC-' + (selectedCC()?.id || selectedCC()?.id_centro_costo)) }} - {{ selectedCC()?.CentroCosto || 'Seleccione un Centro de Costos' }}</span>
+            </h3>
+            <span class="text-[10px] bg-slate-200 text-slate-700 px-1.5 py-0.5 rounded font-mono font-bold">OBRA</span>
+          </div>
+          <div class="flex items-center space-x-2">
+            <button (click)="openNewPresupuestoForm(selectedCC() || undefined)" type="button" class="bg-emerald-600 hover:bg-emerald-700 text-white px-2 py-0.5 rounded text-xs font-medium flex items-center space-x-1 shadow-2xs cursor-pointer transition">
+              <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+              <span>Nuevo Presupuesto</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Budgets Table (Base + Adicionales) -->
+        <div class="overflow-y-auto flex-1">
+          <table class="w-full text-left text-xs border-collapse">
+            <thead class="bg-slate-100/80 sticky top-0 z-10 text-[10px] font-bold text-slate-500 uppercase tracking-wider border-b border-slate-200">
+              <tr>
+                <th class="py-1.5 px-3 w-8 text-center">SEL</th>
+                <th class="py-1.5 px-3">TIPO</th>
+                <th class="py-1.5 px-3">CÓDIGO & NOMBRE PPTO</th>
+                <th class="py-1.5 px-3">VERSIÓN</th>
+                <th class="py-1.5 px-3 text-right">COSTO DIRECTO (S/)</th>
+                <th class="py-1.5 px-3 text-right">TOTAL PRESUPUESTO (S/)</th>
+                <th class="py-1.5 px-3 text-center">ESTADO</th>
+                <th class="py-1.5 px-3 text-center w-20">ACCIONES</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-200 text-xs">
+              @for (ppto of presupuestosDelCC(); track ppto.id || ppto.IdPresupuesto) {
+                <tr [class]="isPptoSelected(ppto) ? 'bg-emerald-50/40 hover:bg-emerald-50/80 font-medium' : 'hover:bg-slate-50'" class="transition">
+                  <td class="py-1.5 px-3 text-center">
+                    <input type="radio" name="selected_ppto" [checked]="isPptoSelected(ppto)" (change)="onSelectPresupuesto(ppto)"
+                           class="text-emerald-600 focus:ring-emerald-500 w-3.5 h-3.5 border-slate-300 cursor-pointer">
+                  </td>
+                  <td class="py-1.5 px-3">
+                    <span [class]="isBaseContractual(ppto) ? 'bg-blue-50 text-blue-700 border-blue-200' : 'bg-amber-50 text-amber-700 border-amber-200'"
+                          class="inline-flex items-center px-1.5 py-0.2 rounded text-[10px] font-semibold border">
+                      {{ isBaseContractual(ppto) ? 'BASE CONTRACTUAL' : (ppto.TipoPpto || 'ADICIONAL') }}
+                    </span>
+                  </td>
+                  <td class="py-1.5 px-3 font-semibold text-slate-900">
+                    <div>{{ ppto.IdPresupuesto }} <span class="font-normal text-slate-500">| {{ ppto.Proyecto || ppto.Concepto || 'Sin descripción' }}</span></div>
+                    <div class="text-[10px] font-normal text-slate-400">Aprobado por Cliente: {{ (ppto.FechaAprobacion || ppto.FechaCreacion | date:'dd/MM/yyyy') || '12/01/2026' }}</div>
+                  </td>
+                  <td class="py-1.5 px-3 text-slate-600 font-mono text-[11px]">{{ ppto.Version || 'v1.0 (Final)' }}</td>
+                  <td class="py-1.5 px-3 text-right font-bold text-slate-900 font-mono tabular-nums">{{ (ppto.CostoDirecto | number:'1.2-2') || '0.00' }}</td>
+                  <td class="py-1.5 px-3 text-right font-bold text-emerald-700 font-mono tabular-nums">{{ (ppto.Total | number:'1.2-2') || '0.00' }}</td>
+                  <td class="py-1.5 px-3 text-center">
+                    <span class="text-[10px] font-bold bg-emerald-100 text-emerald-800 px-1.5 py-0.5 rounded border border-emerald-300 uppercase">
+                      {{ ppto.Estado || 'APROBADO' }}
+                    </span>
+                  </td>
+                  <td class="py-1.5 px-3 text-center">
+                    <div class="flex items-center justify-center space-x-1">
+                      <button (click)="openEditPresupuesto(ppto)" type="button" class="p-1 text-slate-500 hover:text-slate-800 cursor-pointer" title="Editar"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg></button>
+                      <button (click)="delete(ppto.IdPresupuesto || ppto.id)" type="button" class="p-1 text-slate-400 hover:text-red-600 cursor-pointer" title="Eliminar"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg></button>
+                    </div>
+                  </td>
+                </tr>
+              } @empty {
+                <tr>
+                  <td colspan="8" class="text-center py-6 text-slate-400">
+                    No hay presupuestos registrados para este Centro de Costos.
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Budget quick summary footer -->
+        <div class="bg-slate-50 px-3 py-1 text-slate-500 text-[11px] border-t border-slate-200 flex justify-between items-center shrink-0">
+          <span>Línea Contractual Vigente: <strong>{{ (presupuestoActivo()?.Total | currency:'PEN':'S/ ') || 'S/ 0.00' }}</strong></span>
+          <div class="space-x-3 font-medium">
+            <span>Total Base: <strong class="text-slate-800">{{ (presupuestoActivo()?.CostoDirecto | currency:'PEN':'S/ ') || 'S/ 0.00' }}</strong></span>
+            <span>Total Adicionales Aprobados: <strong class="text-slate-800">S/ 0.00</strong></span>
+          </div>
+        </div>
+      </div>
+    </section>
+    <!-- END: SectionSuperior -->
+
+    <!-- BEGIN: SectionInferior (Fases y Categorías de Partidas) -->
+    <section class="flex-1 min-h-0 flex flex-col space-y-2 overflow-hidden" data-purpose="seccion-inferior">
+      <!-- Upper Section: FASES Table -->
+      <div class="bg-white border border-slate-200 rounded shadow-xs flex flex-col flex-1 min-h-0 overflow-hidden">
+        <!-- Header Fases -->
+        <div class="px-3 py-1.5 border-b border-slate-200 flex flex-wrap items-center justify-between gap-1 bg-white shrink-0">
+          <div class="flex items-center space-x-2">
+            <span class="text-emerald-700 font-bold flex items-center text-xs space-x-1 font-manrope">
+              <svg class="w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>
+              <span>FASES</span>
+            </span>
+            <span class="text-slate-300">|</span>
+            <span class="text-[11px] text-slate-600">
+              Presupuesto asignado a: <strong class="text-slate-800">{{ selectedCC()?.CodCentroCto || ('CC-' + (selectedCC()?.id || selectedCC()?.id_centro_costo)) }} - {{ selectedCC()?.CentroCosto }}</strong>
+            </span>
+            <span class="text-[9px] bg-slate-100 text-slate-600 px-1 py-0.2 rounded border border-slate-200 font-mono">OBRA</span>
+          </div>
+          <div class="flex items-center space-x-3 text-xs">
+            <span class="text-[11px] text-slate-500 font-medium">
+              Ponderación total: <strong class="text-emerald-700">100%</strong>
+            </span>
+            <button (click)="abrirNuevaFase()" type="button" class="bg-white hover:bg-slate-50 text-slate-700 border border-slate-300 px-2 py-0.5 rounded text-[11px] font-semibold flex items-center space-x-1 shadow-2xs cursor-pointer transition">
+              <svg class="w-3 h-3 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+              <span>Nueva Fase</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Fases Table Body -->
+        <div class="overflow-y-auto flex-1">
+          <table class="w-full text-left text-xs border-collapse">
+            <thead class="bg-slate-50 text-[10px] font-bold text-slate-500 uppercase tracking-wider border-b border-slate-200 sticky top-0 z-10">
+              <tr>
+                <th class="py-1 px-3 w-8 text-center">SEL.</th>
+                <th class="py-1 px-2.5 w-16 text-center">CÓDIGO</th>
+                <th class="py-1 px-3">DESCRIPCIÓN DE LA FASE</th>
+                <th class="py-1 px-3 text-right w-20">PESO (%)</th>
+                <th class="py-1 px-3 text-right w-28">COSTO DIRECTO (S/)</th>
+                <th class="py-1 px-3 w-52">AVANCE FÍSICO / COMPRAS</th>
+                <th class="py-1 px-3 text-center w-24">Nº PARTIDAS</th>
+                <th class="py-1 px-3 text-center w-20">ESTADO</th>
+                <th class="py-1 px-3 text-center w-20">ACCIONES</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-200">
+              @for (fase of presupuestoActivo()?.fases; track fase.id || fase.IdpptoFase) {
+                @let isFaseSel = (selectedFase()?.id === fase.id || selectedFase()?.IdpptoFase === fase.IdpptoFase);
+                <tr [class]="isFaseSel ? 'bg-emerald-50/50 font-medium' : 'hover:bg-slate-50 transition'">
+                  <td class="py-1 px-3 text-center">
+                    <input type="radio" name="selected_fase" [checked]="isFaseSel" (change)="onSelectFase(fase)"
+                           class="text-emerald-600 focus:ring-emerald-500 w-3.5 h-3.5 border-slate-300 cursor-pointer">
+                  </td>
+                  <td class="py-1 px-2.5 text-center">
+                    <span class="border border-slate-300 bg-white px-1.5 py-0.5 rounded text-[10px] font-mono">{{ fase.IdpptoFase || 'F-01' }}</span>
+                  </td>
+                  <td class="py-1 px-3 text-slate-900 cursor-pointer" (click)="onSelectFase(fase)">
+                    <div class="flex items-center space-x-2">
+                      <span class="font-bold">{{ fase.NombreFase || fase.IdpptoFase }}</span>
+                      @if (isFaseSel) {
+                        <span class="text-[9px] bg-emerald-100 text-emerald-800 px-1 rounded uppercase font-semibold">Seleccionada</span>
+                      }
+                    </div>
+                    <div class="text-[10px] text-slate-400 font-normal">Creado por: Sistema</div>
+                  </td>
+                  <td class="py-1 px-3 text-right font-mono text-slate-700 tabular-nums">{{ getPesoFase(fase) }}</td>
+                  <td class="py-1 px-3 text-right font-mono font-bold text-slate-900 tabular-nums">{{ (fase.CostoDirecto | currency:'PEN':'S/ ') || 'S/ 0.00' }}</td>
+                  <td class="py-1 px-3">
+                    <div class="flex items-center space-x-2">
+                      <div class="w-full bg-slate-200 rounded-full h-1.5 overflow-hidden">
+                        <div class="bg-emerald-600 h-1.5 rounded-full" style="width: 100%"></div>
+                      </div>
+                      <span class="text-[10px] font-mono font-bold text-emerald-700">100%</span>
+                    </div>
+                  </td>
+                  <td class="py-1 px-3 text-center font-mono">{{ fase.categorias?.length || 0 }}</td>
+                  <td class="py-1 px-3 text-center">
+                    <span class="text-[10px] border border-slate-200 bg-white text-slate-700 px-1 py-0.5 rounded">En Curso</span>
+                  </td>
+                  <td class="py-1 px-3 text-center">
+                    <div class="flex items-center justify-center space-x-1.5 text-slate-400">
+                      <button (click)="abrirModalFase('edit', fase)" type="button" class="hover:text-slate-700 cursor-pointer" title="Editar"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg></button>
+                      <button (click)="eliminarFase(fase)" type="button" class="hover:text-red-600 cursor-pointer" title="Eliminar"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg></button>
+                    </div>
+                  </td>
+                </tr>
+              } @empty {
+                <tr>
+                  <td colspan="9" class="text-center py-6 text-slate-400">
+                    No hay fases asociadas a este presupuesto.
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Lower Section: FASES CATEGORIAS / PARTIDAS Table -->
+      <div class="bg-white border border-slate-200 rounded shadow-xs flex flex-col flex-1 min-h-0 overflow-hidden">
+        <!-- Category Header with Filter and Buttons -->
+        <div class="px-3 py-1.5 border-b border-slate-200 flex flex-wrap items-center justify-between gap-1 bg-white shrink-0">
+          <div class="flex items-center space-x-2">
+            <svg class="w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"/></svg>
+            <span class="erp-label text-slate-800 font-manrope">FASES CATEGORIAS</span>
+            <span class="text-[11px] text-slate-500">
+              Detalle por Categorías de Costo Directo APU en <strong class="text-slate-800">{{ selectedFase()?.NombreFase || selectedFase()?.IdpptoFase || 'Fase' }}</strong>
+            </span>
+          </div>
+          <div class="flex items-center space-x-2">
+            <div class="flex items-center space-x-1 text-xs">
+              <span class="text-slate-500 text-[11px]">Filtrar:</span>
+              <select [(ngModel)]="filterCategoria" class="text-xs py-0.5 pl-2 pr-6 border border-slate-200 rounded bg-slate-50 font-medium text-slate-700 cursor-pointer">
+                <option value="Todos">Todos</option>
+                @for (catName of categoriasDeFase; track catName) {
+                  <option [value]="catName">{{ catName }}</option>
+                }
+              </select>
+            </div>
+            <button (click)="abrirNuevaCategoria()" type="button" class="bg-white hover:bg-slate-50 text-slate-700 border border-slate-300 px-2 py-0.5 rounded text-[11px] font-semibold flex items-center space-x-1 shadow-2xs cursor-pointer transition">
+              <svg class="w-3 h-3 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+              <span>Nueva Categoría</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Categories / Items Table -->
+        <div class="overflow-y-auto flex-1">
+          <table class="w-full text-left text-xs border-collapse">
+            <thead class="bg-slate-50 text-[10px] font-bold text-slate-500 uppercase tracking-wider border-b border-slate-200 sticky top-0 z-10">
+              <tr>
+                <th class="py-1 px-3 w-8 text-center">
+                  <input type="checkbox" checked class="rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 w-3 h-3">
+                </th>
+                <th class="py-1 px-3 w-16">ÍTEM</th>
+                <th class="py-1 px-3">DESCRIPCIÓN DE LA PARTIDA / INSUMO</th>
+                <th class="py-1 px-3 text-center">CATEGORÍA APU</th>
+                <th class="py-1 px-3 text-right">P.U. (S/)</th>
+                <th class="py-1 px-3 text-right">SUBTOTAL CD (S/)</th>
+                <th class="py-1 px-3 text-right w-16">% INC.</th>
+                <th class="py-1 px-3 text-center w-20">ESTADO</th>
+                <th class="py-1 px-3 text-center w-20">ACCIONES</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-200">
+              @for (cat of categoriasFiltradas; track cat.id || cat.IdPresupuestoDetalleCategoria; let idx = $index) {
+                @let itemCode = getFaseCode(selectedFase()) + '.' + (idx < 9 ? '0' + (idx + 1) : (idx + 1));
+                <tr class="hover:bg-slate-50 transition font-medium">
+                  <td class="py-1.5 px-3 text-center">
+                    <input type="checkbox" class="rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 w-3.5 h-3.5">
+                  </td>
+                  <td class="py-1.5 px-3 font-mono text-slate-700">{{ itemCode }}</td>
+                  <td class="py-1.5 px-3 text-slate-900">
+                    <span class="font-bold">{{ cat.CategoriaInsumo || cat.IdpptoFaseCategoria }}</span>
+                    <div class="text-[10px] text-slate-400 font-mono">ID Detalle: {{ cat.IdPresupuestoDetalleCategoria || ('DF-' + cat.id) }}</div>
+                  </td>
+                  <td class="py-1.5 px-3 text-center">
+                    <span class="inline-block bg-emerald-50 text-emerald-700 border border-emerald-200 px-2 py-0.5 rounded text-[10px] font-semibold">
+                      {{ cat.CategoriaInsumo || cat.IdpptoFaseCategoria }}
+                    </span>
+                  </td>
+                  <td class="py-1.5 px-3 text-right font-mono text-slate-800 tabular-nums">
+                    <span class="text-[10px] text-slate-400 mr-1">S/</span>{{ ((cat.CostoDirecto ?? cat.SubTotalCategoria) | number:'1.2-2') || '0.00' }}
+                  </td>
+                  <td class="py-1.5 px-3 text-right font-mono font-bold text-slate-900 tabular-nums">
+                    <span class="text-[10px] text-slate-400 mr-1">S/</span>{{ ((cat.CostoDirecto ?? cat.SubTotalCategoria) | number:'1.2-2') || '0.00' }}
+                  </td>
+                  <td class="py-1.5 px-3 text-right font-mono text-slate-700 tabular-nums">{{ getPesoCategoria(cat) }}</td>
+                  <td class="py-1.5 px-3 text-center">
+                    <span class="text-[10px] bg-emerald-100 text-emerald-800 font-bold px-1.5 py-0.5 rounded border border-emerald-300">
+                      Validado
+                    </span>
+                  </td>
+                  <td class="py-1.5 px-3 text-center">
+                    <div class="flex items-center justify-center space-x-1.5 text-slate-400">
+                      <button (click)="abrirModalCategoria('edit', cat)" type="button" class="hover:text-slate-700 cursor-pointer" title="Editar"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg></button>
+                      <button (click)="eliminarCategoria(cat)" type="button" class="hover:text-red-600 cursor-pointer" title="Eliminar"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg></button>
+                    </div>
+                  </td>
+                </tr>
+              } @empty {
+                <tr>
+                  <td colspan="9" class="text-center py-6 text-slate-400">
+                    No hay partidas registradas para esta fase.
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+    <!-- END: SectionInferior -->
+  </div>
+
+  <!-- BEGIN: BottomFinancialFooter -->
+  <footer class="h-9 bg-white border-t border-slate-300 px-4 flex items-center justify-between text-xs shrink-0 select-none shadow-inner" data-purpose="resumen-financiero">
+    <!-- Left: Portafolio activo -->
+    <div class="flex items-center space-x-2">
+      <span class="text-[11px] text-slate-500 font-medium">Total Portafolio Activo:</span>
+      <span class="font-bold text-slate-900 font-mono tabular-nums">{{ (totalPortafolioActivo | currency:'PEN':'S/ ') || 'S/ 0.00' }}</span>
+    </div>
+
+    <!-- Center: Contadores de fase y categorías -->
+    <div class="hidden md:flex items-center space-x-4 text-[11px] text-slate-600">
+      <span>Ítems en fase: <strong class="text-slate-800">{{ totalPartidas }}</strong> partidas</span>
+      <span class="text-slate-300">•</span>
+      <span>Categorías activas: <strong class="text-slate-800">{{ totalNaturalezas }}</strong> naturalezas</span>
+    </div>
+
+    <!-- Right: Liquidación de la Fase Seleccionada -->
+    <div class="flex items-center space-x-4">
+      <div class="flex items-center space-x-3 text-[11px] text-slate-600">
+        <span>Costo Directo Fase: <strong class="text-slate-900 font-mono tabular-nums">{{ (statsFase?.cd | currency:'PEN':'S/ ') || 'S/ 0.00' }}</strong></span>
+        <span class="text-slate-300">•</span>
+        <span>GG ({{ statsFase?.ggPorcentaje || 0 }}%): <strong class="text-slate-900 font-mono tabular-nums">{{ (statsFase?.gg | currency:'PEN':'S/ ') || 'S/ 0.00' }}</strong></span>
+        <span class="text-slate-300">•</span>
+        <span>Utilidad ({{ statsFase?.utilPorcentaje || 0 }}%): <strong class="text-slate-900 font-mono tabular-nums">{{ (statsFase?.util | currency:'PEN':'S/ ') || 'S/ 0.00' }}</strong></span>
+      </div>
+
+      <!-- Total Ppto Fase Highlight -->
+      <div class="bg-emerald-50 border border-emerald-300 px-2.5 py-0.5 rounded text-emerald-900 font-extrabold text-xs flex items-center space-x-1.5 shadow-2xs">
+        <span class="text-[10px] tracking-wide text-emerald-800 font-semibold">TOTAL PPTO FASE:</span>
+        <span class="font-mono text-emerald-950 tabular-nums">{{ (statsFase?.total | currency:'PEN':'S/ ') || 'S/ 0.00' }}</span>
+      </div>
+    </div>
+  </footer>
+  <!-- END: BottomFinancialFooter -->
 </div><!-- END: main wrapper -->
-
-<!-- ============================================================
-     MODAL FLOTANTE — Nuevo / Editar Presupuesto
-     ============================================================ -->
 
 @if (showForm()) {
 <!-- BACKDROP OVERLAY FLOTANTE -->
