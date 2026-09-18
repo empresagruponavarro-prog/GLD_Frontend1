@@ -99,6 +99,11 @@
 
   <ng-template #centroRow let-item>
     <tr>
+      <td style="text-align: center; vertical-align: middle;">
+        <span class="id-badge font-mono font-bold" style="font-weight: 800; font-family: monospace; font-size: 0.85rem; color: #1e4838; background: #e8f5e9; border: 1px solid #a5d6a7; padding: 3px 8px; border-radius: 6px; display: inline-block;">
+          #{{ item.id ?? item.id_centro_costo }}
+        </span>
+      </td>
       <td>
         <div class="table-cell-title">{{ item.CentroCosto || '—' }}</div>
         <div class="table-cell-subtitle">
@@ -140,6 +145,15 @@
           >
             <i class="fa-solid fa-file-invoice-dollar"></i>
             <span>Ppto</span>
+          </button>
+          <button
+            class="table-action-btn"
+            style="font-weight: 700; gap: 0.45rem; padding-inline: 0.7rem; font-size: 0.72rem; color: #1e293b; background: #f8fafc; border-color: #cbd5e1;"
+            (click)="onVerDatos(item)"
+            title="Datos"
+          >
+            <i class="fa-solid fa-database"></i>
+            <span>Datos</span>
           </button>
           <button
             class="table-action-btn"
@@ -205,42 +219,18 @@
 
           <div class="cc-form-card-body">
             <div class="cc-form-row">
-            <div class="cc-form-field">
-              <label class="cc-label">Empresa <span class="cc-required">*</span></label>
-              <div class="cc-select-wrapper">
-                <select [(ngModel)]="formData.id_empresa" (change)="onEmpresaChange()">
-                  <option [ngValue]="undefined">Seleccione Empresa...</option>
-                  <option *ngFor="let empresa of empresas()" [ngValue]="empresa.id_empresa">
-                    {{ empresa.RazonSocial || empresa.razon_social || empresa.CodEmpresa }}
-                  </option>
-                </select>
-                <svg class="cc-select-icon" viewBox="0 0 14 14" fill="none">
-                  <path d="M3.5 5.25L7 8.75L10.5 5.25" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
-                </svg>
-              </div>
-            </div>
-
-            <div class="cc-form-field">
-              <label class="cc-label">Centro de Costo Principal <span class="cc-required">*</span></label>
-              <div class="cc-select-wrapper">
-                <select [(ngModel)]="formData.id_centro_costos_principal" (change)="onPrincipalChange()">
-                  <option [ngValue]="undefined">{{ formData.id_empresa ? 'Seleccione Centro de Costo Principal...' : 'Seleccione primero una Empresa...' }}</option>
-                  <option *ngFor="let p of principalesFiltrados" [ngValue]="p.id">
-                    {{ p.descripcion }}
-                  </option>
-                </select>
-                <svg class="cc-select-icon" viewBox="0 0 14 14" fill="none">
-                  <path d="M3.5 5.25L7 8.75L10.5 5.25" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
-                </svg>
-              </div>
-            </div>
-            </div>
-
-            <div class="cc-form-row">
               <div class="cc-form-field">
-                <label class="cc-label">Nombre Centro de Costo <span class="cc-required">*</span></label>
-                <div class="cc-input-only">
-                  <input type="text" [(ngModel)]="formData.CentroCosto" placeholder="Ej. Obra Norte">
+                <label class="cc-label">Empresa <span class="cc-required">*</span></label>
+                <div class="cc-select-wrapper">
+                  <select [(ngModel)]="formData.id_empresa" (change)="onEmpresaChange()">
+                    <option [ngValue]="undefined">Seleccione Empresa...</option>
+                    <option *ngFor="let empresa of empresas()" [ngValue]="empresa.id_empresa">
+                      {{ empresa.RazonSocial || empresa.razon_social || empresa.CodEmpresa }}
+                    </option>
+                  </select>
+                  <svg class="cc-select-icon" viewBox="0 0 14 14" fill="none">
+                    <path d="M3.5 5.25L7 8.75L10.5 5.25" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+                  </svg>
                 </div>
               </div>
 
@@ -255,6 +245,30 @@
                   <svg class="cc-select-icon" viewBox="0 0 14 14" fill="none">
                     <path d="M3.5 5.25L7 8.75L10.5 5.25" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
                   </svg>
+                </div>
+              </div>
+            </div>
+
+            <div class="cc-form-row">
+              <div class="cc-form-field">
+                <label class="cc-label">Centro de Costo Principal <span class="cc-required">*</span></label>
+                <div class="cc-select-wrapper">
+                  <select [(ngModel)]="formData.id_centro_costos_principal" (change)="onPrincipalChange()">
+                    <option [ngValue]="undefined">{{ formData.id_empresa ? 'Seleccione Centro de Costo Principal...' : 'Seleccione primero una Empresa...' }}</option>
+                    <option *ngFor="let p of principalesFiltrados" [ngValue]="p.id">
+                      {{ p.descripcion }}
+                    </option>
+                  </select>
+                  <svg class="cc-select-icon" viewBox="0 0 14 14" fill="none">
+                    <path d="M3.5 5.25L7 8.75L10.5 5.25" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+                  </svg>
+                </div>
+              </div>
+
+              <div class="cc-form-field">
+                <label class="cc-label">Centro de Costo <span class="cc-required">*</span></label>
+                <div class="cc-input-only">
+                  <input type="text" [(ngModel)]="formData.CentroCosto" placeholder="Ej. Obra Norte">
                 </div>
               </div>
             </div>

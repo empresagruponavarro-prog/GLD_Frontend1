@@ -34,6 +34,7 @@ export class CentrosCostosComponent {
   private readonly router = inject(Router);
 
   columns: DataTable[] = [
+    { label: 'ID', width: '75px', align: 'center' },
     { label: 'Centro de Costo' },
     { label: 'Empresa' },
     { label: 'Cliente' },
@@ -42,7 +43,7 @@ export class CentrosCostosComponent {
     { label: 'Fin Programado' },
     { label: 'Estado' },
     { label: 'Ppto. Estado' },
-    { label: 'Acciones' }
+    { label: 'Acciones', width: '220px' }
   ];
   private centrosCostosService = inject(CentrosCostosService);
   private empresasService = inject(EmpresasService);
@@ -152,6 +153,12 @@ export class CentrosCostosComponent {
   }
 
   emptyForm(): CentroCosto {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+    const today = `${year}-${month}-${day}`;
+
     return {
       id_centro_costos_principal: undefined,
       CodCentroCtoPrincipal: '',
@@ -167,7 +174,7 @@ export class CentrosCostosComponent {
       PresupuestoViaticos: 0,
       PresupuestoMonto: 0,
       OCFile: '',
-      FechaIncio: '',
+      FechaIncio: today,
       FechaFinProg: '',
       FechaFinReal: '',
     };
@@ -386,7 +393,32 @@ export class CentrosCostosComponent {
   }
 
   duplicar() {
-    this.openModal();
+    if (!this.formData.CentroCosto && !this.formData.id_centro_costos_principal) {
+      return;
+    }
+
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+    const today = `${year}-${month}-${day}`;
+
+    // Cambiar a modo creación (nuevo registro) manteniendo los datos clonados
+    this.editingId.set(null);
+    this.resumen.set(null);
+
+    this.formData = {
+      ...this.formData,
+      id: undefined,
+      id_centro_costo: undefined,
+      CodCentroCto: undefined,
+      CentroCosto: this.formData.CentroCosto ? `${this.formData.CentroCosto} (Copia)` : '',
+      FechaIncio: this.formData.FechaIncio || today,
+      FechaFinProg: '',
+      FechaFinReal: '',
+      OCFile: '',
+      Estado: 'ABIERTO',
+    };
   }
 
   descartar() {
@@ -413,5 +445,9 @@ export class CentrosCostosComponent {
     this.router.navigate(['/presupuestos'], {
       state: { fromCC: item }
     }); 
+  }
+
+  onVerDatos(item: CentroCosto) {
+    console.log('Datos del Centro de Costo:', item);
   }
 }
