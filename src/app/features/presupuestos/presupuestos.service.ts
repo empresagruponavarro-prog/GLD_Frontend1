@@ -5,6 +5,7 @@ import {
   PresupuestoPrincipal, 
   CategoriaFaseMaestra, 
   FaseAsignada, 
+  FasePorCentroCosto,
   Historial,
   PaginatedResponse,
   PresupuestoCompleto
@@ -124,6 +125,10 @@ export class PresupuestosService {
   // Fases Asignadas
   getFasesAsignadas(): Observable<FaseAsignada[]> {
     return this.http.get<FaseAsignada[]>(`${this.apiUrl}/fases-asignadas`);
+  }
+
+  getFasesPorCentroCosto(idCentroCosto: number): Observable<FasePorCentroCosto[]> {
+    return this.http.get<FasePorCentroCosto[]>(`${this.apiUrl}/fases-asignadas/centro-costo/${idCentroCosto}`);
   }
 
   createFaseAsignada(data: any): Observable<any> {

@@ -93,6 +93,11 @@ export interface ResumenFinanciero {
   pagosPlanillas?: number;
 }
 
+export interface CentroCostoSelect {
+  id: number;
+  nombre: string;
+}
+
 export interface CentroCostoPrincipal {
   id: number;
   centro_costo_principal: string;

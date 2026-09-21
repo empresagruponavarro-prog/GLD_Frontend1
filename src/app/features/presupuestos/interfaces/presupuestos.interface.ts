@@ -92,6 +92,11 @@ export interface FaseAsignada {
   NotasAdicionales?: string;
 }
 
+export interface FasePorCentroCosto {
+  id: number;
+  descripcion: string | null;
+}
+
 export interface CategoriaAsignada {
   id?: number;
   id_empresa?: number;

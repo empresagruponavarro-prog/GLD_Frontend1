@@ -15,6 +15,11 @@ export interface Anexo {
   estado: boolean;
 }
 
+export interface AnexoSelect {
+  id: number;
+  nombre: string;
+}
+
 export interface AnexoQuery {
   page?: number;
   pageSize?: number;

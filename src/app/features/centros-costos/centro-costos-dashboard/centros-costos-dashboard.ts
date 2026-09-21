@@ -22,7 +22,6 @@ export class CentrosCostosDashboardComponent implements OnInit {
     { key: 'IdPeriodo', label: 'Año' },
     { key: 'Cliente', label: 'Cliente' },
     { key: 'CentroCostoPrincipal', label: 'Centro de costo Principal' },
-    { key: 'CodCentroCto', label: 'Codigo CTO' },
     { key: 'CentroCosto', label: 'CentroCosto' },
     { key: 'Estado', label: 'Estado' },
     { key: 'PresupuestoEstado', label: 'PresupuestoEstado' },
@@ -232,13 +231,12 @@ export class CentrosCostosDashboardComponent implements OnInit {
       return;
     }
 
-    const headers = ['Empresa', 'IdPeriodo', 'CodCliente (Nombre)', 'Centro de costo Principal', 'Codigo CTO', 'CentroCosto', 'Estado', 'PresupuestoEstado'];
+    const headers = ['Empresa', 'IdPeriodo', 'CodCliente (Nombre)', 'Centro de costo Principal', 'CentroCosto', 'Estado', 'PresupuestoEstado'];
     const rows = this.centros.map(c => [
       `"${(c.Empresa || c.CodEmpresa || '').replace(/"/g, '""')}"`,
       c.periodo ?? c.IdPeriodo ?? '',
       `"${(c.Cliente || c.CodCliente || '').replace(/"/g, '""')}"`,
       `"${(c.CentroCostoPrincipal || c.CodCentroCtoPrincipal || '').replace(/"/g, '""')}"`,
-      c.CodCentroCto || c.id || '',
       `"${(c.CentroCosto || '').replace(/"/g, '""')}"`,
       c.Estado || '',
       c.PresupuestoEstado || ''

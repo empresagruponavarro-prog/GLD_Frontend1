@@ -1,7 +1,7 @@
 import { Service, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable, map } from 'rxjs';
-import { CentroCosto, CatalogosFiltros, CentroCostoPrincipal, CreateCentroCostoDto, UpdateCentroCostoDto, PaginatedCentrosCostos, FiltrosCentrosCostos } from './interfaces';
+import { CentroCosto, CatalogosFiltros, CentroCostoPrincipal, CentroCostoSelect, CreateCentroCostoDto, UpdateCentroCostoDto, PaginatedCentrosCostos, FiltrosCentrosCostos } from './interfaces';
 import { environment } from '@env';
 
 @Service()
@@ -60,6 +60,10 @@ export class CentrosCostosService {
 
   getPrincipales(): Observable<CentroCostoPrincipal[]> {
     return this.http.get<CentroCostoPrincipal[]>(`${this.apiUrl}/principales`);
+  }
+
+  getSelect(): Observable<CentroCostoSelect[]> {
+    return this.http.get<CentroCostoSelect[]>(`${this.apiUrl}/select`);
   }
 
   getCatalogosFiltros(): Observable<CatalogosFiltros> {

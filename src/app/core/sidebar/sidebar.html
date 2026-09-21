@@ -22,6 +22,19 @@
       <i class="fa-solid fa-clipboard-list"></i> Registro de Incidencias
     </a>
   </li>
+  <li>
+    <div class="sidebar-item has-sub" (click)="toggleDocumentos()">
+      <span><i class="fa-solid fa-folder-open"></i> Documentos</span>
+      <i class="fa-solid" [class.fa-chevron-down]="!isDocumentosOpen" [class.fa-chevron-up]="isDocumentosOpen"></i>
+    </div>
+    <ul class="sidebar-submenu" *ngIf="isDocumentosOpen">
+      <li>
+        <a class="sidebar-subitem" routerLink="/documentos/origen" routerLinkActive="active">
+          <i class="fa-solid fa-file-lines"></i> Documentos Origen
+        </a>
+      </li>
+    </ul>
+  </li>
 
 
 

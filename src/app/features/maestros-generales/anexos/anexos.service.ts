@@ -2,7 +2,7 @@ import { Service, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '@env';
-import { Anexo, AnexoPaginated, AnexoQuery } from './interfaces/anexos.interface';
+import { Anexo, AnexoPaginated, AnexoQuery, AnexoSelect, TipoAnexo } from './interfaces/anexos.interface';
 
 @Service()
 export class AnexosService {
@@ -18,6 +18,14 @@ export class AnexosService {
     });
 
     return this.http.get<AnexoPaginated>(this.apiUrl, { params });
+  }
+
+  getSelect(tipoAnexo?: TipoAnexo): Observable<AnexoSelect[]> {
+    let params = new HttpParams();
+    if (tipoAnexo) {
+      params = params.set('tipoAnexo', tipoAnexo);
+    }
+    return this.http.get<AnexoSelect[]>(`${this.apiUrl}/select`, { params });
   }
 
   getById(id: number): Observable<Anexo> {

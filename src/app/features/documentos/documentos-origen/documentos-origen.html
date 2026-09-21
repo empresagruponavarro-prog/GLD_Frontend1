@@ -1,0 +1,312 @@
+<div class="documentos-wrapper">
+  <header class="documentos-header">
+    <div>
+      <h1 class="content-title">Documentos Origen</h1>
+      <p class="content-subtitle">Órdenes de compra y documentos origen registrados.</p>
+    </div>
+
+    <div style="display: flex; gap: 0.5rem; align-items: center;">
+      <button class="btn btn-primary" type="button" (click)="openModal()">
+        <i class="fa-solid fa-plus"></i>
+        Nuevo documento
+      </button>
+      <button class="btn btn-secondary" (click)="load()" [disabled]="loading()">
+        <i class="fa-solid fa-arrows-rotate" [class.fa-spin]="loading()"></i>
+        {{ loading() ? 'Cargando...' : 'Actualizar' }}
+      </button>
+    </div>
+  </header>
+
+  <section class="toolbar-shell">
+    <div class="toolbar-search-row">
+      <div class="search-field">
+        <span class="search-icon">
+          <i class="fa-solid fa-magnifying-glass"></i>
+        </span>
+        <input
+          type="text"
+          class="form-control search-input"
+          placeholder="Buscar por ID de OC o número de OC..."
+          maxlength="255"
+          [ngModel]="search()"
+          (ngModelChange)="onSearch($event)"
+        />
+      </div>
+
+      <button class="ghost-button" type="button">
+        <i class="fa-solid fa-filter"></i>
+        Filtros Activos
+        <span *ngIf="activeFiltersCount() > 0" class="badge badge-progress" style="margin-left: 0.5rem;">
+          {{ activeFiltersCount() }}
+        </span>
+      </button>
+    </div>
+
+    <div class="toolbar-filters-row">
+      <div class="toolbar-filters-left">
+        <input
+          type="text"
+          class="toolbar-select"
+          placeholder="Tipo de OC"
+          maxlength="255"
+          [ngModel]="tipoOcFilter()"
+          (ngModelChange)="tipoOcFilter.set($event); onFilterChange()"
+        />
+
+        <input
+          type="text"
+          class="toolbar-select"
+          placeholder="Período"
+          maxlength="255"
+          [ngModel]="periodoFilter()"
+          (ngModelChange)="periodoFilter.set($event); onFilterChange()"
+        />
+
+        <input
+          type="text"
+          class="toolbar-select"
+          placeholder="Mes"
+          maxlength="255"
+          [ngModel]="mesFilter()"
+          (ngModelChange)="mesFilter.set($event); onFilterChange()"
+        />
+
+        <input
+          type="number"
+          class="toolbar-select"
+          placeholder="Centro de Costo"
+          min="1"
+          [ngModel]="idCentroCostoFilter()"
+          (ngModelChange)="idCentroCostoFilter.set($event); onFilterChange()"
+        />
+
+        <input
+          type="number"
+          class="toolbar-select"
+          placeholder="Categoría"
+          min="1"
+          [ngModel]="idCategoriaFilter()"
+          (ngModelChange)="idCategoriaFilter.set($event); onFilterChange()"
+        />
+
+        <input
+          type="number"
+          class="toolbar-select"
+          placeholder="Anexo"
+          min="1"
+          [ngModel]="idAnexoFilter()"
+          (ngModelChange)="idAnexoFilter.set($event); onFilterChange()"
+        />
+
+        <input
+          type="number"
+          class="toolbar-select"
+          placeholder="Detalle Fase"
+          min="1"
+          [ngModel]="idDetalleFaseFilter()"
+          (ngModelChange)="idDetalleFaseFilter.set($event); onFilterChange()"
+        />
+
+        <button class="toolbar-reset" type="button" (click)="resetFilters()">
+          <i class="fa-solid fa-rotate-left"></i>
+          Restablecer
+        </button>
+      </div>
+
+      <div class="toolbar-meta">
+        <span>Mostrando</span>
+        <strong>{{ totalRecords() }}</strong>
+        <span>registros</span>
+      </div>
+    </div>
+  </section>
+
+  <app-data-table
+    [columns]="columns"
+    [items]="items()"
+    [loading]="loading()"
+    [totalItems]="totalRecords()"
+    [currentPage]="currentPage()"
+    [pageSize]="pageSize()"
+    [pageSizeOptions]="[10, 20, 50, 100]"
+    [minWidth]="'1400px'"
+    emptyMessage="No hay documentos origen registrados."
+    emptyIcon="fa-solid fa-folder-open"
+    [rowTemplate]="documentoRow"
+    (pageChange)="goToPage($event)"
+    (pageSizeChange)="onPageSizeChange($event)">
+  </app-data-table>
+
+  <ng-template #documentoRow let-item>
+    <tr>
+      <td>{{ item.tipo_oc || '—' }}</td>
+      <td>{{ item.tipo_costo || '—' }}</td>
+      <td>{{ item.nombre_centro_costo || '—' }}</td>
+      <td>{{ item.periodo || '—' }}</td>
+      <td style="text-align: center;">{{ item.mes || '—' }}</td>
+      <td>{{ item.nombre_fase || '—' }}</td>
+      <td>{{ item.fecha_emision ? (item.fecha_emision | date:'dd/MM/yyyy') : '—' }}</td>
+      <td style="text-align: right; font-weight: 600;">
+        {{ item.total != null ? (item.total | number:'1.2-2') : '—' }}
+      </td>
+      <td style="text-align: center;">
+        <span class="badge badge-progress" *ngIf="item.moneda_simbolo || item.moneda_id">
+          {{ item.moneda_simbolo || item.moneda_id }}
+        </span>
+        <span *ngIf="!item.moneda_simbolo && !item.moneda_id">—</span>
+      </td>
+      <td>{{ item.usuario || '—' }}</td>
+      <td style="text-align: center;">
+        <div class="table-actions">
+          <button
+            class="table-action-btn table-action-btn--primary"
+            type="button"
+            *ngIf="item.oc_pdf"
+            (click)="openPdf(item)"
+            title="Ver OC (PDF)"
+          >
+            <i class="fa-solid fa-file-pdf"></i>
+          </button>
+          <span *ngIf="!item.oc_pdf" style="color: var(--text-muted);">—</span>
+          <button
+            class="table-action-btn"
+            type="button"
+            (click)="openEdit(item)"
+            title="Editar documento"
+          >
+            <i class="fa-solid fa-pen-to-square"></i>
+          </button>
+        </div>
+      </td>
+    </tr>
+  </ng-template>
+
+  <app-modal
+    [isOpen]="showModal()"
+    [title]="editingId() !== null ? 'Editar Documento' : 'Nuevo Documento'"
+    maxWidth="900px"
+    height="85vh"
+    [showDefaultFooter]="false"
+    (closed)="closeModal()"
+  >
+    <div class="documento-form">
+      <p class="documento-form-section-title">
+        <i class="fa-solid fa-file-invoice"></i>
+        Datos del Documento
+      </p>
+
+      <div class="documento-form-grid">
+        <div class="form-group">
+          <label>Tipo OC</label>
+          <select class="form-control" [(ngModel)]="formData.tipo_oc" name="tipo_oc" (ngModelChange)="onTipoOcChange($event)">
+            <option *ngFor="let t of tiposOc" [value]="t">{{ t }}</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>Centro de Costo</label>
+          <select class="form-control" [(ngModel)]="formData.id_centro_costo" name="id_centro_costo" (ngModelChange)="onCentroCostoChange($event)">
+            <option [ngValue]="0">Seleccione...</option>
+            <option *ngFor="let cc of centrosCostos()" [ngValue]="cc.id">
+              {{ cc.nombre }}
+            </option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>Fase</label>
+          <select class="form-control" [(ngModel)]="formData.id_fase" name="id_fase">
+            <option [ngValue]="0">Seleccione...</option>
+            <option *ngFor="let f of fases()" [ngValue]="f.id">
+              {{ f.descripcion }}
+            </option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>Categoría</label>
+          <select class="form-control" [(ngModel)]="formData.id_categoria" name="id_categoria">
+            <option [ngValue]="0">Seleccione...</option>
+            <option *ngFor="let c of categorias()" [ngValue]="c.id">
+              {{ c.nombre }}
+            </option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>Forma de Pago</label>
+          <select class="form-control" [(ngModel)]="formData.forma_pago" name="forma_pago">
+            <option *ngFor="let f of formasPago" [value]="f">{{ f }}</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>Proveedor</label>
+          <select class="form-control" [(ngModel)]="formData.id_anexo" name="id_anexo">
+            <option [ngValue]="0">Seleccione...</option>
+            <option *ngFor="let a of anexos()" [ngValue]="a.id">
+              {{ a.nombre }}
+            </option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>Moneda</label>
+          <select class="form-control" [(ngModel)]="formData.moneda_id" name="moneda_id" (ngModelChange)="onMonedaChange($event)">
+            <option *ngFor="let m of monedas" [value]="m.id">{{ m.label }}</option>
+          </select>
+        </div>
+      </div>
+
+      <p class="documento-form-section-title">
+        <i class="fa-solid fa-list-check"></i>
+        Detalle
+        <button class="detalle-add-btn" type="button" (click)="addDetalle()">
+          <i class="fa-solid fa-plus"></i>
+          Agregar
+        </button>
+      </p>
+
+      <div class="detalle-list">
+        <div class="detalle-row" *ngFor="let d of detalles(); let i = index">
+          <div class="form-group detalle-producto">
+            <label>Producto/Servicio</label>
+            <select class="form-control" [ngModel]="d.id_producto" (ngModelChange)="updateDetalle(i, 'id_producto', $event)" [name]="'id_producto_' + i">
+              <option [ngValue]="0">Seleccione...</option>
+              <option *ngFor="let p of productos()" [ngValue]="p.id">
+                {{ p.descripcion }}
+              </option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label>Cantidad</label>
+            <input type="number" class="form-control" step="0.01" min="0" [ngModel]="d.cantidad" (ngModelChange)="updateDetalle(i, 'cantidad', $event)" [name]="'cantidad_' + i" />
+          </div>
+
+          <div class="form-group">
+            <label>Precio</label>
+            <input type="number" class="form-control" step="0.01" min="0" [ngModel]="d.precio" (ngModelChange)="updateDetalle(i, 'precio', $event)" [name]="'precio_' + i" />
+          </div>
+
+          <button class="detalle-remove-btn" type="button" (click)="removeDetalle(i)" title="Quitar">
+            <i class="fa-solid fa-trash"></i>
+          </button>
+        </div>
+      </div>
+
+      <div class="detalle-total">
+        <span>Total</span>
+        <strong>{{ totalDetalle() | number:'1.2-2' }}</strong>
+      </div>
+    </div>
+
+    <div modal-footer class="modal-footer">
+      <button class="btn btn-secondary" type="button" (click)="closeModal()" [disabled]="saving()">Cancelar</button>
+      <button class="btn btn-primary" type="button" (click)="save()" [disabled]="saving()">
+        <i class="fa-solid" [class.fa-floppy-disk]="!saving()" [class.fa-spinner]="saving()" [class.fa-spin]="saving()"></i>
+        {{ saving() ? 'Guardando...' : (editingId() !== null ? 'Guardar Cambios' : 'Crear Documento') }}
+      </button>
+    </div>
+  </app-modal>
+</div>

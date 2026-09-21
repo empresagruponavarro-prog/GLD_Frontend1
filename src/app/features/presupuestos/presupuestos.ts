@@ -1115,7 +1115,7 @@ export class PresupuestosComponent implements OnInit {
   loadCentrosCostos() {
     this.loading.set(true);
     // Cargamos todos los centros de costos (hasta 1500) para mostrar la lista completa
-    this.centrosCostosService.getAll(1, 1500).subscribe({
+    this.centrosCostosService.getAll(1, 100).subscribe({
       next: (res) => {
         const list = res.data || [];
         this.centrosCostos.set(list);

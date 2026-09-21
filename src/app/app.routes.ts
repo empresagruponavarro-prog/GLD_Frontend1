@@ -11,6 +11,7 @@ import { TipoDocIdentidadComponent } from './features/maestros-generales/tipo-do
 import { CentrosCostosDashboardComponent } from './features/centros-costos/centro-costos-dashboard/centros-costos-dashboard';
 import { CentrosCostosComponent } from './features/centros-costos/centros-costos';
 import { PresupuestosComponent } from './features/presupuestos/presupuestos';
+import { DocumentosOrigenComponent } from './features/documentos/documentos-origen/documentos-origen';
 
 export const routes: Routes = [
   { path: '', component: CentrosCostosDashboardComponent },
@@ -26,6 +27,7 @@ export const routes: Routes = [
   { path: 'maestros-generales/especialidades', component: EspecialidadesComponent },
   { path: 'maestros-generales/tipo-doc-identidad', component: TipoDocIdentidadComponent },
   { path: 'presupuestos', component: PresupuestosComponent },
+  { path: 'documentos/origen', component: DocumentosOrigenComponent },
   { path: '**', redirectTo: '' }
 ];
 
