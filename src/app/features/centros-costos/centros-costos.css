@@ -1,0 +1,51 @@
+﻿:host {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  height: 100%;
+  overflow: hidden;
+}
+
+.content-header {
+  flex-shrink: 0;
+}
+
+.content-body {
+  padding: 1.25rem 2rem;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  min-height: 0;
+}
+
+.toolbar-shell {
+  flex-shrink: 0;
+}
+
+:host app-data-table {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+:host ::ng-deep app-data-table .table-card {
+  flex: 1;
+  min-height: 0;
+  max-height: none;
+  overflow-y: auto;
+  overflow-x: auto;
+}
+
+:host ::ng-deep app-data-table .table-card table th {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background-color: #f8fafc;
+}
+
+:host ::ng-deep app-data-table > div:last-child {
+  flex-shrink: 0;
+  margin-top: 0.75rem;
+}

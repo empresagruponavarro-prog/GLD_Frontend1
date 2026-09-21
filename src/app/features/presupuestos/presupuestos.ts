@@ -1133,30 +1133,6 @@ export class PresupuestosComponent implements OnInit {
               this.onCentroCostoFormChange(matched);
             }
           }
-        } else if (list.length > 0) {
-          // Buscamos el primer presupuesto existente para auto-seleccionar un CC que tenga presupuesto y fases reales
-          this.presupuestosService.getPresupuestos(1, 10).subscribe({
-            next: (pRes) => {
-              let pptos: PresupuestoPrincipal[] = [];
-              if ('data' in pRes && pRes.data.length > 0) pptos = pRes.data;
-              else if (Array.isArray(pRes) && pRes.length > 0) pptos = pRes;
-
-              const pptoConCC = pptos.find(p => p.id_centro_costo != null);
-              if (pptoConCC) {
-                const targetCC = list.find(c => (c.id ?? c.id_centro_costo) === pptoConCC.id_centro_costo);
-                if (targetCC) {
-                  this.onSelectCC(targetCC);
-                  return;
-                }
-              }
-              const fallback = list.find(c => Number(c.PresupuestoMonto) > 0 || c.PresupuestoEstado === 'Aprobado') || list[0];
-              this.onSelectCC(fallback);
-            },
-            error: () => {
-              const fallback = list.find(c => Number(c.PresupuestoMonto) > 0 || c.PresupuestoEstado === 'Aprobado') || list[0];
-              this.onSelectCC(fallback);
-            }
-          });
         }
       },
       error: (err) => {

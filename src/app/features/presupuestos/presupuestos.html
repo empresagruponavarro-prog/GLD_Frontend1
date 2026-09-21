@@ -149,7 +149,7 @@
           <div class="flex items-center space-x-2">
             <svg class="w-3.5 h-3.5 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"/></svg>
             <h3 class="font-bold text-xs text-slate-800 font-manrope">
-              PRESUPUESTOS DEL PROYECTO: <span class="text-emerald-700 font-extrabold">{{ selectedCC()?.CodCentroCto || ('CC-' + (selectedCC()?.id || selectedCC()?.id_centro_costo)) }} - {{ selectedCC()?.CentroCosto || 'Seleccione un Centro de Costos' }}</span>
+              PRESUPUESTOS DEL PROYECTO: <span class="text-emerald-700 font-extrabold">{{ selectedCC() ? ((selectedCC()?.CodCentroCto || ('CC-' + (selectedCC()?.id || selectedCC()?.id_centro_costo))) + ' - ' + selectedCC()?.CentroCosto) : 'Seleccione un Centro de Costos' }}</span>
             </h3>
             <span class="text-[10px] bg-slate-200 text-slate-700 px-1.5 py-0.5 rounded font-mono font-bold">OBRA</span>
           </div>
@@ -211,7 +211,7 @@
               } @empty {
                 <tr>
                   <td colspan="8" class="text-center py-6 text-slate-400">
-                    No hay presupuestos registrados para este Centro de Costos.
+                    {{ selectedCC() ? 'No hay presupuestos registrados para este Centro de Costos.' : 'Selecciona un Centro de Costos en la lista de la izquierda.' }}
                   </td>
                 </tr>
               }
@@ -244,7 +244,7 @@
             </span>
             <span class="text-slate-300">|</span>
             <span class="text-[11px] text-slate-600">
-              Presupuesto asignado a: <strong class="text-slate-800">{{ selectedCC()?.CodCentroCto || ('CC-' + (selectedCC()?.id || selectedCC()?.id_centro_costo)) }} - {{ selectedCC()?.CentroCosto }}</strong>
+              Presupuesto asignado a: <strong class="text-slate-800">{{ selectedCC() ? ((selectedCC()?.CodCentroCto || ('CC-' + (selectedCC()?.id || selectedCC()?.id_centro_costo))) + ' - ' + selectedCC()?.CentroCosto) : 'Ninguno' }}</strong>
             </span>
             <span class="text-[9px] bg-slate-100 text-slate-600 px-1 py-0.2 rounded border border-slate-200 font-mono">OBRA</span>
           </div>

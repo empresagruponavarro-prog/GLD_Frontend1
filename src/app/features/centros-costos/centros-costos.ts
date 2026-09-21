@@ -16,7 +16,8 @@ import { Empresa } from '../administration/empresas/interfaces';
   selector: 'app-centros-costos',
   standalone: true,
   imports: [CommonModule, FormsModule, DataTableComponent, ModalComponent, LucideAngularModule],
-  templateUrl: './centros-costos.html'
+  templateUrl: './centros-costos.html',
+  styleUrl: './centros-costos.css'
 })
 export class CentrosCostosComponent {
   readonly ArrowLeft = ArrowLeft;
@@ -117,7 +118,7 @@ export class CentrosCostosComponent {
 
   // Paginación
   currentPage = signal<number>(1);
-  pageSize = signal<number>(15);
+  pageSize = signal<number>(20);
   totalRecords = signal<number>(0);
 
   formData: CentroCosto = this.emptyForm();
