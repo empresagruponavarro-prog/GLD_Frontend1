@@ -220,6 +220,43 @@ export class PresupuestosComponent implements OnInit {
   comprasDetalleFase = signal<DocumentoOrigenDetalleLinea[]>([]);
   totalComprasFase = signal<number>(0);
 
+  get pptoFaseCostoDirecto(): number {
+    return Number(this.faseSeleccionadaCompras()?.CostoDirecto) || 0;
+  }
+
+  get saldoDisponibleFase(): number {
+    return this.pptoFaseCostoDirecto - this.totalComprasFase();
+  }
+
+  get isFaseSobrepasada(): boolean {
+    return this.pptoFaseCostoDirecto > 0 && this.totalComprasFase() > this.pptoFaseCostoDirecto;
+  }
+
+  get porcentajeComprometidoFase(): number {
+    if (this.pptoFaseCostoDirecto <= 0) {
+      return this.totalComprasFase() > 0 ? 100 : 0;
+    }
+    return (this.totalComprasFase() / this.pptoFaseCostoDirecto) * 100;
+  }
+
+  get totalOrdenesUnicasFase(): number {
+    const set = new Set(
+      this.comprasDetalleFase()
+        .map(d => d.numero_oc || d.id_oc || (d.id_documento ? String(d.id_documento) : ''))
+        .filter(Boolean)
+    );
+    return set.size;
+  }
+
+  get totalProveedoresUnicosFase(): number {
+    const set = new Set(
+      this.comprasDetalleFase()
+        .map(d => d.nombre_anexo)
+        .filter(Boolean)
+    );
+    return set.size;
+  }
+
   modalCategoriaOpen = signal<boolean>(false);
   modalCategoriaModo = signal<'new' | 'edit'>('new');
   modalCategoriaData = {

@@ -1501,24 +1501,66 @@
       </button>
     </div>
 
-    <!-- TARJETAS DE RESUMEN -->
-    <div class="bg-slate-50 border-b border-slate-200 px-5 py-3 shrink-0 grid grid-cols-1 sm:grid-cols-3 gap-3">
-      <div class="bg-white p-2.5 rounded-lg border border-slate-200">
-        <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Costo Directo Presupuestado</span>
-        <span class="text-sm font-mono font-bold text-slate-800">
-          {{ (faseSeleccionadaCompras()?.CostoDirecto | currency:'PEN':'S/ ') || 'S/ 0.00' }}
+    <!-- TARJETAS DE RESUMEN METRICAS -->
+    <div class="bg-slate-50/80 border-b border-slate-200 px-5 py-3.5 shrink-0 grid grid-cols-2 lg:grid-cols-4 gap-3">
+      <!-- 1. PPTO. FASE (C.D.) -->
+      <div class="bg-white p-3 rounded-xl border border-slate-200 shadow-2xs">
+        <span class="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">PPTO. FASE (C.D.)</span>
+        <span class="text-base font-mono font-bold text-slate-900 block mt-1 tracking-tight">
+          {{ (pptoFaseCostoDirecto | currency:'PEN':'S/ ') || 'S/ 0.00' }}
         </span>
+        <span class="text-[11px] text-slate-400 font-normal block mt-1">Línea base contractual</span>
       </div>
-      <div class="bg-white p-2.5 rounded-lg border border-slate-200">
-        <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Total Comprado (OC)</span>
-        <span class="text-sm font-mono font-bold text-emerald-700">
+
+      <!-- 2. OCS EMITIDAS (COMPROMETIDO) -->
+      <div class="bg-white p-3 rounded-xl border shadow-2xs transition-colors"
+           [class]="isFaseSobrepasada ? 'border-rose-200 bg-rose-50/20' : 'border-slate-200'">
+        <span class="text-[10px] font-bold uppercase tracking-wider block"
+              [class]="isFaseSobrepasada ? 'text-rose-600' : 'text-emerald-700'">
+          OCS EMITIDAS (COMPROMETIDO)
+        </span>
+        <span class="text-base font-mono font-bold block mt-1 tracking-tight"
+              [class]="isFaseSobrepasada ? 'text-rose-600' : 'text-emerald-700'">
           {{ (totalComprasFase() | currency:'PEN':'S/ ') || 'S/ 0.00' }}
         </span>
+        <span class="text-[11px] font-medium block mt-1 flex items-center gap-1"
+              [class]="isFaseSobrepasada ? 'text-rose-600' : 'text-emerald-700'">
+          {{ porcentajeComprometidoFase | number:'1.1-1' }}% comprometido
+          @if (isFaseSobrepasada) {
+            <span class="font-bold underline ml-0.5">(Sobrecosto)</span>
+          }
+        </span>
       </div>
-      <div class="bg-white p-2.5 rounded-lg border border-slate-200">
-        <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Líneas de Detalle</span>
-        <span class="text-sm font-mono font-bold text-slate-700">
-          {{ comprasDetalleFase().length }} productos/servicios
+
+      <!-- 3. SALDO DISPONIBLE FASE -->
+      <div class="bg-white p-3 rounded-xl border shadow-2xs transition-colors"
+           [class]="saldoDisponibleFase < 0 ? 'border-rose-200 bg-rose-50/20' : 'border-slate-200'">
+        <span class="text-[10px] font-bold uppercase tracking-wider block"
+              [class]="saldoDisponibleFase < 0 ? 'text-rose-600' : 'text-slate-500'">
+          SALDO DISPONIBLE FASE
+        </span>
+        <span class="text-base font-mono font-bold block mt-1 tracking-tight"
+              [class]="saldoDisponibleFase < 0 ? 'text-rose-600' : 'text-slate-900'">
+          {{ (saldoDisponibleFase | currency:'PEN':'S/ ') || 'S/ 0.00' }}
+        </span>
+        <span class="text-[11px] font-normal block mt-1"
+              [class]="saldoDisponibleFase < 0 ? 'text-rose-600 font-medium' : 'text-slate-400'">
+          @if (saldoDisponibleFase < 0) {
+            Exceso de presupuesto: {{ (-saldoDisponibleFase | currency:'PEN':'S/ ') }}
+          } @else {
+            Sin desviación detectada
+          }
+        </span>
+      </div>
+
+      <!-- 4. DOCUMENTOS / OCS -->
+      <div class="bg-white p-3 rounded-xl border border-slate-200 shadow-2xs">
+        <span class="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">DOCUMENTOS / OCS</span>
+        <span class="text-base font-mono font-bold text-slate-900 block mt-1 tracking-tight">
+          {{ totalOrdenesUnicasFase }} {{ totalOrdenesUnicasFase === 1 ? 'Orden' : 'Órdenes' }}
+        </span>
+        <span class="text-[11px] text-slate-400 font-normal block mt-1">
+          {{ totalProveedoresUnicosFase }} {{ totalProveedoresUnicosFase === 1 ? 'proveedor activo' : 'proveedores activos' }}
         </span>
       </div>
     </div>
@@ -1595,12 +1637,22 @@
                 </tr>
               }
             </tbody>
-            <tfoot class="bg-[#f8fafc] font-bold border-t-2 border-slate-200 divide-x divide-slate-200/70">
+            <tfoot class="font-bold border-t-2 divide-x divide-slate-200/70"
+            [class]="isFaseSobrepasada ? 'bg-rose-50/50 border-rose-300' : 'bg-[#f8fafc] border-slate-200'">
               <tr>
-                <td colspan="7" class="py-2.5 px-3 text-right uppercase text-[11px] text-slate-600 tracking-wider">
-                  Total Acumulado:
+                <td colspan="7" class="py-2.5 px-3 text-right uppercase text-[11px] tracking-wider"
+                    [class]="isFaseSobrepasada ? 'text-rose-700' : 'text-slate-600'">
+                  <div class="flex items-center justify-end gap-2">
+                    @if (isFaseSobrepasada) {
+                      <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-100 text-rose-700 border border-rose-200">
+                        ⚠️ SOBREPASADO POR {{ (-saldoDisponibleFase | currency:'PEN':'S/ ') }}
+                      </span>
+                    }
+                    <span>Total Acumulado:</span>
+                  </div>
                 </td>
-                <td class="py-2.5 px-3 text-right font-mono text-sm text-emerald-800 font-black tabular-nums bg-emerald-50/40">
+                <td class="py-2.5 px-3 text-right font-mono text-sm font-black tabular-nums transition-colors"
+                    [class]="isFaseSobrepasada ? 'text-rose-600 bg-rose-100/50' : 'text-emerald-800 bg-emerald-50/40'">
                   S/ {{ totalComprasFase() | number:"1.2-2" }}
                 </td>
               </tr>
