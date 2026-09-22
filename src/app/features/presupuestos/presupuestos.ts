@@ -946,6 +946,16 @@ export class PresupuestosComponent implements OnInit {
     });
   }
 
+  cambiarTipoPpto(tipo: string) {
+    this.formData.TipoPpto = tipo;
+    const current = (this.formData.Concepto || '').trim();
+    if (!current || current === 'PPTO CONTRACTUAL' || current.startsWith('Adicional #')) {
+      this.formData.Concepto = tipo === 'Principal'
+        ? 'PPTO CONTRACTUAL'
+        : `Adicional #${this.presupuestosDelCC().length + 1}`;
+    }
+  }
+
   agregarPresupuesto() {
     const cc = this.selectedCC();
     const idCc = cc?.id ?? cc?.id_centro_costo ?? this.formData.id_centro_costo;
@@ -969,7 +979,9 @@ export class PresupuestosComponent implements OnInit {
       CodEmpresa: cc?.CodEmpresa || cc?.Empresa || this.formData.CodEmpresa || '',
       periodo: cc?.periodo != null ? String(cc.periodo) : (this.formData.periodo || '2026'),
       TipoPpto: tipo,
-      Concepto: tipo === 'Principal' ? 'PPTO CONTRACTUAL' : `Adicional #${this.presupuestosDelCC().length + 1}`,
+      Concepto: (this.formData.Concepto && this.formData.Concepto.trim())
+        ? this.formData.Concepto.trim()
+        : (tipo === 'Principal' ? 'PPTO CONTRACTUAL' : `Adicional #${this.presupuestosDelCC().length + 1}`),
       FechaRequerimiento: reqDate,
       FechaEntrega: entregaDate,
       Estado: 'PENDIENTE',
