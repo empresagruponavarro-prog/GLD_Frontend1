@@ -234,7 +234,7 @@ export class PresupuestosComponent implements OnInit {
   fileOCInfo = signal<string | null>(null);
 
   // Especialista y Control para Paso 5
-  especialista = signal<string>('George Tavara');
+  especialista = signal<string>('');
   comentarios = signal<string>('');
 
   // Getters Financieros Reactivos
@@ -661,13 +661,53 @@ export class PresupuestosComponent implements OnInit {
     this.faseFormMode = 'new-fase';
     this.editingFaseAsignada = null;
     this.editingCategoriaAsignada = null;
-    this.closeForm();
+    this.newFaseId = '';
+    this.newFaseCategoriaId = '';
+    this.newFaseSubtotal = null;
+    this.categoriasFaseMaestra.set([]);
+    // NO llamar a closeForm() para no botar al usuario del modal
     this.recargarPresupuestoActivo();
   }
 
   private recargarPresupuestoActivo() {
-    const presupuesto = this.presupuestoActivo();
-    if (presupuesto?.id) this.cargarDetallePresupuesto(String(presupuesto.id));
+    const pptoId = this.editingId() || this.presupuestoActivo()?.id || this.presupuestoActivo()?.IdPresupuesto;
+    if (pptoId) {
+      this.cargarDetallePresupuesto(String(pptoId));
+      this.presupuestosService.getPresupuestoCompleto(String(pptoId)).subscribe({
+        next: (completo) => {
+          this.presupuestoActivo.set(completo);
+          const mappedFases: { id?: number; idFase: string; nombre: string; idCategoria: string; categoria: string; subtotal: number }[] = [];
+          if (completo.fases && Array.isArray(completo.fases)) {
+            completo.fases.forEach((f: any) => {
+              const fName = f.NombreFase || f.FaseProyecto || f.IdpptoFase;
+              if (f.categorias && Array.isArray(f.categorias) && f.categorias.length > 0) {
+                f.categorias.forEach((c: any) => {
+                  mappedFases.push({
+                    id: c.id,
+                    idFase: f.IdpptoFase,
+                    nombre: fName,
+                    idCategoria: c.IdpptoFaseCategoria,
+                    categoria: c.Descripcion || c.IdpptoFaseCategoria,
+                    subtotal: Number(c.CostoDirecto ?? c.SubTotalCategoria ?? 0)
+                  });
+                });
+              } else {
+                mappedFases.push({
+                  id: f.id,
+                  idFase: f.IdpptoFase,
+                  nombre: fName,
+                  idCategoria: '',
+                  categoria: 'General',
+                  subtotal: Number(f.CostoDirecto ?? 0)
+                });
+              }
+            });
+          }
+          this.formFases.set(mappedFases);
+          this.recargarPresupuestosDelCCActual();
+        }
+      });
+    }
   }
 
   cerrarNuevaCategoria() {
@@ -742,7 +782,7 @@ export class PresupuestosComponent implements OnInit {
     this.newFaseCategoriaId = '';
     this.newFaseSubtotal = null;
     this.categoriasFaseMaestra.set([]);
-    this.closeForm();
+    // NO llamar a closeForm()
   }
 
   removeFormFase(index: number) {
@@ -815,9 +855,24 @@ export class PresupuestosComponent implements OnInit {
     if (!centroCosto) {
       this.formData.id_centro_costo = undefined;
       this.formData.CodCentroCto = '';
+      this.presupuestosDelCC.set([]);
       return;
     }
 
+    const ccNumericId = centroCosto.id ?? centroCosto.id_centro_costo;
+    if (ccNumericId) {
+      this.presupuestosService.getPresupuestos(1, 100, '', undefined, ccNumericId).subscribe({
+        next: (res) => {
+          let pptos: PresupuestoPrincipal[] = [];
+          if ('data' in res && Array.isArray(res.data)) pptos = res.data;
+          else if (Array.isArray(res) && res.length > 0) pptos = res;
+          this.presupuestosDelCC.set(pptos);
+        },
+        error: (err) => console.error('Error al cargar presupuestos del CC:', err)
+      });
+    }
+
+    const today = new Date().toISOString().slice(0, 10);
     this.formData = {
       ...this.formData,
       Proyecto: centroCosto.CentroCosto || '',
@@ -825,15 +880,165 @@ export class PresupuestosComponent implements OnInit {
       id_centro_costo: centroCosto.id ?? centroCosto.id_centro_costo,
       Cliente: centroCosto.Cliente || centroCosto.CodCliente || '',
       Concepto: this.formData.Concepto || 'PPTO CONTRACTUAL',
+      TipoPpto: this.formData.TipoPpto && this.formData.TipoPpto !== 'OBRA' ? this.formData.TipoPpto : 'Principal',
+      FechaRequerimiento: this.formData.FechaRequerimiento || today,
       periodo: centroCosto.periodo != null
         ? String(centroCosto.periodo)
-        : (centroCosto.IdPeriodo || ''),
+        : (centroCosto.IdPeriodo || '2026'),
       IdPeriodo: centroCosto.periodo != null
         ? String(centroCosto.periodo)
-        : (centroCosto.IdPeriodo || ''),
+        : (centroCosto.IdPeriodo || '2026'),
       id_empresa: centroCosto.id_empresa,
       CodEmpresa: centroCosto.CodEmpresa || centroCosto.Empresa || '',
     };
+  }
+
+  abrirPresupuestoEnForm(p: PresupuestoPrincipal) {
+    const pptoId = String(p.IdPresupuesto || (p as any).id);
+    this.editingId.set(pptoId);
+    this.formData = { ...p };
+    this.selectedPresupuestoId.set(pptoId);
+    this.loading.set(true);
+
+    this.presupuestosService.getPresupuestoCompleto(pptoId).subscribe({
+      next: (completo) => {
+        this.presupuestoActivo.set(completo);
+        const mappedFases: { id?: number; idFase: string; nombre: string; idCategoria: string; categoria: string; subtotal: number }[] = [];
+        if (completo.fases && Array.isArray(completo.fases)) {
+          completo.fases.forEach((f: any) => {
+            const fName = f.NombreFase || f.FaseProyecto || f.IdpptoFase;
+            if (f.categorias && Array.isArray(f.categorias) && f.categorias.length > 0) {
+              f.categorias.forEach((c: any) => {
+                mappedFases.push({
+                  id: c.id,
+                  idFase: f.IdpptoFase,
+                  nombre: fName,
+                  idCategoria: c.IdpptoFaseCategoria,
+                  categoria: c.Descripcion || c.IdpptoFaseCategoria,
+                  subtotal: Number(c.CostoDirecto ?? c.SubTotalCategoria ?? 0)
+                });
+              });
+            } else {
+              mappedFases.push({
+                id: f.id,
+                idFase: f.IdpptoFase,
+                nombre: fName,
+                idCategoria: '',
+                categoria: 'General',
+                subtotal: Number(f.CostoDirecto ?? 0)
+              });
+            }
+          });
+        }
+        this.formFases.set(mappedFases);
+        this.pctGG.set(Number(completo.GGPorcentaje ?? p.GGPorcentaje ?? 0));
+        this.pctUtilidad.set(Number(completo.UtiliPorcentaje ?? p.UtiliPorcentaje ?? 0));
+        this.viaticos.set(Number(completo.Viaticos ?? p.Viaticos ?? 0));
+        this.descuento.set(Number(completo.DsctoComercial ?? p.DsctoComercial ?? 0));
+        this.loading.set(false);
+        this.formStep.set(2);
+      },
+      error: (err) => {
+        console.error('Error al cargar detalle del presupuesto:', err);
+        this.loading.set(false);
+        this.formStep.set(2);
+      }
+    });
+  }
+
+  agregarPresupuesto() {
+    const cc = this.selectedCC();
+    const idCc = cc?.id ?? cc?.id_centro_costo ?? this.formData.id_centro_costo;
+    if (!idCc) {
+      alert('Debe haber un Centro de Costo seleccionado.');
+      return;
+    }
+
+    const today = new Date().toISOString().slice(0, 10);
+    const tipo = this.formData.TipoPpto || 'Principal';
+    const reqDate = this.formData.FechaRequerimiento || today;
+    const entregaDate = this.formData.FechaEntrega || '';
+
+    const payload: Partial<PresupuestoPrincipal> = {
+      id_centro_costo: Number(idCc),
+      CodCentroCto: cc?.CodCentroCto || this.formData.CodCentroCto || '',
+      Proyecto: cc?.CentroCosto || this.formData.Proyecto || 'Presupuesto',
+      Cliente: cc?.Cliente || cc?.CodCliente || (cc as any)?.cod_cliente || this.formData.Cliente || '',
+      CodigoAnexo: cc?.Cliente || cc?.CodCliente || (cc as any)?.cod_cliente || this.formData.Cliente || '',
+      id_empresa: cc?.id_empresa || this.formData.id_empresa,
+      CodEmpresa: cc?.CodEmpresa || cc?.Empresa || this.formData.CodEmpresa || '',
+      periodo: cc?.periodo != null ? String(cc.periodo) : (this.formData.periodo || '2026'),
+      TipoPpto: tipo,
+      Concepto: tipo === 'Principal' ? 'PPTO CONTRACTUAL' : `Adicional #${this.presupuestosDelCC().length + 1}`,
+      FechaRequerimiento: reqDate,
+      FechaEntrega: entregaDate,
+      Estado: 'PENDIENTE',
+      CostoDirecto: 0,
+      GGPorcentaje: 0,
+      GastosGenerales: 0,
+      UtiliPorcentaje: 0,
+      Utilidad: 0,
+      Viaticos: 0,
+      DsctoComercial: 0,
+      Total: 0
+    };
+
+    this.loading.set(true);
+    this.presupuestosService.createPresupuesto(payload).subscribe({
+      next: (created) => {
+        // Refrescar lista de presupuestos del CC
+        this.presupuestosService.getPresupuestos(1, 100, '', undefined, Number(idCc)).subscribe({
+          next: (res) => {
+            let pptos: PresupuestoPrincipal[] = [];
+            if ('data' in res && Array.isArray(res.data)) pptos = res.data;
+            else if (Array.isArray(res) && res.length > 0) pptos = res;
+            this.presupuestosDelCC.set(pptos);
+            this.loading.set(false);
+          },
+          error: () => this.loading.set(false)
+        });
+        // Si se agregó Principal, cambiar default a Adicional para el próximo
+        if (tipo === 'Principal') {
+          this.formData.TipoPpto = 'Adicional';
+        }
+      },
+      error: (err) => {
+        console.error('Error al agregar presupuesto:', err);
+        alert('Error al agregar presupuesto: ' + (err.error?.message || err.message));
+        this.loading.set(false);
+      }
+    });
+  }
+
+  eliminarPresupuestoDeCC(p: PresupuestoPrincipal) {
+    const id = String(p.IdPresupuesto || (p as any).id);
+    if (confirm(`¿Eliminar el presupuesto "${id}"? Esta acción no se puede deshacer.`)) {
+      this.loading.set(true);
+      this.presupuestosService.deletePresupuesto(id).subscribe({
+        next: () => {
+          const cc = this.selectedCC();
+          const idCc = cc?.id ?? cc?.id_centro_costo;
+          if (idCc) {
+            this.presupuestosService.getPresupuestos(1, 100, '', undefined, Number(idCc)).subscribe({
+              next: (res) => {
+                let pptos: PresupuestoPrincipal[] = [];
+                if ('data' in res && Array.isArray(res.data)) pptos = res.data;
+                else if (Array.isArray(res) && res.length > 0) pptos = res;
+                this.presupuestosDelCC.set(pptos);
+                this.loading.set(false);
+              },
+              error: () => this.loading.set(false)
+            });
+          } else {
+            this.loading.set(false);
+          }
+        },
+        error: (err) => {
+          alert('Error al eliminar: ' + (err.error?.message || err.message));
+          this.loading.set(false);
+        }
+      });
+    }
   }
 
   onEmpresaFormularioChange() {
@@ -947,8 +1152,9 @@ export class PresupuestosComponent implements OnInit {
         next: () => {
           this.loading.set(false);
           this.closeForm();
-          alert(`✅ Presupuesto ${payload.IdPresupuesto} actualizado con éxito.`);
+          this.recargarPresupuestosDelCCActual();
           this.loadCentrosCostos();
+          alert(`✅ Presupuesto ${payload.IdPresupuesto} actualizado con éxito.`);
         },
         error: (err) => {
           this.loading.set(false);
@@ -988,8 +1194,9 @@ export class PresupuestosComponent implements OnInit {
             });
           }
 
-          alert(`Presupuesto ${pptoCode} guardado y emitido con éxito.`);
+          this.recargarPresupuestosDelCCActual();
           this.loadCentrosCostos();
+          alert(`Presupuesto ${pptoCode} guardado y emitido con éxito.`);
         },
         error: (err) => {
           this.loading.set(false);
@@ -1086,18 +1293,21 @@ export class PresupuestosComponent implements OnInit {
   }
 
   emptyForm(): Partial<PresupuestoPrincipal> {
+    const today = new Date().toISOString().slice(0, 10);
     return {
       IdPresupuesto: '',
       Proyecto: '',
       Cliente: '',
-      Concepto: '',
+      Concepto: 'PPTO CONTRACTUAL',
       CodEmpresa: '',
       CodCentroCto: '',
       IdPeriodo: '',
       id_empresa: undefined,
       id_centro_costo: undefined,
-      periodo: '',
-      TipoPpto: 'OBRA',
+      periodo: '2026',
+      TipoPpto: 'Principal',
+      FechaRequerimiento: today,
+      FechaEntrega: '',
       CostoDirecto: 0,
       GGPorcentaje: 0,
       UtiliPorcentaje: 0,
@@ -1111,6 +1321,27 @@ export class PresupuestosComponent implements OnInit {
   // ==========================================
   // NUEVO FLUJO DE DATOS (Layout Dashboard)
   // ==========================================
+
+  
+  recargarPresupuestosDelCCActual(callback?: () => void) {
+    const cc = this.selectedCC();
+    const idCc = cc?.id ?? cc?.id_centro_costo ?? this.formData.id_centro_costo;
+    if (idCc) {
+      this.presupuestosService.getPresupuestos(1, 100, '', undefined, Number(idCc)).subscribe({
+        next: (res) => {
+          let pptos: PresupuestoPrincipal[] = [];
+          if ('data' in res && Array.isArray(res.data)) pptos = res.data;
+          else if (Array.isArray(res)) pptos = res;
+          this.presupuestosDelCC.set([...pptos]);
+          if (callback) callback();
+        },
+        error: (err) => {
+          console.error('Error al recargar presupuestos del CC:', err);
+          if (callback) callback();
+        }
+      });
+    }
+  }
 
   loadCentrosCostos() {
     this.loading.set(true);
@@ -1129,6 +1360,7 @@ export class PresupuestosComponent implements OnInit {
           );
           if (matched) {
             this.selectedCC.set(matched);
+            this.recargarPresupuestosDelCCActual();
             if (this.showForm()) {
               this.onCentroCostoFormChange(matched);
             }

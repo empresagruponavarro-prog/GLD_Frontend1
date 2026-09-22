@@ -11,6 +11,7 @@ export interface PresupuestoPrincipal {
   TipoPpto?: string;
   Proyecto?: string;
   Cliente?: string;
+  CodigoAnexo?: string;
   Concepto?: string;
   CodCentroCtoPrincipal?: string;
   FechaRequerimiento?: string;
