@@ -7,6 +7,8 @@ import { EmpresasService } from '../administration/empresas/empresas.service';
 import { Empresa } from '../administration/empresas/interfaces';
 import { PresupuestosService } from './presupuestos.service';
 import { PresupuestoPrincipal, PaginatedResponse, DetalleFase, PresupuestoCompleto, FaseMaestra, FaseCategoriaMaestra } from './interfaces';
+import { DocumentosOrigenService } from '../documentos/documentos-origen/documentos-origen.service';
+import { DocumentoOrigenDetalleLinea } from '../documentos/documentos-origen/interfaces/documentos-origen.interface';
 import { CentrosCostosService } from '../centros-costos/centros-costos.service';
 import { CentroCosto, CatalogosFiltros } from '../centros-costos/interfaces/centros-costos.interface';
 
@@ -23,6 +25,7 @@ export class PresupuestosComponent implements OnInit {
   private centrosCostosService = inject(CentrosCostosService);
   private empresasService = inject(EmpresasService);
   private router = inject(Router);
+  private documentosOrigenService = inject(DocumentosOrigenService);
 
   // Estado general
   loading = signal<boolean>(false);
@@ -209,6 +212,13 @@ export class PresupuestosComponent implements OnInit {
     IdpptoFase: '',
     CostoDirecto: null as number | null,
   };
+
+  // Modal Compras y Documentos Origen por Fase
+  modalComprasOpen = signal<boolean>(false);
+  loadingCompras = signal<boolean>(false);
+  faseSeleccionadaCompras = signal<DetalleFase | null>(null);
+  comprasDetalleFase = signal<DocumentoOrigenDetalleLinea[]>([]);
+  totalComprasFase = signal<number>(0);
 
   modalCategoriaOpen = signal<boolean>(false);
   modalCategoriaModo = signal<'new' | 'edit'>('new');
@@ -481,6 +491,44 @@ export class PresupuestosComponent implements OnInit {
 
   cerrarModalCategoria() {
     this.modalCategoriaOpen.set(false);
+  }
+
+  abrirModalComprasFase(fase: DetalleFase, event?: Event) {
+    if (event) event.stopPropagation();
+    this.faseSeleccionadaCompras.set(fase);
+    this.modalComprasOpen.set(true);
+    this.loadingCompras.set(true);
+    this.comprasDetalleFase.set([]);
+    this.totalComprasFase.set(0);
+
+    const ccId = this.selectedCC()?.id ?? this.selectedCC()?.id_centro_costo ?? this.presupuestoActivo()?.id_centro_costo;
+    const faseId = fase.id_fase;
+
+    if (!ccId || !faseId) {
+      this.loadingCompras.set(false);
+      return;
+    }
+
+    this.documentosOrigenService.getDetallePorFase(Number(ccId), Number(faseId)).subscribe({
+      next: (items) => {
+        const list = items || [];
+        this.comprasDetalleFase.set(list);
+        const sum = list.reduce((acc, it) => acc + (Number(it.monto) || 0), 0);
+        this.totalComprasFase.set(sum);
+        this.loadingCompras.set(false);
+      },
+      error: (err) => {
+        console.error("Error cargando compras de la fase:", err);
+        this.loadingCompras.set(false);
+      }
+    });
+  }
+
+  cerrarModalCompras() {
+    this.modalComprasOpen.set(false);
+    this.faseSeleccionadaCompras.set(null);
+    this.comprasDetalleFase.set([]);
+    this.totalComprasFase.set(0);
   }
 
   guardarModalCategoria() {

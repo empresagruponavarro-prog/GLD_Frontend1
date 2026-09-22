@@ -2,7 +2,7 @@ import { Service, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable, map } from 'rxjs';
 import { environment } from '@env';
-import { CreateDocumentoOrigen, DocumentoOrigen, DocumentoOrigenDetalle, DocumentoOrigenPaginated, DocumentoOrigenQuery } from './interfaces/documentos-origen.interface';
+import { CreateDocumentoOrigen, DocumentoOrigen, DocumentoOrigenDetalle, DocumentoOrigenPaginated, DocumentoOrigenQuery, DocumentoOrigenDetalleLinea } from './interfaces/documentos-origen.interface';
 
 @Service()
 export class DocumentosOrigenService {
@@ -57,5 +57,12 @@ export class DocumentosOrigenService {
 
   update(id: number, data: CreateDocumentoOrigen): Observable<DocumentoOrigen> {
     return this.http.patch<DocumentoOrigen>(`${this.apiUrl}/${id}`, data);
+  }
+
+  getDetallePorFase(idCentroCosto?: number, idFase?: number): Observable<DocumentoOrigenDetalleLinea[]> {
+    let params = new HttpParams();
+    if (idCentroCosto) params = params.set('id_centro_costo', idCentroCosto.toString());
+    if (idFase) params = params.set('id_fase', idFase.toString());
+    return this.http.get<DocumentoOrigenDetalleLinea[]>(`${this.apiUrl}/detalle-por-fase`, { params });
   }
 }

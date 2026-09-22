@@ -127,6 +127,7 @@ export interface DetalleFase {
   IdPresupuestoDetalle: string;
   IdPresupuesto: string;
   id_empresa?: number;
+  id_fase?: number | null;
   id_centro_costo?: number;
   IdpptoFase?: string;
   CodEmpresa?: string;

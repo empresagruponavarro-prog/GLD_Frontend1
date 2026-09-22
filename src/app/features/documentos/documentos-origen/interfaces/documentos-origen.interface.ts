@@ -110,3 +110,25 @@ export interface DocumentoOrigenPaginated {
   pageSize: number;
   totalPages: number;
 }
+
+export interface DocumentoOrigenDetalleLinea {
+  id_documento: number;
+  id_oc: string | null;
+  numero_oc: string | null;
+  id_centro_costo: number | null;
+  nombre_centro_costo: string | null;
+  id_fase: number | null;
+  nombre_fase: string | null;
+  id_anexo: number | null;
+  nombre_anexo?: string | null;
+  unidad_medida?: string | null;
+  fecha_emision: string | null;
+  id_detalle: number;
+  id_producto: number | null;
+  producto_codigo: string | null;
+  producto_descripcion: string | null;
+  tipo_producto: string | null;
+  cantidad: string | number | null;
+  precio: string | number | null;
+  monto: string | number | null;
+}
