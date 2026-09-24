@@ -171,6 +171,21 @@ export class PresupuestosComponent implements OnInit {
     return ((faseCd / totalCd) * 100).toFixed(1) + '%';
   }
 
+  get ponderacionTotalFases(): number {
+    const totalCd = Number(this.presupuestoActivo()?.CostoDirecto) || 0;
+    if (totalCd <= 0) return 0;
+    const fases = this.presupuestoActivo()?.fases || [];
+    const sumFasesCd = fases.reduce((acc, f) => acc + (Number(f.CostoDirecto) || 0), 0);
+    return Number(((sumFasesCd / totalCd) * 100).toFixed(1));
+  }
+
+  get saldoSinAsignarFases(): number {
+    const totalCd = Number(this.presupuestoActivo()?.CostoDirecto) || 0;
+    const fases = this.presupuestoActivo()?.fases || [];
+    const sumFasesCd = fases.reduce((acc, f) => acc + (Number(f.CostoDirecto) || 0), 0);
+    return totalCd - sumFasesCd;
+  }
+
   getPesoCategoria(cat: any): string {
     const faseCd = Number(this.selectedFase()?.CostoDirecto) || 0;
     const catCd = Number(cat.CostoDirecto ?? cat.SubTotalCategoria) || 0;
@@ -256,6 +271,61 @@ export class PresupuestosComponent implements OnInit {
     );
     return set.size;
   }
+
+  // Resumen de Compras para todo el Centro de Costo y por Fase
+  comprasPorFaseMap = signal<Record<number, number>>({});
+  totalComprasCC = signal<number>(0);
+  loadingComprasCC = signal<boolean>(false);
+
+  getComprasFaseMonto(fase: DetalleFase): number {
+    if (!fase?.id_fase) return 0;
+    return this.comprasPorFaseMap()[Number(fase.id_fase)] || 0;
+  }
+
+  getPctComprasFase(fase: DetalleFase): number {
+    const cd = Number(fase?.CostoDirecto) || 0;
+    const compras = this.getComprasFaseMonto(fase);
+    if (cd <= 0) return compras > 0 ? 100 : 0;
+    return Math.min(100, Math.round((compras / cd) * 100));
+  }
+
+  getPctRealComprasFase(fase: DetalleFase): number {
+    const cd = Number(fase?.CostoDirecto) || 0;
+    const compras = this.getComprasFaseMonto(fase);
+    if (cd <= 0) return compras > 0 ? 100 : 0;
+    return Math.round((compras / cd) * 100);
+  }
+
+  isFaseRowSobrepasada(fase: DetalleFase): boolean {
+    const cd = Number(fase?.CostoDirecto) || 0;
+    const compras = this.getComprasFaseMonto(fase);
+    return cd > 0 && compras > cd;
+  }
+
+  getEstadoFaseText(fase: DetalleFase): string {
+    const compras = this.getComprasFaseMonto(fase);
+    const cd = Number(fase?.CostoDirecto) || 0;
+    if (compras <= 0) return 'Sin Iniciar';
+    if (cd > 0 && compras > cd) return 'Sobrecosto';
+    if (cd > 0 && compras >= cd) return 'Completado';
+    return 'En Curso';
+  }
+
+  getEstadoFaseClass(fase: DetalleFase): string {
+    const estado = this.getEstadoFaseText(fase);
+    switch (estado) {
+      case 'Sin Iniciar':
+        return 'bg-slate-100 text-slate-500 border-slate-200';
+      case 'Sobrecosto':
+        return 'bg-rose-100 text-rose-700 border-rose-300 font-bold';
+      case 'Completado':
+        return 'bg-blue-100 text-blue-700 border-blue-300 font-semibold';
+      case 'En Curso':
+      default:
+        return 'bg-emerald-100 text-emerald-800 border-emerald-300 font-semibold';
+    }
+  }
+
 
   modalCategoriaOpen = signal<boolean>(false);
   modalCategoriaModo = signal<'new' | 'edit'>('new');
@@ -449,7 +519,7 @@ export class PresupuestosComponent implements OnInit {
       return;
     }
 
-    const monto = Number(this.modalFaseData.CostoDirecto) || 0;
+    const monto = this.modalFaseModo() === 'edit' ? (Number(this.modalFaseData.CostoDirecto) || 0) : 0;
     const payload = {
       IdPresupuesto: String(ppto.IdPresupuesto),
       IdpptoFase: this.modalFaseData.IdpptoFase,
@@ -552,11 +622,40 @@ export class PresupuestosComponent implements OnInit {
         this.comprasDetalleFase.set(list);
         const sum = list.reduce((acc, it) => acc + (Number(it.monto) || 0), 0);
         this.totalComprasFase.set(sum);
+        if (faseId) {
+          this.comprasPorFaseMap.update(prev => ({ ...prev, [Number(faseId)]: sum }));
+        }
         this.loadingCompras.set(false);
       },
       error: (err) => {
         console.error("Error cargando compras de la fase:", err);
         this.loadingCompras.set(false);
+      }
+    });
+  }
+
+  cargarComprasCC(idCentroCosto: number) {
+    if (!idCentroCosto) return;
+    this.loadingComprasCC.set(true);
+    this.documentosOrigenService.getDetallePorFase(Number(idCentroCosto)).subscribe({
+      next: (items) => {
+        const map: Record<number, number> = {};
+        let total = 0;
+        (items || []).forEach(it => {
+          const monto = Number(it.monto) || 0;
+          total += monto;
+          if (it.id_fase != null) {
+            const fid = Number(it.id_fase);
+            map[fid] = (map[fid] || 0) + monto;
+          }
+        });
+        this.comprasPorFaseMap.set(map);
+        this.totalComprasCC.set(total);
+        this.loadingComprasCC.set(false);
+      },
+      error: (err) => {
+        console.error('Error cargando compras del CC:', err);
+        this.loadingComprasCC.set(false);
       }
     });
   }
@@ -936,6 +1035,10 @@ export class PresupuestosComponent implements OnInit {
   onCentroCostoFormChange(centroCosto: CentroCosto | null) {
     this.selectedCC.set(centroCosto);
     this.cargarFasesPorCentroCosto(centroCosto);
+    const ccIdForm = centroCosto?.id ?? centroCosto?.id_centro_costo;
+    if (ccIdForm) {
+      this.cargarComprasCC(Number(ccIdForm));
+    }
 
     if (!centroCosto) {
       this.formData.id_centro_costo = undefined;
@@ -982,6 +1085,8 @@ export class PresupuestosComponent implements OnInit {
     const pptoId = String(p.IdPresupuesto || (p as any).id);
     this.editingId.set(pptoId);
     this.formData = { ...p };
+    this.comentarios.set(p.Comentarios || '');
+    this.especialista.set(p.Usuario || '');
     this.selectedPresupuestoId.set(pptoId);
     this.loading.set(true);
 
@@ -1236,7 +1341,8 @@ export class PresupuestosComponent implements OnInit {
       SubTotalSinIGV: this.formSubtotal,
       IGV: this.formIGV,
       Total: this.formTotalGeneral,
-      Comentarios: this.comentarios()
+      Comentarios: this.comentarios(),
+      Usuario: this.especialista() || this.formData.Usuario
     };
     if (!this.editingId() && !String(payload.IdPresupuesto ?? '').trim()) {
       delete payload.IdPresupuesto;
@@ -1430,6 +1536,9 @@ export class PresupuestosComponent implements OnInit {
           if ('data' in res && Array.isArray(res.data)) pptos = res.data;
           else if (Array.isArray(res)) pptos = res;
           this.presupuestosDelCC.set([...pptos]);
+          if (idCc) {
+            this.cargarComprasCC(Number(idCc));
+          }
           if (callback) callback();
         },
         error: (err) => {
@@ -1481,6 +1590,9 @@ export class PresupuestosComponent implements OnInit {
     this.loading.set(true);
 
     const ccNumericId = cc.id ?? cc.id_centro_costo;
+    if (ccNumericId) {
+      this.cargarComprasCC(Number(ccNumericId));
+    }
     // Buscar todos los presupuestos asignados a este Centro de Costos por su id_centro_costo
     this.presupuestosService.getPresupuestos(1, 100, '', undefined, ccNumericId).subscribe({
       next: (res) => {
@@ -1535,6 +1647,23 @@ export class PresupuestosComponent implements OnInit {
   // GETTERS PARA UI
   // ==========================================
 
+  get totalCostoDirectoCC(): number {
+    return this.presupuestosDelCC().reduce((acc, p) => acc + (Number(p.CostoDirecto) || 0), 0);
+  }
+
+  get totalPresupuestosCC(): number {
+    return this.presupuestosDelCC().reduce((acc, p) => acc + (Number(p.Total) || 0), 0);
+  }
+
+  get saldoDisponibleCC(): number {
+    return this.totalPresupuestosCC - this.totalComprasCC();
+  }
+
+  get isCCPresupuestoSobrepasado(): boolean {
+    const total = this.totalPresupuestosCC;
+    return total > 0 && this.totalComprasCC() > total;
+  }
+
   get totalCCs() {
     return this.centrosCostosFiltrados.length;
   }
@@ -1567,10 +1696,10 @@ export class PresupuestosComponent implements OnInit {
     const ggPorcentaje = Number(p.GGPorcentaje) || 0;
     const utilPorcentaje = Number(p.UtiliPorcentaje) || 0;
     
-    // Si la BD trae los totales ya calculados, usarlos, si no, calcular:
-    const gg = Number(p.GastosGenerales) || (cdTotal * ggPorcentaje / 100);
-    const util = Number(p.Utilidad) || (cdTotal * utilPorcentaje / 100);
-    const total = Number(p.Total) || (cdTotal + gg + util);
+    // GG, Utilidad y Total calculados para la fase seleccionada
+    const gg = (cdFase * ggPorcentaje / 100);
+    const util = (cdFase * utilPorcentaje / 100);
+    const total = cdFase + gg + util;
     
     return {
       cd: cdFase,
@@ -1597,6 +1726,14 @@ export class PresupuestosComponent implements OnInit {
 
   onSelectFase(fase: DetalleFase) {
     this.selectedFase.set(fase);
+  }
+
+  isFaseSeleccionada(fase: DetalleFase): boolean {
+    const sel = this.selectedFase();
+    if (!sel || !fase) return false;
+    if (sel.id != null && fase.id != null) return Number(sel.id) === Number(fase.id);
+    if (sel.IdPresupuestoDetalle && fase.IdPresupuestoDetalle) return sel.IdPresupuestoDetalle === fase.IdPresupuestoDetalle;
+    return sel === fase;
   }
 
   badgeClass(estado: string | undefined): string {

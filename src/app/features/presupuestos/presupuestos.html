@@ -91,7 +91,7 @@
               <span class="w-2 h-2 rounded-full bg-emerald-500 inline-block"></span>
               <span class="erp-label text-slate-800 font-manrope">Centros de Costos</span>
             </div>
-            <span class="text-[10px] bg-slate-100 text-slate-600 px-1.5 py-0.2 rounded font-semibold border border-slate-200">{{ centrosCostosFiltrados.length }} CC Reg.</span>
+            <span class="text-[10px] bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded font-semibold border border-slate-200">{{ centrosCostosFiltrados.length }} CC Reg.</span>
           </div>
           <!-- Quick search bar in CC (WITHOUT ⌘K symbol as requested) -->
           <div class="relative mt-1">
@@ -186,7 +186,7 @@
                   </td>
                   <td class="py-1.5 px-3">
                     <span [class]="isBaseContractual(ppto) ? 'bg-blue-50 text-blue-700 border-blue-200' : 'bg-amber-50 text-amber-700 border-amber-200'"
-                          class="inline-flex items-center px-1.5 py-0.2 rounded text-[10px] font-semibold border">
+                          class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold border">
                       {{ isBaseContractual(ppto) ? 'BASE CONTRACTUAL' : (ppto.TipoPpto || 'ADICIONAL') }}
                     </span>
                   </td>
@@ -252,11 +252,15 @@
             <span class="text-[11px] text-slate-600">
               Presupuesto asignado a: <strong class="text-slate-800">{{ selectedCC() ? ((selectedCC()?.CodCentroCto || ('CC-' + (selectedCC()?.id || selectedCC()?.id_centro_costo))) + ' - ' + selectedCC()?.CentroCosto) : 'Ninguno' }}</strong>
             </span>
-            <span class="text-[9px] bg-slate-100 text-slate-600 px-1 py-0.2 rounded border border-slate-200 font-mono">OBRA</span>
+            <span class="text-[9px] bg-slate-100 text-slate-600 px-1 py-0.5 rounded border border-slate-200 font-mono">OBRA</span>
           </div>
           <div class="flex items-center space-x-3 text-xs">
-            <span class="text-[11px] text-slate-500 font-medium">
-              Ponderación total: <strong class="text-emerald-700">100%</strong>
+            <span class="text-[11px] text-slate-500 font-medium flex items-center gap-1">
+              <span>Ponderación total:</span>
+              <strong class="font-mono font-bold"
+                      [ngClass]="ponderacionTotalFases === 100 ? 'text-emerald-700' : (ponderacionTotalFases > 100 ? 'text-rose-600' : 'text-amber-600')">
+                {{ ponderacionTotalFases }}%
+              </strong>
             </span>
             <button (click)="abrirNuevaFase()" type="button" class="bg-white hover:bg-slate-50 text-slate-700 border border-slate-300 px-2 py-0.5 rounded text-[11px] font-semibold flex items-center space-x-1 shadow-2xs cursor-pointer transition">
               <svg class="w-3 h-3 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
@@ -282,8 +286,8 @@
               </tr>
             </thead>
             <tbody class="divide-y divide-slate-200">
-              @for (fase of presupuestoActivo()?.fases; track fase.id || fase.IdpptoFase) {
-                @let isFaseSel = (selectedFase()?.id === fase.id || selectedFase()?.IdpptoFase === fase.IdpptoFase);
+              @for (fase of presupuestoActivo()?.fases; track (fase.id || fase.IdPresupuestoDetalle || $index)) {
+                @let isFaseSel = isFaseSeleccionada(fase);
                 <tr [class]="isFaseSel ? 'bg-emerald-50/50 font-medium' : 'hover:bg-slate-50 transition'">
                   <td class="py-1 px-3 text-center">
                     <input type="radio" name="selected_fase" [checked]="isFaseSel" (change)="onSelectFase(fase)"
@@ -302,26 +306,31 @@
                     <div class="text-[10px] text-slate-400 font-normal">Creado por: Sistema</div>
                   </td>
                   <td class="py-1 px-3 text-right font-mono text-slate-700 tabular-nums">{{ getPesoFase(fase) }}</td>
-                  <td class="py-1 px-3 text-right font-mono font-bold text-slate-900 tabular-nums">{{ (fase.CostoDirecto | currency:'PEN':'S/ ') || 'S/ 0.00' }}</td>
+                                    <td class="py-1 px-3 text-right font-mono font-bold text-slate-900 tabular-nums">{{ (fase.CostoDirecto | currency:'PEN':'S/ ') || 'S/ 0.00' }}</td>
                   <td class="py-1 px-3">
                     <button type="button" (click)="abrirModalComprasFase(fase, $event)"
-                            class="w-full flex items-center justify-between gap-2 px-2 py-1 -my-0.5 rounded-lg border border-slate-200 bg-white hover:border-emerald-500 hover:bg-emerald-50/70 transition group cursor-pointer text-left shadow-2xs"
-                            title="Ver compras y órdenes de compra de esta fase">
-                      <div class="flex-1 min-w-[70px] bg-slate-100 rounded-full h-2 overflow-hidden border border-slate-200/80">
-                        <div class="bg-[#1e4838] group-hover:bg-emerald-600 h-2 rounded-full transition-all duration-300" style="width: 100%"></div>
+                            class="w-full flex items-center justify-between gap-2 px-2 py-1 -my-0.5 rounded-lg border transition group cursor-pointer text-left shadow-2xs"
+                            [ngClass]="isFaseRowSobrepasada(fase) 
+                              ? 'border-rose-300 bg-rose-50/50 hover:bg-rose-100/70 hover:border-rose-400' 
+                              : 'border-slate-200 bg-white hover:border-emerald-500 hover:bg-emerald-50/70'"
+                            [title]="'Compras: S/ ' + (getComprasFaseMonto(fase) | number:'1.2-2') + ' (' + getPctRealComprasFase(fase) + '%)'">
+                      <div class="flex-1 min-w-[65px] bg-slate-100 rounded-full h-2 overflow-hidden border border-slate-200/80">
+                        <div class="h-2 rounded-full transition-all duration-300"
+                             [style.width.%]="getPctComprasFase(fase)"
+                             [ngClass]="isFaseRowSobrepasada(fase) ? 'bg-rose-500' : 'bg-[#1e4838] group-hover:bg-emerald-600'"></div>
                       </div>
-                      <span class="text-[10px] font-mono font-bold text-emerald-800 flex items-center gap-1 shrink-0">
-                        <svg class="w-3 h-3 text-emerald-600 group-hover:scale-110 transition" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
-                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
-                        </svg>
-                        Ver OC
+                      <span class="text-[10px] font-mono font-bold flex items-center gap-1 shrink-0"
+                            [ngClass]="isFaseRowSobrepasada(fase) ? 'text-rose-600' : 'text-emerald-800'">
+                        {{ getPctRealComprasFase(fase) }}%
                       </span>
                     </button>
                   </td>
                   <td class="py-1 px-3 text-center font-mono">{{ fase.categorias?.length || 0 }}</td>
                   <td class="py-1 px-3 text-center">
-                    <span class="text-[10px] border border-slate-200 bg-white text-slate-700 px-1 py-0.5 rounded">En Curso</span>
+                    <span class="text-[10px] border px-1.5 py-0.5 rounded inline-block"
+                          [ngClass]="getEstadoFaseClass(fase)">
+                      {{ getEstadoFaseText(fase) }}
+                    </span>
                   </td>
                   <td class="py-1 px-3 text-center">
                     <div class="flex items-center justify-center space-x-1.5 text-slate-400">
@@ -651,7 +660,79 @@
                 </tr>
               }
             </tbody>
+          
+            @if (presupuestosDelCC().length > 0) {
+              <tfoot class="bg-slate-50 border-t-2 border-slate-200 text-[12px] font-bold">
+                <tr>
+                  <td colspan="4" class="py-2.5 px-3 text-right uppercase text-slate-500 tracking-wider text-[11px]">
+                    Totales Presupuestados:
+                  </td>
+                  <td class="py-2.5 px-3 text-right font-mono font-bold text-slate-900 tabular-nums">
+                    {{ totalCostoDirectoCC | currency:'PEN':'S/ ' }}
+                  </td>
+                  <td class="py-2.5 px-3 text-right font-mono font-black text-emerald-800 tabular-nums">
+                    {{ totalPresupuestosCC | currency:'PEN':'S/ ' }}
+                  </td>
+                  <td></td>
+                </tr>
+              </tfoot>
+            }
           </table>
+        </div>
+
+        <!-- RESUMEN EN VIVO: PRESUPUESTO VS COMPRAS (ORDENES DE COMPRA DEL CC) -->
+        <div class="rounded-xl border p-4 transition-all"
+             [ngClass]="isCCPresupuestoSobrepasado 
+               ? 'bg-rose-50/70 border-rose-300 shadow-sm' 
+               : 'bg-emerald-50/30 border-emerald-200/80'">
+          <div class="flex flex-wrap items-center justify-between gap-3">
+            <div class="flex items-center gap-3">
+              <div class="w-9 h-9 rounded-lg flex items-center justify-center shrink-0"
+                   [ngClass]="isCCPresupuestoSobrepasado ? 'bg-rose-100 text-rose-700' : 'bg-emerald-100 text-emerald-800'">
+                @if (isCCPresupuestoSobrepasado) {
+                  <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+                } @else {
+                  <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                }
+              </div>
+              <div>
+                <div class="text-[12px] font-bold uppercase tracking-wider flex items-center gap-2"
+                     [ngClass]="isCCPresupuestoSobrepasado ? 'text-rose-800' : 'text-emerald-900'">
+                  <span>{{ isCCPresupuestoSobrepasado ? '¡Alerta: Presupuesto Sobrepasado!' : 'Control Financiero del Centro de Costo' }}</span>
+                  @if (isCCPresupuestoSobrepasado) {
+                    <span class="bg-rose-200 text-rose-800 text-[10px] px-2 py-0.5 rounded-full font-black uppercase tracking-wider animate-pulse">Sobrecosto</span>
+                  }
+                </div>
+                <div class="text-[11px]" [ngClass]="isCCPresupuestoSobrepasado ? 'text-rose-600 font-medium' : 'text-slate-500'">
+                  {{ isCCPresupuestoSobrepasado 
+                      ? 'Las órdenes de compra emitidas exceden el presupuesto asignado para este Centro de Costo.' 
+                      : 'Compras y órdenes de compra emitidas en tiempo real vs presupuesto total.' }}
+                </div>
+              </div>
+            </div>
+
+            <!-- Indicadores monetarios -->
+            <div class="flex items-center gap-4 text-xs">
+              <div class="text-right">
+                <span class="block text-[10px] text-slate-400 font-bold uppercase">Total Presupuestado</span>
+                <span class="font-mono font-bold text-slate-800 text-[13px]">{{ totalPresupuestosCC | currency:'PEN':'S/ ' }}</span>
+              </div>
+              <div class="text-right border-l border-slate-200 pl-4">
+                <span class="block text-[10px] font-bold uppercase" [ngClass]="isCCPresupuestoSobrepasado ? 'text-rose-600' : 'text-slate-400'">Total Comprado (OC)</span>
+                <span class="font-mono font-black text-[13px] px-2 py-0.5 rounded inline-block"
+                      [ngClass]="isCCPresupuestoSobrepasado ? 'bg-rose-100 text-rose-700 border border-rose-300' : 'text-slate-800'">
+                  {{ totalComprasCC() | currency:'PEN':'S/ ' }}
+                </span>
+              </div>
+              <div class="text-right border-l border-slate-200 pl-4">
+                <span class="block text-[10px] font-bold uppercase" [ngClass]="saldoDisponibleCC < 0 ? 'text-rose-600' : 'text-slate-400'">Saldo Disponible</span>
+                <span class="font-mono font-black text-[13px]"
+                      [ngClass]="saldoDisponibleCC < 0 ? 'text-rose-600' : 'text-emerald-700'">
+                  {{ saldoDisponibleCC | currency:'PEN':'S/ ' }}
+                </span>
+              </div>
+            </div>
+          </div>
         </div>
 
         <!-- ABAJO DE LA GRILLA: BARRA DE ENTRADA CON BOTÓN AGREGAR ARRIBA A LA DERECHA -->
@@ -1198,7 +1279,7 @@
               <div class="w-8 h-8 rounded-full bg-[#1e4838] text-white flex items-center justify-center text-[12px] font-bold shrink-0">
                 {{ especialista() ? especialista().charAt(0).toUpperCase() : '-' }}
               </div>
-              <input [(ngModel)]="especialista" type="text"
+              <input [ngModel]="especialista()" (ngModelChange)="especialista.set($event)" type="text"
                      placeholder="Nombre del especialista responsable..."
                      class="flex-1 bg-transparent text-[13px] font-semibold text-slate-700 focus:outline-none">
             </div>
@@ -1207,7 +1288,7 @@
           <!-- Comentarios -->
           <div>
             <label class="block text-[12px] font-bold text-slate-500 mb-2 uppercase tracking-wide">Comentarios Técnicos &amp; Observaciones</label>
-            <textarea [(ngModel)]="comentarios" rows="5"
+            <textarea [ngModel]="comentarios()" (ngModelChange)="comentarios.set($event)" rows="5"
                       placeholder="Ingrese observaciones técnicas, condiciones especiales, restricciones de alcance o cualquier nota relevante para el equipo de aprobación..."
                       class="w-full border border-slate-300 rounded-lg px-3 py-2.5 text-[13px] text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#529b7b]/40 focus:border-[#529b7b] resize-vertical"></textarea>
           </div>
@@ -1355,19 +1436,19 @@
         </select>
       </div>
 
-      <div>
-        <label class="block text-[12px] font-bold text-slate-700 uppercase tracking-wide mb-1.5">
-          Monto Costo Directo (S/.)
-        </label>
-        <div class="relative">
-          <span class="absolute left-3 top-2.5 text-slate-400 font-bold text-[13px]">S/</span>
-          <input [(ngModel)]="modalFaseData.CostoDirecto" type="number" step="0.01" min="0" placeholder="0.00"
-                 class="w-full pl-9 pr-3 py-2.5 border border-slate-300 rounded-lg text-[14px] font-mono font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#529b7b]/40 focus:border-[#529b7b]">
+            <!-- Cálculo Automático de Costo Directo por Categorías -->
+      <div class="bg-emerald-50/50 border border-emerald-200/80 rounded-lg p-3.5 space-y-1.5">
+        <div class="flex items-center justify-between">
+          <span class="text-[11px] font-bold uppercase text-slate-600 tracking-wider">Costo Directo:</span>
+          <span class="font-mono font-black text-slate-900 text-sm">
+            {{ (modalFaseModo() === 'edit' ? (modalFaseData.CostoDirecto || 0) : 0) | currency:'PEN':'S/ ' }}
+          </span>
         </div>
-        <p class="text-[11px] text-slate-400 mt-1">
-          Si la fase tiene categorías asignadas, el costo se consolida de sus partidas.
+        <p class="text-[11px] text-slate-500 leading-relaxed">
+          El costo de esta fase se calcula automáticamente sumando las categorías y partidas APU que le asignes en el panel inferior (idéntico al sistema anterior).
         </p>
       </div>
+        
     </div>
 
     <div class="bg-slate-50 border-t border-slate-200 px-5 py-3 flex items-center justify-end gap-2.5">
