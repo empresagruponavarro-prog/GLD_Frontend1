@@ -376,6 +376,16 @@ export class DocumentosOrigenComponent {
     });
   }
 
+  confirmDelete(item: { id?: number; numero_oc?: string }): void {
+    if (!item.id) return;
+    const label = item.numero_oc ? `"${item.numero_oc}"` : `ID ${item.id}`;
+    if (!confirm(`¿Eliminar el documento de origen ${label}? Esta acción no se puede deshacer.`)) return;
+    this.service.delete(item.id).subscribe({
+      next: () => this.load(),
+      error: () => alert('Error al eliminar el documento de origen.'),
+    });
+  }
+
   private emptyForm(): CreateDocumentoOrigen {
     return {
       id_oc: '',

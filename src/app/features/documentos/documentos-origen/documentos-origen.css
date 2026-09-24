@@ -169,3 +169,14 @@
   font-size: 1rem;
   font-weight: 700;
 }
+
+.table-action-btn--danger {
+  color: #dc2626;
+  border-color: #fca5a5;
+  background: #fff5f5;
+}
+.table-action-btn--danger:hover {
+  background: #fee2e2;
+  border-color: #f87171;
+  color: #b91c1c;
+}

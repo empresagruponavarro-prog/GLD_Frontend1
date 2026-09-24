@@ -59,6 +59,10 @@ export class DocumentosOrigenService {
     return this.http.patch<DocumentoOrigen>(`${this.apiUrl}/${id}`, data);
   }
 
+  delete(id: number): Observable<{ deleted: boolean; id: number }> {
+    return this.http.delete<{ deleted: boolean; id: number }>(`${this.apiUrl}/${id}`);
+  }
+
   getDetallePorFase(idCentroCosto?: number, idFase?: number): Observable<DocumentoOrigenDetalleLinea[]> {
     let params = new HttpParams();
     if (idCentroCosto) params = params.set('id_centro_costo', idCentroCosto.toString());
