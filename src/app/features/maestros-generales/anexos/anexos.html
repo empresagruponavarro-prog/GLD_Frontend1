@@ -1,0 +1,336 @@
+<div class="content-header">
+  <div>
+    <h1 class="content-title">Anexos</h1>
+    <p class="content-subtitle">
+      Maestro de anexos (proveedores, clientes y trabajadores).
+    </p>
+  </div>
+  <div style="display: flex; gap: 0.5rem; align-items: center">
+    <button class="btn btn-primary" type="button" (click)="openCreate()">
+      <i class="fa-solid fa-plus"></i> Nuevo Anexo
+    </button>
+    <button
+      class="btn btn-secondary"
+      type="button"
+      (click)="load()"
+      [disabled]="loading()"
+    >
+      <i class="fa-solid fa-arrows-rotate" [class.fa-spin]="loading()"></i>
+      {{ loading() ? 'Cargando...' : 'Actualizar' }}
+    </button>
+  </div>
+</div>
+
+<div class="content-body">
+  <section class="toolbar-shell">
+    <div class="toolbar-search-row">
+      <div class="search-field">
+        <span class="search-icon"
+          ><i class="fa-solid fa-magnifying-glass"></i
+        ></span>
+        <input
+          type="text"
+          class="form-control search-input"
+          placeholder="Buscar por anexo..."
+          maxlength="255"
+          [ngModel]="anexoFilter()"
+          (ngModelChange)="onSearch($event)"
+        />
+      </div>
+      <div class="toolbar-meta">
+        <span>Mostrando</span>
+        <strong>{{ totalRecords() }}</strong>
+        <span>registros</span>
+      </div>
+    </div>
+
+    <div class="toolbar-filters-row">
+      <div class="toolbar-filters-left">
+        <select
+          class="toolbar-select"
+          [ngModel]="tipoAnexoFilter()"
+          (ngModelChange)="tipoAnexoFilter.set($event); onFilterChange()"
+        >
+          <option value="">Todos los tipos</option>
+          @for (t of tiposAnexo; track t) {
+          <option [value]="t">{{ t }}</option>
+          }
+        </select>
+
+        <select
+          class="toolbar-select"
+          [ngModel]="estadoFilter()"
+          (ngModelChange)="estadoFilter.set($event); onFilterChange()"
+        >
+          <option [ngValue]="null">Todos los estados</option>
+          <option [ngValue]="true">Activo</option>
+          <option [ngValue]="false">Inactivo</option>
+        </select>
+
+        <button class="toolbar-reset" type="button" (click)="resetFilters()">
+          <i class="fa-solid fa-rotate-left"></i> Restablecer
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <app-data-table
+    [columns]="columns"
+    [items]="anexos()"
+    [loading]="loading()"
+    [totalItems]="totalRecords()"
+    [currentPage]="currentPage()"
+    [pageSize]="pageSize()"
+    [pageSizeOptions]="[10, 20, 50, 100]"
+    [minWidth]="'1100px'"
+    emptyMessage="No hay anexos registrados."
+    emptyIcon="fa-solid fa-paperclip"
+    [rowTemplate]="anexoRow"
+    (pageChange)="onPageChange($event)"
+    (pageSizeChange)="onPageSizeChange($event)"
+  >
+  </app-data-table>
+
+  <ng-template #anexoRow let-item>
+    <tr>
+      <td>{{ item.id }}</td>
+      <td>{{ item.tipoAnexo ?? '—' }}</td>
+      <td>{{ nombreEspecialidad(item.AnexoEspecialidadId) }}</td>
+      <td>{{ nombreTipoDoc(item.AnexoTipoDocIdeId) }}</td>
+      <td>{{ item.NumeroDocIde ?? '—' }}</td>
+      <td><strong>{{ item.Anexo ?? '—' }}</strong></td>
+      <td>{{ item.NombreComercial ?? '—' }}</td>
+      <td>{{ item.Contacto ?? '—' }}</td>
+      <td align="center">
+        <span
+          class="badge"
+          [class.badge-success]="item.estado"
+          [class.badge-danger]="!item.estado"
+        >
+          {{ item.estado ? 'Activo' : 'Inactivo' }}
+        </span>
+      </td>
+      <td align="center">
+        <button
+          class="table-action-btn"
+          type="button"
+          (click)="openDetail(item)"
+          title="Ver detalle"
+        >
+          <i class="fa-solid fa-eye"></i>
+        </button>
+        <button
+          class="table-action-btn table-action-btn--primary"
+          type="button"
+          (click)="openEdit(item)"
+          title="Editar"
+        >
+          <i class="fa-solid fa-pen-to-square"></i>
+        </button>
+        <button
+          class="table-action-btn table-action-btn--danger"
+          type="button"
+          (click)="deleteAnexo(item)"
+          title="Eliminar"
+        >
+          <i class="fa-solid fa-trash"></i>
+        </button>
+      </td>
+    </tr>
+  </ng-template>
+</div>
+
+<!-- Modal formulario (crear / editar) -->
+<app-modal
+  [isOpen]="showModal()"
+  [title]="editingId() !== null ? 'Editar Anexo' : 'Nuevo Anexo'"
+  maxWidth="760px"
+  [loading]="saving()"
+  submitText="Guardar Anexo"
+  (closed)="closeModal()"
+  (saved)="saveAnexo()"
+>
+  <div class="anexo-form">
+    <div class="anexo-form-grid">
+      <div class="form-group">
+        <label>Tipo de Anexo</label>
+        <select
+          class="form-control"
+          [ngModel]="formData.tipoAnexo"
+          (ngModelChange)="onTipoAnexoChange($event)"
+        >
+          <option [ngValue]="null">— Seleccione —</option>
+          @for (t of tiposAnexo; track t) {
+          <option [ngValue]="t">{{ t }}</option>
+          }
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label>N° Documento</label>
+        <input
+          type="text"
+          class="form-control"
+          [(ngModel)]="formData.NumeroDocIde"
+          maxlength="255"
+        />
+      </div>
+
+      <div class="form-group">
+        <label>Especialidad</label>
+        <select class="form-control" [(ngModel)]="formData.AnexoEspecialidadId">
+          <option [ngValue]="null">— Seleccione —</option>
+          @for (e of especialidadesForm(); track e.id) {
+          <option [ngValue]="e.id">{{ e.nombre }}</option>
+          }
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label>Tipo Documento (IDE)</label>
+        <select class="form-control" [(ngModel)]="formData.AnexoTipoDocIdeId">
+          <option [ngValue]="null">— Seleccione —</option>
+          @for (t of tiposDocIdeForm(); track t.id) {
+          <option [ngValue]="t.id">{{ t.nombre }}</option>
+          }
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label>Anexo <span class="required">*</span></label>
+        <input
+          type="text"
+          class="form-control"
+          [(ngModel)]="formData.Anexo"
+          maxlength="255"
+          placeholder="Razón social / nombre"
+        />
+      </div>
+
+      <div class="form-group">
+        <label>Nombre Comercial</label>
+        <input
+          type="text"
+          class="form-control"
+          [(ngModel)]="formData.NombreComercial"
+          maxlength="255"
+        />
+      </div>
+
+      <div class="form-group">
+        <label>Dirección</label>
+        <input
+          type="text"
+          class="form-control"
+          [(ngModel)]="formData.Direccion"
+          maxlength="255"
+        />
+      </div>
+
+      <div class="form-group">
+        <label>Contacto</label>
+        <input
+          type="text"
+          class="form-control"
+          [(ngModel)]="formData.Contacto"
+          maxlength="255"
+        />
+      </div>
+
+      <div class="form-group">
+        <label>Teléfono</label>
+        <input
+          type="text"
+          class="form-control"
+          [(ngModel)]="formData.Telefono"
+          maxlength="255"
+        />
+      </div>
+
+      <div class="form-group">
+        <label>Correo</label>
+        <input
+          type="email"
+          class="form-control"
+          [(ngModel)]="formData.Correo"
+          maxlength="255"
+        />
+      </div>
+
+      <div class="form-group">
+        <label>Estado</label>
+        <label class="anexo-estado">
+          <input type="checkbox" [(ngModel)]="formData.estado" />
+          <span>{{ formData.estado ? 'Activo' : 'Inactivo' }}</span>
+        </label>
+      </div>
+    </div>
+  </div>
+</app-modal>
+
+<!-- Modal detalle (solo lectura) -->
+<app-modal
+  [isOpen]="showDetail()"
+  title="Detalle del Anexo"
+  maxWidth="760px"
+  [showDefaultFooter]="false"
+  (closed)="closeDetail()"
+>
+  @if (detail(); as d) {
+  <div class="anexo-detail-grid">
+    <div class="anexo-detail-item">
+      <span>ID</span><strong>{{ d.id }}</strong>
+    </div>
+    <div class="anexo-detail-item">
+      <span>Tipo de Anexo</span><strong>{{ d.tipoAnexo ?? '—' }}</strong>
+    </div>
+    <div class="anexo-detail-item">
+      <span>Especialidad</span
+      ><strong>{{ nombreEspecialidad(d.AnexoEspecialidadId) }}</strong>
+    </div>
+    <div class="anexo-detail-item">
+      <span>Tipo Documento (IDE)</span
+      ><strong>{{ nombreTipoDoc(d.AnexoTipoDocIdeId) }}</strong>
+    </div>
+    <div class="anexo-detail-item">
+      <span>N° Documento</span><strong>{{ d.NumeroDocIde ?? '—' }}</strong>
+    </div>
+    <div class="anexo-detail-item">
+      <span>Anexo</span><strong>{{ d.Anexo ?? '—' }}</strong>
+    </div>
+    <div class="anexo-detail-item">
+      <span>Nombre Comercial</span
+      ><strong>{{ d.NombreComercial ?? '—' }}</strong>
+    </div>
+    <div class="anexo-detail-item">
+      <span>Dirección</span><strong>{{ d.Direccion ?? '—' }}</strong>
+    </div>
+    <div class="anexo-detail-item">
+      <span>Contacto</span><strong>{{ d.Contacto ?? '—' }}</strong>
+    </div>
+    <div class="anexo-detail-item">
+      <span>Teléfono</span><strong>{{ d.Telefono ?? '—' }}</strong>
+    </div>
+    <div class="anexo-detail-item">
+      <span>Correo</span><strong>{{ d.Correo ?? '—' }}</strong>
+    </div>
+    <div class="anexo-detail-item">
+      <span>Estado</span>
+      <strong>
+        <span
+          class="badge"
+          [class.badge-success]="d.estado"
+          [class.badge-danger]="!d.estado"
+        >
+          {{ d.estado ? 'Activo' : 'Inactivo' }}
+        </span>
+      </strong>
+    </div>
+  </div>
+  }
+  <div modal-footer class="modal-footer">
+    <button class="btn btn-secondary" type="button" (click)="closeDetail()">
+      Cerrar
+    </button>
+  </div>
+</app-modal>

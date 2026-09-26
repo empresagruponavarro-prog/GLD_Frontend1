@@ -38,3 +38,8 @@ export interface AnexoPaginated {
   total: number;
   totalPages: number;
 }
+
+export interface SelectOption {
+  id: number;
+  nombre: string | null;
+}

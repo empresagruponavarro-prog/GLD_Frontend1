@@ -23,7 +23,7 @@ export const routes: Routes = [
   { path: 'admin/usuarios', component: UsuariosComponent },
   { path: 'admin/menus', component: MenusComponent },
   { path: 'admin/empresas', component: EmpresasComponent },
-  { path: 'maestros-generales/anexos', component: AnexosComponent },
+  { path: 'anexos', component: AnexosComponent },
   { path: 'maestros-generales/especialidades', component: EspecialidadesComponent },
   { path: 'maestros-generales/tipo-doc-identidad', component: TipoDocIdentidadComponent },
   { path: 'presupuestos', component: PresupuestosComponent },

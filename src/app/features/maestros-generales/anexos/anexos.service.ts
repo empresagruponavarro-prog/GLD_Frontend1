@@ -2,7 +2,7 @@ import { Service, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '@env';
-import { Anexo, AnexoPaginated, AnexoQuery, AnexoSelect, TipoAnexo } from './interfaces/anexos.interface';
+import { Anexo, AnexoPaginated, AnexoQuery, AnexoSelect, SelectOption, TipoAnexo } from './interfaces/anexos.interface';
 
 @Service()
 export class AnexosService {
@@ -26,6 +26,22 @@ export class AnexosService {
       params = params.set('tipoAnexo', tipoAnexo);
     }
     return this.http.get<AnexoSelect[]>(`${this.apiUrl}/select`, { params });
+  }
+
+  getEspecialidadesSelect(tipoAnexo?: TipoAnexo): Observable<SelectOption[]> {
+    let params = new HttpParams();
+    if (tipoAnexo) {
+      params = params.set('tipoAnexo', tipoAnexo);
+    }
+    return this.http.get<SelectOption[]>(`${environment.apiUrl}/maestros/especialidad/select`, { params });
+  }
+
+  getTiposDocIdeSelect(tipoAnexo?: TipoAnexo): Observable<SelectOption[]> {
+    let params = new HttpParams();
+    if (tipoAnexo) {
+      params = params.set('tipoAnexo', tipoAnexo);
+    }
+    return this.http.get<SelectOption[]>(`${environment.apiUrl}/maestros/tipo-doc-identidad/select`, { params });
   }
 
   getById(id: number): Observable<Anexo> {
