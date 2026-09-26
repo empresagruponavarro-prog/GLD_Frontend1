@@ -1,0 +1,64 @@
+.producto-form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.9rem 1rem;
+}
+
+.producto-form-full {
+  grid-column: 1 / -1;
+}
+
+.producto-form .form-group label .required {
+  color: #dc2626;
+}
+
+.producto-estado {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-height: 38px;
+  font-weight: 600;
+  color: var(--text-main, #334155);
+  cursor: pointer;
+}
+
+.producto-detail-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem 1rem;
+}
+
+.producto-detail-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--border-color, #e2e8f0);
+  border-radius: 8px;
+  background: #f8fafc;
+}
+
+.producto-detail-full {
+  grid-column: 1 / -1;
+}
+
+.producto-detail-item > span {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  color: var(--text-muted, #64748b);
+}
+
+.producto-detail-item > strong {
+  font-size: 0.9rem;
+  color: var(--text-main, #1e293b);
+  word-break: break-word;
+}
+
+@media (max-width: 640px) {
+  .producto-form-grid,
+  .producto-detail-grid {
+    grid-template-columns: 1fr;
+  }
+}

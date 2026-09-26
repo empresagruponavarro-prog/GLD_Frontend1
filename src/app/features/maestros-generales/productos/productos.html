@@ -1,0 +1,359 @@
+<div class="content-header">
+  <div>
+    <h1 class="content-title">Productos</h1>
+    <p class="content-subtitle">
+      Maestro de productos y servicios.
+    </p>
+  </div>
+  <div style="display: flex; gap: 0.5rem; align-items: center">
+    <button class="btn btn-primary" type="button" (click)="openCreate()">
+      <i class="fa-solid fa-plus"></i> Nuevo Producto
+    </button>
+    <button
+      class="btn btn-secondary"
+      type="button"
+      (click)="load()"
+      [disabled]="loading()"
+    >
+      <i class="fa-solid fa-arrows-rotate" [class.fa-spin]="loading()"></i>
+      {{ loading() ? 'Cargando...' : 'Actualizar' }}
+    </button>
+  </div>
+</div>
+
+<div class="content-body">
+  <section class="toolbar-shell">
+    <div class="toolbar-search-row">
+      <div class="search-field">
+        <span class="search-icon"
+          ><i class="fa-solid fa-magnifying-glass"></i
+        ></span>
+        <input
+          type="text"
+          class="form-control search-input"
+          placeholder="Buscar por código..."
+          maxlength="255"
+          [ngModel]="codigoFilter()"
+          (ngModelChange)="onSearchCodigo($event)"
+        />
+      </div>
+      <div class="search-field">
+        <span class="search-icon"
+          ><i class="fa-solid fa-magnifying-glass"></i
+        ></span>
+        <input
+          type="text"
+          class="form-control search-input"
+          placeholder="Buscar por descripción..."
+          maxlength="255"
+          [ngModel]="descripcionFilter()"
+          (ngModelChange)="onSearchDescripcion($event)"
+        />
+      </div>
+      <div class="toolbar-meta">
+        <span>Mostrando</span>
+        <strong>{{ totalRecords() }}</strong>
+        <span>registros</span>
+      </div>
+    </div>
+
+    <div class="toolbar-filters-row">
+      <div class="toolbar-filters-left">
+        <select
+          class="toolbar-select"
+          [ngModel]="tipoProductoFilter()"
+          (ngModelChange)="tipoProductoFilter.set($event); onFilterChange()"
+        >
+          <option value="">Todos los tipos</option>
+          @for (t of tiposProducto; track t) {
+          <option [value]="t">{{ t }}</option>
+          }
+        </select>
+
+        <select
+          class="toolbar-select"
+          [ngModel]="categoriaFilter()"
+          (ngModelChange)="categoriaFilter.set($event); onFilterChange()"
+        >
+          <option [ngValue]="null">Todas las categorías</option>
+          @for (c of categorias(); track c.id) {
+          <option [ngValue]="c.id">{{ c.nombre }}</option>
+          }
+        </select>
+
+        <select
+          class="toolbar-select"
+          [ngModel]="unidadMedidaFilter()"
+          (ngModelChange)="unidadMedidaFilter.set($event); onFilterChange()"
+        >
+          <option [ngValue]="null">Todas las unidades</option>
+          @for (u of unidadesMedida(); track u.id) {
+          <option [ngValue]="u.id">{{ u.nombre }}</option>
+          }
+        </select>
+
+        <select
+          class="toolbar-select"
+          [ngModel]="estadoFilter()"
+          (ngModelChange)="estadoFilter.set($event); onFilterChange()"
+        >
+          <option [ngValue]="null">Todos los estados</option>
+          <option [ngValue]="true">Activo</option>
+          <option [ngValue]="false">Inactivo</option>
+        </select>
+
+        <button class="toolbar-reset" type="button" (click)="resetFilters()">
+          <i class="fa-solid fa-rotate-left"></i> Restablecer
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <app-data-table
+    [columns]="columns"
+    [items]="productos()"
+    [loading]="loading()"
+    [totalItems]="totalRecords()"
+    [currentPage]="currentPage()"
+    [pageSize]="pageSize()"
+    [pageSizeOptions]="[10, 20, 50, 100]"
+    [minWidth]="'1100px'"
+    emptyMessage="No hay productos registrados."
+    emptyIcon="fa-solid fa-box"
+    [rowTemplate]="productoRow"
+    (pageChange)="onPageChange($event)"
+    (pageSizeChange)="onPageSizeChange($event)"
+  >
+  </app-data-table>
+
+  <ng-template #productoRow let-item>
+    <tr>
+      <td>{{ item.id }}</td>
+      <td><strong>{{ item.codigo }}</strong></td>
+      <td>{{ item.descripcion }}</td>
+      <td>{{ nombreCategoria(item.id_categoria) }}</td>
+      <td>{{ nombreUnidadMedida(item.id_unidad_medida) }}</td>
+      <td align="center">
+        <span
+          class="badge"
+          [class.badge-success]="item.tipo_producto === 'PRODUCTO'"
+          [class.badge-danger]="item.tipo_producto === 'SERVICIO'"
+        >
+          {{ item.tipo_producto }}
+        </span>
+      </td>
+      <td align="right">{{ item.stock }}</td>
+      <td align="center">
+        <span
+          class="badge"
+          [class.badge-success]="item.estado"
+          [class.badge-danger]="!item.estado"
+        >
+          {{ item.estado ? 'Activo' : 'Inactivo' }}
+        </span>
+      </td>
+      <td align="center">
+        <button
+          class="table-action-btn"
+          type="button"
+          (click)="openDetail(item)"
+          title="Ver detalle"
+        >
+          <i class="fa-solid fa-eye"></i>
+        </button>
+        <button
+          class="table-action-btn table-action-btn--primary"
+          type="button"
+          (click)="openEdit(item)"
+          title="Editar"
+        >
+          <i class="fa-solid fa-pen-to-square"></i>
+        </button>
+        <button
+          class="table-action-btn table-action-btn--danger"
+          type="button"
+          (click)="deleteProducto(item)"
+          title="Desactivar"
+        >
+          <i class="fa-solid fa-trash"></i>
+        </button>
+      </td>
+    </tr>
+  </ng-template>
+</div>
+
+<!-- Modal formulario (crear / editar) -->
+<app-modal
+  [isOpen]="showModal()"
+  [title]="editingId() !== null ? 'Editar Producto' : 'Nuevo Producto'"
+  maxWidth="760px"
+  [loading]="saving()"
+  submitText="Guardar Producto"
+  (closed)="closeModal()"
+  (saved)="saveProducto()"
+>
+  <div class="producto-form">
+    <div class="producto-form-grid">
+      <div class="form-group">
+        <label>Código <span class="required">*</span></label>
+        <input
+          type="text"
+          class="form-control"
+          [(ngModel)]="formData.codigo"
+          maxlength="255"
+          placeholder="PROD-001"
+        />
+      </div>
+
+      <div class="form-group">
+        <label>Tipo <span class="required">*</span></label>
+        <select class="form-control" [(ngModel)]="formData.tipo_producto">
+          @for (t of tiposProducto; track t) {
+          <option [ngValue]="t">{{ t }}</option>
+          }
+        </select>
+      </div>
+
+      <div class="form-group producto-form-full">
+        <label>Descripción <span class="required">*</span></label>
+        <input
+          type="text"
+          class="form-control"
+          [(ngModel)]="formData.descripcion"
+          maxlength="255"
+          placeholder="Descripción del producto"
+        />
+      </div>
+
+      <div class="form-group">
+        <label>Categoría <span class="required">*</span></label>
+        <select class="form-control" [(ngModel)]="formData.id_categoria">
+          <option [ngValue]="0">— Seleccione —</option>
+          @for (c of categorias(); track c.id) {
+          <option [ngValue]="c.id">{{ c.nombre }}</option>
+          }
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label>Unidad de Medida <span class="required">*</span></label>
+        <select class="form-control" [(ngModel)]="formData.id_unidad_medida">
+          <option [ngValue]="0">— Seleccione —</option>
+          @for (u of unidadesMedida(); track u.id) {
+          <option [ngValue]="u.id">{{ u.nombre }}</option>
+          }
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label>Stock</label>
+        <input
+          type="text"
+          class="form-control"
+          inputmode="decimal"
+          [(ngModel)]="formData.stock"
+          maxlength="50"
+          placeholder="0"
+        />
+      </div>
+
+      <div class="form-group">
+        <label>Estado</label>
+        <label class="producto-estado">
+          <input type="checkbox" [(ngModel)]="formData.estado" />
+          <span>{{ formData.estado ? 'Activo' : 'Inactivo' }}</span>
+        </label>
+      </div>
+
+      <div class="form-group producto-form-full">
+        <label>Imagen (URL)</label>
+        <input
+          type="text"
+          class="form-control"
+          [(ngModel)]="formData.imagen_url"
+          maxlength="1000"
+          placeholder="https://..."
+        />
+      </div>
+
+      <div class="form-group producto-form-full">
+        <label>Comentarios</label>
+        <input
+          type="text"
+          class="form-control"
+          [(ngModel)]="formData.comentarios"
+          maxlength="1000"
+        />
+      </div>
+    </div>
+  </div>
+</app-modal>
+
+<!-- Modal detalle (solo lectura) -->
+<app-modal
+  [isOpen]="showDetail()"
+  title="Detalle del Producto"
+  maxWidth="760px"
+  [showDefaultFooter]="false"
+  (closed)="closeDetail()"
+>
+  @if (detail(); as d) {
+  <div class="producto-detail-grid">
+    <div class="producto-detail-item">
+      <span>ID</span><strong>{{ d.id }}</strong>
+    </div>
+    <div class="producto-detail-item">
+      <span>Código</span><strong>{{ d.codigo }}</strong>
+    </div>
+    <div class="producto-detail-item">
+      <span>Descripción</span><strong>{{ d.descripcion }}</strong>
+    </div>
+    <div class="producto-detail-item">
+      <span>Tipo</span>
+      <strong>
+        <span
+          class="badge"
+          [class.badge-success]="d.tipo_producto === 'PRODUCTO'"
+          [class.badge-danger]="d.tipo_producto === 'SERVICIO'"
+        >
+          {{ d.tipo_producto }}
+        </span>
+      </strong>
+    </div>
+    <div class="producto-detail-item">
+      <span>Categoría</span
+      ><strong>{{ nombreCategoria(d.id_categoria) }}</strong>
+    </div>
+    <div class="producto-detail-item">
+      <span>Unidad de Medida</span
+      ><strong>{{ nombreUnidadMedida(d.id_unidad_medida) }}</strong>
+    </div>
+    <div class="producto-detail-item">
+      <span>Stock</span><strong>{{ d.stock }}</strong>
+    </div>
+    <div class="producto-detail-item">
+      <span>Imagen (URL)</span><strong>{{ d.imagen_url ?? '—' }}</strong>
+    </div>
+    <div class="producto-detail-item producto-detail-full">
+      <span>Comentarios</span><strong>{{ d.comentarios ?? '—' }}</strong>
+    </div>
+    <div class="producto-detail-item">
+      <span>Estado</span>
+      <strong>
+        <span
+          class="badge"
+          [class.badge-success]="d.estado"
+          [class.badge-danger]="!d.estado"
+        >
+          {{ d.estado ? 'Activo' : 'Inactivo' }}
+        </span>
+      </strong>
+    </div>
+  </div>
+  }
+  <div modal-footer class="modal-footer">
+    <button class="btn btn-secondary" type="button" (click)="closeDetail()">
+      Cerrar
+    </button>
+  </div>
+</app-modal>
