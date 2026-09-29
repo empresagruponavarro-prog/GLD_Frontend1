@@ -1,0 +1,2397 @@
+<div class="w-full min-h-screen bg-surface px-5 py-3 max-w-[1920px] mx-auto font-sans antialiased text-on-surface"><div class="flex flex-col w-full gap-3">
+<!-- ==================== 1. TOP COMPACT PANORAMIC COCKPIT HEADER ==================== -->
+<section class="bg-surface-container-lowest rounded-xl shadow-sm border border-surface-container p-3.5">
+<!-- Line 1: Breadcrumb + Action Controls -->
+<div class="flex flex-wrap items-center justify-between gap-2 pb-2.5 border-b border-surface-container/60">
+<div class="flex items-center gap-1.5 text-xs text-on-surface-variant">
+<a class="hover:text-primary transition-colors flex items-center gap-1 font-medium" href="#">
+<span class="material-symbols-outlined text-sm">account_balance_wallet</span>
+<span>Centros de Costos</span>
+</a>
+<span class="material-symbols-outlined text-xs text-outline-variant">chevron_right</span>
+<span class="font-semibold text-on-surface">CC-948 Tambo Villa El Salvador</span>
+<span class="material-symbols-outlined text-xs text-outline-variant">chevron_right</span>
+<span class="px-2 py-0.5 rounded bg-primary-fixed/40 text-on-primary-fixed font-semibold text-[11px] tracking-wide">DATOS DE OBRA &amp; GESTIÓN TÉCNICA</span>
+</div>
+<div class="flex items-center gap-2">
+<button class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-surface-container-lowest text-on-surface text-xs font-semibold shadow-sm hover:bg-surface-container transition-colors border border-surface-container" (click)="volver()">
+<span class="material-symbols-outlined text-sm">arrow_back</span>
+<span>Volver a Centros de Costos</span>
+</button>
+<button class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-surface-container-high text-on-surface text-xs font-semibold hover:bg-surface-container-highest transition-colors shadow-sm" (click)="openModal('modal-registro')">
+<span class="material-symbols-outlined text-sm text-primary">add_circle</span>
+<span>+ Nuevo Registro Rápido</span>
+</button>
+<div class="relative inline-block text-left" id="exportMenuWrapper">
+<button class="inline-flex items-center gap-1 px-3 py-1 rounded-lg bg-primary text-on-primary text-xs font-semibold shadow-sm hover:opacity-95 transition-opacity" (click)="toggleExportMenu()">
+<span class="material-symbols-outlined text-sm">ios_share</span>
+<span>Exportar Ficha Técnica</span>
+<span class="material-symbols-outlined text-xs ml-0.5">expand_more</span>
+</button>
+<div class="hidden absolute right-0 mt-1 w-48 rounded-xl bg-surface-container-lowest shadow-xl z-30 p-1.5 border border-surface-container" id="exportMenuDropdown">
+<button class="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs text-on-surface hover:bg-surface-container-high text-left">
+<span class="material-symbols-outlined text-sm text-error">picture_as_pdf</span> Dossier Completo (PDF)
+          </button>
+<button class="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs text-on-surface hover:bg-surface-container-high text-left">
+<span class="material-symbols-outlined text-sm text-primary">table_view</span> Matriz de Control (Excel)
+          </button>
+</div>
+</div>
+</div>
+</div>
+<!-- Line 2: Panoramic Project Headline + Inline Badges + Integrated KPI Strip -->
+<div class="flex flex-col xl:flex-row xl:items-center justify-between gap-3 pt-2.5">
+<div class="flex flex-col lg:flex-row lg:items-center gap-3">
+<div class="flex items-center gap-2">
+<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-primary-fixed text-on-primary-fixed-variant text-[11px] font-bold tracking-tight">
+<span class="w-2 h-2 rounded-full bg-primary animate-pulse"></span>
+          ABIERTO EN EJECUCIÓN
+        </span>
+<h1 class="font-headline-xl text-xl font-bold tracking-tight text-on-surface">
+          Datos Operativos de Obra: <span class="text-primary">{{ (cockpit()?.nombre_obra ?? 'CC-' + idCentroCosto()) | uppercase }}</span>
+</h1>
+</div>
+<!-- Inline Badge Pills -->
+<div class="flex flex-wrap items-center gap-1.5 text-[11px]">
+<span class="px-2 py-0.5 rounded bg-surface-container text-on-surface-variant font-mono font-semibold">COD CC: #{{ idCentroCosto() }}</span>
+<span class="px-2 py-0.5 rounded bg-surface-container-high text-on-surface-variant">ID EXPEDIENTE: EXP-2026-TMB-048</span>
+<span class="px-2 py-0.5 rounded bg-surface-container-low text-on-surface"><span class="text-on-surface-variant/70 uppercase text-[9px] font-bold">Empresa:</span> <strong class="font-semibold">GLD SERVICIOS GENERALES EIRL</strong></span>
+<span class="px-2 py-0.5 rounded bg-surface-container-low text-on-surface"><span class="text-on-surface-variant/70 uppercase text-[9px] font-bold">Cliente:</span> <strong class="font-semibold">TIENDAS TAMBO S.A.C.</strong></span>
+<span class="px-2 py-0.5 rounded bg-surface-container-low text-on-surface"><span class="text-on-surface-variant/70 uppercase text-[9px] font-bold">Inicio:</span> <strong class="font-semibold">18/09/2026</strong></span>
+<span class="px-2 py-0.5 rounded bg-surface-container-low text-on-surface flex items-center gap-0.5"><span class="material-symbols-outlined text-xs text-primary">pin_drop</span><span class="font-semibold">VES - Av. Central 450</span></span>
+</div>
+</div>
+<!-- Horizontal KPI Metric Strip -->
+<div class="flex items-center gap-2 bg-surface-container-low px-3 py-1.5 rounded-xl self-start xl:self-auto shrink-0 border border-surface-container">
+<div class="text-center px-2.5">
+<span class="text-[9px] uppercase font-bold text-on-surface-variant block tracking-wider leading-tight">Avance Real</span>
+<span class="text-lg font-headline-xl font-extrabold text-primary leading-tight">{{ cockpit()?.kpis?.avance_real_global ?? '—' }}%</span>
+<span class="text-[9px] text-primary font-medium block leading-tight">Meta: {{ cockpit()?.kpis?.avance_meta_global ?? '—' }}%</span>
+</div>
+<div class="w-px h-8 bg-surface-variant"></div>
+<div class="text-center px-2.5">
+<span class="text-[9px] uppercase font-bold text-on-surface-variant block tracking-wider leading-tight">Semana Actual</span>
+<span class="text-lg font-headline-xl font-extrabold text-on-surface leading-tight">Sem {{ cockpit()?.kpis?.semana_activa ?? '—' }}</span>
+<span class="text-[9px] text-on-surface-variant block leading-tight">de {{ cockpit()?.kpis?.semanas_totales ?? '—' }}</span>
+</div>
+<div class="w-px h-8 bg-surface-variant"></div>
+<div class="text-center px-2.5">
+<span class="text-[9px] uppercase font-bold text-on-surface-variant block tracking-wider leading-tight">Personal Activo</span>
+<span class="text-lg font-headline-xl font-extrabold text-secondary leading-tight">{{ cockpit()?.kpis?.personal_activo ?? '—' }} Op.</span>
+<span class="text-[9px] text-on-surface-variant block leading-tight">Turno Diurno</span>
+</div>
+</div>
+</div>
+<!-- Line 3: Sleek Horizontal Curva S & 6-Week Milestones Track Bar -->
+<div class="mt-2.5 pt-2 border-t border-surface-container/60">
+<div class="flex items-center justify-between text-xs mb-1">
+<div class="flex items-center gap-2">
+<span class="font-medium text-on-surface text-[11px]">Curva S de Avance Operativo Físico</span>
+<span class="text-[10px] text-on-surface-variant">(Semana 01 a Semana 06 - Entrega Prevista: 30/10/2026)</span>
+</div>
+<span class="font-mono font-semibold text-primary text-xs">24 de 42 Días Calendario</span>
+</div>
+<div class="w-full h-2 rounded-full bg-surface-container overflow-hidden flex">
+<div class="bg-primary h-full rounded-full transition-all duration-500" style="width: 42.5%;"></div>
+<div class="bg-secondary-container h-full transition-all duration-500" style="width: 7.5%; opacity: 0.7;"></div>
+</div>
+<div class="flex justify-between items-center text-[10px] text-on-surface-variant mt-1 font-medium">
+<span>Sem 01 (Preliminares) ✓</span>
+<span>Sem 02 (Demolición y Muros) ✓</span>
+<span class="font-bold text-primary">Sem 03 (Instalaciones Eléctricas &amp; Drywall) ●</span>
+<span>Sem 04 (Pintura &amp; Enchapes)</span>
+<span>Sem 05 (Mobiliario &amp; Frío)</span>
+<span>Sem 06 (Pruebas &amp; Apertura)</span>
+</div>
+</div>
+</section>
+<!-- ==================== 2. MAIN BODY 2-COLUMN MODULAR GRID ==================== -->
+<div class="grid grid-cols-1 xl:grid-cols-12 gap-3 items-start">
+<!-- ==================== LEFT MAIN SECTION (65% width / 8 cols) ==================== -->
+<div class="xl:col-span-8 flex flex-col gap-3">
+<!-- Operational Navigation Tabs -->
+<div class="flex items-center gap-1 overflow-x-auto pb-0.5 scrollbar-none" id="tabContainer">
+<button type="button" id="btn-tab-cronograma" (click)="setTab('tab-cronograma')" class="tab-button flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all shadow-sm cursor-pointer" [ngClass]="activeTab() === 'tab-cronograma' ? 'bg-primary text-on-primary' : 'bg-surface-container-lowest text-on-surface-variant hover:bg-surface-container hover:text-on-surface'">
+<span class="material-symbols-outlined text-sm">calendar_month</span>
+<span>Cronograma Semanal</span>
+<span class="px-1.5 py-0.2 rounded-full text-[10px]" [ngClass]="activeTab() === 'tab-cronograma' ? 'bg-on-primary/20 text-on-primary' : 'bg-surface-container-high text-on-surface-variant'">6 sem</span>
+</button>
+<button type="button" id="btn-tab-directorio" (click)="setTab('tab-directorio')" class="tab-button flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all shadow-sm cursor-pointer" [ngClass]="activeTab() === 'tab-directorio' ? 'bg-primary text-on-primary' : 'bg-surface-container-lowest text-on-surface-variant hover:bg-surface-container hover:text-on-surface'">
+<span class="material-symbols-outlined text-sm">engineering</span>
+<span>Directorio de Residentes &amp; Comunicación</span>
+<span class="px-1.5 py-0.2 rounded-full text-[10px]" [ngClass]="activeTab() === 'tab-directorio' ? 'bg-on-primary/20 text-on-primary' : 'bg-surface-container-high text-on-surface-variant'">4</span>
+</button>
+<button type="button" id="btn-tab-planos" (click)="setTab('tab-planos')" class="tab-button flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all shadow-sm cursor-pointer" [ngClass]="activeTab() === 'tab-planos' ? 'bg-primary text-on-primary' : 'bg-surface-container-lowest text-on-surface-variant hover:bg-surface-container hover:text-on-surface'">
+<span class="material-symbols-outlined text-sm">architecture</span>
+<span>Planos de Obra (CAD/BIM/PDF)</span>
+<span class="px-1.5 py-0.2 rounded-full text-[10px]" [ngClass]="activeTab() === 'tab-planos' ? 'bg-on-primary/20 text-on-primary' : 'bg-surface-container-high text-on-surface-variant'">8</span>
+</button>
+<button type="button" id="btn-tab-documentos" (click)="setTab('tab-documentos')" class="tab-button flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all shadow-sm cursor-pointer" [ngClass]="activeTab() === 'tab-documentos' ? 'bg-primary text-on-primary' : 'bg-surface-container-lowest text-on-surface-variant hover:bg-surface-container hover:text-on-surface'">
+<span class="material-symbols-outlined text-sm">folder_managed</span>
+<span>Documentos Técnicos &amp; Actas</span>
+<span class="px-1.5 py-0.2 rounded-full text-[10px]" [ngClass]="activeTab() === 'tab-documentos' ? 'bg-on-primary/20 text-on-primary' : 'bg-surface-container-high text-on-surface-variant'">12</span>
+</button>
+<button type="button" id="btn-tab-incidencias" (click)="setTab('tab-incidencias')" class="tab-button flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all shadow-sm cursor-pointer" [ngClass]="activeTab() === 'tab-incidencias' ? 'bg-primary text-on-primary' : 'bg-surface-container-lowest text-on-surface-variant hover:bg-surface-container hover:text-on-surface'">
+<span class="material-symbols-outlined text-sm">assignment_late</span>
+<span>Bitácora &amp; Incidencias Activas</span>
+<span class="px-1.5 py-0.2 rounded-full text-[10px] font-bold" [ngClass]="activeTab() === 'tab-incidencias' ? 'bg-on-primary/20 text-on-primary' : 'bg-error-container text-on-error-container'">2 Pend</span>
+</button>
+</div>
+<!-- TAB 1: CRONOGRAMA SEMANAL (Default view in Left Column) -->
+<div class="tab-content flex-col gap-3" [class.flex]="activeTab() === 'tab-cronograma'" [class.hidden]="activeTab() !== 'tab-cronograma'" id="tab-cronograma">
+<!-- Toolbar & Summary Metrics Row -->
+<div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+<div class="p-3 bg-surface-container-lowest rounded-xl shadow-sm border border-surface-container">
+<div class="flex items-center justify-between">
+<span class="text-[10px] text-on-surface-variant uppercase font-medium tracking-wider">Duración Total</span>
+<span class="material-symbols-outlined text-primary text-base">date_range</span>
+</div>
+<div class="text-lg font-bold font-headline-xl text-on-surface mt-0.5">42 Días</div>
+<div class="text-[10px] text-on-surface-variant">Inicio: 18/09 · Fin: 30/10/2026</div>
+</div>
+<div class="p-3 bg-surface-container-lowest rounded-xl shadow-sm border border-surface-container">
+<div class="flex items-center justify-between">
+<span class="text-[10px] text-on-surface-variant uppercase font-medium tracking-wider">Avance Físico Global</span>
+<span class="material-symbols-outlined text-primary text-base">trending_up</span>
+</div>
+<div class="text-lg font-bold font-headline-xl text-primary mt-0.5">42.50%</div>
+<div class="text-[10px] text-primary font-medium">Programado a la fecha: 41.30%</div>
+</div>
+<div class="p-3 bg-surface-container-lowest rounded-xl shadow-sm border border-surface-container">
+<div class="flex items-center justify-between">
+<span class="text-[10px] text-on-surface-variant uppercase font-medium tracking-wider">Desviación de Plazo</span>
+<span class="material-symbols-outlined text-secondary text-base">timelapse</span>
+</div>
+<div class="text-lg font-bold font-headline-xl text-secondary mt-0.5">+1.2 Días</div>
+<div class="text-[10px] text-secondary font-medium">Dentro de holgura contractual</div>
+</div>
+<div class="p-3 bg-surface-container-lowest rounded-xl shadow-sm border border-surface-container flex flex-col justify-center">
+<button class="w-full py-2 px-3 rounded-lg bg-primary text-on-primary text-xs font-semibold shadow-sm hover:opacity-95 flex items-center justify-center gap-1.5 transition-all" (click)="abrirModalNuevaSemana()">
+<span class="material-symbols-outlined text-sm">add_task</span>
+<span>+ Programar Nueva Semana / Hito</span>
+</button>
+</div>
+</div>
+<!-- Tabla Semanal con Gantt visual embebido -->
+<div class="bg-surface-container-lowest rounded-xl shadow-sm border border-surface-container overflow-hidden">
+<div class="p-3 bg-surface-container-low flex flex-wrap items-center justify-between gap-2 border-b border-surface-container">
+<div class="flex items-center gap-2">
+<span class="font-bold text-xs text-on-surface">Programación Semanal Maestra (GLD-GANTT)</span>
+<span class="text-[11px] text-on-surface-variant">| Monitoreo de Metas por Frente de Trabajo</span>
+</div>
+<div class="flex items-center gap-2">
+<select class="text-xs bg-surface-container-lowest border border-surface-container rounded-lg px-2.5 py-1 text-on-surface focus:outline-none shadow-sm" id="filtroFase" onchange="filterFase(this.value)">
+<option value="todas">Todas las Fases (Preliminar, Arq, IIEE, Acabados)</option>
+<option value="preliminar">Fase 1: Obras Preliminares &amp; Demolición</option>
+<option value="arquitectura">Fase 2: Drywall &amp; Arquitectura</option>
+<option value="instalaciones">Fase 3: Instalaciones Sanitarias y Eléctricas</option>
+<option value="acabados">Fase 4: Acabados Finales &amp; Pruebas</option>
+</select>
+</div>
+</div>
+<div class="overflow-x-auto">
+<table class="w-full text-left border-collapse text-xs">
+<thead>
+<tr class="bg-surface-container-high/60 text-on-surface-variant font-semibold text-[11px] uppercase tracking-wider">
+<th class="py-2.5 px-3">Semana</th>
+<th class="py-2.5 px-2.5">Rango Fechas</th>
+<th class="py-2.5 px-3">Fase / Actividades Principales</th>
+<th class="py-2.5 px-2.5">Responsable</th>
+<th class="py-2.5 px-3 min-w-[150px]">Progreso (Prog. vs Real)</th>
+<th class="py-2.5 px-2.5">Estado</th>
+<th class="py-2.5 px-3 text-right">Acciones</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-surface-container" id="tabla-cronograma-body">
+@if (cockpit() && cockpit()!.cronograma.length > 0) {
+  @for (sem of cockpit()!.cronograma; track sem.id) {
+  <tr class="hover:bg-surface-container-low transition-colors">
+    <td class="py-2.5 px-3 font-mono font-bold" [ngClass]="sem.estado === 'En Plazo' || sem.estado === 'Completado' ? 'text-primary' : 'text-on-surface-variant'">
+      SEM {{ sem.numero_semana }}
+      @if (sem.estado === 'En Plazo') {
+        <span class="w-2 h-2 rounded-full bg-primary animate-ping inline-block ml-1"></span>
+      }
+    </td>
+    <td class="py-2.5 px-2.5 text-on-surface font-medium whitespace-nowrap">
+      {{ sem.fecha_inicio | date:'dd/MM' }} - {{ sem.fecha_fin | date:'dd/MM' }}
+    </td>
+    <td class="py-2.5 px-3">
+      <div class="font-semibold text-on-surface">{{ sem.etiqueta_semana }}</div>
+      <div class="text-[11px] text-on-surface-variant">{{ sem.fase_principal }}</div>
+    </td>
+    <td class="py-2.5 px-2.5 whitespace-nowrap">
+      <span class="inline-flex items-center gap-1 font-medium text-on-surface text-[11px]">
+        <span class="material-symbols-outlined text-xs text-primary">person</span> {{ sem.responsable_nombre ?? '—' }}
+      </span>
+    </td>
+    <td class="py-2.5 px-3">
+      <div class="flex items-center justify-between text-[10px] mb-0.5">
+        <span class="font-bold text-on-surface">{{ sem.porcentaje_real }}%</span>
+        <span class="text-on-surface-variant">Meta: {{ sem.porcentaje_meta }}%</span>
+      </div>
+      <div class="w-full bg-surface-container-high h-1.5 rounded-full overflow-hidden">
+        <div class="bg-primary h-full rounded-full" [style.width]="sem.porcentaje_real + '%'"></div>
+      </div>
+    </td>
+    <td class="py-2.5 px-2.5">
+      <span class="px-2 py-0.5 rounded-md text-[10px] font-bold" [ngClass]="{
+        'bg-primary-fixed text-on-primary-fixed-variant': sem.estado === 'Completado',
+        'bg-primary/15 text-primary': sem.estado === 'En Plazo',
+        'bg-error-container text-on-error-container': sem.estado === 'Retrasado',
+        'bg-surface-container text-on-surface-variant': sem.estado === 'Programado'
+      }">{{ sem.estado }}</span>
+    </td>
+    <td class="py-2.5 px-3 text-right">
+      <div class="flex items-center justify-end gap-1">
+        <button class="p-1 rounded hover:bg-surface-container text-on-surface-variant" (click)="viewEvidence('SEM-0' + sem.numero_semana)" title="Ver Evidencia Fotográfica"><span class="material-symbols-outlined text-base">photo_library</span></button>
+        <button class="p-1 rounded hover:bg-surface-container text-on-surface-variant" (click)="editCronogramaRow('SEM-0' + sem.numero_semana)" title="Editar Semana"><span class="material-symbols-outlined text-base">edit</span></button>
+      </div>
+    </td>
+  </tr>
+  }
+} @else {
+  <tr>
+    <td colspan="7" class="py-8 text-center text-xs text-on-surface-variant">
+      <span class="material-symbols-outlined text-2xl block mb-2 opacity-40">calendar_month</span>
+      No hay semanas de cronograma registradas aún.
+    </td>
+  </tr>
+}
+</tbody>
+</table>
+</div>
+</div>
+</div>
+<!-- TAB 2: DIRECTORIO DE RESIDENTES & COMUNICACIÓN (When selected) -->
+<div class="tab-content flex-col gap-3" [class.flex]="activeTab() === 'tab-directorio'" [class.hidden]="activeTab() !== 'tab-directorio'" id="tab-directorio">
+<div class="flex flex-wrap items-center justify-between gap-4 bg-surface-container-lowest p-4 rounded-xl shadow-sm border border-surface-container">
+<div>
+<h2 class="font-bold text-sm text-on-surface">Comité Técnico y Residentes Asignados</h2>
+<p class="text-xs text-on-surface-variant">Canales directos de escalamiento y supervisión de campo de GLD Arquitectura en Obra Tambo VES.</p>
+</div>
+<div class="flex items-center gap-2">
+<button class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary text-on-primary text-xs font-semibold shadow-sm hover:opacity-95" (click)="openModal('modal-residente')">
+<span class="material-symbols-outlined text-sm">person_add</span>
+<span>+ Asignar Nuevo Residente / Contacto</span>
+</button>
+</div>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+@if (cockpit() && cockpit()!.residentes.length > 0) {
+  @for (res of cockpit()!.residentes; track res.id) {
+  <div class="rounded-xl bg-surface-container-lowest shadow-sm border border-surface-container p-4 flex flex-col justify-between relative overflow-hidden">
+    <div class="absolute top-0 right-0 w-24 h-24 bg-primary/10 rounded-bl-full pointer-events-none"></div>
+    <div>
+      <div class="flex items-center justify-between mb-2">
+        <span class="px-2 py-0.5 rounded-full bg-primary-fixed text-on-primary-fixed-variant text-[10px] font-extrabold uppercase tracking-wide">{{ res.rol_obra }}</span>
+        <span class="flex items-center gap-1 text-[10px] font-bold" [ngClass]="res.estado_planta === 'En Planta' ? 'text-primary' : 'text-on-surface-variant'">
+          <span class="w-1.5 h-1.5 rounded-full" [ngClass]="res.estado_planta === 'En Planta' ? 'bg-primary' : 'bg-outline'"></span>
+          {{ res.estado_planta }}
+        </span>
+      </div>
+      <div class="flex items-center gap-3 mb-3">
+        @if (res.foto_url) {
+          <img class="w-12 h-12 rounded-full object-cover shadow-sm" [src]="res.foto_url" [alt]="res.nombre_completo" />
+        } @else {
+          <div class="w-12 h-12 rounded-full bg-surface-container-high flex items-center justify-center text-on-surface-variant text-lg font-bold shadow-sm">
+            {{ res.nombre_completo.charAt(0) }}
+          </div>
+        }
+        <div>
+          <h3 class="font-bold text-xs text-on-surface leading-tight">{{ res.nombre_completo }}</h3>
+          @if (res.cip_cap) {
+            <span class="text-[10px] font-mono text-on-surface-variant block">{{ res.cip_cap }}</span>
+          }
+          @if (res.especialidad) {
+            <span class="text-[11px] text-primary font-medium">{{ res.especialidad }}</span>
+          }
+        </div>
+      </div>
+      <div class="space-y-1.5 text-xs text-on-surface-variant mb-4">
+        @if (res.turno) {
+          <div class="flex items-center gap-1.5">
+            <span class="material-symbols-outlined text-xs text-outline">schedule</span>
+            <span>Turno: {{ res.turno }}</span>
+          </div>
+        }
+        @if (res.correo) {
+          <div class="flex items-center gap-1.5">
+            <span class="material-symbols-outlined text-xs text-outline">mail</span>
+            <span class="truncate">{{ res.correo }}</span>
+          </div>
+        }
+        @if (res.telefono) {
+          <div class="flex items-center gap-1.5">
+            <span class="material-symbols-outlined text-xs text-outline">phone</span>
+            <span>{{ res.telefono }}</span>
+          </div>
+        }
+      </div>
+    </div>
+    <div class="flex items-center gap-2 pt-3 border-t border-surface-container/60">
+      @if (res.whatsapp_url) {
+        <a [href]="res.whatsapp_url" target="_blank" class="flex-1 inline-flex items-center justify-center gap-1.5 py-1.5 rounded-lg bg-[#25D366]/10 text-[#128C7E] text-[11px] font-bold hover:bg-[#25D366]/20 transition-colors">
+          <span class="material-symbols-outlined text-sm">chat</span>
+          <span>WhatsApp</span>
+        </a>
+      }
+      @if (res.correo) {
+        <a [href]="'mailto:' + res.correo" class="flex-1 inline-flex items-center justify-center gap-1.5 py-1.5 rounded-lg border border-surface-container text-on-surface text-[11px] font-semibold hover:bg-surface-container transition-colors">
+          <span class="material-symbols-outlined text-sm">mail</span>
+          <span>Correo</span>
+        </a>
+      }
+      <button class="p-1.5 rounded-lg border border-surface-container text-on-surface-variant hover:bg-surface-container transition-colors" (click)="editResidente(res.nombre_completo)" title="Ver ficha">
+        <span class="material-symbols-outlined text-sm">person</span>
+      </button>
+    </div>
+  </div>
+  }
+} @else {
+  <div class="col-span-2 py-8 text-center text-xs text-on-surface-variant">
+    <span class="material-symbols-outlined text-2xl block mb-2 opacity-40">group</span>
+    No hay residentes asignados a esta obra aún.
+  </div>
+}
+</div>
+</div>
+
+<!-- TAB 3: PLANOS DE OBRA (When selected) -->
+<div class="tab-content flex-col gap-3" [class.flex]="activeTab() === 'tab-planos'" [class.hidden]="activeTab() !== 'tab-planos'" id="tab-planos">
+<div class="flex flex-wrap items-center justify-between gap-2 bg-surface-container-lowest p-3 rounded-xl shadow-sm border border-surface-container">
+<div class="flex items-center gap-2 flex-1 max-w-md">
+<div class="relative w-full">
+<span class="material-symbols-outlined absolute left-3 top-2 text-on-surface-variant text-base">search</span>
+<input class="w-full pl-9 pr-3 py-1.5 rounded-lg bg-surface-container text-xs text-on-surface placeholder:text-on-surface-variant/60 focus:outline-none focus:bg-surface-container-high" id="filtroPlanosInput" onkeyup="filterPlanosTable()" placeholder="Buscar por código (ej. ARQ-01), disciplina o nombre..." type="text"/>
+</div>
+</div>
+<div class="flex items-center gap-2">
+<select class="text-xs bg-surface-container border-0 rounded-lg px-3 py-1.5 text-on-surface focus:outline-none" id="disciplinaSelect" onchange="filterPlanosDisciplina(this.value)">
+<option value="todas">Todas las Disciplinas</option>
+<option value="ARQ">Arquitectura (ARQ)</option>
+<option value="EST">Estructuras (EST)</option>
+<option value="ELEC">Instalaciones Eléctricas (IE)</option>
+<option value="SAN">Instalaciones Sanitarias (IS)</option>
+<option value="HVAC">Climatización / HVAC</option>
+</select>
+<button class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary text-on-primary text-xs font-semibold shadow-sm hover:opacity-95 transition-all" (click)="openModal('modal-plano')">
+<span class="material-symbols-outlined text-sm">cloud_upload</span>
+<span>+ Subir Nuevo Plano (CAD/PDF)</span>
+</button>
+</div>
+</div>
+<div class="bg-surface-container-lowest rounded-xl shadow-sm border border-surface-container overflow-hidden">
+<div class="overflow-x-auto">
+<table class="w-full text-left border-collapse text-xs" id="planosTable">
+<thead>
+<tr class="bg-surface-container-high/60 text-on-surface-variant font-semibold text-[11px] uppercase tracking-wider">
+<th class="py-2.5 px-3">Código</th>
+<th class="py-2.5 px-3">Nombre del Plano &amp; Especialidad</th>
+<th class="py-2.5 px-2">Versión</th>
+<th class="py-2.5 px-2">Estado Aprobación</th>
+<th class="py-2.5 px-2">Fecha Visto Bueno</th>
+<th class="py-2.5 px-2">Formato / Peso</th>
+<th class="py-2.5 px-2">Emitido Por</th>
+<th class="py-2.5 px-3 text-right">Acciones</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-surface-container">
+@if (cockpit() && cockpit()!.planos.length > 0) {
+  @for (plano of cockpit()!.planos; track plano.id) {
+  <tr class="hover:bg-surface-container-low transition-colors">
+    <td class="py-2.5 px-3 font-mono font-bold text-primary">{{ plano.codigo_plano }}</td>
+    <td class="py-2.5 px-3">
+      <div class="font-semibold text-on-surface">{{ plano.nombre_plano }}</div>
+      <span class="text-[10px] text-on-surface-variant">{{ plano.disciplina }}</span>
+    </td>
+    <td class="py-2.5 px-2"><span class="font-mono px-2 py-0.5 rounded bg-surface-container font-semibold">{{ plano.version }}</span></td>
+    <td class="py-2.5 px-2">
+      <span class="px-2 py-0.5 rounded-md text-[11px] font-bold" [ngClass]="{
+        'bg-primary-fixed text-on-primary-fixed-variant': plano.estado_aprobacion === 'Aprobado Obra',
+        'bg-secondary-container text-on-secondary-container': plano.estado_aprobacion === 'En Revisión',
+        'bg-error-container text-on-error-container': plano.estado_aprobacion === 'Observado',
+        'bg-surface-container text-on-surface-variant': !plano.estado_aprobacion
+      }">{{ plano.estado_aprobacion ?? '—' }}</span>
+    </td>
+    <td class="py-2.5 px-2 font-mono text-[11px]">{{ plano.formato_peso ?? '—' }}</td>
+    <td class="py-2.5 px-2 text-on-surface-variant">{{ plano.emitido_por ?? '—' }}</td>
+    <td class="py-2.5 px-3 text-right">
+      <div class="flex items-center justify-end gap-1">
+        <button class="p-1 rounded hover:bg-surface-container text-primary" (click)="previewPlano(plano.codigo_plano, plano.nombre_plano)" title="Ver Plano"><span class="material-symbols-outlined text-base">visibility</span></button>
+        <button class="p-1 rounded hover:bg-surface-container text-on-surface-variant" (click)="downloadPlano(plano.codigo_plano + '.pdf')" title="Descargar"><span class="material-symbols-outlined text-base">download</span></button>
+        <button class="p-1 rounded hover:bg-surface-container text-secondary" (click)="openReplaceModal(plano.codigo_plano)" title="Subir Nueva Versión"><span class="material-symbols-outlined text-base">upgrade</span></button>
+      </div>
+    </td>
+  </tr>
+  }
+} @else {
+  <tr>
+    <td colspan="7" class="py-8 text-center text-xs text-on-surface-variant">
+      <span class="material-symbols-outlined text-2xl block mb-2 opacity-40">architecture</span>
+      No hay planos registrados para esta obra aún.
+    </td>
+  </tr>
+}
+</tbody>
+</table>
+</div>
+</div>
+</div>
+<!-- TAB 4: DOCUMENTOS TÉCNICOS & ACTAS (When selected) -->
+<div class="tab-content flex-col gap-3" [class.flex]="activeTab() === 'tab-documentos'" [class.hidden]="activeTab() !== 'tab-documentos'" id="tab-documentos">
+<div class="flex flex-wrap items-center justify-between gap-2 bg-surface-container-lowest p-3 rounded-xl shadow-sm border border-surface-container">
+<div>
+<h2 class="font-bold text-sm text-on-surface">Gestión Documental Contractual &amp; SST</h2>
+<p class="text-xs text-on-surface-variant">Actas, licencias municipales, pólizas CAR y certificados de homologación de materiales.</p>
+</div>
+<button class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary text-on-primary text-xs font-semibold shadow-sm hover:opacity-95 transition-all" (click)="openModal('modal-documento')">
+<span class="material-symbols-outlined text-sm">post_add</span>
+<span>+ Anexar Documento Técnico / Acta</span>
+</button>
+</div>
+<div class="bg-surface-container-lowest rounded-xl shadow-sm border border-surface-container overflow-hidden">
+<div class="overflow-x-auto">
+<table class="w-full text-left border-collapse text-xs">
+<thead>
+<tr class="bg-surface-container-high/60 text-on-surface-variant font-semibold text-[11px] uppercase tracking-wider">
+<th class="py-2.5 px-3">Documento / Título</th>
+<th class="py-2.5 px-2">Categoría</th>
+<th class="py-2.5 px-2">Folio / N° Registro</th>
+<th class="py-2.5 px-2">Fecha Emisión</th>
+<th class="py-2.5 px-2">Vigencia / Vencimiento</th>
+<th class="py-2.5 px-2">Estado</th>
+<th class="py-2.5 px-3 text-right">Acciones</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-surface-container">
+<tr class="hover:bg-surface-container-low transition-colors">
+<td class="py-2.5 px-3">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary text-lg">verified_user</span>
+<div>
+<strong class="text-on-surface block">Acta de Entrega de Terreno / Local Comercial</strong>
+<span class="text-[10px] text-on-surface-variant">Firmado en conjunto con Operaciones TIENDAS TAMBO S.A.C.</span>
+</div>
+</div>
+</td>
+<td class="py-2.5 px-2"><span class="px-2 py-0.5 rounded bg-surface-container text-on-surface font-medium">Legal / Obra</span></td>
+<td class="py-2.5 px-2 font-mono font-medium text-on-surface">ACT-VES-001</td>
+<td class="py-2.5 px-2 text-on-surface">18/09/2026</td>
+<td class="py-2.5 px-2 text-on-surface font-semibold text-primary">Permanente</td>
+<td class="py-2.5 px-2"><span class="px-2 py-0.5 rounded bg-primary-fixed text-on-primary-fixed-variant text-[11px] font-bold">Validado</span></td>
+<td class="py-2.5 px-3 text-right">
+<div class="flex items-center justify-end gap-1">
+<button class="p-1 rounded hover:bg-surface-container text-on-surface-variant" title="Descargar PDF"><span class="material-symbols-outlined text-base">download</span></button>
+<button class="p-1 rounded hover:bg-surface-container text-primary" (click)="verDetalleDocumento('ACT-VES-001')" (click)="verDetalleDocumento()" title="Detalle"><span class="material-symbols-outlined text-base">info</span></button>
+</div>
+</td>
+</tr>
+<tr class="hover:bg-surface-container-low transition-colors">
+<td class="py-2.5 px-3">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary text-lg">shield</span>
+<div>
+<strong class="text-on-surface block">Póliza Todo Riesgo Construcción (CAR) - Rimac</strong>
+<span class="text-[10px] text-on-surface-variant">Cobertura a terceros, predio e inventario en tránsito</span>
+</div>
+</div>
+</td>
+<td class="py-2.5 px-2"><span class="px-2 py-0.5 rounded bg-surface-container text-on-surface font-medium">SST / Seguro</span></td>
+<td class="py-2.5 px-2 font-mono font-medium text-on-surface">POL-RIM-89021</td>
+<td class="py-2.5 px-2 text-on-surface">15/09/2026</td>
+<td class="py-2.5 px-2 text-on-surface font-semibold">15/11/2026</td>
+<td class="py-2.5 px-2"><span class="px-2 py-0.5 rounded bg-primary-fixed text-on-primary-fixed-variant text-[11px] font-bold">Vigente</span></td>
+<td class="py-2.5 px-3 text-right">
+<div class="flex items-center justify-end gap-1">
+<button class="p-1 rounded hover:bg-surface-container text-on-surface-variant" title="Descargar PDF"><span class="material-symbols-outlined text-base">download</span></button>
+<button class="p-1 rounded hover:bg-surface-container text-on-surface-variant" (click)="verDetalleDocumento()" title="Detalle"><span class="material-symbols-outlined text-base">info</span></button>
+</div>
+</td>
+</tr>
+<tr class="hover:bg-surface-container-low transition-colors">
+<td class="py-2.5 px-3">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-secondary text-lg">description</span>
+<div>
+<strong class="text-on-surface block">Licencia de Edificación / Remodelación Tipo B (Muni VES)</strong>
+<span class="text-[10px] text-on-surface-variant">Resolución de Subgerencia de Obras Privadas</span>
+</div>
+</div>
+</td>
+<td class="py-2.5 px-2"><span class="px-2 py-0.5 rounded bg-surface-container text-on-surface font-medium">Municipal</span></td>
+<td class="py-2.5 px-2 font-mono font-medium text-on-surface">LIC-2026-0814-VES</td>
+<td class="py-2.5 px-2 text-on-surface">10/09/2026</td>
+<td class="py-2.5 px-2 text-on-surface font-semibold">10/09/2027</td>
+<td class="py-2.5 px-2"><span class="px-2 py-0.5 rounded bg-primary-fixed text-on-primary-fixed-variant text-[11px] font-bold">Conforme</span></td>
+<td class="py-2.5 px-3 text-right">
+<div class="flex items-center justify-end gap-1">
+<button class="p-1 rounded hover:bg-surface-container text-on-surface-variant" title="Descargar PDF"><span class="material-symbols-outlined text-base">download</span></button>
+<button class="p-1 rounded hover:bg-surface-container text-on-surface-variant" (click)="verDetalleDocumento()" title="Detalle"><span class="material-symbols-outlined text-base">info</span></button>
+</div>
+</td>
+</tr>
+<tr class="hover:bg-surface-container-low transition-colors">
+<td class="py-2.5 px-3">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary text-lg">menu_book</span>
+<div>
+<strong class="text-on-surface block">Cuaderno de Obra Digital GLD - Tomo I</strong>
+<span class="text-[10px] text-on-surface-variant">Asientos diarios del 01 al 24 debidamente visados</span>
+</div>
+</div>
+</td>
+<td class="py-2.5 px-2"><span class="px-2 py-0.5 rounded bg-surface-container text-on-surface font-medium">Bitácora</span></td>
+<td class="py-2.5 px-2 font-mono font-medium text-on-surface">LIB-DIG-948-T1</td>
+<td class="py-2.5 px-2 text-on-surface">18/09/2026</td>
+<td class="py-2.5 px-2 text-on-surface">En curso</td>
+<td class="py-2.5 px-2"><span class="px-2 py-0.5 rounded bg-secondary-fixed text-on-secondary-fixed-variant text-[11px] font-bold">Activo Diariamente</span></td>
+<td class="py-2.5 px-3 text-right">
+<div class="flex items-center justify-end gap-1">
+<button class="p-1 rounded hover:bg-surface-container text-on-surface-variant" title="Descargar PDF"><span class="material-symbols-outlined text-base">download</span></button>
+<button class="p-1 rounded hover:bg-surface-container text-on-surface-variant" (click)="verDetalleDocumento()" title="Detalle"><span class="material-symbols-outlined text-base">info</span></button>
+</div>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+<!-- TAB 5: BITÁCORA & INCIDENCIAS ACTIVAS (When selected) -->
+<div class="tab-content flex-col gap-3" [class.flex]="activeTab() === 'tab-incidencias'" [class.hidden]="activeTab() !== 'tab-incidencias'" id="tab-incidencias">
+<div class="flex flex-wrap items-center justify-between gap-4 bg-surface-container-lowest p-3 rounded-xl shadow-sm border border-surface-container">
+<div>
+<h2 class="font-bold text-sm text-on-surface">Control de Incidencias Técnicas &amp; RFI de Obra</h2>
+<p class="text-xs text-on-surface-variant">Consultas a proyectistas, interferencias y requerimientos de materiales con resolución inmediata.</p>
+</div>
+<button class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-error text-on-error text-xs font-semibold shadow-sm hover:opacity-95 transition-all" (click)="openModal('modal-incidencia')">
+<span class="material-symbols-outlined text-sm">warning</span>
+<span>+ Reportar Nueva Incidencia en Obra</span>
+</button>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+<!-- Incidencia 1 -->
+<div class="bg-surface-container-lowest rounded-xl shadow-sm border border-surface-container p-3 flex flex-col justify-between">
+<div>
+<div class="flex items-center justify-between mb-1.5">
+<span class="px-2 py-0.5 rounded bg-error-container text-on-error-container font-mono text-[10px] font-bold">INC-948-004 · ALTA PRIORIDAD</span>
+<span class="text-[10px] text-on-surface-variant">03/10/2026 - 11:20 AM</span>
+</div>
+<h3 class="font-bold text-xs text-on-surface mb-1">Interferencia en Pase de Ducto de Clima con Viga Principal</h3>
+<p class="text-[11px] text-on-surface-variant mb-2.5">Se detectó que la altura de montante según plano HVAC-01 colisiona con el peralte de viga de concreto preexistente en eje 3-B. Se solicitó rediseño con curvatura metálica de 45°.</p>
+<div class="p-2 rounded-lg bg-surface-container text-[11px] text-on-surface-variant space-y-0.5">
+<div><strong>Responsable:</strong> Ing. Marcos Quispe (Instalaciones)</div>
+<div><strong>Acción solicitada:</strong> Visto Bueno del Proyectista Tambo para desvío de ducto.</div>
+</div>
+</div>
+<div class="mt-3 pt-2 flex items-center justify-between border-t border-surface-container/60">
+<span class="text-[10px] text-secondary font-bold">⏳ Plazo resolución: 24 Horas</span>
+<div class="flex gap-1.5">
+<button class="px-2 py-0.5 rounded bg-surface-container-high text-on-surface text-[11px] font-semibold hover:bg-surface-container-highest">Ver Fotos</button>
+<button class="px-2 py-0.5 rounded bg-primary text-on-primary text-[11px] font-semibold hover:opacity-90" (click)="showAlert('Marcando resuelta...')">Resolver</button>
+</div>
+</div>
+</div>
+<!-- Incidencia 2 -->
+<div class="bg-surface-container-lowest rounded-xl shadow-sm border border-surface-container p-3 flex flex-col justify-between">
+<div>
+<div class="flex items-center justify-between mb-1.5">
+<span class="px-2 py-0.5 rounded bg-secondary-container text-on-secondary-container font-mono text-[10px] font-bold">INC-948-003 · MEDIA PRIORIDAD</span>
+<span class="text-[10px] text-on-surface-variant">01/10/2026 - 16:45 PM</span>
+</div>
+<h3 class="font-bold text-xs text-on-surface mb-1">Demora en Suministro de Tableros Eléctricos Normados</h3>
+<p class="text-[11px] text-on-surface-variant mb-2.5">Proveedor informa entrega reprogramada para el lunes temprano. No afecta ruta crítica porque se avanza simultáneamente con el entubado y cableado.</p>
+<div class="p-2 rounded-lg bg-surface-container text-[11px] text-on-surface-variant space-y-0.5">
+<div><strong>Responsable:</strong> Ing. Carlos Mendoza (Jefatura)</div>
+<div><strong>Acción ejecutada:</strong> Coordinación con logística GLD para despacho expedito.</div>
+</div>
+</div>
+<div class="mt-3 pt-2 flex items-center justify-between border-t border-surface-container/60">
+<span class="text-[10px] text-primary font-bold">✓ Monitoreado en Cronograma</span>
+<div class="flex gap-1.5">
+<button type="button" class="px-2 py-0.5 rounded bg-surface-container-high text-on-surface text-[11px] font-semibold hover:bg-surface-container-highest cursor-pointer transition-colors" (click)="verAsientoBitacora(14)">Ver Bitácora</button>
+<button class="px-2 py-0.5 rounded bg-primary text-on-primary text-[11px] font-semibold hover:opacity-90" (click)="showAlert('Marcando resuelta...')">Resolver</button>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- ==================== RIGHT AUXILIARY PANEL (35% width / 4 cols) ==================== -->
+<div class="xl:col-span-4 flex flex-col gap-3">
+<!-- Card A: Residentes & Supervisores de Contacto Rápido -->
+<div class="bg-surface-container-lowest rounded-xl shadow-sm border border-surface-container p-3 flex flex-col">
+<div class="flex items-center justify-between mb-2.5 pb-2 border-b border-surface-container">
+<div class="flex items-center gap-1.5">
+<span class="material-symbols-outlined text-primary text-base">engineering</span>
+<h2 class="font-bold text-xs text-on-surface">Residentes &amp; Supervisores de Contacto Rápido</h2>
+</div>
+<button class="text-[10px] text-primary font-semibold hover:underline" (click)="setTab('tab-directorio')">Ver todos (4)</button>
+</div>
+<div class="space-y-2">
+<!-- 1. Ing. Carlos Mendoza -->
+<div class="p-2 rounded-lg bg-surface-container-low border border-surface-container/70 flex flex-col gap-1.5">
+<div class="flex items-center justify-between">
+<span class="px-1.5 py-0.2 rounded bg-primary-fixed text-on-primary-fixed-variant text-[9px] font-extrabold uppercase tracking-wide">Jefe de Obra General</span>
+<span class="flex items-center gap-1 text-[9px] text-primary font-bold"><span class="w-1.5 h-1.5 rounded-full bg-primary"></span> En Planta</span>
+</div>
+<div class="flex items-center gap-2.5">
+<img class="w-9 h-9 rounded-full object-cover shadow-sm shrink-0" data-alt="Corporate headshot of a senior Peruvian male civil engineer wearing a white hardhat and professional dark safety vest on a construction site, confident expression, architectural lighting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCFdGLCvTBVqL9nG7XznPsUAx7TmKoLvOnwntttD54Qf4X0rGyYgWH91dqTLoV-U2jRYmj5jtMq0-BLJz2kLyITZe3a3lu3JxHQc2petuRTm8z-E0atW7zxUElQRVQbNUVtYqr6x4HLBZQWsxVCttDbo0FxGTRIMA2p0FsZtn8dO8bDEzbmWsra2A4mnO1iJd-KdzfoKtJ-2S-XN4o4V9opRuREvRaX06Imkg1a6PO_diWrYfHnXW3ToQ"/>
+<div class="flex-1 min-w-0">
+<h3 class="font-bold text-xs text-on-surface truncate leading-tight">Ing. Carlos Mendoza P.</h3>
+<div class="text-[10px] text-on-surface-variant truncate">CIP: 142859 · Supervisión &amp; Calidad GLD</div>
+</div>
+</div>
+<div class="grid grid-cols-2 gap-1.5 pt-0.5">
+<a class="inline-flex items-center justify-center gap-1 py-1 px-2 rounded-lg bg-surface-container-high hover:bg-surface-container-highest text-[10px] font-semibold text-on-surface transition-colors" href="https://wa.me/51987654321?text=Hola%20Ing.%20Mendoza,%20comunicación%20desde%20SistemaGLD%20Obra%20CC948" target="_blank">
+<span class="material-symbols-outlined text-xs text-primary">chat</span> WhatsApp
+            </a>
+<a class="inline-flex items-center justify-center gap-1 py-1 px-2 rounded-lg bg-surface-container-high hover:bg-surface-container-highest text-[10px] font-semibold text-on-surface transition-colors" href="tel:+51987654321">
+<span class="material-symbols-outlined text-xs text-secondary">call</span> Llamar
+            </a>
+</div>
+</div>
+<!-- 2. Arq. Lucía Fernández -->
+<div class="p-2 rounded-lg bg-surface-container-low border border-surface-container/70 flex flex-col gap-1.5">
+<div class="flex items-center justify-between">
+<span class="px-1.5 py-0.2 rounded bg-surface-container-high text-on-surface-variant text-[9px] font-bold uppercase tracking-wide">Residente Acabados</span>
+<span class="flex items-center gap-1 text-[9px] text-primary font-bold"><span class="w-1.5 h-1.5 rounded-full bg-primary"></span> En Planta</span>
+</div>
+<div class="flex items-center gap-2.5">
+<img class="w-9 h-9 rounded-full object-cover shadow-sm shrink-0" data-alt="Portrait of a female architect inspecting blueprints on a tablet inside a retail store remodeling site, professional attire, soft daylight, high contrast" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAnvBZ0vtIoaMLoWuXNJeGjCO6Y2okfr8rBX-Wv_lT6TZkX-6fD-S6UnxlfRFRU5OnnWpzEmucLAEDFQ1Qj8H1DFTokIpOHddtGdVcIRNMjhAmX1qYM5J2_KKviCInxtEuS9CNKM-g76c7Pt1BdACpywKXQ4Xxsewp5LsgHRlqfMIAF_QCZ4nmxHadU0K20TjfoQ4T_XGqv9irPIfhwgOiqbWkgVaVFgWJUjBTkKTFtI5leQn4yzUP6ug"/>
+<div class="flex-1 min-w-0">
+<h3 class="font-bold text-xs text-on-surface truncate leading-tight">Arq. Lucía Fernández R.</h3>
+<div class="text-[10px] text-on-surface-variant truncate">CAP: 9821 · Drywall, Pisos &amp; Rótulos</div>
+</div>
+</div>
+<div class="grid grid-cols-2 gap-1.5 pt-0.5">
+<a class="inline-flex items-center justify-center gap-1 py-1 px-2 rounded-lg bg-surface-container-high hover:bg-surface-container-highest text-[10px] font-semibold text-on-surface transition-colors" href="https://wa.me/51945123789" target="_blank">
+<span class="material-symbols-outlined text-xs text-primary">chat</span> WhatsApp
+            </a>
+<a class="inline-flex items-center justify-center gap-1 py-1 px-2 rounded-lg bg-surface-container-high hover:bg-surface-container-highest text-[10px] font-semibold text-on-surface transition-colors" href="tel:+51945123789">
+<span class="material-symbols-outlined text-xs text-secondary">call</span> Llamar
+            </a>
+</div>
+</div>
+<!-- 3. Ing. Marcos Quispe -->
+<div class="p-2 rounded-lg bg-surface-container-low border border-surface-container/70 flex flex-col gap-1.5">
+<div class="flex items-center justify-between">
+<span class="px-1.5 py-0.2 rounded bg-surface-container-high text-on-surface-variant text-[9px] font-bold uppercase tracking-wide">Residente IIEE / IISS</span>
+<span class="flex items-center gap-1 text-[9px] text-primary font-bold"><span class="w-1.5 h-1.5 rounded-full bg-primary"></span> En Planta</span>
+</div>
+<div class="flex items-center gap-2.5">
+<img class="w-9 h-9 rounded-full object-cover shadow-sm shrink-0" data-alt="Portrait of an electrical engineer holding a multimeter and inspecting an electrical industrial distribution panel, crisp detail, modern construction atmosphere" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDoiMOoFE6T6gI-AnwP6OMf2wl7mt52zO129bfXAe2S8oBSJ9I5TZmDXzRBadxJt2NjceTMe5fuaTrnNiOc4NFhEqtb-sWThkuVizprj7drnSPZiAfIeAv71PFHB97g4T4TAUKTuE2wcloCFLeIAGsRPNPCxfHJUDjg-5YFtON1Y0EuMA-raZFvP720GbjAKDsa-PPFZXznTgjNcC1t0bkTWcEl2t59EiLKtwGHF2tIbKgCX9wptSVnBg"/>
+<div class="flex-1 min-w-0">
+<h3 class="font-bold text-xs text-on-surface truncate leading-tight">Ing. Marcos Quispe T.</h3>
+<div class="text-[10px] text-on-surface-variant truncate">CIP: 189201 · Tableros TG, Clima, Pozo</div>
+</div>
+</div>
+<div class="grid grid-cols-2 gap-1.5 pt-0.5">
+<a class="inline-flex items-center justify-center gap-1 py-1 px-2 rounded-lg bg-surface-container-high hover:bg-surface-container-highest text-[10px] font-semibold text-on-surface transition-colors" href="https://wa.me/51956789012" target="_blank">
+<span class="material-symbols-outlined text-xs text-primary">chat</span> WhatsApp
+            </a>
+<a class="inline-flex items-center justify-center gap-1 py-1 px-2 rounded-lg bg-surface-container-high hover:bg-surface-container-highest text-[10px] font-semibold text-on-surface transition-colors" href="tel:+51956789012">
+<span class="material-symbols-outlined text-xs text-secondary">call</span> Llamar
+            </a>
+</div>
+</div>
+</div>
+</div>
+<!-- Card B: Quick Document Access preview (Planos & Actas recientes) -->
+<div class="bg-surface-container-lowest rounded-xl shadow-sm border border-surface-container p-3 flex flex-col">
+<div class="flex items-center justify-between mb-2.5 pb-2 border-b border-surface-container">
+<div class="flex items-center gap-1.5">
+<span class="material-symbols-outlined text-primary text-base">folder_open</span>
+<h2 class="font-bold text-xs text-on-surface">Acceso Rápido: Planos &amp; Actas</h2>
+</div>
+<button class="text-[10px] text-primary font-semibold hover:underline" (click)="setTab('tab-documentos')">Ver Repositorio</button>
+</div>
+<!-- Quick Plans List -->
+<div class="space-y-1.5">
+<div class="flex items-center justify-between p-2 rounded-lg bg-surface-container-low hover:bg-surface-container transition-colors">
+<div class="flex items-center gap-2 min-w-0">
+<span class="font-mono text-[10px] font-bold text-primary bg-primary/10 px-1.5 py-0.5 rounded">ARQ-01</span>
+<div class="min-w-0">
+<div class="text-[11px] font-semibold text-on-surface truncate">Distribución Arquitectónica General &amp; Circulaciones</div>
+<div class="text-[9px] text-on-surface-variant font-mono">v2.1 · PDF (8.4 MB) · Aprobado Obra</div>
+</div>
+</div>
+<button class="p-1 rounded hover:bg-surface-container-high text-primary" (click)="previewPlano('ARQ-01', 'Distribución Arquitectónica')" title="Ver Plano"><span class="material-symbols-outlined text-sm">visibility</span></button>
+</div>
+<div class="flex items-center justify-between p-2 rounded-lg bg-surface-container-low hover:bg-surface-container transition-colors">
+<div class="flex items-center gap-2 min-w-0">
+<span class="font-mono text-[10px] font-bold text-primary bg-primary/10 px-1.5 py-0.5 rounded">ELEC-02</span>
+<div class="min-w-0">
+<div class="text-[11px] font-semibold text-on-surface truncate">Diagrama Unifilar, Tablero General TG y Cargas</div>
+<div class="text-[9px] text-on-surface-variant font-mono">v1.3 · DWG + PDF (14.2 MB) · Aprobado Obra</div>
+</div>
+</div>
+<button class="p-1 rounded hover:bg-surface-container-high text-primary" (click)="previewPlano('ELEC-02', 'Diagrama Unifilar')" title="Ver Plano"><span class="material-symbols-outlined text-sm">visibility</span></button>
+</div>
+<div class="flex items-center justify-between p-2 rounded-lg bg-surface-container-low hover:bg-surface-container transition-colors">
+<div class="flex items-center gap-2 min-w-0">
+<span class="material-symbols-outlined text-primary text-base shrink-0">verified_user</span>
+<div class="min-w-0">
+<div class="text-[11px] font-semibold text-on-surface truncate">Acta de Entrega de Terreno / Local Comercial</div>
+<div class="text-[9px] text-on-surface-variant font-mono">ACT-VES-001 · 18/09/2026 · Validado</div>
+</div>
+</div>
+<button class="p-1 rounded hover:bg-surface-container-high text-on-surface-variant" title="Descargar PDF"><span class="material-symbols-outlined text-sm">download</span></button>
+</div>
+<div class="flex items-center justify-between p-2 rounded-lg bg-surface-container-low hover:bg-surface-container transition-colors">
+<div class="flex items-center gap-2 min-w-0">
+<span class="material-symbols-outlined text-primary text-base shrink-0">shield</span>
+<div class="min-w-0">
+<div class="text-[11px] font-semibold text-on-surface truncate">Póliza Todo Riesgo Construcción (CAR) - Rimac</div>
+<div class="text-[9px] text-on-surface-variant font-mono">POL-RIM-89021 · Vigencia: 15/11/2026 · Vigente</div>
+</div>
+</div>
+<button class="p-1 rounded hover:bg-surface-container-high text-on-surface-variant" title="Descargar PDF"><span class="material-symbols-outlined text-sm">download</span></button>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- =========================================================================
+     MODALES INTERACTIVOS DE CRONOGRAMA SEMANAL
+     ========================================================================= -->
+
+<!-- MODAL 1: PROGRAMAR NUEVA SEMANA / HITO -->
+@if (modalNuevaSemanaVisible()) {
+  <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-xs p-4" (click)="cerrarModales()">
+    <div class="bg-surface-container-lowest rounded-2xl shadow-2xl border border-surface-container w-full max-w-xl overflow-hidden animate-in fade-in zoom-in-95 duration-150" (click)="$event.stopPropagation()">
+      <!-- Header -->
+      <div class="flex items-center justify-between p-5 border-b border-surface-container bg-surface-container-low/40">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold">
+            <span class="material-symbols-outlined text-xl">add_task</span>
+          </div>
+          <div>
+            <h3 class="font-bold text-sm text-on-surface">+ Programar Nueva Semana / Hito de Obra</h3>
+            <p class="text-xs text-on-surface-variant">Proyecto: <span class="font-semibold text-on-surface">CC-948 Tambo Villa El Salvador</span> | Plazo maestro: <span class="text-primary font-semibold">42 Días Calendario</span></p>
+          </div>
+        </div>
+        <button type="button" class="p-1 rounded-lg hover:bg-surface-container text-on-surface-variant" (click)="cerrarModales()">
+          <span class="material-symbols-outlined text-lg">close</span>
+        </button>
+      </div>
+
+      <!-- Body -->
+      <div class="p-5 flex flex-col gap-4 text-xs">
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div>
+            <label class="block font-semibold text-on-surface mb-1">Semana / Correlativo</label>
+            <div class="flex items-center px-3 py-2 rounded-lg bg-surface-container-low border border-surface-container text-primary font-mono font-bold">
+              <span>{{ nuevaSemana.correlativo }}</span>
+            </div>
+            <span class="text-[10px] text-on-surface-variant mt-0.5 block">Siguiente correlativo maestro</span>
+          </div>
+          <div>
+            <label class="block font-semibold text-on-surface mb-1">Fecha de Inicio *</label>
+            <input type="date" [(ngModel)]="nuevaSemana.fechaInicio" class="w-full px-3 py-2 rounded-lg bg-surface-container-lowest border border-surface-container text-on-surface focus:outline-none focus:border-primary">
+          </div>
+          <div>
+            <label class="block font-semibold text-on-surface mb-1">Fecha de Fin *</label>
+            <input type="date" [(ngModel)]="nuevaSemana.fechaFin" class="w-full px-3 py-2 rounded-lg bg-surface-container-lowest border border-surface-container text-on-surface focus:outline-none focus:border-primary">
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div class="sm:col-span-2">
+            <label class="block font-semibold text-on-surface mb-1">Fase Principal / Frente de Trabajo *</label>
+            <select [(ngModel)]="nuevaSemana.fasePrincipal" class="w-full px-3 py-2 rounded-lg bg-surface-container-lowest border border-surface-container text-on-surface focus:outline-none focus:border-primary">
+              <option value="Obras Provisionales y Demolición Parcial">Obras Provisionales y Demolición Parcial</option>
+              <option value="Estructuración Metálica & Muros Drywall">Estructuración Metálica & Muros Drywall</option>
+              <option value="Instalaciones Sanitarias, Eléctricas TG y Climatización">Instalaciones Sanitarias, Eléctricas TG y Climatización</option>
+              <option value="Cielorraso, Enchapes Porcelanato y Pintura Látex">Cielorraso, Enchapes Porcelanato y Pintura Látex</option>
+              <option value="Muebles Comerciales, Góndolas y Equipamiento de Frío">Muebles Comerciales, Góndolas y Equipamiento de Frío</option>
+              <option value="Pruebas de Vacío & Entrega Final">Pruebas de Vacío & Entrega Final</option>
+            </select>
+          </div>
+          <div>
+            <label class="block font-semibold text-on-surface mb-1">Meta Ponderada (%) *</label>
+            <div class="flex items-center rounded-lg border border-surface-container overflow-hidden">
+              <input type="number" [(ngModel)]="nuevaSemana.metaPonderada" class="w-full px-3 py-2 bg-surface-container-lowest text-on-surface font-mono font-bold text-right focus:outline-none">
+              <span class="px-2 bg-surface-container text-on-surface-variant font-bold">%</span>
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <label class="block font-semibold text-on-surface mb-1">Nombre / Título del Hito *</label>
+          <div class="flex items-center gap-2 px-3 py-2 rounded-lg bg-surface-container-lowest border border-surface-container">
+            <span class="material-symbols-outlined text-sm text-outline">flag</span>
+            <input type="text" [(ngModel)]="nuevaSemana.nombreHito" class="w-full bg-transparent text-on-surface focus:outline-none" placeholder="Título del hito...">
+          </div>
+        </div>
+
+        <div>
+          <label class="block font-semibold text-on-surface mb-1">Responsable Técnico Asignado *</label>
+          <select [(ngModel)]="nuevaSemana.responsable" class="w-full px-3 py-2 rounded-lg bg-surface-container-lowest border border-surface-container text-on-surface focus:outline-none focus:border-primary">
+            <option value="Ing. Carlos Mendoza P. (Jefe de Obra)">Ing. Carlos Mendoza P. (Jefe de Obra)</option>
+            <option value="Arq. Lucía Fernández R. (Residente Acabados)">Arq. Lucía Fernández R. (Residente Acabados)</option>
+            <option value="Ing. Marcos Quispe T. (Residente IIEE / IISS)">Ing. Marcos Quispe T. (Residente IIEE / IISS)</option>
+            <option value="Bach. Diego Salazar (Supervisor SSOMA)">Bach. Diego Salazar (Supervisor SSOMA)</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block font-semibold text-on-surface mb-1">Detalle de Actividades y Tareas Críticas</label>
+          <textarea rows="3" [(ngModel)]="nuevaSemana.detalleActividades" class="w-full p-3 rounded-lg bg-surface-container-lowest border border-surface-container text-on-surface focus:outline-none focus:border-primary text-xs leading-relaxed" placeholder="Describa las actividades..."></textarea>
+        </div>
+      </div>
+
+      <!-- Footer -->
+      <div class="flex items-center justify-between p-4 px-5 border-t border-surface-container bg-surface-container-low/40">
+        <div class="flex items-center gap-1.5 text-xs text-primary font-medium">
+          <span class="material-symbols-outlined text-sm">check_circle</span>
+          <span>Se integrará a la Curva S y tabla Gantt</span>
+        </div>
+        <div class="flex items-center gap-2">
+          <button type="button" class="px-4 py-2 rounded-lg text-xs font-semibold text-on-surface-variant hover:bg-surface-container transition-colors" (click)="cerrarModales()">Cancelar</button>
+          <button type="button" class="px-4 py-2 rounded-lg bg-primary text-on-primary text-xs font-semibold hover:bg-primary/90 flex items-center gap-1.5 shadow-sm" (click)="guardarNuevaSemana()">
+            <span class="material-symbols-outlined text-sm">save</span>
+            <span>Guardar Nueva Semana</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- MODAL 2: VISOR DE EVIDENCIAS FOTOGRÁFICAS -->
+@if (modalEvidenciasVisible()) {
+  <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4" (click)="cerrarModales()">
+    <div class="bg-surface-container-lowest rounded-2xl shadow-2xl border border-surface-container w-full max-w-4xl overflow-hidden animate-in fade-in zoom-in-95 duration-150 flex flex-col max-h-[92vh]" (click)="$event.stopPropagation()">
+      <!-- Header -->
+      <div class="flex flex-wrap items-center justify-between gap-3 p-4 px-5 border-b border-surface-container bg-surface-container-low/30">
+        <div class="flex items-center gap-3">
+          <div class="w-9 h-9 rounded-xl bg-primary/10 text-primary flex items-center justify-center">
+            <span class="material-symbols-outlined text-lg">collections</span>
+          </div>
+          <div>
+            <div class="flex items-center gap-2">
+              <h3 class="font-bold text-sm text-on-surface">Evidencias Fotográficas — {{ evidenciaSemanaTitulo() }}</h3>
+              <span class="px-2 py-0.5 rounded-full bg-primary/10 text-primary text-[10px] font-bold">100% Concluido</span>
+              <span class="px-2 py-0.5 rounded-full bg-secondary-container text-on-secondary-container text-[10px] font-bold">Validado por SSOMA</span>
+            </div>
+            <p class="text-[11px] text-on-surface-variant mt-0.5">Obra: <span class="font-semibold text-on-surface">TAMBO VILLA EL SALVADOR (CC-948)</span> • Responsable: Arq. Lucía Fernández R. • <span class="text-primary font-semibold">6 Fotografías Registradas</span></p>
+          </div>
+        </div>
+        <div class="flex items-center gap-2">
+          <button type="button" class="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-primary text-on-primary text-xs font-semibold shadow-sm hover:bg-primary/90" (click)="showAlert('Abriendo selector de fotos para subir nueva evidencia...')">
+            <span class="material-symbols-outlined text-xs">add_photo_alternate</span>
+            <span>+ Subir Evidencia</span>
+          </button>
+          <button type="button" class="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-surface-container-lowest border border-surface-container text-on-surface text-xs font-semibold hover:bg-surface-container" (click)="showAlert('Descargando Dossier ZIP de fotos (28.4 MB)...')">
+            <span class="material-symbols-outlined text-xs">folder_zip</span>
+            <span>Dossier ZIP</span>
+          </button>
+          <button type="button" class="p-1 rounded-lg hover:bg-surface-container text-on-surface-variant ml-1" (click)="cerrarModales()">
+            <span class="material-symbols-outlined text-lg">close</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Filter Bar -->
+      <div class="flex items-center justify-between px-5 py-2.5 border-b border-surface-container text-xs bg-surface-container-lowest">
+        <div class="flex items-center gap-1.5">
+          <span class="text-[11px] font-bold uppercase tracking-wider text-on-surface-variant mr-1">Filtrar:</span>
+          <button type="button" (click)="filtrarFotosPorCategoria('Todas')" class="px-2.5 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer" [ngClass]="filtroEvidenciaCategoria() === 'Todas' ? 'bg-primary text-on-primary shadow-sm' : 'bg-surface-container-low text-on-surface-variant hover:bg-surface-container'">Todas (6)</button>
+          <button type="button" (click)="filtrarFotosPorCategoria('Estructura Metálica')" class="px-2.5 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer" [ngClass]="filtroEvidenciaCategoria() === 'Estructura Metálica' ? 'bg-primary text-on-primary shadow-sm' : 'bg-surface-container-low text-on-surface-variant hover:bg-surface-container'">Estructura Metálica (3)</button>
+          <button type="button" (click)="filtrarFotosPorCategoria('Placas Yeso / RH')" class="px-2.5 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer" [ngClass]="filtroEvidenciaCategoria() === 'Placas Yeso / RH' ? 'bg-primary text-on-primary shadow-sm' : 'bg-surface-container-low text-on-surface-variant hover:bg-surface-container'">Placas Yeso / RH (2)</button>
+          <button type="button" (click)="filtrarFotosPorCategoria('Seguridad SSOMA')" class="px-2.5 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer" [ngClass]="filtroEvidenciaCategoria() === 'Seguridad SSOMA' ? 'bg-primary text-on-primary shadow-sm' : 'bg-surface-container-low text-on-surface-variant hover:bg-surface-container'">Seguridad SSOMA (1)</button>
+        </div>
+        <div class="flex items-center gap-1 text-[11px] text-on-surface-variant font-mono">
+          <span class="material-symbols-outlined text-xs text-primary">location_on</span>
+          <span>VES Av. Central 450 • Hito Sem 02</span>
+        </div>
+      </div>
+
+      <!-- Main Split Viewer -->
+      <div class="p-5 overflow-y-auto flex-1 flex flex-col gap-4">
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-4">
+          <!-- Big Photo (7 cols) -->
+          <div class="lg:col-span-7 bg-black rounded-xl overflow-hidden relative shadow-md flex items-center justify-center min-h-[300px]">
+            <img [src]="fotoActiva().fotoUrl" [alt]="fotoActiva().titulo" class="w-full h-auto max-h-[340px] object-cover">
+            <!-- Tag overlay -->
+            <div class="absolute bottom-3 left-3 bg-black/75 backdrop-blur-xs text-white text-[11px] font-mono px-2.5 py-1 rounded flex items-center gap-1.5 shadow">
+              <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+              <span>{{ fotoActiva().tag }}</span>
+            </div>
+            <!-- Top action icons -->
+            <div class="absolute top-3 right-3 flex items-center gap-1.5">
+              <button type="button" class="w-7 h-7 rounded bg-black/60 hover:bg-black/80 text-white flex items-center justify-center text-xs shadow cursor-pointer" (click)="showAlert('Zoom de imagen en alta resolución')">
+                <span class="material-symbols-outlined text-sm">zoom_in</span>
+              </button>
+              <button type="button" class="w-7 h-7 rounded bg-black/60 hover:bg-black/80 text-white flex items-center justify-center text-xs shadow cursor-pointer" (click)="showAlert('Descargando imagen original...')">
+                <span class="material-symbols-outlined text-sm">download</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Inspection Details Card (5 cols) -->
+          <div class="lg:col-span-5 bg-surface-container-low/50 rounded-xl border border-surface-container p-4 flex flex-col justify-between text-xs">
+            <div>
+              <div class="flex items-center justify-between mb-2">
+                <span class="px-2 py-0.5 rounded bg-primary/10 text-primary text-[10px] font-extrabold uppercase tracking-wide">Inspección en Detalle</span>
+                <span class="flex items-center gap-1 text-[11px] text-primary font-bold">
+                  <span class="w-1.5 h-1.5 rounded-full bg-primary"></span> Visto Bueno Aprobado
+                </span>
+              </div>
+              <h4 class="font-bold text-sm text-on-surface mb-1.5 leading-snug">{{ fotoActiva().titulo }}</h4>
+              <p class="text-on-surface-variant leading-relaxed mb-3 text-[11.5px]">{{ fotoActiva().descripcion }}</p>
+
+              <div class="space-y-1.5 py-2 border-t border-b border-surface-container/80 text-[11px]">
+                <div class="flex justify-between">
+                  <span class="text-on-surface-variant">Frente:</span>
+                  <span class="font-semibold text-on-surface">{{ fotoActiva().frente }}</span>
+                </div>
+                <div class="flex justify-between">
+                  <span class="text-on-surface-variant">Plano de Referencia:</span>
+                  <span class="font-mono font-bold text-primary">{{ fotoActiva().plano }}</span>
+                </div>
+                <div class="flex justify-between">
+                  <span class="text-on-surface-variant">Registrado Por:</span>
+                  <span class="font-medium text-on-surface">{{ fotoActiva().registradoPor }}</span>
+                </div>
+                <div class="flex justify-between">
+                  <span class="text-on-surface-variant">Visto Bueno SSOMA:</span>
+                  <span class="font-semibold text-primary">{{ fotoActiva().ssoma }}</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="pt-3 flex items-center justify-between gap-2 mt-2">
+              <div class="text-[10px] text-on-surface-variant font-mono">
+                Georreferenciado: {{ fotoActiva().coords }}
+              </div>
+              <button type="button" (click)="marcarConforme()" class="px-3 py-1.5 rounded-lg bg-primary text-on-primary text-xs font-semibold hover:bg-primary/90 flex items-center gap-1 shadow-sm cursor-pointer">
+                <span class="material-symbols-outlined text-xs">verified</span>
+                <span>Conforme</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Thumbnails Gallery Row -->
+        <div>
+          <div class="flex items-center justify-between mb-2">
+            <span class="text-[11px] font-bold uppercase tracking-wider text-on-surface">Muestrario de Fotografías de la Semana ({{ fotosFiltradas.length }} Registros)</span>
+            <span class="text-[10px] text-on-surface-variant">Haga clic en una tarjeta para cargarla en el visor</span>
+          </div>
+
+          <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-2.5">
+            @for (f of fotosFiltradas; track f.id) {
+              <div
+                (click)="seleccionarFoto(f)"
+                class="rounded-xl border p-1.5 bg-surface-container-lowest cursor-pointer transition-all hover:shadow-md"
+                [ngClass]="fotoActiva().id === f.id ? 'border-2 border-primary shadow-sm bg-primary/5' : 'border-surface-container hover:border-outline-variant'">
+                <div class="relative rounded-lg overflow-hidden h-16 bg-surface-container mb-1.5">
+                  <img [src]="f.fotoUrl" [alt]="f.titulo" class="w-full h-full object-cover">
+                  @if (fotoActiva().id === f.id) {
+                    <span class="absolute top-1 right-1 px-1 py-0.2 rounded bg-primary text-white text-[8px] font-bold">Activo</span>
+                  }
+                </div>
+                <div class="font-bold text-[10px] text-on-surface truncate leading-tight">{{ f.titulo }}</div>
+                <div class="text-[9px] text-on-surface-variant font-mono mt-0.5">{{ f.fecha }}</div>
+              </div>
+            }
+          </div>
+        </div>
+      </div>
+
+      <!-- Footer -->
+      <div class="flex items-center justify-between p-3 px-5 border-t border-surface-container bg-surface-container-low/30">
+        <div class="flex items-center gap-1.5 text-xs text-primary font-medium">
+          <span class="material-symbols-outlined text-sm">check_circle</span>
+          <span>Mostrando {{ fotosFiltradas.length }} de {{ todasFotos.length }} fotos registradas para SEM 02</span>
+        </div>
+        <div class="flex items-center gap-2">
+          <button type="button" class="px-4 py-2 rounded-lg text-xs font-semibold text-on-surface-variant hover:bg-surface-container transition-colors" (click)="cerrarModales()">Cerrar</button>
+          <button type="button" class="px-4 py-2 rounded-lg bg-primary text-on-primary text-xs font-semibold hover:bg-primary/90 flex items-center gap-1.5 shadow-sm" (click)="exportarReportePdf()">
+            <span class="material-symbols-outlined text-sm">picture_as_pdf</span>
+            <span>Exportar Reporte Fotográfico (PDF)</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- MODAL 3: EDITAR PROGRAMACIÓN DE SEMANA / HITO -->
+@if (modalEditarSemanaVisible()) {
+  <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-xs p-4" (click)="cerrarModales()">
+    <div class="bg-surface-container-lowest rounded-2xl shadow-2xl border border-surface-container w-full max-w-xl overflow-hidden animate-in fade-in zoom-in-95 duration-150" (click)="$event.stopPropagation()">
+      <!-- Header -->
+      <div class="flex items-center justify-between p-5 border-b border-surface-container bg-surface-container-low/40">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold">
+            <span class="material-symbols-outlined text-xl">edit_calendar</span>
+          </div>
+          <div>
+            <div class="flex items-center gap-2">
+              <h3 class="font-bold text-sm text-on-surface">Editar Programación de Semana / Hito</h3>
+              <span class="px-2 py-0.5 rounded-full bg-primary-fixed text-on-primary-fixed-variant text-[10px] font-extrabold uppercase">{{ semanaEnEdicion.identificador }}</span>
+              <span class="px-2 py-0.5 rounded-full bg-secondary-container text-on-secondary-container text-[10px] font-extrabold">{{ semanaEnEdicion.estado }}</span>
+            </div>
+            <p class="text-xs text-on-surface-variant mt-0.5">Proyecto: <span class="font-semibold text-on-surface">CC-948 Tambo Villa El Salvador</span> | Responsable de Obra: <span class="text-primary font-semibold">{{ semanaEnEdicion.responsable }}</span></p>
+          </div>
+        </div>
+        <button type="button" class="p-1 rounded-lg hover:bg-surface-container text-on-surface-variant" (click)="cerrarModales()">
+          <span class="material-symbols-outlined text-lg">close</span>
+        </button>
+      </div>
+
+      <!-- Body -->
+      <div class="p-5 flex flex-col gap-4 text-xs">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label class="block font-semibold text-on-surface mb-1">Semana / Identificador</label>
+            <div class="flex items-center px-3 py-2 rounded-lg bg-surface-container-low border border-surface-container text-primary font-mono font-bold">
+              <span>{{ semanaEnEdicion.identificador }}</span>
+            </div>
+            <span class="text-[10px] text-on-surface-variant mt-0.5 block">Identificador correlativo</span>
+          </div>
+          <div>
+            <label class="block font-semibold text-on-surface mb-1">Fase Principal Vinculada *</label>
+            <select [(ngModel)]="semanaEnEdicion.fase" class="w-full px-3 py-2 rounded-lg bg-surface-container-lowest border border-surface-container text-on-surface focus:outline-none focus:border-primary">
+              <option value="Fase 1: Obras Provisionales y Demolición Parcial">Fase 1: Obras Provisionales y Demolición Parcial</option>
+              <option value="Fase 2: Estructuración Metálica & Muros Drywall">Fase 2: Estructuración Metálica & Muros Drywall</option>
+              <option value="Fase 3: Instalaciones Sanitarias, Eléctricas TG y Climatización">Fase 3: Instalaciones Sanitarias, Eléctricas TG y Climatización</option>
+              <option value="Fase 4: Cielorraso, Enchapes Porcelanato y Pintura Látex">Fase 4: Cielorraso, Enchapes Porcelanato y Pintura Látex</option>
+              <option value="Fase 5: Muebles Comerciales, Góndolas y Equipamiento de Frío">Fase 5: Muebles Comerciales, Góndolas y Equipamiento de Frío</option>
+              <option value="Fase 6: Pruebas de Vacío & Entrega Final">Fase 6: Pruebas de Vacío & Entrega Final</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label class="block font-semibold text-on-surface mb-1">Fecha de Inicio Programada *</label>
+            <input type="date" [(ngModel)]="semanaEnEdicion.fechaInicio" class="w-full px-3 py-2 rounded-lg bg-surface-container-lowest border border-surface-container text-on-surface focus:outline-none focus:border-primary">
+          </div>
+          <div>
+            <label class="block font-semibold text-on-surface mb-1">Fecha de Fin Programada *</label>
+            <input type="date" [(ngModel)]="semanaEnEdicion.fechaFin" class="w-full px-3 py-2 rounded-lg bg-surface-container-lowest border border-surface-container text-on-surface focus:outline-none focus:border-primary">
+          </div>
+        </div>
+
+        <div>
+          <label class="block font-semibold text-on-surface mb-1">Nombre de la Actividad / Hito *</label>
+          <div class="flex items-center gap-2 px-3 py-2 rounded-lg bg-surface-container-lowest border border-surface-container">
+            <span class="material-symbols-outlined text-sm text-outline">flag</span>
+            <input type="text" [(ngModel)]="semanaEnEdicion.nombre" class="w-full bg-transparent text-on-surface focus:outline-none">
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label class="block font-semibold text-on-surface mb-1">Responsable Técnico de Campo *</label>
+            <input type="text" [(ngModel)]="semanaEnEdicion.responsable" class="w-full px-3 py-2 rounded-lg bg-surface-container-lowest border border-surface-container text-on-surface focus:outline-none focus:border-primary">
+          </div>
+          <div>
+            <label class="block font-semibold text-on-surface mb-1">Estado de la Semana *</label>
+            <select [(ngModel)]="semanaEnEdicion.estado" class="w-full px-3 py-2 rounded-lg bg-surface-container-lowest border border-surface-container text-on-surface focus:outline-none focus:border-primary">
+              <option value="Concluido">Concluido</option>
+              <option value="En Plazo">En Plazo</option>
+              <option value="Retrasado">Retrasado</option>
+              <option value="Programado">Programado</option>
+              <option value="Hito Final">Hito Final</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Metric Cards: Meta Planificada vs Avance Real -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div class="p-3 bg-surface-container-low rounded-xl border border-surface-container">
+            <div class="flex items-center justify-between text-on-surface-variant mb-1 font-semibold">
+              <span>Meta Planificada (%)</span>
+              <span class="material-symbols-outlined text-sm">equalizer</span>
+            </div>
+            <div class="text-lg font-mono font-bold text-on-surface">{{ semanaEnEdicion.meta }} %</div>
+          </div>
+
+          <div class="p-3 bg-primary/5 rounded-xl border-2 border-primary">
+            <div class="flex items-center justify-between text-primary mb-1 font-bold">
+              <span>Avance Real Ejecutado (%)</span>
+              <span class="material-symbols-outlined text-sm">trending_up</span>
+            </div>
+            <div class="flex items-center gap-1">
+              <input type="number" min="0" max="100" step="0.5" [(ngModel)]="semanaEnEdicion.avanceReal" class="w-full text-lg font-mono font-bold text-primary bg-transparent focus:outline-none">
+              <span class="text-primary font-bold text-base">%</span>
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <label class="block font-semibold text-on-surface mb-1">Descripción Detallada y Alcance Técnico</label>
+          <textarea rows="3" [(ngModel)]="semanaEnEdicion.descripcion" class="w-full p-3 rounded-lg bg-surface-container-lowest border border-surface-container text-on-surface focus:outline-none focus:border-primary text-xs leading-relaxed"></textarea>
+        </div>
+      </div>
+
+      <!-- Footer -->
+      <div class="flex items-center justify-between p-4 px-5 border-t border-surface-container bg-surface-container-low/40">
+        <div class="flex items-center gap-1.5 text-xs text-primary font-medium">
+          <span class="material-symbols-outlined text-sm">check_circle</span>
+          <span>Actualiza automáticamente la Curva S</span>
+        </div>
+        <div class="flex items-center gap-2">
+          <button type="button" class="px-4 py-2 rounded-lg text-xs font-semibold text-on-surface-variant hover:bg-surface-container transition-colors" (click)="cerrarModales()">Cancelar</button>
+          <button type="button" class="px-4 py-2 rounded-lg bg-primary text-on-primary text-xs font-semibold hover:bg-primary/90 flex items-center gap-1.5 shadow-sm" (click)="guardarEdicionSemana()">
+            <span class="material-symbols-outlined text-sm">save</span>
+            <span>Guardar Modificación</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+}
+
+
+<!-- ════════════════════════════════════════════════════════════════════════ -->
+<!-- MODAL 4: SUBIR NUEVO PLANO DE OBRA (CAD / BIM / PDF)                    -->
+<!-- ════════════════════════════════════════════════════════════════════════ -->
+@if (modalSubirPlanoVisible()) {
+  <div class="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 overflow-y-auto animate-in fade-in duration-200">
+    <div class="bg-surface-container-lowest rounded-2xl shadow-2xl border border-surface-container w-full max-w-xl overflow-hidden my-auto flex flex-col">
+      <!-- Header -->
+      <div class="flex items-center justify-between p-4 px-5 border-b border-surface-container bg-surface-container-low/30">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-xl bg-emerald-50 text-primary flex items-center justify-center border border-emerald-200/50 shadow-xs">
+            <span class="material-symbols-outlined text-xl">architecture</span>
+          </div>
+          <div>
+            <div class="flex items-center gap-2">
+              <h2 class="font-bold text-sm text-on-surface">Subir Nuevo Plano de Obra (CAD / BIM / PDF)</h2>
+              <span class="bg-emerald-100 text-emerald-800 text-[10px] font-bold px-2 py-0.5 rounded tracking-wider uppercase font-mono">REPOSITORIO TÉCNICO</span>
+            </div>
+            <p class="text-xs text-on-surface-variant mt-0.5">CC-948: Tambo Villa El Salvador • Control de Versiones y Aprobaciones</p>
+          </div>
+        </div>
+        <button type="button" class="text-on-surface-variant hover:text-on-surface p-1 rounded-lg hover:bg-surface-container transition-colors" (click)="cerrarModales()">
+          <span class="material-symbols-outlined text-lg">close</span>
+        </button>
+      </div>
+
+      <!-- Body -->
+      <div class="p-5 space-y-4 max-h-[75vh] overflow-y-auto text-xs">
+        <!-- Dropzone Area -->
+        <div class="border-2 border-dashed border-emerald-300/80 bg-[#f4faff] rounded-xl p-4 sm:p-5 text-center transition-all hover:border-primary">
+          <div class="w-11 h-11 rounded-xl bg-emerald-100/80 text-primary flex items-center justify-center mx-auto mb-2 shadow-xs">
+            <span class="material-symbols-outlined text-2xl">cloud_upload</span>
+          </div>
+          <p class="text-xs text-on-surface">
+            Arrastra y suelta tu archivo aquí o <span class="text-primary font-bold cursor-pointer hover:underline">haz clic para explorar</span>
+          </p>
+
+          <!-- Badges de Formatos Soportados -->
+          <div class="flex flex-wrap justify-center gap-1.5 mt-2.5">
+            <span class="px-2 py-0.5 rounded bg-white text-[11px] font-mono text-on-surface-variant border border-surface-container/70 shadow-2xs">DWG / DXF (AutoCAD)</span>
+            <span class="px-2 py-0.5 rounded bg-white text-[11px] font-mono text-on-surface-variant border border-surface-container/70 shadow-2xs">RVT / IFC (BIM)</span>
+            <span class="px-2 py-0.5 rounded bg-white text-[11px] font-mono text-on-surface-variant border border-surface-container/70 shadow-2xs">PDF Alta Resolución</span>
+            <span class="px-2 py-0.5 rounded bg-white text-[11px] font-mono text-on-surface-variant border border-surface-container/70 shadow-2xs">ZIP (Máx. 50 MB)</span>
+          </div>
+
+          <!-- Archivo Analizado Card -->
+          <div class="bg-white rounded-lg p-3 border border-surface-container flex items-center justify-between mt-3 text-left shadow-xs">
+            <div class="flex items-center gap-2.5">
+              <span class="material-symbols-outlined text-on-surface-variant text-xl">draft</span>
+              <div>
+                <div class="font-mono font-semibold text-xs text-on-surface">{{ nuevoPlano.archivoNombre }}</div>
+                <div class="text-[11px] text-on-surface-variant">{{ nuevoPlano.archivoPeso }} • Archivo analizado y listo para carga</div>
+              </div>
+            </div>
+            <span class="bg-emerald-100 text-emerald-700 font-bold text-xs px-2.5 py-1 rounded-full flex items-center gap-1 shrink-0">
+              <span class="material-symbols-outlined text-xs">check</span>
+              <span>Válido</span>
+            </span>
+          </div>
+        </div>
+
+        <!-- Formulario Técnico -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label class="block font-semibold text-on-surface mb-1">Código de Plano *</label>
+            <div class="flex items-center gap-2 px-3 py-2 rounded-lg bg-surface-container-lowest border border-surface-container focus-within:border-primary">
+              <span class="material-symbols-outlined text-primary text-base">tag</span>
+              <input type="text" [(ngModel)]="nuevoPlano.codigo" class="w-full text-xs font-mono font-bold text-primary bg-transparent focus:outline-none">
+            </div>
+          </div>
+
+          <div>
+            <label class="block font-semibold text-on-surface mb-1">Nombre / Título del Plano *</label>
+            <div class="flex items-center gap-2 px-3 py-2 rounded-lg bg-surface-container-lowest border border-surface-container focus-within:border-primary">
+              <span class="material-symbols-outlined text-on-surface-variant text-base">description</span>
+              <input type="text" [(ngModel)]="nuevoPlano.nombre" class="w-full text-xs text-on-surface bg-transparent focus:outline-none">
+            </div>
+          </div>
+
+          <div>
+            <label class="block font-semibold text-on-surface mb-1">Especialidad / Disciplina *</label>
+            <select [(ngModel)]="nuevoPlano.especialidad" class="w-full px-3 py-2 rounded-lg bg-surface-container-lowest border border-surface-container text-on-surface focus:outline-none focus:border-primary text-xs">
+              <option value="Arquitectura (ARQ)">Arquitectura (ARQ)</option>
+              <option value="Estructuras (EST)">Estructuras (EST)</option>
+              <option value="Instalaciones Eléctricas (IE)">Instalaciones Eléctricas (IE)</option>
+              <option value="Instalaciones Sanitarias (IS)">Instalaciones Sanitarias (IS)</option>
+              <option value="HVAC / Climatización (MEC)">HVAC / Climatización (MEC)</option>
+              <option value="Seguridad & Evacuación (SSOMA)">Seguridad & Evacuación (SSOMA)</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="block font-semibold text-on-surface mb-1">Número de Versión *</label>
+            <div class="flex items-center gap-2">
+              <input type="text" [(ngModel)]="nuevoPlano.version" class="w-full px-3 py-2 rounded-lg bg-surface-container-lowest border border-surface-container text-on-surface font-mono font-bold text-xs focus:outline-none focus:border-primary">
+              <button type="button" class="px-2.5 py-1.5 rounded-lg bg-[#e2f0a8] hover:bg-[#d5e796] text-lime-950 font-bold text-xs border border-lime-300 shrink-0 transition-colors">
+                + Nueva v2.1
+              </button>
+            </div>
+          </div>
+
+          <div>
+            <label class="block font-semibold text-on-surface mb-1">Estado de Aprobación Inicial *</label>
+            <select [(ngModel)]="nuevoPlano.estadoAprobacion" class="w-full px-3 py-2 rounded-lg bg-surface-container-lowest border border-surface-container text-on-surface focus:outline-none focus:border-primary text-xs">
+              <option value="Aprobado para Obra (Apto para Construcción)">Aprobado para Obra (Apto para Construcción)</option>
+              <option value="En Revisión Técnica">En Revisión Técnica</option>
+              <option value="Observado / Subsanación">Observado / Subsanación</option>
+              <option value="Preliminar para Coordinación">Preliminar para Coordinación</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="block font-semibold text-on-surface mb-1">Fecha de VoBo / Firma *</label>
+            <div class="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-surface-container-lowest border border-surface-container focus-within:border-primary">
+              <input type="date" [(ngModel)]="nuevoPlano.fechaVobo" class="w-full text-xs text-on-surface bg-transparent focus:outline-none">
+            </div>
+          </div>
+
+          <div class="sm:col-span-2">
+            <label class="block font-semibold text-on-surface mb-1">Emitido Por / Proyectista Responsable *</label>
+            <div class="flex items-center gap-2 px-3 py-2 rounded-lg bg-surface-container-lowest border border-surface-container focus-within:border-primary">
+              <span class="material-symbols-outlined text-on-surface-variant text-base">engineering</span>
+              <input type="text" [(ngModel)]="nuevoPlano.proyectista" class="w-full text-xs text-on-surface bg-transparent focus:outline-none">
+            </div>
+          </div>
+        </div>
+
+        <!-- Checkboxes -->
+        <div class="bg-surface-container-low/40 rounded-xl p-3 border border-surface-container/60 space-y-2">
+          <label class="flex items-start gap-2.5 cursor-pointer">
+            <input type="checkbox" [(ngModel)]="nuevoPlano.reemplazarArchivar" class="mt-0.5 rounded text-primary focus:ring-primary h-4 w-4">
+            <span class="text-xs text-on-surface font-medium leading-tight">Reemplazar y archivar versión anterior v2.1 en el histórico de planos automáticamente.</span>
+          </label>
+          <label class="flex items-start gap-2.5 cursor-pointer">
+            <input type="checkbox" [(ngModel)]="nuevoPlano.notificarWhatsapp" class="mt-0.5 rounded text-primary focus:ring-primary h-4 w-4">
+            <span class="text-xs text-on-surface font-medium leading-tight">Notificar vía WhatsApp / Correo a la Jefatura de Obra y Residentes de Campo.</span>
+          </label>
+        </div>
+      </div>
+
+      <!-- Footer -->
+      <div class="flex items-center justify-between p-4 px-5 border-t border-surface-container bg-surface-container-low/40">
+        <div class="flex items-center gap-1.5 text-[11px] text-on-surface-variant">
+          <span class="material-symbols-outlined text-sm text-primary">info</span>
+          <span>El plano se registrará en la tabla "obra_planos" y estará accesible de inmediato para los residentes.</span>
+        </div>
+        <div class="flex items-center gap-2">
+          <button type="button" class="px-3.5 py-2 rounded-lg text-xs font-semibold text-on-surface-variant hover:bg-surface-container transition-colors" (click)="cerrarModales()">Cancelar</button>
+          <button type="button" class="px-4 py-2 rounded-lg bg-primary text-on-primary text-xs font-semibold hover:bg-primary/90 flex items-center gap-1.5 shadow-sm transition-opacity" (click)="guardarNuevoPlano()">
+            <span class="material-symbols-outlined text-sm">cloud_upload</span>
+            <span>Subir y Registrar Plano</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- ════════════════════════════════════════════════════════════════════════ -->
+<!-- MODAL 5: VISOR TÉCNICO CAD 2D                                            -->
+<!-- ════════════════════════════════════════════════════════════════════════ -->
+@if (modalVisorCadVisible()) {
+  <div class="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-2 sm:p-4 overflow-hidden animate-in fade-in duration-200">
+    <div class="bg-surface-container-lowest rounded-2xl shadow-2xl border border-surface-container w-full max-w-6xl h-[92vh] flex flex-col overflow-hidden">
+      <!-- Header -->
+      <div class="flex items-center justify-between p-3.5 px-5 border-b border-surface-container bg-surface-container-low/40 shrink-0">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-xl bg-emerald-50 text-primary flex items-center justify-center border border-emerald-200/50 shadow-xs">
+            <span class="material-symbols-outlined text-xl">architecture</span>
+          </div>
+          <div>
+            <div class="flex items-center gap-2 flex-wrap">
+              <h2 class="font-bold text-sm text-on-surface">Visor Técnico de Plano • <span class="text-primary font-mono">{{ planoVisorActivo.codigo }}</span>: {{ planoVisorActivo.nombre }}</h2>
+              <span class="bg-emerald-100 text-emerald-800 text-[10px] font-bold px-2 py-0.5 rounded font-mono">{{ planoVisorActivo.version }}</span>
+              <span class="bg-slate-100 text-slate-700 text-[10px] font-semibold px-2 py-0.5 rounded font-mono">{{ planoVisorActivo.disciplina }}</span>
+              <span class="bg-slate-100 text-slate-700 text-[10px] font-semibold px-2 py-0.5 rounded font-mono">{{ planoVisorActivo.escala }}</span>
+            </div>
+            <p class="text-xs text-on-surface-variant mt-0.5">{{ planoVisorActivo.formatoPeso }} • {{ planoVisorActivo.cc }} • Visto Bueno: {{ planoVisorActivo.voboFecha }}</p>
+          </div>
+        </div>
+        <div class="flex items-center gap-2">
+          <button type="button" class="px-3 py-1.5 rounded-lg bg-primary text-on-primary text-xs font-semibold hover:bg-primary/90 flex items-center gap-1.5 shadow-xs transition-opacity" (click)="downloadPlano(planoVisorActivo.codigo + '.dwg')">
+            <span class="material-symbols-outlined text-sm">download</span>
+            <span>Descargar DWG / PDF</span>
+          </button>
+          <button type="button" class="px-3 py-1.5 rounded-lg border border-surface-container bg-surface-container-lowest hover:bg-surface-container text-xs font-semibold flex items-center gap-1.5 text-on-surface transition-colors" (click)="abrirHistorialDesdeVisor()">
+            <span class="material-symbols-outlined text-sm">history</span>
+            <span>Historial (v2.1, v2.0)</span>
+          </button>
+          <button type="button" class="p-1.5 rounded-lg hover:bg-surface-container text-on-surface-variant" title="Pantalla Completa" (click)="resetZoomCad()">
+            <span class="material-symbols-outlined text-lg">fullscreen</span>
+          </button>
+          <button type="button" class="p-1.5 rounded-lg hover:bg-surface-container text-on-surface-variant" (click)="cerrarModales()">
+            <span class="material-symbols-outlined text-lg">close</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Toolbar de Controles CAD -->
+      <div class="bg-[#0e1e25] text-white px-4 py-2 flex flex-wrap items-center justify-between gap-3 text-xs border-y border-[#18343f] shrink-0 select-none">
+        <!-- Zoom & Navegación -->
+        <div class="flex items-center gap-2">
+          <button type="button" class="p-1 rounded bg-[#162f39] hover:bg-[#1f4250] text-cyan-300" (click)="zoomOutCad()" title="Alejar">
+            <span class="material-symbols-outlined text-sm">zoom_out</span>
+          </button>
+          <button type="button" class="px-2 py-0.5 rounded bg-[#162f39] hover:bg-[#1f4250] text-cyan-300 font-mono font-semibold" (click)="resetZoomCad()" title="Restablecer">
+            {{ cadZoom() }}% Ajustar
+          </button>
+          <button type="button" class="p-1 rounded bg-[#162f39] hover:bg-[#1f4250] text-cyan-300" (click)="zoomInCad()" title="Acercar">
+            <span class="material-symbols-outlined text-sm">zoom_in</span>
+          </button>
+          <div class="h-4 w-px bg-white/20 mx-1"></div>
+          <button type="button" class="inline-flex items-center gap-1 px-2 py-1 rounded hover:bg-[#162f39] text-gray-300">
+            <span class="material-symbols-outlined text-sm">square_foot</span>
+            <span>Medir Cotas</span>
+          </button>
+          <button type="button" class="inline-flex items-center gap-1 px-2 py-1 rounded hover:bg-[#162f39] text-gray-300">
+            <span class="material-symbols-outlined text-sm">crop_free</span>
+            <span>Encuadre</span>
+          </button>
+        </div>
+
+        <!-- Capas CAD Activas -->
+        <div class="flex items-center gap-3">
+          <span class="font-mono text-cyan-400 font-bold text-[11px] tracking-wider">CAPAS CAD:</span>
+          <label class="flex items-center gap-1.5 text-gray-300 hover:text-white cursor-pointer text-xs">
+            <input type="checkbox" [checked]="cadCapas.muros" (change)="toggleCapa('muros')" class="rounded border-gray-600 text-emerald-500 focus:ring-0">
+            <span>Muros Drywall</span>
+          </label>
+          <label class="flex items-center gap-1.5 text-gray-300 hover:text-white cursor-pointer text-xs">
+            <input type="checkbox" [checked]="cadCapas.cotas" (change)="toggleCapa('cotas')" class="rounded border-gray-600 text-emerald-500 focus:ring-0">
+            <span>Cotas & Ejes</span>
+          </label>
+          <label class="flex items-center gap-1.5 text-gray-300 hover:text-white cursor-pointer text-xs">
+            <input type="checkbox" [checked]="cadCapas.gondolas" (change)="toggleCapa('gondolas')" class="rounded border-gray-600 text-emerald-500 focus:ring-0">
+            <span>Góndolas & Frío</span>
+          </label>
+          <label class="flex items-center gap-1.5 text-gray-300 hover:text-white cursor-pointer text-xs">
+            <input type="checkbox" [checked]="cadCapas.electricas" (change)="toggleCapa('electricas')" class="rounded border-gray-600 text-emerald-500 focus:ring-0">
+            <span>Eléctricas / Tomas</span>
+          </label>
+        </div>
+
+        <!-- Comparador -->
+        <div>
+          <button type="button" class="inline-flex items-center gap-1.5 px-3 py-1 rounded bg-emerald-700/80 hover:bg-emerald-600 text-white font-semibold text-xs transition-colors" (click)="abrirHistorialDesdeVisor()">
+            <span class="material-symbols-outlined text-sm">compare</span>
+            <span>Comparar v2.1</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Canvas CAD Oscuro (Vector Blueprint 2D) -->
+      <div class="relative flex-1 bg-[#071318] overflow-hidden flex flex-col justify-between p-4 select-none border-b border-surface-container">
+        <!-- Architectural Grid Background -->
+        <div class="absolute inset-0 opacity-20 pointer-events-none" style="background-image: linear-gradient(to right, #153a47 1px, transparent 1px), linear-gradient(to bottom, #153a47 1px, transparent 1px); background-size: 26px 26px;"></div>
+
+        <!-- Top Canvas Metadata -->
+        <div class="relative z-10 flex items-center justify-between text-xs font-mono">
+          <div class="flex items-center gap-2">
+            <span class="bg-emerald-950/90 border border-emerald-500/50 text-emerald-400 font-bold px-2 py-0.5 rounded text-[10px] tracking-wider">CAD VIEW: 2D FLOOR PLAN</span>
+            <span class="text-cyan-300/80 text-[11px]">EJE CENTRAL: 1-A / 4-D</span>
+          </div>
+          <div class="text-cyan-300/70 text-[11px]">
+            <span>X: 142.50 Y: 88.20 GRID: 0.10m</span>
+          </div>
+        </div>
+
+        <!-- Canvas Blueprint Graphic (SVG Vector) -->
+        <div class="relative z-10 flex-1 flex items-center justify-center overflow-auto p-2">
+          <div [style.transform]="'scale(' + (cadZoom() / 100) + ')'" class="transition-transform duration-200 ease-out origin-center">
+            <svg width="780" height="420" viewBox="0 0 780 420" class="max-w-full drop-shadow-lg">
+              <!-- Outer Dimension Line L=15.30m -->
+              @if (cadCapas.cotas) {
+                <g stroke="#38bdf8" stroke-width="1.2">
+                  <line x1="80" y1="45" x2="680" y2="45" stroke="#38bdf8" />
+                  <line x1="80" y1="40" x2="80" y2="50" stroke="#38bdf8" />
+                  <line x1="680" y1="40" x2="680" y2="50" stroke="#38bdf8" />
+                  <text x="380" y="40" fill="#38bdf8" font-size="10" font-family="monospace" text-anchor="middle" font-weight="bold">L = 15.30 m</text>
+                </g>
+              }
+
+              <!-- Perimeter Walls (Muros Drywall & Fachada) -->
+              @if (cadCapas.muros) {
+                <!-- Exterior Envelope -->
+                <rect x="80" y="55" width="600" height="310" fill="#081b24" stroke="#2dd4bf" stroke-width="2.5" />
+                <rect x="83" y="58" width="594" height="304" fill="none" stroke="#134e4a" stroke-width="1" />
+
+                <!-- ALMACÉN SECO -->
+                <rect x="95" y="70" width="135" height="120" fill="#0c2633" stroke="#2dd4bf" stroke-width="1.8" />
+                <text x="162" y="125" fill="#ffffff" font-size="11" font-family="sans-serif" font-weight="bold" text-anchor="middle">ALMACÉN SECO</text>
+                <text x="162" y="142" fill="#5eead4" font-size="9" font-family="monospace" text-anchor="middle">Área: 18.50 m²</text>
+
+                <!-- CÁMARA FRÍO -->
+                <rect x="238" y="70" width="115" height="120" fill="#0c2633" stroke="#2dd4bf" stroke-width="1.8" />
+                <text x="295" y="125" fill="#ffffff" font-size="11" font-family="sans-serif" font-weight="bold" text-anchor="middle">CÁMARA FRÍO</text>
+                <text x="295" y="142" fill="#5eead4" font-size="9" font-family="monospace" text-anchor="middle">Temp: 0°C a 4°C</text>
+              }
+
+              <!-- GÓNDOLAS Y EQUIPAMIENTO FRÍO -->
+              @if (cadCapas.gondolas) {
+                <!-- Góndola Bebidas -->
+                <rect x="368" y="75" width="105" height="48" rx="3" fill="#0e3344" stroke="#38bdf8" stroke-width="1.5" />
+                <text x="420" y="104" fill="#ffffff" font-size="9" font-family="sans-serif" font-weight="bold" text-anchor="middle">GÓNDOLA BEBIDAS</text>
+
+                <!-- Góndola Snacks 01 -->
+                <rect x="200" y="210" width="135" height="42" rx="3" fill="#0e3344" stroke="#38bdf8" stroke-width="1.5" />
+                <text x="267" y="235" fill="#ffffff" font-size="9" font-family="sans-serif" font-weight="bold" text-anchor="middle">GÓNDOLA SNACKS 01</text>
+
+                <!-- Góndola Snacks 02 -->
+                <rect x="350" y="210" width="135" height="42" rx="3" fill="#0e3344" stroke="#38bdf8" stroke-width="1.5" />
+                <text x="417" y="235" fill="#ffffff" font-size="9" font-family="sans-serif" font-weight="bold" text-anchor="middle">GÓNDOLA SNACKS 02</text>
+              }
+
+              <!-- INSTALACIONES ELÉCTRICAS & TABLERO TG -->
+              @if (cadCapas.electricas) {
+                <!-- Tablero TG -->
+                <rect x="525" y="70" width="90" height="120" fill="#09202a" stroke="#38bdf8" stroke-width="1.5" stroke-dasharray="5,4" />
+                <text x="570" y="125" fill="#ffffff" font-size="10" font-family="sans-serif" font-weight="bold" text-anchor="middle">TABLERO TG</text>
+                <text x="570" y="142" fill="#38bdf8" font-size="9" font-family="monospace" text-anchor="middle">ELEC-02 v1.3</text>
+              }
+
+              <!-- COTAS Y PASILLO DE EVACUACIÓN INDECI -->
+              @if (cadCapas.cotas) {
+                <g>
+                  <line x1="195" y1="285" x2="495" y2="285" stroke="#f59e0b" stroke-width="1.5" stroke-dasharray="4,4" />
+                  <line x1="195" y1="280" x2="195" y2="290" stroke="#f59e0b" stroke-width="1.5" />
+                  <line x1="495" y1="280" x2="495" y2="290" stroke="#f59e0b" stroke-width="1.5" />
+                  <text x="345" y="280" fill="#fbbf24" font-size="9" font-family="monospace" font-weight="bold" text-anchor="middle">PASILLO EVACUACIÓN: 1.20 m (OK INDECI)</text>
+                </g>
+              }
+
+              <!-- Ingreso Principal & Swing Door -->
+              <g>
+                <text x="135" y="325" fill="#ffffff" font-size="9" font-family="sans-serif" font-weight="bold">INGRESO PRINCIPAL</text>
+                <path d="M 180 325 A 30 30 0 0 0 210 295" fill="none" stroke="#2dd4bf" stroke-width="1.5" stroke-dasharray="3,3" />
+                <line x1="180" y1="325" x2="180" y2="295" stroke="#2dd4bf" stroke-width="2" />
+              </g>
+
+              <!-- Zona Cajas POS / Cobro -->
+              <rect x="525" y="250" width="100" height="85" rx="3" fill="#082b26" stroke="#2dd4bf" stroke-width="1.5" />
+              <text x="575" y="288" fill="#ffffff" font-size="10" font-family="sans-serif" font-weight="bold" text-anchor="middle">ZONA CAJAS</text>
+              <text x="575" y="303" fill="#5eead4" font-size="9" font-family="sans-serif" text-anchor="middle">P.O.S. / Cobro</text>
+            </svg>
+          </div>
+        </div>
+
+        <!-- Bottom Canvas Details & Stamp -->
+        <div class="relative z-10 flex items-end justify-between text-xs font-mono">
+          <div class="text-cyan-400/80 text-[10px]">
+            <span>PROYECTO: TAMBO VES CC-948 • PLANO: ARQ-02 • REV: 02.2</span>
+          </div>
+
+          <!-- Sello Técnico de Aprobación GLD -->
+          <div class="bg-[#051d18]/90 border border-emerald-500/70 rounded p-2.5 px-3 text-right shadow-md">
+            <div class="text-[9px] uppercase tracking-wider text-emerald-400 font-bold">CONTROL DE CALIDAD & VISTO BUENO</div>
+            <div class="text-xs font-black text-white my-0.5 tracking-tight">APROBADO PARA CONSTRUCCIÓN</div>
+            <div class="text-[10px] text-gray-300">CAP: 9821 Arq. Lucía Fernández R.</div>
+            <div class="text-[9px] text-emerald-400/90 mt-0.5">Firma Digital GLD • 10/02/2026 14:15</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Footer -->
+      <div class="flex flex-wrap items-center justify-between p-3 px-5 border-t border-surface-container bg-surface-container-lowest shrink-0 gap-3">
+        <div>
+          <div class="font-bold text-xs text-on-surface">Notas de Versión v2.2:</div>
+          <p class="text-xs text-on-surface-variant leading-snug">Ampliación de pasillo central a 1.20m por norma técnica de evacuación comercial INDECI y reubicación de tablero TG.</p>
+          <div class="text-xs text-emerald-700 font-medium flex items-center gap-1 mt-0.5">
+            <span class="material-symbols-outlined text-xs">check_circle</span>
+            <span>Plano sincronizado en estación de tablets para residentes de obra.</span>
+          </div>
+        </div>
+
+        <div class="flex items-center gap-2">
+          <button type="button" class="px-3 py-1.5 rounded-lg border border-surface-container text-xs font-semibold text-on-surface hover:bg-surface-container flex items-center gap-1.5 transition-colors">
+            <span class="material-symbols-outlined text-sm">print</span>
+            <span>Imprimir Ficha A1</span>
+          </button>
+          <button type="button" class="px-3.5 py-1.5 rounded-lg bg-primary text-on-primary text-xs font-semibold hover:bg-primary/90 flex items-center gap-1.5 shadow-xs transition-opacity" (click)="abrirSubirDesdeVisor()">
+            <span class="material-symbols-outlined text-sm">cloud_upload</span>
+            <span>Reemplazar Versión</span>
+          </button>
+          <button type="button" class="px-3 py-1.5 text-xs font-semibold text-on-surface-variant hover:text-on-surface" (click)="cerrarModales()">
+            Cerrar Visor
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- ════════════════════════════════════════════════════════════════════════ -->
+<!-- MODAL 6: HISTORIAL DE VERSIONES — ARQ-02                                 -->
+<!-- ════════════════════════════════════════════════════════════════════════ -->
+@if (modalHistorialPlanosVisible()) {
+  <div class="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 overflow-y-auto animate-in fade-in duration-200">
+    <div class="bg-surface-container-lowest rounded-2xl shadow-2xl border border-surface-container w-full max-w-2xl overflow-hidden my-auto flex flex-col">
+      <!-- Header -->
+      <div class="flex items-center justify-between p-4 px-5 border-b border-surface-container bg-surface-container-low/30">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-xl bg-emerald-50 text-primary flex items-center justify-center border border-emerald-200/50 shadow-xs">
+            <span class="material-symbols-outlined text-xl">history</span>
+          </div>
+          <div>
+            <div class="flex items-center gap-2">
+              <h2 class="font-bold text-sm text-on-surface">Historial de Versiones — <span class="text-primary font-mono">ARQ-02</span></h2>
+              <span class="bg-amber-100 text-amber-900 text-[10px] font-bold px-2 py-0.5 rounded-full font-mono">3 Versiones Registradas</span>
+              <span class="bg-emerald-100 text-emerald-800 text-[10px] font-bold px-2 py-0.5 rounded-full font-mono">Trazabilidad GLD</span>
+            </div>
+            <p class="text-xs text-on-surface-variant mt-0.5">Distribución Arquitectónica General & Circulaciones • CC-948: Tambo Villa El Salvador • Control Oficial de Cambios</p>
+          </div>
+        </div>
+        <div class="flex items-center gap-2">
+          <button type="button" class="px-3 py-1.5 rounded-lg bg-primary text-on-primary text-xs font-semibold hover:bg-primary/90 flex items-center gap-1.5 shadow-xs transition-opacity" (click)="abrirVisorDesdeHistorial()">
+            <span class="material-symbols-outlined text-sm">compare</span>
+            <span>Comparar Versiones</span>
+          </button>
+          <button type="button" class="text-on-surface-variant hover:text-on-surface p-1 rounded-lg hover:bg-surface-container transition-colors" (click)="cerrarModales()">
+            <span class="material-symbols-outlined text-lg">close</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Body / Cards -->
+      <div class="p-5 space-y-3.5 max-h-[70vh] overflow-y-auto text-xs">
+        @for (item of historialPlanos; track item.version) {
+          <div class="rounded-xl p-4 transition-all shadow-xs" [ngClass]="item.actual ? 'border-2 border-emerald-600 bg-surface-container-lowest' : 'border border-surface-container bg-surface-container-lowest hover:border-surface-container-high'">
+            <div class="flex flex-wrap items-center justify-between gap-2 pb-2 border-b border-surface-container/60">
+              <div class="flex items-center gap-2">
+                <span class="font-mono font-bold text-xs px-2.5 py-0.5 rounded" [ngClass]="item.actual ? 'bg-emerald-800 text-white' : 'bg-gray-100 text-gray-700'">
+                  {{ item.version }}
+                </span>
+                <span class="font-semibold text-xs px-2.5 py-0.5 rounded" [ngClass]="item.actual ? 'bg-emerald-100 text-emerald-800' : (item.estado.includes('Observado') ? 'bg-amber-100 text-amber-800' : 'bg-blue-100 text-blue-800')">
+                  {{ item.estado }}
+                </span>
+                <span class="font-mono text-on-surface-variant text-[11px]">{{ item.peso }}</span>
+              </div>
+              <div class="text-[11px] text-on-surface-variant font-mono flex items-center gap-1">
+                <span class="material-symbols-outlined text-xs">calendar_today</span>
+                <span>{{ item.fecha }}</span>
+              </div>
+            </div>
+
+            <p class="text-xs text-on-surface font-medium mt-2.5 leading-relaxed">{{ item.descripcion }}</p>
+
+            <div class="flex flex-wrap items-center justify-between gap-2 mt-3 pt-2 text-[11px] text-on-surface-variant border-t border-surface-container/40">
+              <div>
+                <span>Proyectista: <strong class="text-on-surface">{{ item.proyectista }}</strong></span>
+              </div>
+              <div class="flex items-center gap-3">
+                <button type="button" class="text-primary hover:underline font-semibold flex items-center gap-1" (click)="abrirVisorDesdeHistorial(item.version)">
+                  <span class="material-symbols-outlined text-sm">visibility</span>
+                  <span>Ver en Visor CAD</span>
+                </button>
+                <button type="button" class="text-on-surface-variant hover:text-on-surface font-medium flex items-center gap-1" (click)="downloadPlano(item.version + '.dwg')">
+                  <span class="material-symbols-outlined text-sm">download</span>
+                  <span>Descargar</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        }
+      </div>
+
+      <!-- Footer -->
+      <div class="flex items-center justify-between p-3.5 px-5 border-t border-surface-container bg-surface-container-low/40">
+        <span class="text-[11px] text-on-surface-variant">Histórico sincronizado con el registro oficial de licitación y supervisión técnica.</span>
+        <button type="button" class="px-4 py-1.5 rounded-lg text-xs font-semibold text-on-surface-variant hover:bg-surface-container transition-colors" (click)="cerrarModales()">Cerrar Historial</button>
+      </div>
+    </div>
+  </div>
+}
+
+
+<!-- ════════════════════════════════════════════════════════════════════════ -->
+<!-- MODAL 7: ANEXAR DOCUMENTO TÉCNICO / ACTA LEGAL DE OBRA                   -->
+<!-- ════════════════════════════════════════════════════════════════════════ -->
+@if (modalAnexarDocVisible()) {
+  <div class="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 overflow-y-auto animate-in fade-in duration-200">
+    <div class="bg-surface-container-lowest rounded-2xl shadow-2xl border border-surface-container w-full max-w-xl overflow-hidden my-auto flex flex-col">
+      <!-- Header -->
+      <div class="flex items-center justify-between p-4 px-5 border-b border-surface-container bg-surface-container-low/30">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-xl bg-emerald-50 text-primary flex items-center justify-center border border-emerald-200/50 shadow-xs">
+            <span class="material-symbols-outlined text-xl">post_add</span>
+          </div>
+          <div>
+            <div class="flex items-center gap-2 flex-wrap">
+              <h2 class="font-bold text-sm text-on-surface">Anexar Documento Técnico / Acta Legal de Obra</h2>
+              <span class="bg-emerald-100 text-emerald-800 text-[10px] font-bold px-2 py-0.5 rounded tracking-wider uppercase font-mono">MODAL ACTIVO</span>
+              <span class="bg-amber-100 text-amber-900 text-[10px] font-bold px-2 py-0.5 rounded font-mono">EXP-2026-TMB-048</span>
+            </div>
+            <p class="text-xs text-on-surface-variant mt-0.5">CC-948: Tambo Villa El Salvador • Repositorio Documental Contractual & SST • Control Oficial GLD</p>
+          </div>
+        </div>
+        <button type="button" class="text-on-surface-variant hover:text-on-surface p-1 rounded-lg hover:bg-surface-container transition-colors" (click)="cerrarModales()">
+          <span class="material-symbols-outlined text-lg">close</span>
+        </button>
+      </div>
+
+      <!-- Body -->
+      <div class="p-5 space-y-4 max-h-[75vh] overflow-y-auto text-xs">
+        <!-- Dropzone Area -->
+        <div class="border-2 border-dashed border-emerald-300/80 bg-[#f4faff] rounded-xl p-4 sm:p-5 text-center transition-all hover:border-primary">
+          <div class="w-11 h-11 rounded-xl bg-emerald-100/80 text-primary flex items-center justify-center mx-auto mb-2 shadow-xs">
+            <span class="material-symbols-outlined text-2xl">cloud_upload</span>
+          </div>
+          <p class="text-xs text-on-surface">
+            Arrastra y suelta el documento aquí o <span class="text-primary font-bold cursor-pointer hover:underline">haz clic para explorar</span>
+          </p>
+          <p class="text-[11px] text-on-surface-variant mt-1">Formatos soportados: PDF firmado, DOCX, XLSX, Archivos ZIP (Máx. 25 MB)</p>
+
+          <!-- Archivo Analizado Card -->
+          <div class="bg-white rounded-lg p-3 border border-surface-container flex items-center justify-between mt-3 text-left shadow-xs">
+            <div class="flex items-center gap-2.5">
+              <div class="w-8 h-8 rounded bg-red-100/80 text-red-600 font-bold text-xs flex items-center justify-center font-mono border border-red-200">
+                PDF
+              </div>
+              <div>
+                <div class="font-mono font-semibold text-xs text-on-surface">{{ nuevoDocumento.archivoNombre }}</div>
+                <div class="text-[11px] text-on-surface-variant">{{ nuevoDocumento.archivoPeso }} • Escaneado de firmas conforme • SHA-256 Verificado</div>
+              </div>
+            </div>
+            <div class="flex items-center gap-2 shrink-0">
+              <span class="bg-emerald-100 text-emerald-700 font-bold text-xs px-2.5 py-1 rounded-full flex items-center gap-1">
+                <span class="material-symbols-outlined text-xs">check</span>
+                <span>Archivo Válido</span>
+              </span>
+              <button type="button" class="text-on-surface-variant hover:text-on-surface p-1 rounded" title="Remover">
+                <span class="material-symbols-outlined text-sm">close</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Formulario -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label class="block font-semibold text-on-surface mb-1">Tipo / Categoría de Documento *</label>
+            <select [(ngModel)]="nuevoDocumento.categoria" class="w-full px-3 py-2 rounded-lg bg-surface-container-lowest border border-surface-container text-on-surface focus:outline-none focus:border-primary text-xs">
+              <option value="Actas de Entrega y Recepción (Legal / Obra)">Actas de Entrega y Recepción (Legal / Obra)</option>
+              <option value="Licencias & Permisos Municipales">Licencias & Permisos Municipales</option>
+              <option value="Seguridad & Salud en el Trabajo (SST)">Seguridad & Salud en el Trabajo (SST)</option>
+              <option value="Pólizas de Seguro (CAR / Trebol)">Pólizas de Seguro (CAR / Trebol)</option>
+              <option value="Certificados de Homologación de Materiales">Certificados de Homologación de Materiales</option>
+              <option value="Protocolos de Pruebas & Comisionamiento">Protocolos de Pruebas & Comisionamiento</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="block font-semibold text-on-surface mb-1">N° Registro / Folio / Código Contractual *</label>
+            <div class="flex items-center gap-2 px-3 py-2 rounded-lg bg-surface-container-lowest border border-surface-container focus-within:border-primary">
+              <span class="material-symbols-outlined text-primary text-base">pin</span>
+              <input type="text" [(ngModel)]="nuevoDocumento.folio" class="w-full text-xs font-mono font-bold text-primary bg-transparent focus:outline-none">
+            </div>
+          </div>
+
+          <div class="sm:col-span-2">
+            <label class="block font-semibold text-on-surface mb-1">Título / Denominación Oficial del Documento *</label>
+            <div class="flex items-center gap-2 px-3 py-2 rounded-lg bg-surface-container-lowest border border-surface-container focus-within:border-primary">
+              <span class="material-symbols-outlined text-on-surface-variant text-base">description</span>
+              <input type="text" [(ngModel)]="nuevoDocumento.titulo" class="w-full text-xs text-on-surface bg-transparent focus:outline-none">
+            </div>
+          </div>
+
+          <div>
+            <label class="block font-semibold text-on-surface mb-1">Entidad Emisora / Suscribe *</label>
+            <div class="flex items-center gap-2 px-3 py-2 rounded-lg bg-surface-container-lowest border border-surface-container focus-within:border-primary">
+              <span class="material-symbols-outlined text-on-surface-variant text-base">store</span>
+              <input type="text" [(ngModel)]="nuevoDocumento.entidadEmisora" class="w-full text-xs text-on-surface bg-transparent focus:outline-none">
+            </div>
+          </div>
+
+          <div class="grid grid-cols-2 gap-2">
+            <div>
+              <label class="block font-semibold text-on-surface mb-1">Fecha de Emisión *</label>
+              <div class="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-surface-container-lowest border border-surface-container focus-within:border-primary">
+                <input type="date" [(ngModel)]="nuevoDocumento.fechaEmision" class="w-full text-xs text-on-surface bg-transparent focus:outline-none">
+              </div>
+            </div>
+
+            <div>
+              <label class="block font-semibold text-on-surface mb-1">Vigencia / Plazo</label>
+              <input type="text" [(ngModel)]="nuevoDocumento.vigencia" class="w-full px-3 py-2 rounded-lg bg-surface-container-lowest border border-surface-container text-on-surface focus:outline-none focus:border-primary text-xs">
+            </div>
+          </div>
+
+          <div>
+            <label class="block font-semibold text-on-surface mb-1">Responsable GLD de Validación / Firma *</label>
+            <select [(ngModel)]="nuevoDocumento.responsableGld" class="w-full px-3 py-2 rounded-lg bg-surface-container-lowest border border-surface-container text-on-surface focus:outline-none focus:border-primary text-xs">
+              <option value="Ing. Carlos Mendoza P. (CIP: 142859) - Jefe de Obra">Ing. Carlos Mendoza P. (CIP: 142859) - Jefe de Obra</option>
+              <option value="Arq. Lucía Fernández R. (CAP: 9821) - Residente de Obra">Arq. Lucía Fernández R. (CAP: 9821) - Residente de Obra</option>
+              <option value="Ing. Marco Silva T. - Coordinador SST">Ing. Marco Silva T. - Coordinador SST</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="block font-semibold text-on-surface mb-1">Hito / Semana Asociada</label>
+            <select [(ngModel)]="nuevoDocumento.hitoSemana" class="w-full px-3 py-2 rounded-lg bg-surface-container-lowest border border-surface-container text-on-surface focus:outline-none focus:border-primary text-xs">
+              <option value="SEM 01: Obras Provisionales y Demolición (Hito de Arrancada)">SEM 01: Obras Provisionales y Demolición (Hito de Arrancada)</option>
+              <option value="SEM 02: Estructuración Metálica & Muros Drywall">SEM 02: Estructuración Metálica & Muros Drywall</option>
+              <option value="SEM 03: Redes Sanitarias & Climatización HVAC">SEM 03: Redes Sanitarias & Climatización HVAC</option>
+              <option value="SEM 04: Instalaciones Eléctricas & Iluminación LED">SEM 04: Instalaciones Eléctricas & Iluminación LED</option>
+              <option value="SEM 05: Mobiliario Comercial, Cajas & Góndolas">SEM 05: Mobiliario Comercial, Cajas & Góndolas</option>
+              <option value="SEM 06: Pruebas de Vacío & Entrega Final">SEM 06: Pruebas de Vacío & Entrega Final</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Checkboxes de Trazabilidad -->
+        <div class="bg-surface-container-low/40 rounded-xl p-3.5 border border-surface-container/60 space-y-2">
+          <div class="font-mono font-bold text-[10px] text-on-surface-variant uppercase tracking-wider mb-1">OPCIONES DE TRAZABILIDAD & NOTIFICACIONES</div>
+          <label class="flex items-start gap-2.5 cursor-pointer">
+            <input type="checkbox" [(ngModel)]="nuevoDocumento.sincronizarTablets" class="mt-0.5 rounded text-primary focus:ring-primary h-4 w-4">
+            <span class="text-xs text-on-surface font-medium leading-tight">Sincronizar inmediatamente con estación de tablets para residentes de obra.</span>
+          </label>
+          <label class="flex items-start gap-2.5 cursor-pointer">
+            <input type="checkbox" [(ngModel)]="nuevoDocumento.notificarWhatsapp" class="mt-0.5 rounded text-primary focus:ring-primary h-4 w-4">
+            <span class="text-xs text-on-surface font-medium leading-tight">Notificar vía correo y WhatsApp a Supervisión Corporativa y Jefatura de Operaciones.</span>
+          </label>
+          <label class="flex items-start gap-2.5 cursor-pointer">
+            <input type="checkbox" [(ngModel)]="nuevoDocumento.incluirDossier" class="mt-0.5 rounded text-primary focus:ring-primary h-4 w-4">
+            <span class="text-xs text-on-surface font-medium leading-tight">Incluir automáticamente en el Dossier de Calidad y Entrega Final.</span>
+          </label>
+        </div>
+      </div>
+
+      <!-- Footer -->
+      <div class="flex items-center justify-between p-4 px-5 border-t border-surface-container bg-surface-container-low/40">
+        <div class="flex items-center gap-1.5 text-[11px] text-on-surface-variant">
+          <span class="material-symbols-outlined text-sm text-primary">lock</span>
+          <span>El documento se encriptará y archivará en la tabla obra_documentos_actas con sellado de tiempo.</span>
+        </div>
+        <div class="flex items-center gap-2">
+          <button type="button" class="px-3.5 py-2 rounded-lg text-xs font-semibold text-on-surface-variant hover:bg-surface-container transition-colors" (click)="cerrarModales()">Cancelar</button>
+          <button type="button" class="px-4 py-2 rounded-lg bg-primary text-on-primary text-xs font-semibold hover:bg-primary/90 flex items-center gap-1.5 shadow-sm transition-opacity" (click)="guardarNuevoDocumento()">
+            <span class="material-symbols-outlined text-sm">cloud_upload</span>
+            <span>Subir y Registrar Documento</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- ════════════════════════════════════════════════════════════════════════ -->
+<!-- MODAL 8: DETALLE DE DOCUMENTO TÉCNICO & ACTA CONTRACTUAL                -->
+<!-- ════════════════════════════════════════════════════════════════════════ -->
+@if (modalDetalleDocVisible()) {
+  <div class="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 overflow-y-auto animate-in fade-in duration-200">
+    <div class="bg-surface-container-lowest rounded-2xl shadow-2xl border border-surface-container w-full max-w-4xl overflow-hidden my-auto flex flex-col">
+      <!-- Header -->
+      <div class="flex items-center justify-between p-4 px-5 border-b border-surface-container bg-surface-container-low/30">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-xl bg-emerald-50 text-primary flex items-center justify-center border border-emerald-200/50 shadow-xs">
+            <span class="material-symbols-outlined text-xl">verified_user</span>
+          </div>
+          <div>
+            <div class="flex items-center gap-2 flex-wrap">
+              <h2 class="font-bold text-sm text-on-surface">Detalle de Documento Técnico & Acta Contractual</h2>
+              <span class="bg-amber-100 text-amber-900 text-[10px] font-bold px-2 py-0.5 rounded font-mono">{{ documentoDetalleActivo.folio }}</span>
+              <span class="bg-emerald-100 text-emerald-800 text-[10px] font-bold px-2 py-0.5 rounded font-mono flex items-center gap-1">
+                <span class="material-symbols-outlined text-xs">check</span>
+                <span>Validado por Supervisión GLD</span>
+              </span>
+            </div>
+            <p class="text-xs text-on-surface-variant mt-0.5">CC-948: Tambo Villa El Salvador • Repositorio Legal & Técnico • Folio Digital Verificado</p>
+          </div>
+        </div>
+        <div class="flex items-center gap-2">
+          <button type="button" class="px-3 py-1.5 rounded-lg border border-surface-container text-xs font-semibold text-on-surface hover:bg-surface-container flex items-center gap-1.5 transition-colors">
+            <span class="material-symbols-outlined text-sm">print</span>
+            <span>Imprimir</span>
+          </button>
+          <button type="button" class="text-on-surface-variant hover:text-on-surface p-1 rounded-lg hover:bg-surface-container transition-colors" (click)="cerrarModales()">
+            <span class="material-symbols-outlined text-lg">close</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Body Grid -->
+      <div class="p-5 max-h-[78vh] overflow-y-auto text-xs grid grid-cols-1 lg:grid-cols-12 gap-4">
+        <!-- Columna Izquierda: Ficha Técnica & Condiciones -->
+        <div class="lg:col-span-7 space-y-4">
+          <!-- Card A: Ficha Técnica del Documento -->
+          <div class="border border-surface-container rounded-xl p-4 bg-surface-container-lowest shadow-xs">
+            <div class="flex items-center justify-between pb-3 border-b border-surface-container/60">
+              <div class="flex items-center gap-2">
+                <span class="bg-[#104a37] text-white text-[10px] font-bold px-2 py-0.5 rounded uppercase font-mono tracking-wider">METADATOS OFICIALES</span>
+                <span class="font-semibold text-xs text-on-surface">Ficha Técnica del Documento</span>
+              </div>
+              <span class="bg-emerald-50 text-emerald-900 text-[10px] font-bold px-2 py-0.5 rounded font-mono border border-emerald-200/60">{{ documentoDetalleActivo.expediente }}</span>
+            </div>
+
+            <div class="mt-3">
+              <span class="text-[11px] text-on-surface-variant">Nombre Oficial Contractual:</span>
+              <h3 class="font-bold text-sm text-on-surface mt-0.5 leading-snug">{{ documentoDetalleActivo.titulo }}</h3>
+            </div>
+
+            <div class="grid grid-cols-2 gap-3 mt-3 pt-3 border-t border-surface-container/50">
+              <div>
+                <span class="text-[10px] uppercase font-mono text-on-surface-variant block font-bold">TIPO / CATEGORÍA</span>
+                <span class="font-medium text-on-surface text-xs">{{ documentoDetalleActivo.categoria }}</span>
+              </div>
+              <div>
+                <span class="text-[10px] uppercase font-mono text-on-surface-variant block font-bold">N° FOLIO / REGISTRO</span>
+                <span class="font-mono font-bold text-primary text-xs">{{ documentoDetalleActivo.folioCompleto }}</span>
+              </div>
+              <div>
+                <span class="text-[10px] uppercase font-mono text-on-surface-variant block font-bold">FECHA DE EMISIÓN</span>
+                <span class="font-medium text-on-surface text-xs">{{ documentoDetalleActivo.fechaEmision }}</span>
+              </div>
+              <div>
+                <span class="text-[10px] uppercase font-mono text-on-surface-variant block font-bold">VIGENCIA / PLAZO</span>
+                <span class="font-semibold text-emerald-700 text-xs flex items-center gap-1">
+                  <span class="w-1.5 h-1.5 rounded-full bg-emerald-600"></span>
+                  <span>{{ documentoDetalleActivo.vigencia }}</span>
+                </span>
+              </div>
+              <div>
+                <span class="text-[10px] text-on-surface-variant block">Entidades Firmantes:</span>
+                <span class="font-medium text-on-surface text-xs">{{ documentoDetalleActivo.entidadesFirmantes }}</span>
+              </div>
+              <div>
+                <span class="text-[10px] text-on-surface-variant block">Responsable Técnico GLD:</span>
+                <span class="font-medium text-on-surface text-xs">{{ documentoDetalleActivo.responsableGld }}</span>
+              </div>
+              <div class="col-span-2">
+                <span class="text-[10px] text-on-surface-variant block">Hito / Fase Vinculada:</span>
+                <span class="font-semibold text-primary text-xs">{{ documentoDetalleActivo.hitoVinculado }}</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Card B: Condiciones de Entrega & Observaciones Notariales -->
+          <div class="border border-surface-container rounded-xl p-4 bg-surface-container-lowest shadow-xs">
+            <div class="flex items-center justify-between pb-2.5 border-b border-surface-container/60">
+              <div class="flex items-center gap-1.5 font-mono font-bold text-[11px] text-emerald-900 tracking-wider">
+                <span class="material-symbols-outlined text-sm text-primary">checklist</span>
+                <span>CONDICIONES DE ENTREGA & OBSERVACIONES NOTARIALES</span>
+              </div>
+              <span class="bg-emerald-50 text-emerald-800 text-[10px] font-bold px-2 py-0.5 rounded font-mono border border-emerald-200/50">4 Puntos Clave Conformes</span>
+            </div>
+
+            <ul class="mt-3 space-y-2 text-xs text-on-surface-variant leading-relaxed">
+              <li class="flex items-start gap-1.5">
+                <span class="text-primary font-bold">•</span>
+                <span><strong class="text-on-surface">Entrega de llaves y accesos:</strong> Recepción conforme de la llave principal del predio y llaves maestras de medidores de luz y agua.</span>
+              </li>
+              <li class="flex items-start gap-1.5">
+                <span class="text-primary font-bold">•</span>
+                <span><strong class="text-on-surface">Suministros verificados:</strong> Factibilidad operativa comprobada de acometida eléctrica monofásica provisoria y presión hidráulica adecuada.</span>
+              </li>
+              <li class="flex items-start gap-1.5">
+                <span class="text-primary font-bold">•</span>
+                <span><strong class="text-on-surface">Inspección de linderos:</strong> Área útil de 148.50 m² delimitada sin invasiones ni litigios pendientes con colindantes comerciales.</span>
+              </li>
+              <li class="flex items-start gap-1.5">
+                <span class="text-primary font-bold">•</span>
+                <span><strong class="text-on-surface">Autorizaciones municipales:</strong> Licencia tipo B expedida por la Municipalidad de Villa El Salvador apta para inicio de obra.</span>
+              </li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- Columna Derecha: Archivo Digital, Sello SHA-256 & Firmas -->
+        <div class="lg:col-span-5 space-y-4">
+          <!-- Card C: Archivo Digital Asociado -->
+          <div class="border border-surface-container rounded-xl p-4 bg-surface-container-lowest shadow-xs">
+            <div class="flex items-center justify-between pb-2.5 border-b border-surface-container/60">
+              <div class="flex items-center gap-1.5 font-semibold text-xs text-on-surface">
+                <span class="material-symbols-outlined text-sm text-on-surface-variant">description</span>
+                <span>Archivo Digital Asociado</span>
+              </div>
+              <span class="bg-emerald-100 text-emerald-800 text-[10px] font-bold px-2 py-0.5 rounded font-mono">PDF FIRMADO</span>
+            </div>
+
+            <div class="bg-surface-container-low/40 rounded-xl p-3 border border-surface-container/60 flex items-center justify-between mt-3">
+              <div class="flex items-center gap-2.5">
+                <div class="w-9 h-9 rounded bg-red-100/80 text-red-600 font-bold text-xs flex items-center justify-center font-mono border border-red-200 shrink-0">
+                  PDF
+                </div>
+                <div class="overflow-hidden">
+                  <div class="font-mono font-bold text-xs text-on-surface truncate">{{ documentoDetalleActivo.archivoNombre }}</div>
+                  <div class="text-[11px] text-on-surface-variant">{{ documentoDetalleActivo.archivoPeso }} • PDF con Metadatos Notariales</div>
+                </div>
+              </div>
+              <button type="button" class="p-2 rounded-lg bg-surface-container hover:bg-surface-container-high text-on-surface transition-colors" (click)="downloadPlano(documentoDetalleActivo.archivoNombre)" title="Descargar">
+                <span class="material-symbols-outlined text-base">download</span>
+              </button>
+            </div>
+
+            <div class="mt-2.5 flex items-center gap-1 font-mono text-[11px] text-emerald-700 font-semibold">
+              <span class="material-symbols-outlined text-xs">verified</span>
+              <span>SHA-256: {{ documentoDetalleActivo.sha256 }}</span>
+            </div>
+
+            <!-- Sello Digital Sub-card -->
+            <div class="bg-emerald-50/70 border border-emerald-200/80 rounded-lg p-2.5 flex items-start gap-2 mt-3">
+              <span class="material-symbols-outlined text-emerald-700 text-base mt-0.5 shrink-0">verified_user</span>
+              <div>
+                <div class="font-bold text-xs text-emerald-950">Sello Digital SHA-256 y Validador Legal Activo</div>
+                <p class="text-[11px] text-emerald-900/80 leading-tight mt-0.5">Certificado digital emitido con estampa cronológica notarial conforme a la Ley de Firmas Digitales Nº 27269.</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Card D: Firmas de Conformidad y Aprobación -->
+          <div class="border border-surface-container rounded-xl p-4 bg-surface-container-lowest shadow-xs">
+            <div class="flex items-center justify-between pb-2.5 border-b border-surface-container/60">
+              <div class="flex items-center gap-1.5 font-mono font-bold text-[11px] text-on-surface-variant tracking-wider">
+                <span class="material-symbols-outlined text-sm text-primary">edit_document</span>
+                <span>FIRMAS DE CONFORMIDAD Y APROBACIÓN</span>
+              </div>
+              <span class="bg-slate-100 text-slate-700 text-[10px] font-bold px-2 py-0.5 rounded font-mono">3/3 Firmados</span>
+            </div>
+
+            <div class="mt-3 space-y-2.5">
+              <!-- Firmante 1 -->
+              <div class="flex items-center justify-between p-2 rounded-lg bg-surface-container-low/30 border border-surface-container/40">
+                <div class="flex items-center gap-2.5">
+                  <div class="w-8 h-8 rounded-full bg-emerald-100 text-emerald-900 font-bold text-xs flex items-center justify-center border border-emerald-300">
+                    ST
+                  </div>
+                  <div>
+                    <div class="font-bold text-xs text-on-surface">Supervisor TIENDAS TAMBO</div>
+                    <div class="text-[11px] text-on-surface-variant">Ing. Renzo Pacheco • 18/09/2026</div>
+                  </div>
+                </div>
+                <span class="bg-emerald-100 text-emerald-700 font-bold text-xs px-2.5 py-0.5 rounded-full flex items-center gap-1">
+                  <span class="material-symbols-outlined text-xs">check</span>
+                  <span>Firmado</span>
+                </span>
+              </div>
+
+              <!-- Firmante 2 -->
+              <div class="flex items-center justify-between p-2 rounded-lg bg-surface-container-low/30 border border-surface-container/40">
+                <div class="flex items-center gap-2.5">
+                  <div class="w-8 h-8 rounded-full bg-emerald-100 text-emerald-900 font-bold text-xs flex items-center justify-center border border-emerald-300">
+                    GL
+                  </div>
+                  <div>
+                    <div class="font-bold text-xs text-on-surface">Jefatura de Obra GLD</div>
+                    <div class="text-[11px] text-on-surface-variant">Ing. Carlos Mendoza (CIP 142859)</div>
+                  </div>
+                </div>
+                <span class="bg-emerald-100 text-emerald-700 font-bold text-xs px-2.5 py-0.5 rounded-full flex items-center gap-1">
+                  <span class="material-symbols-outlined text-xs">check</span>
+                  <span>Firmado</span>
+                </span>
+              </div>
+
+              <!-- Firmante 3 -->
+              <div class="flex items-center justify-between p-2 rounded-lg bg-surface-container-low/30 border border-surface-container/40">
+                <div class="flex items-center gap-2.5">
+                  <div class="w-8 h-8 rounded-full bg-lime-100 text-lime-900 font-bold text-xs flex items-center justify-center border border-lime-300">
+                    MV
+                  </div>
+                  <div>
+                    <div class="font-bold text-xs text-on-surface">Fiscalización Municipal VES</div>
+                    <div class="text-[11px] text-on-surface-variant">Acta de Inspección Nº 0814-2026</div>
+                  </div>
+                </div>
+                <span class="bg-emerald-100 text-emerald-700 font-bold text-xs px-2.5 py-0.5 rounded-full flex items-center gap-1">
+                  <span class="material-symbols-outlined text-xs">check</span>
+                  <span>Conforme</span>
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Footer -->
+      <div class="flex flex-wrap items-center justify-between p-3.5 px-5 border-t border-surface-container bg-surface-container-low/40 shrink-0 gap-3">
+        <button type="button" class="text-xs font-semibold text-on-surface-variant hover:text-on-surface flex items-center gap-1.5 py-1">
+          <span class="material-symbols-outlined text-sm">history</span>
+          <span>Historial de Adendas (0)</span>
+        </button>
+
+        <div class="flex items-center gap-2">
+          <button type="button" class="px-3.5 py-2 rounded-lg text-xs font-semibold text-on-surface-variant hover:bg-surface-container transition-colors" (click)="cerrarModales()">Cerrar</button>
+          <button type="button" class="px-3.5 py-2 rounded-lg border border-surface-container text-xs font-semibold text-on-surface hover:bg-surface-container flex items-center gap-1.5 transition-colors" (click)="downloadPlano(documentoDetalleActivo.archivoNombre)">
+            <span class="material-symbols-outlined text-sm">visibility</span>
+            <span>Ver PDF Completo</span>
+          </button>
+          <button type="button" class="px-4 py-2 rounded-lg bg-primary text-on-primary text-xs font-semibold hover:bg-primary/90 flex items-center gap-1.5 shadow-sm transition-opacity" (click)="downloadPlano(documentoDetalleActivo.archivoNombre)">
+            <span class="material-symbols-outlined text-sm">download</span>
+            <span>Descargar Copia Certificada</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+}
+
+
+<!-- ════════════════════════════════════════════════════════════════════════ -->
+<!-- MODAL 9: BITÁCORA DIGITAL DE OBRA & ASIENTO TÉCNICO DE CONTROL           -->
+<!-- ════════════════════════════════════════════════════════════════════════ -->
+@if (modalBitacoraVisible()) {
+  <div class="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 overflow-y-auto animate-in fade-in duration-200">
+    <div class="bg-surface-container-lowest rounded-2xl shadow-2xl border border-surface-container w-full max-w-4xl overflow-hidden my-auto flex flex-col">
+      <!-- Header -->
+      <div class="flex items-center justify-between p-4 px-5 border-b border-surface-container bg-surface-container-low/30 shrink-0">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-xl bg-emerald-50 text-primary flex items-center justify-center border border-emerald-200/50 shadow-xs">
+            <span class="material-symbols-outlined text-xl">menu_book</span>
+          </div>
+          <div>
+            <div class="flex items-center gap-2 flex-wrap">
+              <h2 class="font-bold text-sm text-on-surface">Bitácora Digital de Obra & Asiento Técnico de Control</h2>
+              <span class="bg-[#e5e4aa] text-[#4b480c] font-mono font-bold text-[10px] px-2 py-0.5 rounded border border-[#cfce85]">ASIENTO #14 - DIGITALIZADO & FIRMADO</span>
+              <span class="bg-emerald-100 text-emerald-800 font-mono font-bold text-[10px] px-2 py-0.5 rounded flex items-center gap-1">
+                <span class="material-symbols-outlined text-xs">check</span>
+                <span>Conforme por Supervisión</span>
+              </span>
+            </div>
+            <p class="text-xs text-on-surface-variant mt-0.5">CC-948: Tambo Villa El Salvador • Cuaderno de Obra Oficial GLD • Sincronizado con Estación de Tablets</p>
+          </div>
+        </div>
+        <div class="flex items-center gap-2">
+          <button type="button" class="px-3 py-1.5 rounded-lg border border-surface-container text-xs font-semibold text-on-surface hover:bg-surface-container flex items-center gap-1.5 transition-colors">
+            <span class="material-symbols-outlined text-sm">print</span>
+            <span>Imprimir / PDF</span>
+          </button>
+          <button type="button" class="text-on-surface-variant hover:text-on-surface p-1 rounded-lg hover:bg-surface-container transition-colors" (click)="cerrarModales()">
+            <span class="material-symbols-outlined text-lg">close</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Body Grid -->
+      <div class="p-5 max-h-[78vh] overflow-y-auto text-xs grid grid-cols-1 lg:grid-cols-12 gap-4">
+        <!-- Columna Izquierda: Metadatos, Anotación y Acuerdos -->
+        <div class="lg:col-span-7 space-y-4">
+          <!-- Card 1: Metadatos del Asiento -->
+          <div class="border border-surface-container rounded-xl p-4 bg-surface-container-lowest shadow-xs">
+            <div class="flex items-center justify-between pb-3 border-b border-surface-container/60">
+              <div class="flex items-center gap-2">
+                <span class="bg-[#104a37] text-white text-[10px] font-bold px-2 py-0.5 rounded uppercase font-mono tracking-wider">METADATOS DEL ASIENTO</span>
+                <span class="font-semibold text-xs text-on-surface">Cuaderno de Obra Digital GLD</span>
+              </div>
+              <span class="bg-emerald-50 text-emerald-900 text-[10px] font-bold px-2 py-0.5 rounded font-mono border border-emerald-200/60">{{ asientoBitacoraActivo.folio }}</span>
+            </div>
+
+            <div class="grid grid-cols-2 gap-3 mt-3 pt-1">
+              <div>
+                <span class="text-[10px] uppercase font-mono text-on-surface-variant block font-bold">NÚMERO DE ASIENTO</span>
+                <span class="font-mono font-bold text-primary text-xs">Asiento Nº {{ asientoBitacoraActivo.numero }}</span>
+              </div>
+              <div>
+                <span class="text-[10px] uppercase font-mono text-on-surface-variant block font-bold">FECHA Y HORA DE REGISTRO</span>
+                <span class="font-medium text-on-surface text-xs">{{ asientoBitacoraActivo.fechaHora }}</span>
+              </div>
+              <div>
+                <span class="text-[10px] uppercase font-mono text-on-surface-variant block font-bold">AUTOR DEL ASIENTO</span>
+                <span class="font-bold text-on-surface text-xs block">{{ asientoBitacoraActivo.autor }}</span>
+                <span class="text-[10px] text-on-surface-variant">{{ asientoBitacoraActivo.autorCargo }}</span>
+              </div>
+              <div>
+                <span class="text-[10px] uppercase font-mono text-on-surface-variant block font-bold">SUPERVISOR VALIDADOR</span>
+                <span class="font-bold text-on-surface text-xs block">{{ asientoBitacoraActivo.supervisor }}</span>
+                <span class="text-[10px] text-on-surface-variant">{{ asientoBitacoraActivo.supervisorCargo }}</span>
+              </div>
+              <div>
+                <span class="text-[10px] uppercase font-mono text-on-surface-variant block font-bold">HITO / FRENTE VINCULADO</span>
+                <span class="font-semibold text-primary text-xs">{{ asientoBitacoraActivo.hitoFrente }}</span>
+              </div>
+              <div>
+                <span class="text-[10px] uppercase font-mono text-on-surface-variant block font-bold">CLIMA Y JORNADA</span>
+                <span class="font-medium text-on-surface text-xs">{{ asientoBitacoraActivo.climaJornada }}</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Card 2: Anotación de Cuaderno de Obra Oficial -->
+          <div class="border border-surface-container rounded-xl p-4 bg-surface-container-lowest shadow-xs">
+            <div class="flex items-center justify-between pb-2.5 border-b border-surface-container/60">
+              <div class="flex items-center gap-1.5 font-mono font-bold text-[11px] text-emerald-900 tracking-wider">
+                <span class="material-symbols-outlined text-sm text-primary">edit_note</span>
+                <span>ANOTACIÓN DE CUADERNO DE OBRA OFICIAL</span>
+              </div>
+              <span class="bg-emerald-50 text-emerald-800 text-[10px] font-bold px-2 py-0.5 rounded font-mono border border-emerald-200/50">Asiento Ordinario</span>
+            </div>
+            <p class="mt-3 text-xs text-on-surface leading-relaxed text-justify">{{ asientoBitacoraActivo.anotacion }}</p>
+          </div>
+
+          <!-- Card 3: Acuerdos y Compromisos de Campo -->
+          <div class="border border-surface-container rounded-xl p-4 bg-surface-container-lowest shadow-xs">
+            <div class="flex items-center justify-between pb-2.5 border-b border-surface-container/60">
+              <div class="flex items-center gap-1.5 font-mono font-bold text-[11px] text-emerald-900 tracking-wider">
+                <span class="material-symbols-outlined text-sm text-primary">handshake</span>
+                <span>ACUERDOS Y COMPROMISOS DE CAMPO</span>
+              </div>
+              <span class="bg-emerald-50 text-emerald-800 text-[10px] font-bold px-2 py-0.5 rounded font-mono border border-emerald-200/50">2 Acciones Fijadas</span>
+            </div>
+            <ul class="mt-3 space-y-2 text-xs text-on-surface-variant leading-relaxed">
+              @for (acuerdo of asientoBitacoraActivo.acuerdos; track acuerdo.titulo) {
+                <li class="flex items-start gap-1.5">
+                  <span class="text-primary font-bold">•</span>
+                  <span><strong class="text-on-surface">{{ acuerdo.titulo }}</strong> {{ acuerdo.detalle }}</span>
+                </li>
+              }
+            </ul>
+          </div>
+        </div>
+
+        <!-- Columna Derecha: Fotos, Sello Criptográfico & Firmas -->
+        <div class="lg:col-span-5 space-y-4">
+          <!-- Card 4: Evidencias Fotográficas del Asiento -->
+          <div class="border border-surface-container rounded-xl p-4 bg-surface-container-lowest shadow-xs">
+            <div class="flex items-center justify-between pb-2.5 border-b border-surface-container/60">
+              <div class="flex items-center gap-1.5 font-semibold text-xs text-on-surface">
+                <span class="material-symbols-outlined text-sm text-on-surface-variant">photo_library</span>
+                <span>Evidencias Fotográficas del Asiento</span>
+              </div>
+              <span class="bg-emerald-100 text-emerald-800 text-[10px] font-bold px-2 py-0.5 rounded font-mono">2 REGISTROS</span>
+            </div>
+
+            <div class="grid grid-cols-2 gap-2.5 mt-3">
+              <!-- Foto 1 -->
+              <div class="rounded-lg border border-surface-container overflow-hidden bg-surface-container-low/30">
+                <div class="relative h-28 bg-slate-800 overflow-hidden">
+                  <img src="https://images.unsplash.com/photo-1541888946425-d0fbb186156f?q=80&w=400&auto=format&fit=crop" alt="Alineamiento Parantes" class="w-full h-full object-cover">
+                  <span class="absolute top-1.5 right-1.5 bg-emerald-600 text-white text-[9px] font-bold px-2 py-0.5 rounded shadow-xs">Aprobado</span>
+                </div>
+                <div class="p-2">
+                  <div class="font-bold text-[11px] text-on-surface truncate">Alineamiento Parantes 89mm</div>
+                  <div class="text-[10px] text-on-surface-variant">Aprobado SSOMA</div>
+                </div>
+              </div>
+
+              <!-- Foto 2 -->
+              <div class="rounded-lg border border-surface-container overflow-hidden bg-surface-container-low/30">
+                <div class="relative h-28 bg-slate-800 overflow-hidden">
+                  <img src="https://images.unsplash.com/photo-1581092160607-ee22621dd758?q=80&w=400&auto=format&fit=crop" alt="Tendido Conduit" class="w-full h-full object-cover">
+                  <span class="absolute top-1.5 right-1.5 bg-amber-700 text-white text-[9px] font-bold px-2 py-0.5 rounded shadow-xs">IEE Ok</span>
+                </div>
+                <div class="p-2">
+                  <div class="font-bold text-[11px] text-on-surface truncate">Tendido Conduit Empotrado</div>
+                  <div class="text-[10px] text-on-surface-variant">Coordinado ELEC-02</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Card 5: Sello Criptográfico Activo -->
+          <div class="bg-emerald-50/70 border border-emerald-200/80 rounded-xl p-3 flex items-start gap-2.5 shadow-xs">
+            <span class="material-symbols-outlined text-emerald-700 text-lg mt-0.5 shrink-0">verified_user</span>
+            <div>
+              <div class="font-bold text-xs text-emerald-950">Firma Digital & Sello Criptográfico Activo</div>
+              <p class="text-[11px] text-emerald-900/85 leading-tight mt-0.5 font-mono">
+                Hash SHA-256: {{ asientoBitacoraActivo.sha256.slice(0, 8) }}...{{ asientoBitacoraActivo.sha256.slice(-4) }} • Validado por Jefatura GLD con estampa de tiempo conforme a Ley Nº 27269.
+              </p>
+            </div>
+          </div>
+
+          <!-- Card 6: Firmas de Aprobación de Asiento -->
+          <div class="border border-surface-container rounded-xl p-4 bg-surface-container-lowest shadow-xs">
+            <div class="flex items-center justify-between pb-2.5 border-b border-surface-container/60">
+              <div class="flex items-center gap-1.5 font-mono font-bold text-[11px] text-on-surface-variant tracking-wider">
+                <span class="material-symbols-outlined text-sm text-primary">edit_document</span>
+                <span>FIRMAS DE APROBACIÓN DE ASIENTO</span>
+              </div>
+              <span class="bg-slate-100 text-slate-700 text-[10px] font-bold px-2 py-0.5 rounded font-mono">2/2 Firmados</span>
+            </div>
+
+            <div class="mt-3 space-y-2.5">
+              <!-- Firmante 1 -->
+              <div class="flex items-center justify-between p-2 rounded-lg bg-surface-container-low/30 border border-surface-container/40">
+                <div class="flex items-center gap-2.5">
+                  <div class="w-8 h-8 rounded-full bg-emerald-100 text-emerald-900 font-bold text-xs flex items-center justify-center border border-emerald-300">
+                    LF
+                  </div>
+                  <div>
+                    <div class="font-bold text-xs text-on-surface">Arq. Lucía Fernández R.</div>
+                    <div class="text-[11px] text-on-surface-variant">CAP: 9821 • Residente Acabados</div>
+                  </div>
+                </div>
+                <span class="bg-emerald-100 text-emerald-700 font-bold text-xs px-2.5 py-0.5 rounded-full flex items-center gap-1">
+                  <span class="material-symbols-outlined text-xs">check</span>
+                  <span>Firmado</span>
+                </span>
+              </div>
+
+              <!-- Firmante 2 -->
+              <div class="flex items-center justify-between p-2 rounded-lg bg-surface-container-low/30 border border-surface-container/40">
+                <div class="flex items-center gap-2.5">
+                  <div class="w-8 h-8 rounded-full bg-emerald-100 text-emerald-900 font-bold text-xs flex items-center justify-center border border-emerald-300">
+                    CM
+                  </div>
+                  <div>
+                    <div class="font-bold text-xs text-on-surface">Ing. Carlos Mendoza P.</div>
+                    <div class="text-[11px] text-on-surface-variant">CIP: 142859 • Jefe de Obra GLD</div>
+                  </div>
+                </div>
+                <span class="bg-emerald-100 text-emerald-700 font-bold text-xs px-2.5 py-0.5 rounded-full flex items-center gap-1">
+                  <span class="material-symbols-outlined text-xs">check</span>
+                  <span>Validado</span>
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Footer -->
+      <div class="flex flex-wrap items-center justify-between p-3.5 px-5 border-t border-surface-container bg-surface-container-low/40 shrink-0 gap-3">
+        <button type="button" class="text-xs font-semibold text-on-surface-variant hover:text-on-surface flex items-center gap-1.5 py-1">
+          <span class="material-symbols-outlined text-sm">history</span>
+          <span>Ver Historial de Asientos (1 al 14)</span>
+        </button>
+
+        <div class="flex items-center gap-2">
+          <button type="button" class="px-3.5 py-2 rounded-lg text-xs font-semibold text-on-surface-variant hover:bg-surface-container transition-colors" (click)="cerrarModales()">Cerrar</button>
+          <button type="button" class="px-3.5 py-2 rounded-lg border border-surface-container text-xs font-semibold text-on-surface hover:bg-surface-container flex items-center gap-1.5 transition-colors">
+            <span class="material-symbols-outlined text-sm">description</span>
+            <span>Descargar Acta de Asiento (PDF)</span>
+          </button>
+          <button type="button" class="px-4 py-2 rounded-lg bg-primary text-on-primary text-xs font-semibold hover:bg-primary/90 flex items-center gap-1.5 shadow-sm transition-opacity" (click)="guardarNuevoDocumento()">
+            <span class="material-symbols-outlined text-sm">add</span>
+            <span>+ Añadir Nuevo Asiento a Bitácora (+)</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- ════════════════════════════════════════════════════════════════════════ -->
+<!-- MODAL 10: REPORTAR NUEVA INCIDENCIA EN OBRA (RFI / INTERFERENCIA)       -->
+<!-- ════════════════════════════════════════════════════════════════════════ -->
+@if (modalReportarIncidenciaVisible()) {
+  <div class="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 overflow-y-auto animate-in fade-in duration-200">
+    <div class="bg-surface-container-lowest rounded-2xl shadow-2xl border border-surface-container w-full max-w-xl overflow-hidden my-auto flex flex-col">
+      <!-- Header -->
+      <div class="flex items-center justify-between p-4 px-5 border-b border-surface-container bg-error-container/20">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-xl bg-error-container text-on-error-container flex items-center justify-center border border-error/30 shadow-xs">
+            <span class="material-symbols-outlined text-xl">warning</span>
+          </div>
+          <div>
+            <div class="flex items-center gap-2 flex-wrap">
+              <h2 class="font-bold text-sm text-on-surface">Reportar Nueva Incidencia Técnica / RFI de Obra</h2>
+              <span class="bg-error text-on-error text-[10px] font-bold px-2 py-0.5 rounded tracking-wider uppercase font-mono">NUEVA INCIDENCIA</span>
+              <span class="bg-slate-100 text-slate-800 text-[10px] font-bold px-2 py-0.5 rounded font-mono">CC-948: Tambo VES</span>
+            </div>
+            <p class="text-xs text-on-surface-variant mt-0.5">Registro de interferencias, consultas a proyectistas y requerimientos críticos de campo</p>
+          </div>
+        </div>
+        <button type="button" class="text-on-surface-variant hover:text-on-surface p-1 rounded-lg hover:bg-surface-container transition-colors" (click)="cerrarModales()">
+          <span class="material-symbols-outlined text-lg">close</span>
+        </button>
+      </div>
+
+      <!-- Body -->
+      <div class="p-5 space-y-3.5 max-h-[75vh] overflow-y-auto text-xs">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label class="block font-semibold text-on-surface mb-1">Nivel de Prioridad / Severidad *</label>
+            <select [(ngModel)]="nuevaIncidencia.prioridad" class="w-full px-3 py-2 rounded-lg bg-surface-container-lowest border border-surface-container text-on-surface focus:outline-none focus:border-error text-xs font-semibold">
+              <option value="Alta Prioridad (Bloqueo Crítico - Res. 24h)">Alta Prioridad (Bloqueo Crítico - Res. 24h)</option>
+              <option value="Prioridad Media (Desviación Menor - Res. 48h)">Prioridad Media (Desviación Menor - Res. 48h)</option>
+              <option value="Baja Prioridad / Consulta Preventiva">Baja Prioridad / Consulta Preventiva</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="block font-semibold text-on-surface mb-1">Especialidad Afectada *</label>
+            <select [(ngModel)]="nuevaIncidencia.especialidad" class="w-full px-3 py-2 rounded-lg bg-surface-container-lowest border border-surface-container text-on-surface focus:outline-none focus:border-primary text-xs">
+              <option value="Climatización HVAC (Ductos & Equipos)">Climatización HVAC (Ductos & Equipos)</option>
+              <option value="Instalaciones Eléctricas (Cargas / Tableros)">Instalaciones Eléctricas (Cargas / Tableros)</option>
+              <option value="Estructura Metálica & Drywall">Estructura Metálica & Drywall</option>
+              <option value="Instalaciones Sanitarias & Desagüe">Instalaciones Sanitarias & Desagüe</option>
+              <option value="Mobiliario Comercial & Cajas">Mobiliario Comercial & Cajas</option>
+            </select>
+          </div>
+        </div>
+
+        <div>
+          <label class="block font-semibold text-on-surface mb-1">Título / Resumen de la Incidencia *</label>
+          <div class="flex items-center gap-2 px-3 py-2 rounded-lg bg-surface-container-lowest border border-surface-container focus-within:border-primary">
+            <span class="material-symbols-outlined text-on-surface-variant text-base">report</span>
+            <input type="text" [(ngModel)]="nuevaIncidencia.titulo" class="w-full text-xs text-on-surface bg-transparent focus:outline-none" placeholder="Ej. Interferencia en ducto HVAC con viga peraltada eje 3-B">
+          </div>
+        </div>
+
+        <div>
+          <label class="block font-semibold text-on-surface mb-1">Descripción Detallada del Bloqueo & Causa Raíz *</label>
+          <textarea rows="3" [(ngModel)]="nuevaIncidencia.descripcion" class="w-full p-3 rounded-lg bg-surface-container-lowest border border-surface-container text-on-surface focus:outline-none focus:border-primary text-xs leading-relaxed" placeholder="Describa la interferencia en campo, medidas físicas y acción requerida del proyectista..."></textarea>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label class="block font-semibold text-on-surface mb-1">Responsable Asignado para Resolución *</label>
+            <select [(ngModel)]="nuevaIncidencia.responsable" class="w-full px-3 py-2 rounded-lg bg-surface-container-lowest border border-surface-container text-on-surface focus:outline-none focus:border-primary text-xs">
+              <option value="Ing. Marcos Quispe (Instalaciones)">Ing. Marcos Quispe (Instalaciones)</option>
+              <option value="Ing. Carlos Mendoza (Jefe de Obra)">Ing. Carlos Mendoza (Jefe de Obra)</option>
+              <option value="Arq. Lucía Fernández (Residente)">Arq. Lucía Fernández (Residente)</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="block font-semibold text-on-surface mb-1">Plazo Máximo de Respuesta *</label>
+            <select [(ngModel)]="nuevaIncidencia.plazo" class="w-full px-3 py-2 rounded-lg bg-surface-container-lowest border border-surface-container text-on-surface focus:outline-none focus:border-primary text-xs">
+              <option value="24 Horas">24 Horas (Inmediato)</option>
+              <option value="48 Horas">48 Horas</option>
+              <option value="72 Horas">72 Horas</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Checkboxes -->
+        <div class="bg-surface-container-low/40 rounded-xl p-3 border border-surface-container/60 space-y-2">
+          <label class="flex items-start gap-2.5 cursor-pointer">
+            <input type="checkbox" [(ngModel)]="nuevaIncidencia.notificarWhatsapp" class="mt-0.5 rounded text-error focus:ring-error h-4 w-4">
+            <span class="text-xs text-on-surface font-medium leading-tight">Notificar inmediatamente vía WhatsApp y correo al Proyectista y Jefatura de Obra.</span>
+          </label>
+          <label class="flex items-start gap-2.5 cursor-pointer">
+            <input type="checkbox" [(ngModel)]="nuevaIncidencia.vincularCuaderno" class="mt-0.5 rounded text-error focus:ring-error h-4 w-4">
+            <span class="text-xs text-on-surface font-medium leading-tight">Vincular en el Cuaderno de Obra Digital y Curva S si genera desvío de plazo.</span>
+          </label>
+        </div>
+      </div>
+
+      <!-- Footer -->
+      <div class="flex items-center justify-between p-4 px-5 border-t border-surface-container bg-surface-container-low/40">
+        <div class="flex items-center gap-1.5 text-[11px] text-on-surface-variant">
+          <span class="material-symbols-outlined text-sm text-error">info</span>
+          <span>Genera correlativo automático (INC-948-005) y alerta a la estación de tablets.</span>
+        </div>
+        <div class="flex items-center gap-2">
+          <button type="button" class="px-3.5 py-2 rounded-lg text-xs font-semibold text-on-surface-variant hover:bg-surface-container transition-colors" (click)="cerrarModales()">Cancelar</button>
+          <button type="button" class="px-4 py-2 rounded-lg bg-error text-on-error text-xs font-semibold hover:opacity-90 flex items-center gap-1.5 shadow-sm transition-opacity" (click)="guardarNuevaIncidencia()">
+            <span class="material-symbols-outlined text-sm">warning</span>
+            <span>Registrar y Notificar Incidencia</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+}
+
+</div>

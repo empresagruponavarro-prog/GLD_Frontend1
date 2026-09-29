@@ -449,6 +449,6 @@ export class CentrosCostosComponent {
   }
 
   onVerDatos(item: CentroCosto) {
-    console.log('Datos del Centro de Costo:', item);
+    this.router.navigate(['/centros-costos', item.id, 'datos']);
   }
 }

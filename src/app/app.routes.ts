@@ -11,6 +11,7 @@ import { EspecialidadesComponent } from './features/maestros-generales/especiali
 import { TipoDocIdentidadComponent } from './features/maestros-generales/tipo-doc-identidad/tipo-doc-identidad';
 import { CentrosCostosDashboardComponent } from './features/centros-costos/centro-costos-dashboard/centros-costos-dashboard';
 import { CentrosCostosComponent } from './features/centros-costos/centros-costos';
+import { ObraCockpitComponent } from './features/centros-costos/obra-cockpit/obra-cockpit';
 import { PresupuestosComponent } from './features/presupuestos/presupuestos';
 import { DocumentosOrigenComponent } from './features/documentos/documentos-origen/documentos-origen';
 
@@ -18,6 +19,7 @@ export const routes: Routes = [
   { path: '', component: CentrosCostosDashboardComponent },
   { path: 'dashboard-situacional', component: CentrosCostosDashboardComponent },
   { path: 'centros-costos', component: CentrosCostosComponent },
+  { path: 'centros-costos/:id/datos', component: ObraCockpitComponent },
   { path: 'modulos', component: ModulesDashboardComponent },
   { path: 'incidencias', component: IncidenciasComponent },
   { path: 'maestros-generales', component: MaestrosGeneralesComponent },
