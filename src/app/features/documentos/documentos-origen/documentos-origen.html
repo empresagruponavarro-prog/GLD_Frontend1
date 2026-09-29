@@ -276,31 +276,35 @@
       </p>
 
       <div class="detalle-list">
-        <div class="detalle-row" *ngFor="let d of detalles(); let i = index">
-          <div class="form-group detalle-producto">
-            <label>Producto/Servicio</label>
-            <select class="form-control" [ngModel]="d.id_producto" (ngModelChange)="updateDetalle(i, 'id_producto', $event)" [name]="'id_producto_' + i">
-              <option [ngValue]="0">Seleccione...</option>
-              <option *ngFor="let p of productos()" [ngValue]="p.id">
-                {{ p.descripcion }}
-              </option>
-            </select>
-          </div>
+        @for (d of detalles(); track $index; let i = $index) {
+          <div class="detalle-row">
+            <div class="form-group detalle-producto">
+              <label>Producto/Servicio</label>
+              <select class="form-control" [ngModel]="d.id_producto" (ngModelChange)="updateDetalle(i, 'id_producto', $event)" [name]="'id_producto_' + i">
+                <option [ngValue]="0">Seleccione...</option>
+                @for (p of productos(); track p.id) {
+                  <option [ngValue]="p.id">
+                    {{ p.descripcion }}
+                  </option>
+                }
+              </select>
+            </div>
 
-          <div class="form-group">
-            <label>Cantidad</label>
-            <input type="number" class="form-control" step="0.01" min="0" [ngModel]="d.cantidad" (ngModelChange)="updateDetalle(i, 'cantidad', $event)" [name]="'cantidad_' + i" />
-          </div>
+            <div class="form-group">
+              <label>Cantidad</label>
+              <input type="number" class="form-control" step="any" min="0" [(ngModel)]="d.cantidad" (ngModelChange)="onDetalleChange()" [name]="'cantidad_' + i" />
+            </div>
 
-          <div class="form-group">
-            <label>Precio</label>
-            <input type="number" class="form-control" step="0.01" min="0" [ngModel]="d.precio" (ngModelChange)="updateDetalle(i, 'precio', $event)" [name]="'precio_' + i" />
-          </div>
+            <div class="form-group">
+              <label>Precio</label>
+              <input type="number" class="form-control" step="any" min="0" [(ngModel)]="d.precio" (ngModelChange)="onDetalleChange()" [name]="'precio_' + i" />
+            </div>
 
-          <button class="detalle-remove-btn" type="button" (click)="removeDetalle(i)" title="Quitar">
-            <i class="fa-solid fa-trash"></i>
-          </button>
-        </div>
+            <button class="detalle-remove-btn" type="button" (click)="removeDetalle(i)" title="Quitar">
+              <i class="fa-solid fa-trash"></i>
+            </button>
+          </div>
+        }
       </div>
 
       <div class="detalle-total">

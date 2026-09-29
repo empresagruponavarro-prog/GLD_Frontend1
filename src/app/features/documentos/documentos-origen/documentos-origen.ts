@@ -293,10 +293,16 @@ export class DocumentosOrigenComponent {
     this.detalles.update((list) => list.filter((_, i) => i !== index));
   }
 
-  updateDetalle(index: number, field: 'id_producto' | 'cantidad' | 'precio', value: number) {
-    this.detalles.update((list) =>
-      list.map((d, i) => (i === index ? { ...d, [field]: value } : d))
-    );
+  onDetalleChange() {
+    this.detalles.set([...this.detalles()]);
+  }
+
+  updateDetalle(index: number, field: 'id_producto' | 'cantidad' | 'precio', value: any) {
+    const list = this.detalles();
+    if (list[index]) {
+      list[index][field] = value;
+      this.detalles.set([...list]);
+    }
   }
 
   onMonedaChange(monedaId: string) {
