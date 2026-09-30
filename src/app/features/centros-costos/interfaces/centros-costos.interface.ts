@@ -32,7 +32,7 @@ export type CentroCosto = CentroCostoItem;
 export interface CreateCentroCostoDto {
   periodo: number;
   CodCliente: string;
-  id_centro_costos_principal: number;
+  id_centro_costos_principal?: number;
   CentroCosto: string;
   FechaIncio: string;
   Estado?: string;

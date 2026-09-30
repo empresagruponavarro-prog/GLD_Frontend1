@@ -7,7 +7,7 @@ import { LucideAngularModule, ArrowLeft, Copy, X, Check, Lock, Calendar, CloudUp
 import { DataTableComponent } from '../../shared/components/data-table/data-table';
 import { ModalComponent } from '../../shared/components/modal/modal';
 import { DataTable } from '../../shared/interfaces';
-import { CentroCosto, CentroCostoPrincipal, CreateCentroCostoDto, CatalogosFiltros, FiltrosCentrosCostos } from './interfaces';
+import { CentroCosto, CreateCentroCostoDto, CatalogosFiltros, FiltrosCentrosCostos } from './interfaces';
 import { CentrosCostosService } from './centros-costos.service';
 import { EmpresasService } from '../administration/empresas/empresas.service';
 import { Empresa } from '../administration/empresas/interfaces';
@@ -39,7 +39,6 @@ export class CentrosCostosComponent {
     { label: 'Centro de Costo' },
     { label: 'Empresa' },
     { label: 'Cliente' },
-    { label: 'CC Principal' },
     { label: 'Fecha Inicio' },
     { label: 'Fin Programado' },
     { label: 'Estado' },
@@ -55,7 +54,6 @@ export class CentrosCostosComponent {
   editingId = signal<number | string | null>(null);
   search = signal<string>('');
   catalogos = signal<CatalogosFiltros>({ empresas: [], clientes: [], periodos: [], estados: [], pptoEstados: [] });
-  principales = signal<CentroCostoPrincipal[]>([]);
   empresas = signal<Empresa[]>([]);
 
   // Resumen financiero (solo en edición)
@@ -88,32 +86,9 @@ export class CentrosCostosComponent {
     this.formData.Cliente = found ? found.nombre : '';
   }
 
-  onPrincipalChange() {
-    const idPrincipal = this.formData.id_centro_costos_principal;
-    const found = this.principales().find(p => p.id === idPrincipal || p.id === Number(idPrincipal));
-    if (found) {
-      this.formData.id_centro_costos_principal = found.id;
-      this.formData.CodCentroCtoPrincipal = found.centro_costo_principal;
-      this.formData.CentroCostoPrincipal = found.descripcion;
-      this.formData.id_empresa = found.id_empresa;
-    } else {
-      this.formData.id_centro_costos_principal = undefined;
-      this.formData.CodCentroCtoPrincipal = '';
-      this.formData.CentroCostoPrincipal = '';
-    }
-  }
-
-  get principalesFiltrados(): CentroCostoPrincipal[] {
-    const empresaId = this.formData.id_empresa;
-    if (empresaId == null) return [];
-    return this.principales().filter((principal) => principal.id_empresa === Number(empresaId));
-  }
-
   onEmpresaChange() {
-    this.formData.id_centro_costos_principal = undefined;
-    this.formData.CodCentroCtoPrincipal = '';
-    this.formData.CentroCostoPrincipal = '';
   }
+
 
 
   // Paginación
@@ -143,10 +118,6 @@ export class CentrosCostosComponent {
       next: (data) => this.catalogos.set(data || { empresas: [], clientes: [], periodos: [], estados: [], pptoEstados: [] }),
       error: (err) => console.warn('Error al cargar catálogos:', err)
     });
-    this.centrosCostosService.getPrincipales().subscribe({
-      next: (data) => this.principales.set(data || []),
-      error: (err) => console.warn('Error al cargar CC principales:', err)
-    });
     this.empresasService.getAll().subscribe({
       next: (data) => this.empresas.set(data || []),
       error: (err) => console.warn('Error al cargar empresas:', err)
@@ -161,9 +132,6 @@ export class CentrosCostosComponent {
     const today = `${year}-${month}-${day}`;
 
     return {
-      id_centro_costos_principal: undefined,
-      CodCentroCtoPrincipal: '',
-      CentroCostoPrincipal: '',
       CentroCosto: '',
       Estado: 'ABIERTO',
       periodo: 2026,
@@ -233,36 +201,6 @@ export class CentrosCostosComponent {
     this.load();
   }
 
-  getCentroCostoPrincipalLabel(item: CentroCosto): string {
-    const idPrincipal = item.idCentroCostosPrincipal ?? item.id_centro_costos_principal ?? item.id_centro_costo_principal;
-    if (idPrincipal) {
-      const principalById = this.principales().find(p => p.id === idPrincipal);
-      if (principalById) {
-        return principalById.descripcion;
-      }
-    }
-
-    const principalCode = item.CodCentroCtoPrincipal || item.CentroCostoPrincipal;
-
-    if (!principalCode) {
-      return '—';
-    }
-
-    const principal = this.items().find((centro) => centro.CodCentroCto === principalCode);
-    if (principal?.CentroCosto) {
-      return principal.CentroCosto;
-    }
-
-    const principalFromList = this.principales().find(
-      (p) => p.centro_costo_principal === principalCode || p.descripcion === principalCode
-    );
-    if (principalFromList?.descripcion) {
-      return principalFromList.descripcion;
-    }
-
-    return item.CentroCostoPrincipal || item.CodCentroCtoPrincipal || '—';
-  }
-
   resetFilters() {
     this.search.set('');
     this.empresaFilter.set('');
@@ -293,17 +231,7 @@ export class CentrosCostosComponent {
     this.formData = {
       ...item,
       periodo: item.periodo ?? (item.IdPeriodo ? Number(item.IdPeriodo) : undefined),
-      id_centro_costos_principal: item.idCentroCostosPrincipal ?? item.id_centro_costos_principal ?? item.id_centro_costo_principal,
     };
-
-    if (!this.formData.id_centro_costos_principal && (this.formData.CodCentroCtoPrincipal || this.formData.CentroCostoPrincipal)) {
-      const match = this.principales().find(
-        p => p.centro_costo_principal === this.formData.CodCentroCtoPrincipal || p.descripcion === this.formData.CentroCostoPrincipal
-      );
-      if (match) {
-        this.formData.id_centro_costos_principal = match.id;
-      }
-    }
 
     this.showModal.set(true);
     // Cargar resumen financiero al editar
@@ -326,7 +254,6 @@ export class CentrosCostosComponent {
     return {
       periodo: Number(d.periodo),
       CodCliente: d.CodCliente,
-      id_centro_costos_principal: d.id_centro_costos_principal as number,
       CentroCosto: d.CentroCosto,
       FechaIncio: d.FechaIncio ?? '',
       Estado: d.Estado,
@@ -346,7 +273,6 @@ export class CentrosCostosComponent {
       { campo: 'Periodo', ok: !!this.formData.periodo },
       { campo: 'Empresa', ok: !!this.formData.id_empresa },
       { campo: 'Cliente', ok: !!this.formData.CodCliente },
-      { campo: 'Centro de Costo Principal', ok: !!this.formData.id_centro_costos_principal },
       { campo: 'Nombre del Centro de Costo', ok: !!this.formData.CentroCosto },
       { campo: 'Fecha de Inicio', ok: !!this.formData.FechaIncio }
     ];
@@ -394,7 +320,7 @@ export class CentrosCostosComponent {
   }
 
   duplicar() {
-    if (!this.formData.CentroCosto && !this.formData.id_centro_costos_principal) {
+    if (!this.formData.CentroCosto) {
       return;
     }
 
