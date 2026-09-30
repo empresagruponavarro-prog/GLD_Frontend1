@@ -1,6 +1,7 @@
 export interface CentroCostoItem {
   id?: number;
   id_empresa?: number;
+  id_anexo?: number;
   id_centro_costo?: number;
   id_centro_costos_principal?: number;
   id_centro_costo_principal?: number;
@@ -33,6 +34,8 @@ export interface CreateCentroCostoDto {
   periodo: number;
   CodCliente: string;
   id_centro_costos_principal?: number;
+  id_empresa?: number;
+  id_anexo?: number;
   CentroCosto: string;
   FechaIncio: string;
   Estado?: string;

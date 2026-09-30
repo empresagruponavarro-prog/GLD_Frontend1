@@ -10,6 +10,8 @@ import { DataTable } from '../../shared/interfaces';
 import { CentroCosto, CreateCentroCostoDto, CatalogosFiltros, FiltrosCentrosCostos } from './interfaces';
 import { CentrosCostosService } from './centros-costos.service';
 import { EmpresasService } from '../administration/empresas/empresas.service';
+import { AnexosService } from '../maestros-generales/anexos/anexos.service';
+import { AnexoSelect } from '../maestros-generales/anexos/interfaces/anexos.interface';
 import { Empresa } from '../administration/empresas/interfaces';
 
 @Component({
@@ -47,6 +49,7 @@ export class CentrosCostosComponent {
   ];
   private centrosCostosService = inject(CentrosCostosService);
   private empresasService = inject(EmpresasService);
+  private anexosService = inject(AnexosService);
 
   items = signal<CentroCosto[]>([]);
   loading = signal<boolean>(false);
@@ -80,10 +83,29 @@ export class CentrosCostosComponent {
     { id: '626d2014', nombre: 'Inmobiliaria Central' },
     { id: '5fa9c9b0', nombre: 'Proyectos Urbanos' }
   ];
+  
+  // Hidden list of real anexos to map strings to id_anexo
+  realAnexosList = signal<AnexoSelect[]>([]);
 
   onClienteChange() {
-    const found = this.clientesList.find(c => c.id === this.formData.CodCliente);
-    this.formData.Cliente = found ? found.nombre : '';
+    // 1. Try to see if it's one of the dummy clients
+    const foundDummy = this.clientesList.find(c => c.id === this.formData.CodCliente);
+    if (foundDummy) {
+      this.formData.Cliente = foundDummy.nombre;
+      this.formData.id_anexo = undefined;
+      return;
+    }
+    
+    // 2. It's a string from catalogos().clientes. Let's try to find its ID in real Anexos
+    this.formData.Cliente = this.formData.CodCliente;
+    
+    const strToMatch = (this.formData.CodCliente || '').toLowerCase();
+    const foundAnexo = this.realAnexosList().find(a => (a.nombre || '').toLowerCase() === strToMatch);
+    if (foundAnexo) {
+      this.formData.id_anexo = foundAnexo.id;
+    } else {
+      this.formData.id_anexo = undefined;
+    }
   }
 
   onEmpresaChange() {
@@ -121,6 +143,10 @@ export class CentrosCostosComponent {
     this.empresasService.getAll().subscribe({
       next: (data) => this.empresas.set(data || []),
       error: (err) => console.warn('Error al cargar empresas:', err)
+    });
+    this.anexosService.getSelect().subscribe({
+      next: (res) => this.realAnexosList.set(res || []),
+      error: (err) => console.warn('Error al cargar anexos:', err)
     });
   }
 
@@ -253,6 +279,8 @@ export class CentrosCostosComponent {
     const d = this.formData;
     return {
       periodo: Number(d.periodo),
+      id_empresa: d.id_empresa ? Number(d.id_empresa) : undefined,
+      id_anexo: d.id_anexo ? Number(d.id_anexo) : undefined,
       CodCliente: d.CodCliente,
       CentroCosto: d.CentroCosto,
       FechaIncio: d.FechaIncio ?? '',
