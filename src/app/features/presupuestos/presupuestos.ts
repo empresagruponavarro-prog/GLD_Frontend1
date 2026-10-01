@@ -1599,29 +1599,38 @@ export class PresupuestosComponent implements OnInit {
     }
   }
 
-  loadCentrosCostos() {
+    loadCentrosCostos() {
     this.loading.set(true);
-    // Cargamos todos los centros de costos (hasta 1500) para mostrar la lista completa
+    // Cargamos todos los centros de costos (hasta 2000) para mostrar la lista completa
     this.centrosCostosService.getAll(1, 100).subscribe({
       next: (res) => {
         const list = res.data || [];
-        this.centrosCostos.set(list);
         this.loading.set(false);
         if (this.selectedCC()) {
           const current = this.selectedCC()!;
           const currentId = current.id ?? current.id_centro_costo;
-          const matched = list.find((c: any) =>
+          const matchedIndex = list.findIndex((c: any) =>
             (currentId != null && (c.id === currentId || c.id_centro_costo === currentId)) ||
             (current.CodCentroCto && c.CodCentroCto === current.CodCentroCto)
           );
-          if (matched) {
+          if (matchedIndex >= 0) {
+            const matched = list.splice(matchedIndex, 1)[0];
+            list.unshift(matched);
             this.selectedCC.set(matched);
             this.recargarPresupuestosDelCCActual();
             if (this.showForm()) {
               this.onCentroCostoFormChange(matched);
             }
+          } else {
+            // Si venimos de la vista de CC y el CC no est en esta pgina (ej. viejo), lo insertamos manualmente para que se vea
+            list.unshift(current);
+            this.recargarPresupuestosDelCCActual();
+            if (this.showForm()) {
+              this.onCentroCostoFormChange(current);
+            }
           }
         }
+        this.centrosCostos.set(list);
       },
       error: (err) => {
         console.error('Error al cargar centros de costo:', err);
@@ -1667,13 +1676,19 @@ export class PresupuestosComponent implements OnInit {
     });
   }
 
-  cargarDetallePresupuesto(id: string) {
+    cargarDetallePresupuesto(id: string) {
     this.loading.set(true);
     this.presupuestosService.getPresupuestoCompleto(id).subscribe({
       next: (completo) => {
         this.presupuestoActivo.set(completo);
+        const prevFase = this.selectedFase();
         if (completo.fases && completo.fases.length > 0) {
-          this.selectedFase.set(completo.fases[0]);
+          if (prevFase) {
+            const matched = completo.fases.find((f: any) => f.id === prevFase.id || f.IdpptoFase === prevFase.IdpptoFase);
+            this.selectedFase.set(matched || completo.fases[0]);
+          } else {
+            this.selectedFase.set(completo.fases[0]);
+          }
         } else {
           this.selectedFase.set(null);
         }

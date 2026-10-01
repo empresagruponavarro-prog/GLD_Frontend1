@@ -503,6 +503,10 @@
         <span>Presupuestos</span>
         <span class="text-slate-600">›</span>
         <span class="text-white font-semibold">{{ formData.IdPresupuesto || 'Nuevo Presupuesto' }}</span>
+          @if (selectedCC()) {
+            <span class="text-slate-600">›</span>
+            <span class="text-[#529b7b] font-bold">CC: {{ selectedCC()?.CodCentroCto || selectedCC()?.CentroCosto }}</span>
+          }
       </div>
       <p class="text-[11px] text-[#529b7b]">{{ editingId() ? 'Edición Estructurada de Obra' : 'Creación de Nuevo Presupuesto' }}</p>
     </div>
