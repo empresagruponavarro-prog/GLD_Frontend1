@@ -15,7 +15,10 @@ import { ObraCockpitComponent } from './features/centros-costos/obra-cockpit/obr
 import { PresupuestosComponent } from './features/presupuestos/presupuestos';
 import { DocumentosOrigenComponent } from './features/documentos/documentos-origen/documentos-origen';
 
+import { MantenimientoPlantillasComponent } from './features/presupuestos/mantenimiento-plantillas/mantenimiento-plantillas';
+
 export const routes: Routes = [
+  { path: 'presupuestos/plantillas', component: MantenimientoPlantillasComponent },
   { path: '', component: CentrosCostosDashboardComponent },
   { path: 'dashboard-situacional', component: CentrosCostosDashboardComponent },
   { path: 'centros-costos', component: CentrosCostosComponent },

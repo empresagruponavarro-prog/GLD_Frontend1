@@ -14,10 +14,75 @@ import { environment } from '@env';
 
 export * from './interfaces';
 
+
+export interface PlantillaCompleta extends Plantilla {
+  fases: PlantillaFaseDto[];
+}
+export interface PlantillaFaseDto {
+  id: number;
+  IdPlantillaFase: string;
+  IdpptoFase: string;
+  NombreFase?: string;
+  Orden: number;
+  categorias: PlantillaCategoriaDto[];
+}
+export interface PlantillaCategoriaDto {
+  id: number;
+  IdPlantillaFase: string;
+  IdpptoFaseCategoria: string;
+  NombreCategoria?: string;
+  CostoReferencial?: number;
+}
+
+export interface Plantilla {
+  id: number;
+  IdPlantilla: string;
+  Nombre: string;
+  Descripcion?: string;
+  Activo: boolean;
+  FechaCreacion: string;
+}
+
+export interface AplicarPlantillaDto {
+  IdPlantilla: string;
+  CodCentroCto: string;
+  CodCentroCtoPrincipal: string;
+  id_empresa: number;
+  id_centro_costo: number;
+}
+
+
 @Service()
 export class PresupuestosService {
   private http = inject(HttpClient);
   private apiUrl = `${environment.apiUrl}/presupuestos`;
+
+  
+  // Plantillas
+  
+  getPlantillasTodas(): Observable<Plantilla[]> {
+    return this.http.get<Plantilla[]>(`${this.apiUrl}/plantillas/todas`);
+  }
+  getPlantillaCompleta(id: string): Observable<PlantillaCompleta> {
+    return this.http.get<PlantillaCompleta>(`${this.apiUrl}/plantillas/${id}/completa`);
+  }
+  createPlantilla(dto: { Nombre: string; Descripcion?: string }): Observable<Plantilla> {
+    return this.http.post<Plantilla>(`${this.apiUrl}/plantillas`, dto);
+  }
+  updatePlantilla(id: string, dto: { Nombre?: string; Descripcion?: string; Activo?: boolean }): Observable<Plantilla> {
+    return this.http.put<Plantilla>(`${this.apiUrl}/plantillas/${id}`, dto);
+  }
+  updatePlantillaFases(id: string, fases: PlantillaFaseDto[]): Observable<{ success: boolean }> {
+    return this.http.put<{ success: boolean }>(`${this.apiUrl}/plantillas/${id}/fases`, fases);
+  }
+
+  getPlantillasActivas(): Observable<Plantilla[]> {
+    return this.http.get<Plantilla[]>(`${this.apiUrl}/plantillas/activas`);
+  }
+
+  aplicarPlantilla(idPresupuesto: string, dto: AplicarPlantillaDto): Observable<{ success: boolean; fasesAgregadas: number; categoriasAgregadas: number }> {
+    return this.http.post<{ success: boolean; fasesAgregadas: number; categoriasAgregadas: number }>(`${this.apiUrl}/${idPresupuesto}/aplicar-plantilla`, dto);
+  }
 
   // Presupuestos Principales
   getPresupuestos(

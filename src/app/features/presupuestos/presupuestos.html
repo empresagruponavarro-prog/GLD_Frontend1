@@ -785,9 +785,17 @@
             <h2 class="font-bold text-slate-800 text-[16px]">Fases &amp; Costos — Costo Directo APU</h2>
             <p class="text-slate-400 text-[13px]">Desglose de partidas por fase. Los montos alimentan la liquidación financiera.</p>
           </div>
-          <span class="ml-auto bg-[#529b7b]/10 text-[#1e4838] border border-[#529b7b]/30 px-3 py-1 rounded-full text-[12px] font-bold">
-            {{ formFases().length }} items
-          </span>
+          
+            <div class="ml-auto flex items-center gap-2">
+              <button type="button" (click)="abrirModalPlantillas()" class="bg-[#1e4838] hover:bg-[#2d634d] text-white px-3 py-1.5 rounded-full text-[12px] font-medium flex items-center gap-1.5 transition shadow-sm cursor-pointer border border-[#1e4838]">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2"></path></svg>
+                Usar Plantilla
+              </button>
+              <span class="bg-[#529b7b]/10 text-[#1e4838] border border-[#529b7b]/30 px-3 py-1.5 rounded-full text-[12px] font-bold">
+                {{ formFases().length }} items
+              </span>
+            </div>
+
         </div>
 
         <!-- Tabla de Fases -->
@@ -804,7 +812,7 @@
               </tr>
             </thead>
             <tbody class="divide-y divide-slate-100 text-[13px]">
-              @for (fase of formFases(); track fase; let i = $index) {
+              @for (fase of formFases(); track $index; let i = $index) {
                 <tr class="hover:bg-slate-50 transition">
                   <td class="py-2 px-3 font-mono text-[#2d634d] font-bold text-[12px]">{{ (i+1) < 10 ? '0'+(i+1) : (i+1) }}</td>
                   <td class="py-2 px-3 font-medium text-slate-800">{{ fase.nombre }}</td>
@@ -813,9 +821,17 @@
                       {{ fase.categoria }}
                     </span>
                   </td>
-                  <td class="py-2 px-3 text-right font-mono font-bold text-slate-900 tabular-nums">
-                    {{ fase.subtotal | currency:'PEN':'S/ ' }}
-                  </td>
+                    <td class="py-1.5 px-2 text-right">
+                      <div class="relative flex items-center justify-end group">
+                        <span class="absolute left-2 text-slate-400 font-mono text-[11px] group-focus-within:text-[#1e4838]">S/</span>
+                        <input type="number" 
+                               [ngModel]="fase.subtotal" 
+                               (ngModelChange)="updateFormFaseSubtotal(i, $event)"
+                               class="w-[110px] text-right font-mono font-bold text-slate-900 text-[12px] border border-transparent hover:border-slate-300 focus:border-[#529b7b] focus:ring-1 focus:ring-[#529b7b] rounded bg-transparent focus:bg-white pl-6 pr-2 py-1 transition-all outline-none"
+                               placeholder="0.00"
+                               step="0.01">
+                      </div>
+                    </td>
                   <td class="py-2 px-3 text-right font-mono text-[#2d634d] font-semibold tabular-nums">
                     {{ formCostoDirecto > 0 ? ((fase.subtotal / formCostoDirecto) * 100).toFixed(1) + '%' : '0.0%' }}
                   </td>
@@ -1706,3 +1722,76 @@
   </div>
 </div>
 }
+
+
+  <!-- MODAL SELECCIONAR PLANTILLA -->
+  @if (showPlantillasModal()) {
+    <div class="fixed inset-0 z-[100] flex items-center justify-center p-4">
+      <div class="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" (click)="cerrarModalPlantillas()"></div>
+      <div class="bg-white rounded-xl shadow-xl w-full max-w-md relative flex flex-col max-h-[90vh] overflow-hidden border border-slate-200">
+        <!-- Header -->
+        <div class="px-5 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50">
+          <h3 class="font-bold text-slate-800 flex items-center gap-2">
+            <svg class="w-5 h-5 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2"></path></svg>
+            Seleccionar Plantilla
+          </h3>
+          <button (click)="cerrarModalPlantillas()" class="text-slate-400 hover:text-slate-600 cursor-pointer p-1 rounded-full hover:bg-slate-200 transition">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+          </button>
+        </div>
+        
+        <!-- Body -->
+        <div class="p-5 overflow-y-auto">
+          <p class="text-sm text-slate-500 mb-4">Seleccione una plantilla predefinida. Se cargarán sus fases y categorías al presupuesto de forma inmediata para ser ajustadas.</p>
+          
+          <div class="space-y-3">
+            @for (plantilla of plantillasActivas(); track plantilla.IdPlantilla) {
+              <label class="flex items-start p-3 border rounded-lg cursor-pointer transition-colors"
+                     [ngClass]="selectedPlantilla() === plantilla.IdPlantilla ? 'bg-emerald-50 border-emerald-500 shadow-sm' : 'border-slate-200 hover:bg-slate-50'">
+                <div class="flex items-center h-5 mt-0.5">
+                  <input type="radio" name="plantilla_sel" [value]="plantilla.IdPlantilla" 
+                         [ngModel]="selectedPlantilla()" (ngModelChange)="selectedPlantilla.set($event)"
+                         class="w-4 h-4 text-emerald-600 border-slate-300 focus:ring-emerald-500">
+                </div>
+                <div class="ml-3 flex-1">
+                  <span class="block text-sm font-semibold" [ngClass]="selectedPlantilla() === plantilla.IdPlantilla ? 'text-emerald-800' : 'text-slate-800'">
+                    {{ plantilla.Nombre }}
+                  </span>
+                  @if (plantilla.Descripcion) {
+                    <span class="block text-xs mt-1" [ngClass]="selectedPlantilla() === plantilla.IdPlantilla ? 'text-emerald-600/80' : 'text-slate-500'">
+                      {{ plantilla.Descripcion }}
+                    </span>
+                  }
+                </div>
+              </label>
+            }
+            @empty {
+              <div class="text-center py-6 text-sm text-slate-400 border border-dashed rounded-lg">
+                No hay plantillas activas disponibles.
+              </div>
+            }
+          </div>
+        </div>
+        
+        <!-- Footer -->
+        <div class="px-5 py-4 border-t border-slate-100 bg-slate-50 flex justify-end gap-3">
+          <button (click)="cerrarModalPlantillas()" class="px-4 py-2 text-sm font-medium text-slate-600 hover:text-slate-800 bg-white border border-slate-300 rounded-lg shadow-xs hover:bg-slate-50 cursor-pointer transition">
+            Cancelar
+          </button>
+          <button (click)="aplicarPlantillaLocal()" [disabled]="!selectedPlantilla()"
+                  class="px-4 py-2 text-sm font-bold text-white rounded-lg shadow-sm transition flex items-center gap-2"
+                  [ngClass]="selectedPlantilla() ? 'bg-emerald-600 hover:bg-emerald-700 cursor-pointer' : 'bg-emerald-400 opacity-70 cursor-not-allowed'">
+            @if (loading()) {
+              <svg class="animate-spin h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+              Aplicando...
+            } @else {
+              Aplicar Plantilla
+            }
+          </button>
+        </div>
+      </div>
+    </div>
+  }

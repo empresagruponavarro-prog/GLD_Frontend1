@@ -5,7 +5,7 @@ import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { EmpresasService } from '../administration/empresas/empresas.service';
 import { Empresa } from '../administration/empresas/interfaces';
-import { PresupuestosService } from './presupuestos.service';
+import { PresupuestosService, Plantilla } from './presupuestos.service';
 import { PresupuestoPrincipal, PaginatedResponse, DetalleFase, PresupuestoCompleto, FaseMaestra, FaseCategoriaMaestra } from './interfaces';
 import { DocumentosOrigenService } from '../documentos/documentos-origen/documentos-origen.service';
 import { DocumentoOrigenDetalleLinea } from '../documentos/documentos-origen/interfaces/documentos-origen.interface';
@@ -210,6 +210,8 @@ export class PresupuestosComponent implements OnInit {
   // Modelo de Fases din�micas para Paso 2
   formFases = signal<{ id?: number; idFase: string; nombre: string; idCategoria: string; categoria: string; subtotal: number }[]>([]);
   fasesMaestras = signal<FaseMaestra[]>([]);
+  plantillasActivas = signal<Plantilla[]>([]);
+  selectedPlantilla = signal<string>('');
   categoriasFaseMaestra = signal<FaseCategoriaMaestra[]>([]);
 
   // Quick Add para Fases
@@ -917,6 +919,7 @@ export class PresupuestosComponent implements OnInit {
       next: () => {
         this.cerrarNuevaCategoria();
         this.loadFasesMaestras();
+    this.loadPlantillasActivas();
       },
       error: (error) => alert('Error al crear categor�a: ' + (error.error?.message || error.message)),
     });
@@ -968,6 +971,15 @@ export class PresupuestosComponent implements OnInit {
     this.newFaseSubtotal = null;
     this.categoriasFaseMaestra.set([]);
     // NO llamar a closeForm()
+  }
+
+  
+  updateFormFaseSubtotal(index: number, newSubtotal: number) {
+    this.formFases.update(items => {
+      const newItems = [...items];
+      newItems[index] = { ...newItems[index], subtotal: Number(newSubtotal) || 0 };
+      return newItems;
+    });
   }
 
   removeFormFase(index: number) {
@@ -1521,6 +1533,75 @@ export class PresupuestosComponent implements OnInit {
         console.error('Error al cargar fases maestras por centro de costo', error);
         this.fasesMaestras.set([]);
       },
+    });
+  }
+
+  
+  // Modal de Plantillas
+  showPlantillasModal = signal<boolean>(false);
+
+  abrirModalPlantillas() {
+    if (this.plantillasActivas().length === 0) {
+      this.loadPlantillasActivas();
+    }
+    this.selectedPlantilla.set('');
+    this.showPlantillasModal.set(true);
+  }
+
+  cerrarModalPlantillas() {
+    this.showPlantillasModal.set(false);
+  }
+
+  aplicarPlantillaLocal() {
+    const id = this.selectedPlantilla();
+    if (!id) return;
+    
+    this.loading.set(true);
+    this.presupuestosService.getPlantillaCompleta(id).subscribe({
+      next: (plantilla) => {
+        const nuevosItems: { id?: number; idFase: string; nombre: string; idCategoria: string; categoria: string; subtotal: number }[] = [];
+        
+        plantilla.fases.forEach(fase => {
+          if (fase.categorias && fase.categorias.length > 0) {
+            fase.categorias.forEach(cat => {
+              nuevosItems.push({
+                idFase: fase.IdpptoFase,
+                nombre: fase.NombreFase || fase.IdpptoFase,
+                idCategoria: cat.IdpptoFaseCategoria,
+                categoria: cat.NombreCategoria || cat.IdpptoFaseCategoria,
+                subtotal: cat.CostoReferencial || 0
+              });
+            });
+          } else {
+            // Si la fase no tiene categorias agregamos una generica o solo la fase con idCategoria vacio
+            nuevosItems.push({
+                idFase: fase.IdpptoFase,
+                nombre: fase.NombreFase || fase.IdpptoFase,
+                idCategoria: '',
+                categoria: 'General',
+                subtotal: 0
+            });
+          }
+        });
+
+        // Add to current formFases or replace? Usually we want to replace or append. 
+        // Let's append to avoid deleting manually added ones.
+        this.formFases.update(items => [...items, ...nuevosItems]);
+        this.loading.set(false);
+        this.cerrarModalPlantillas();
+      },
+      error: (err) => {
+        this.loading.set(false);
+        alert('Error al cargar detalle de plantilla');
+      }
+    });
+  }
+
+
+  loadPlantillasActivas() {
+    this.presupuestosService.getPlantillasActivas().subscribe({
+      next: (res) => this.plantillasActivas.set(res),
+      error: (err) => console.error('Error cargando plantillas', err)
     });
   }
 

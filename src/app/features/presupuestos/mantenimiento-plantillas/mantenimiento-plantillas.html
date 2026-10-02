@@ -1,0 +1,121 @@
+<div class="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto flex flex-col md:flex-row gap-6 h-[calc(100vh-80px)]">
+  
+  <!-- Left Pane: List of Plantillas -->
+  <div class="w-full md:w-1/3 bg-white rounded-xl border border-slate-200 shadow-sm flex flex-col h-full overflow-hidden">
+    <div class="p-4 border-b border-slate-200 flex justify-between items-center bg-slate-50">
+      <h2 class="font-bold text-slate-800">Plantillas</h2>
+      <button (click)="nuevaPlantilla()" class="bg-[#529b7b] hover:bg-[#438266] text-white px-3 py-1.5 rounded-lg text-xs font-semibold shadow-sm transition-colors">
+        + Nueva
+      </button>
+    </div>
+    <div class="overflow-y-auto flex-1 p-2">
+      @for (p of plantillas(); track p.id) {
+        <div (click)="selectPlantilla(p)" 
+             class="p-3 mb-2 rounded-lg cursor-pointer border transition-colors"
+             [ngClass]="selectedPlantilla()?.IdPlantilla === p.IdPlantilla ? 'border-[#529b7b] bg-[#529b7b]/5' : 'border-slate-200 hover:border-slate-300'">
+          <div class="flex justify-between items-start mb-1">
+            <h3 class="font-bold text-sm text-slate-800">{{ p.Nombre }}</h3>
+            <span class="text-[10px] px-1.5 rounded" [ngClass]="p.Activo ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800'">
+              {{ p.Activo ? 'Activa' : 'Inactiva' }}
+            </span>
+          </div>
+          <p class="text-xs text-slate-500 line-clamp-2">{{ p.Descripcion || 'Sin descripción' }}</p>
+        </div>
+      }
+      @if (plantillas().length === 0) {
+        <div class="text-center p-6 text-sm text-slate-400">No hay plantillas creadas.</div>
+      }
+    </div>
+  </div>
+
+  <!-- Right Pane: Detalle de Plantilla -->
+  <div class="w-full md:w-2/3 bg-white rounded-xl border border-slate-200 shadow-sm flex flex-col h-full overflow-hidden">
+    @if (selectedPlantilla(); as p) {
+      <div class="p-4 border-b border-slate-200 bg-slate-50 flex justify-between items-center">
+        <h2 class="font-bold text-slate-800 text-lg">Configurar Plantilla</h2>
+        <button (click)="guardarCambios()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-semibold shadow-sm transition-colors">
+          Guardar Cambios
+        </button>
+      </div>
+      
+      <div class="overflow-y-auto flex-1 p-6">
+        <!-- Form Info Básica -->
+        <div class="grid grid-cols-2 gap-4 mb-6 pb-6 border-b border-slate-100">
+          <div>
+            <label class="block text-xs font-bold text-slate-600 mb-1">Nombre</label>
+            <input type="text" [(ngModel)]="p.Nombre" class="w-full border border-slate-300 rounded px-3 py-2 text-sm focus:ring-2 focus:ring-[#529b7b]">
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-slate-600 mb-1">Estado</label>
+            <select [(ngModel)]="p.Activo" class="w-full border border-slate-300 rounded px-3 py-2 text-sm focus:ring-2 focus:ring-[#529b7b]">
+              <option [ngValue]="true">Activa</option>
+              <option [ngValue]="false">Inactiva</option>
+            </select>
+          </div>
+          <div class="col-span-2">
+            <label class="block text-xs font-bold text-slate-600 mb-1">Descripción</label>
+            <textarea [(ngModel)]="p.Descripcion" rows="2" class="w-full border border-slate-300 rounded px-3 py-2 text-sm focus:ring-2 focus:ring-[#529b7b]"></textarea>
+          </div>
+        </div>
+
+        <!-- Fases y Categorías -->
+        <div class="flex justify-between items-center mb-4">
+          <h3 class="font-bold text-slate-800">Estructura (Fases y Categorías)</h3>
+          <button (click)="addFase()" class="text-[#529b7b] hover:text-[#438266] text-sm font-semibold">
+            + Agregar Fase
+          </button>
+        </div>
+
+        <div class="space-y-4">
+          @for (fase of p.fases; track fase.IdPlantillaFase || $index) {
+            <div class="border border-slate-200 rounded-lg overflow-hidden">
+              <!-- Fase Header -->
+              <div class="bg-slate-100 px-4 py-3 border-b border-slate-200 flex justify-between items-center">
+                <div class="flex items-center gap-2">
+                  <span class="text-slate-400 font-mono text-xs">#{{ $index + 1 }}</span>
+                  <span class="font-bold text-slate-800 text-sm">{{ fase.NombreFase }}</span>
+                </div>
+                <div class="flex items-center gap-3">
+                  <button (click)="addCategoria(fase)" class="text-xs font-bold text-blue-600 hover:text-blue-800">+ Categoría</button>
+                  <button (click)="removeFase(fase)" class="text-xs font-bold text-rose-500 hover:text-rose-700">Eliminar</button>
+                </div>
+              </div>
+              
+              <!-- Categorías de la fase -->
+              <div class="bg-white p-3 space-y-2">
+                @for (cat of fase.categorias; track cat.IdPlantillaFase || $index) {
+                  <div class="flex justify-between items-center bg-slate-50 border border-slate-100 px-3 py-2 rounded">
+                    <span class="text-sm text-slate-700">{{ cat.NombreCategoria }}</span>
+                    <div class="flex items-center gap-3">
+                      <div class="flex items-center gap-2">
+                        <label class="text-xs text-slate-500">Costo Ref. (S/)</label>
+                        <input type="number" [(ngModel)]="cat.CostoReferencial" class="w-24 text-right border border-slate-300 rounded px-2 py-1 text-sm">
+                      </div>
+                      <button (click)="removeCategoria(fase, cat)" class="text-slate-400 hover:text-rose-500">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                      </button>
+                    </div>
+                  </div>
+                }
+                @if (fase.categorias.length === 0) {
+                  <div class="text-xs text-slate-400 italic py-2 px-2">No hay categorías en esta fase. Agregue una categoría para que se incluya en el presupuesto.</div>
+                }
+              </div>
+            </div>
+          }
+          @if (p.fases.length === 0) {
+            <div class="text-center p-8 border-2 border-dashed border-slate-200 rounded-xl text-slate-400 text-sm">
+              Esta plantilla está vacía. Haz clic en "+ Agregar Fase" para comenzar.
+            </div>
+          }
+        </div>
+      </div>
+    } @else {
+      <div class="flex-1 flex flex-col items-center justify-center text-slate-400 p-8">
+        <svg class="w-16 h-16 mb-4 text-slate-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 002-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
+        <p class="text-lg font-medium text-slate-500">Selecciona una plantilla</p>
+        <p class="text-sm mt-1">O crea una nueva desde el panel izquierdo.</p>
+      </div>
+    }
+  </div>
+</div>
