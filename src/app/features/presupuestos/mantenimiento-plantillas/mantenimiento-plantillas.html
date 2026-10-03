@@ -209,18 +209,13 @@
                     <span class="w-6 h-6 rounded-md bg-emerald-600 text-white font-mono text-xs font-bold flex items-center justify-center shadow-2xs shrink-0">
                       {{ (i + 1).toString().padStart(2, '0') }}
                     </span>
-                    <input type="text" [(ngModel)]="fase.NombreFase" class="text-sm font-bold text-slate-800 tracking-tight bg-transparent border-b border-transparent focus:border-emerald-500 focus:outline-none w-full transition-colors hover:border-slate-300">
+                    <span class="text-sm font-bold text-slate-800 tracking-tight w-full truncate">{{ fase.NombreFase || fase.IdpptoFase }}</span>
                     <span class="text-[11px] font-mono text-slate-400 bg-white/80 px-2 py-0.5 rounded border border-slate-200/60 ml-2 shrink-0">Id: {{ fase.IdpptoFase }}</span>
                   </div>
                 </div>
 
                 <!-- Acciones CRUD de la Fase -->
                 <div class="flex items-center space-x-1.5 shrink-0 pl-4">
-                  <!-- Editar Fase -->
-                  <button type="button" title="Editar nombre" (click)="editFase(fase)" class="p-1.5 rounded-lg text-slate-500 hover:text-slate-800 hover:bg-white active:scale-95 transition-all cursor-pointer">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
-                  </button>
-
                   <!-- Eliminar Fase -->
                   <button type="button" title="Eliminar fase" (click)="removeFase(fase)" class="p-1.5 rounded-lg text-slate-500 hover:text-rose-600 hover:bg-rose-50 active:scale-95 transition-all cursor-pointer">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
@@ -267,11 +262,6 @@
                         </td>
                         <td class="py-3 pr-4 text-center">
                           <div class="flex items-center justify-center space-x-2">
-                            <!-- Editar -->
-                            <button type="button" title="Editar" (click)="editCategoria(cat)" class="p-1 rounded text-slate-500 hover:text-slate-800 hover:bg-slate-100 active:scale-95 transition-all cursor-pointer">
-                              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
-                            </button>
-                            
                             <!-- Eliminar -->
                             <button type="button" title="Eliminar" (click)="removeCategoria(fase, cat)" class="p-1 rounded text-slate-500 hover:text-rose-600 hover:bg-rose-50 active:scale-95 transition-all cursor-pointer">
                               <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>

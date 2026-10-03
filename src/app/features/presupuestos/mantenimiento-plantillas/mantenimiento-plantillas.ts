@@ -188,14 +188,6 @@ export class MantenimientoPlantillasComponent implements OnInit {
     this.targetFaseForCat.set(null);
   }
 
-    editFase(fase: PlantillaFaseDto) {
-    const newName = prompt('Editar nombre de la fase:', fase.NombreFase);
-    if (newName) {
-      fase.NombreFase = newName;
-      this.selectedPlantilla.set(JSON.parse(JSON.stringify(this.selectedPlantilla())));
-    }
-  }
-
   removeFase(fase: PlantillaFaseDto) {
     const p = this.selectedPlantilla();
     if (!p) return;
@@ -209,14 +201,6 @@ export class MantenimientoPlantillasComponent implements OnInit {
 
   getSubtotalFase(f: PlantillaFaseDto): number {
     return f.categorias?.reduce((acc, c) => acc + (Number(c.CostoReferencial) || 0), 0) || 0;
-  }
-
-    editCategoria(cat: PlantillaCategoriaDto) {
-    const newName = prompt('Editar nombre de la categoría:', cat.NombreCategoria);
-    if (newName) {
-      cat.NombreCategoria = newName;
-      this.selectedPlantilla.set(JSON.parse(JSON.stringify(this.selectedPlantilla())));
-    }
   }
 
   
