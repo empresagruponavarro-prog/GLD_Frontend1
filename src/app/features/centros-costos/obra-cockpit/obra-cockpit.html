@@ -1,10 +1,15 @@
 <div class="w-full min-h-screen bg-surface px-5 py-3 max-w-[1920px] mx-auto font-sans antialiased text-on-surface"><div class="flex flex-col w-full gap-3">
+<!-- Aviso de prototipo (fuera de las tabs: visible en todas) -->
+<div class="flex items-center gap-2 px-3 py-2 rounded-lg bg-amber-100 text-amber-900 border border-amber-300 text-xs font-semibold" role="status">
+<span class="material-symbols-outlined text-sm">science</span>
+<span>Vista prototipo: datos de ejemplo</span>
+</div>
 <!-- ==================== 1. TOP COMPACT PANORAMIC COCKPIT HEADER ==================== -->
 <section class="bg-surface-container-lowest rounded-xl shadow-sm border border-surface-container p-3.5">
 <!-- Line 1: Breadcrumb + Action Controls -->
 <div class="flex flex-wrap items-center justify-between gap-2 pb-2.5 border-b border-surface-container/60">
 <div class="flex items-center gap-1.5 text-xs text-on-surface-variant">
-<a class="hover:text-primary transition-colors flex items-center gap-1 font-medium" href="#">
+<a class="hover:text-primary transition-colors flex items-center gap-1 font-medium" routerLink="/centros-costos">
 <span class="material-symbols-outlined text-sm">account_balance_wallet</span>
 <span>Centros de Costos</span>
 </a>
@@ -23,12 +28,12 @@
 <span>+ Nuevo Registro Rápido</span>
 </button>
 <div class="relative inline-block text-left" id="exportMenuWrapper">
-<button class="inline-flex items-center gap-1 px-3 py-1 rounded-lg bg-primary text-on-primary text-xs font-semibold shadow-sm hover:opacity-95 transition-opacity" (click)="toggleExportMenu()">
+<button class="inline-flex items-center gap-1 px-3 py-1 rounded-lg bg-primary text-on-primary text-xs font-semibold shadow-sm opacity-50 cursor-not-allowed" disabled title="Exportación pendiente" (click)="toggleExportMenu()">
 <span class="material-symbols-outlined text-sm">ios_share</span>
 <span>Exportar Ficha Técnica</span>
 <span class="material-symbols-outlined text-xs ml-0.5">expand_more</span>
 </button>
-<div class="hidden absolute right-0 mt-1 w-48 rounded-xl bg-surface-container-lowest shadow-xl z-30 p-1.5 border border-surface-container" id="exportMenuDropdown">
+<div [class.hidden]="!exportMenuOpen()" class="hidden absolute right-0 mt-1 w-48 rounded-xl bg-surface-container-lowest shadow-xl z-30 p-1.5 border border-surface-container" id="exportMenuDropdown">
 <button class="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs text-on-surface hover:bg-surface-container-high text-left">
 <span class="material-symbols-outlined text-sm text-error">picture_as_pdf</span> Dossier Completo (PDF)
           </button>

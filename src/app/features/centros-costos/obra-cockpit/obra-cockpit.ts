@@ -1,7 +1,7 @@
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { ObraService } from './obra.service';
 import { ObraCockpit } from './obra.interface';
 
@@ -62,7 +62,7 @@ export interface SemanaEditable {
 @Component({
   selector: 'app-obra-cockpit',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, RouterLink],
   templateUrl: './obra-cockpit.html',
   styleUrl: './obra-cockpit.css',
 })
