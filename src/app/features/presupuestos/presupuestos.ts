@@ -3,6 +3,8 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 
 import { Router } from '@angular/router';
+import { finalize, switchMap, tap } from 'rxjs';
+import { crearFasesConCategorias, describirFasesFallidas, mensajeDeError } from './presupuestos.orchestration';
 import { EmpresasService } from '../administration/empresas/empresas.service';
 import { Empresa } from '../administration/empresas/interfaces';
 import { PresupuestosService, Plantilla } from './presupuestos.service';
@@ -344,12 +346,6 @@ export class PresupuestosComponent implements OnInit {
   pctUtilidad = signal<number>(0.00);
   viaticos = signal<number>(0.00);
   descuento = signal<number>(0.00);
-
-  // Archivos para Paso 4
-  filePresupuestoName = signal<string | null>(null);
-  filePresupuestoInfo = signal<string | null>(null);
-  fileOCName = signal<string | null>(null);
-  fileOCInfo = signal<string | null>(null);
 
   // Especialista y Control para Paso 5
   especialista = signal<string>('');
@@ -809,18 +805,22 @@ export class PresupuestosComponent implements OnInit {
       return;
     }
 
-    const idDetalle = `DF-${Date.now()}`;
-    this.presupuestosService.createFaseAsignada({ ...contexto, IdPresupuestoDetalle: idDetalle }).subscribe({
-      next: () => this.presupuestosService.createCategoriaAsignada({
-        ...contexto,
-        IdPresupuestoDetalleCategoria: `DFC-${Date.now()}`,
-        IdPresupuestoDetalle: idDetalle,
-        IdpptoFaseCategoria: categoriaMaestra.IdpptoFaseCategoria,
-      }).subscribe({
-        next: () => this.finalizarEdicionFaseCategoria(),
-        error: (error) => alert('La fase fue creada, pero no se pudo crear su categoría: ' + (error.error?.message || error.message)),
-      }),
-      error: (error) => alert('Error al crear fase: ' + (error.error?.message || error.message)),
+    this.loading.set(true);
+    crearFasesConCategorias(this.presupuestosService, contexto, [{
+      idFase: faseMaestra.IdpptoFase,
+      nombre: faseMaestra.FaseProyecto || faseMaestra.IdpptoFase,
+      idCategoria: categoriaMaestra.IdpptoFaseCategoria,
+      subtotal: monto,
+    }]).pipe(finalize(() => this.loading.set(false))).subscribe({
+      next: (fallidas) => {
+        if (fallidas.length === 0) {
+          this.finalizarEdicionFaseCategoria();
+        } else {
+          alert('No se pudo guardar la fase/categoría:\n' + describirFasesFallidas(fallidas));
+          this.recargarPresupuestoActivo();
+        }
+      },
+      error: (error) => alert('Error al crear fase: ' + mensajeDeError(error)),
     });
   }
 
@@ -998,10 +998,6 @@ export class PresupuestosComponent implements OnInit {
     this.viaticos.set(0);
     this.descuento.set(0);
     this.comentarios.set('');
-    this.filePresupuestoName.set(null);
-    this.filePresupuestoInfo.set(null);
-    this.fileOCName.set(null);
-    this.fileOCInfo.set(null);
 
     if (centroCosto) {
       this.onCentroCostoFormChange(centroCosto);
@@ -1246,28 +1242,26 @@ export class PresupuestosComponent implements OnInit {
     };
 
     this.loading.set(true);
-    this.presupuestosService.createPresupuesto(payload).subscribe({
-      next: (created) => {
-        // Refrescar lista de presupuestos del CC
-        this.presupuestosService.getPresupuestos(1, 100, '', undefined, Number(idCc)).subscribe({
-          next: (res) => {
-            let pptos: PresupuestoPrincipal[] = [];
-            if ('data' in res && Array.isArray(res.data)) pptos = res.data;
-            else if (Array.isArray(res) && res.length > 0) pptos = res;
-            this.presupuestosDelCC.set(pptos);
-            this.loading.set(false);
-          },
-          error: () => this.loading.set(false)
-        });
-        // Si se agregó Principal, cambiar default a Adicional para el próximo
+    this.presupuestosService.createPresupuesto(payload).pipe(
+      // Si se agregó Principal, cambiar default a Adicional para el próximo
+      tap(() => {
         if (tipo === 'Principal') {
           this.formData.TipoPpto = 'Adicional';
         }
+      }),
+      // Refrescar la lista solo después de que termine la escritura
+      switchMap(() => this.presupuestosService.getPresupuestos(1, 100, '', undefined, Number(idCc))),
+      finalize(() => this.loading.set(false)),
+    ).subscribe({
+      next: (res) => {
+        let pptos: PresupuestoPrincipal[] = [];
+        if ('data' in res && Array.isArray(res.data)) pptos = res.data;
+        else if (Array.isArray(res) && res.length > 0) pptos = res;
+        this.presupuestosDelCC.set(pptos);
       },
       error: (err) => {
         console.error('Error al agregar presupuesto:', err);
-        alert('Error al agregar presupuesto: ' + (err.error?.message || err.message));
-        this.loading.set(false);
+        alert('Error al agregar presupuesto: ' + mensajeDeError(err));
       }
     });
   }
@@ -1305,72 +1299,6 @@ export class PresupuestosComponent implements OnInit {
 
   onEmpresaFormularioChange() {
     this.onCentroCostoFormChange(null);
-  }
-
-  // -- File: Archivo de Presupuesto ------------------------------
-  onFilePresupuestoSelected(event: Event): void {
-    const input = event.target as HTMLInputElement;
-    if (input.files && input.files[0]) {
-      const file = input.files[0];
-      this.filePresupuestoName.set(file.name);
-      const kb = (file.size / 1024).toFixed(1);
-      const mb = (file.size / (1024 * 1024)).toFixed(1);
-      const size = file.size > 1024 * 1024 ? mb + ' MB' : kb + ' KB';
-      const date = new Date().toLocaleDateString('es-PE', { day:'2-digit', month:'short', year:'numeric' });
-      this.filePresupuestoInfo.set(size + ' · ' + date);
-    }
-  }
-
-  onFilePresupuestoDrop(event: DragEvent): void {
-    event.preventDefault();
-    const file = event.dataTransfer?.files?.[0];
-    if (file) {
-      this.filePresupuestoName.set(file.name);
-      const kb = (file.size / 1024).toFixed(1);
-      const mb = (file.size / (1024 * 1024)).toFixed(1);
-      const size = file.size > 1024 * 1024 ? mb + ' MB' : kb + ' KB';
-      const date = new Date().toLocaleDateString('es-PE', { day:'2-digit', month:'short', year:'numeric' });
-      this.filePresupuestoInfo.set(size + ' · ' + date);
-    }
-  }
-
-  removeFilePresupuesto(event: Event): void {
-    event.stopPropagation();
-    this.filePresupuestoName.set(null);
-    this.filePresupuestoInfo.set(null);
-  }
-
-  // -- File: Orden de Compra --------------------------------------
-  onFileOCSelected(event: Event): void {
-    const input = event.target as HTMLInputElement;
-    if (input.files && input.files[0]) {
-      const file = input.files[0];
-      this.fileOCName.set(file.name);
-      const kb = (file.size / 1024).toFixed(1);
-      const mb = (file.size / (1024 * 1024)).toFixed(1);
-      const size = file.size > 1024 * 1024 ? mb + ' MB' : kb + ' KB';
-      const date = new Date().toLocaleDateString('es-PE', { day:'2-digit', month:'short', year:'numeric' });
-      this.fileOCInfo.set(size + ' · ' + date);
-    }
-  }
-
-  onFileOCDrop(event: DragEvent): void {
-    event.preventDefault();
-    const file = event.dataTransfer?.files?.[0];
-    if (file) {
-      this.fileOCName.set(file.name);
-      const kb = (file.size / 1024).toFixed(1);
-      const mb = (file.size / (1024 * 1024)).toFixed(1);
-      const size = file.size > 1024 * 1024 ? mb + ' MB' : kb + ' KB';
-      const date = new Date().toLocaleDateString('es-PE', { day:'2-digit', month:'short', year:'numeric' });
-      this.fileOCInfo.set(size + ' · ' + date);
-    }
-  }
-
-  removeFileOC(event: Event): void {
-    event.stopPropagation();
-    this.fileOCName.set(null);
-    this.fileOCInfo.set(null);
   }
 
   closeForm() {
@@ -1425,45 +1353,35 @@ export class PresupuestosComponent implements OnInit {
         }
       });
     } else {
-      this.presupuestosService.createPresupuesto(payload).subscribe({
-        next: (created: any) => {
-          this.loading.set(false);
+      let pptoCode = '';
+      let creado = false;
+      const fasesAGuardar = [...this.formFases()];
+      this.presupuestosService.createPresupuesto(payload).pipe(
+        switchMap((created: any) => {
+          creado = true;
+          pptoCode = created?.IdPresupuesto || payload.IdPresupuesto || '';
+          return crearFasesConCategorias(this.presupuestosService, {
+            IdPresupuesto: pptoCode,
+            id_empresa: created?.id_empresa ?? payload.id_empresa,
+            CodCentroCto: created?.CodCentroCto ?? payload.CodCentroCto,
+            id_centro_costo: created?.id_centro_costo ?? payload.id_centro_costo,
+          }, fasesAGuardar);
+        }),
+        finalize(() => this.loading.set(false)),
+      ).subscribe({
+        next: (fallidas) => {
           this.closeForm();
-          const pptoCode = created?.IdPresupuesto || payload.IdPresupuesto || '';
-
-          const fasesAGuardar = [...this.formFases()];
-          if (fasesAGuardar.length > 0) {
-            fasesAGuardar.forEach((item, index) => {
-              const idDetalle = `DF-${Date.now()}-${index}`;
-              const faseData = {
-                IdPresupuesto: pptoCode,
-                IdpptoFase: item.idFase,
-                IdPresupuestoDetalle: idDetalle,
-                id_empresa: created.id_empresa ?? payload.id_empresa,
-                CodCentroCto: created.CodCentroCto ?? payload.CodCentroCto,
-                id_centro_costo: created.id_centro_costo ?? payload.id_centro_costo,
-                CostoDirecto: item.subtotal
-              };
-              this.presupuestosService.createFaseAsignada(faseData).subscribe({
-                next: () => {
-                  this.presupuestosService.createCategoriaAsignada({
-                    ...faseData,
-                    IdPresupuestoDetalleCategoria: `DFC-${Date.now()}-${index}`,
-                    IdpptoFaseCategoria: item.idCategoria,
-                    SubTotalCategoria: item.subtotal
-                  }).subscribe();
-                }
-              });
-            });
-          }
-
           this.recargarPresupuestosDelCCActual();
           this.loadCentrosCostos();
-          alert(`Presupuesto ${pptoCode} guardado y emitido con éxito.`);
+          if (fallidas.length === 0) {
+            alert(`Presupuesto ${pptoCode} guardado y emitido con éxito.`);
+          } else {
+            alert(`El presupuesto ${pptoCode} fue creado, pero no se pudieron guardar estas fases:\n${describirFasesFallidas(fallidas)}`);
+          }
         },
         error: (err) => {
-          this.loading.set(false);
-          alert('Error al crear presupuesto: ' + (err.error?.message || err.message));
+          // Solo puede fallar createPresupuesto: las fallas de fases se capturan por fase.
+          alert((creado ? 'Error al guardar las fases: ' : 'Error al crear presupuesto: ') + mensajeDeError(err));
         }
       });
     }
