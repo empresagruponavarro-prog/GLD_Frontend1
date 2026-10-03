@@ -7,11 +7,23 @@
 
 <div class="content-body">
   <div class="modules-grid">
-    <div class="module-card" *ngFor="let mod of modules" [routerLink]="mod.route">
-      <div class="module-icon">
-        <i [class]="mod.icon"></i>
-      </div>
-      <span class="module-title">{{ mod.title }}</span>
-    </div>
+    @for (mod of modules; track mod.title) {
+      @if (mod.route) {
+        <div class="module-card" [routerLink]="mod.route">
+          <div class="module-icon">
+            <i [class]="mod.icon"></i>
+          </div>
+          <span class="module-title">{{ mod.title }}</span>
+        </div>
+      } @else {
+        <div class="module-card module-card--disabled" aria-disabled="true">
+          <div class="module-icon">
+            <i [class]="mod.icon"></i>
+          </div>
+          <span class="module-title">{{ mod.title }}</span>
+          <span class="module-badge">Próximamente</span>
+        </div>
+      }
+    }
   </div>
 </div>

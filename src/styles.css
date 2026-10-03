@@ -325,6 +325,21 @@ app-sidebar, .app-sidebar {
   border-color: var(--gld-green-primary, #5a9e80);
 }
 
+.module-card--disabled,
+.module-card--disabled:hover {
+  cursor: not-allowed;
+  opacity: 0.55;
+  transform: none;
+  box-shadow: none;
+  border-color: var(--border-color);
+}
+
+.module-badge {
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: #64748b;
+}
+
 .module-icon {
   width: 56px;
   height: 56px;
