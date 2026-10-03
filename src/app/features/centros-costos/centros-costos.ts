@@ -2,7 +2,7 @@ import { Component, inject, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
-import { LucideAngularModule, ArrowLeft, Copy, X, Check, Lock, Calendar, CloudUpload, FileText, CircleCheck, Contact, Clock } from 'lucide-angular';
+import { LucideAngularModule, ArrowLeft, Copy, Check, Lock, Calendar, CloudUpload, FileText, CircleCheck, Contact, Clock } from 'lucide-angular';
 
 import { DataTableComponent } from '../../shared/components/data-table/data-table';
 import { ModalComponent } from '../../shared/components/modal/modal';
@@ -24,7 +24,6 @@ import { Empresa } from '../administration/empresas/interfaces';
 export class CentrosCostosComponent {
   readonly ArrowLeft = ArrowLeft;
   readonly Copy = Copy;
-  readonly X = X;
   readonly Check = Check;
   readonly Lock = Lock;
   readonly Calendar = Calendar;
@@ -76,41 +75,17 @@ export class CentrosCostosComponent {
     'APROBADO',
   ];
 
-  clientesList = [
-    { id: 'CLI-001', nombre: 'SEDAPAL' },
-    { id: '5ef24aa7', nombre: 'Cliente Retail SA' },
-    { id: '34689840', nombre: 'Constructora del Norte' },
-    { id: '626d2014', nombre: 'Inmobiliaria Central' },
-    { id: '5fa9c9b0', nombre: 'Proyectos Urbanos' }
-  ];
-  
-  // Hidden list of real anexos to map strings to id_anexo
-  realAnexosList = signal<AnexoSelect[]>([]);
+  // Clientes reales del maestro de anexos (tipoAnexo = 'Cliente')
+  clientes = signal<AnexoSelect[]>([]);
 
   onClienteChange() {
-    // 1. Try to see if it's one of the dummy clients
-    const foundDummy = this.clientesList.find(c => c.id === this.formData.CodCliente);
-    if (foundDummy) {
-      this.formData.Cliente = foundDummy.nombre;
-      this.formData.id_anexo = undefined;
-      return;
-    }
-    
-    // 2. It's a string from catalogos().clientes. Let's try to find its ID in real Anexos
-    this.formData.Cliente = this.formData.CodCliente;
-    
-    const strToMatch = (this.formData.CodCliente || '').toLowerCase();
-    const foundAnexo = this.realAnexosList().find(a => (a.nombre || '').toLowerCase() === strToMatch);
-    if (foundAnexo) {
-      this.formData.id_anexo = foundAnexo.id;
-    } else {
-      this.formData.id_anexo = undefined;
-    }
+    // El backend exige CodCliente (string) e id_anexo es la FK real al anexo:
+    // se persiste id_anexo y CodCliente se rellena con el nombre del anexo seleccionado.
+    const anexo = this.clientes().find(c => c.id === this.formData.id_anexo);
+    this.formData.id_anexo = anexo?.id;
+    this.formData.CodCliente = anexo?.nombre ?? '';
+    this.formData.Cliente = anexo?.nombre ?? '';
   }
-
-  onEmpresaChange() {
-  }
-
 
 
   // Paginación
@@ -144,9 +119,9 @@ export class CentrosCostosComponent {
       next: (data) => this.empresas.set(data || []),
       error: (err) => console.warn('Error al cargar empresas:', err)
     });
-    this.anexosService.getSelect().subscribe({
-      next: (res) => this.realAnexosList.set(res || []),
-      error: (err) => console.warn('Error al cargar anexos:', err)
+    this.anexosService.getSelect('Cliente').subscribe({
+      next: (res) => this.clientes.set(res || []),
+      error: (err) => console.warn('Error al cargar clientes:', err)
     });
   }
 
@@ -168,7 +143,6 @@ export class CentrosCostosComponent {
       PresupuestoGastosGenerales: 0,
       PresupuestoViaticos: 0,
       PresupuestoMonto: 0,
-      OCFile: '',
       FechaIncio: today,
       FechaFinProg: '',
       FechaFinReal: '',
@@ -292,7 +266,6 @@ export class CentrosCostosComponent {
       PresupuestoGastosGenerales: d.PresupuestoGastosGenerales,
       PresupuestoViaticos: d.PresupuestoViaticos,
       PresupuestoMonto: d.PresupuestoMonto ? Number(d.PresupuestoMonto) : undefined,
-      OCFile: d.OCFile,
     };
   }
 
@@ -300,7 +273,7 @@ export class CentrosCostosComponent {
     const obligatorios = [
       { campo: 'Periodo', ok: !!this.formData.periodo },
       { campo: 'Empresa', ok: !!this.formData.id_empresa },
-      { campo: 'Cliente', ok: !!this.formData.CodCliente },
+      { campo: 'Cliente', ok: !!this.formData.id_anexo || !!this.formData.CodCliente },
       { campo: 'Nombre del Centro de Costo', ok: !!this.formData.CentroCosto },
       { campo: 'Fecha de Inicio', ok: !!this.formData.FechaIncio }
     ];
@@ -330,23 +303,6 @@ export class CentrosCostosComponent {
     this.formData.periodo = p;
   }
 
-  onOCFileChange(event: Event) {
-    const input = event.target as HTMLInputElement;
-    this.formData.OCFile = input.files?.[0]?.name ?? '';
-  }
-
-  removeOCFile(event?: Event) {
-    if (event) {
-      event.stopPropagation();
-      event.preventDefault();
-    }
-    this.formData.OCFile = '';
-    const fileInput = document.getElementById('cc-oc-file') as HTMLInputElement | null;
-    if (fileInput) {
-      fileInput.value = '';
-    }
-  }
-
   duplicar() {
     if (!this.formData.CentroCosto) {
       return;
@@ -371,7 +327,6 @@ export class CentrosCostosComponent {
       FechaIncio: this.formData.FechaIncio || today,
       FechaFinProg: '',
       FechaFinReal: '',
-      OCFile: '',
       Estado: 'ABIERTO',
     };
   }

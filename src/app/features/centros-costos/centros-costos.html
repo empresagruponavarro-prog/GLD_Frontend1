@@ -220,7 +220,7 @@
               <div class="cc-form-field">
                 <label class="cc-label">Empresa <span class="cc-required">*</span></label>
                 <div class="cc-select-wrapper">
-                  <select [(ngModel)]="formData.id_empresa" (change)="onEmpresaChange()">
+                  <select [(ngModel)]="formData.id_empresa">
                     <option [ngValue]="undefined">Seleccione Empresa...</option>
                     <option *ngFor="let empresa of empresas()" [ngValue]="empresa.id_empresa">
                       {{ empresa.RazonSocial || empresa.razon_social || empresa.CodEmpresa }}
@@ -235,15 +235,17 @@
               <div class="cc-form-field">
                 <label class="cc-label">Cliente <span class="cc-required">*</span></label>
                 <div class="cc-select-wrapper">
-                  <select [(ngModel)]="formData.CodCliente" (change)="onClienteChange()">
-                    <option value="">Seleccione Cliente...</option>
-                    <option *ngFor="let c of catalogos().clientes" [value]="c">{{ c }}</option>
-                    <option *ngFor="let c of clientesList" [value]="c.id">{{ c.nombre }}</option>
+                  <select [(ngModel)]="formData.id_anexo" (ngModelChange)="onClienteChange()">
+                    <option [ngValue]="undefined">Seleccione Cliente...</option>
+                    <option *ngFor="let c of clientes()" [ngValue]="c.id">{{ c.nombre }}</option>
                   </select>
                   <svg class="cc-select-icon" viewBox="0 0 14 14" fill="none">
                     <path d="M3.5 5.25L7 8.75L10.5 5.25" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
                   </svg>
                 </div>
+                @if (!formData.id_anexo && formData.CodCliente) {
+                  <small class="cc-card-note">Cliente guardado (sin vincular a un anexo): {{ formData.CodCliente }}</small>
+                }
               </div>
             </div>
 
@@ -375,37 +377,17 @@
               <lucide-icon [img]="FileText" size="15" class="cc-card-icon"></lucide-icon>
               <span class="cc-card-title">Acta de Entrega / Documento Contractual</span>
             </div>
-            <span class="cc-card-note">PDF, DOCX hasta 15MB</span>
+            <span class="cc-card-note">No disponible por ahora</span>
           </div>
 
           <div class="cc-form-card-body">
-            @if (!formData.OCFile) {
-              <label class="cc-dropzone" for="cc-oc-file">
-                <span class="cc-dropzone-icon"><lucide-icon [img]="CloudUpload" size="24"></lucide-icon></span>
-                <span class="cc-dropzone-text">Haz clic para cargar el acta o arrastra y suelta aquí</span>
-              </label>
-            } @else {
-              <div class="cc-uploaded-file-container">
-                <div class="cc-uploaded-file-info">
-                  <div class="cc-uploaded-file-icon">
-                    <lucide-icon [img]="FileText" size="22"></lucide-icon>
-                  </div>
-                  <div class="cc-uploaded-file-details">
-                    <span class="cc-uploaded-file-name" [title]="formData.OCFile">{{ formData.OCFile }}</span>
-                    <span class="cc-uploaded-file-sub">Documento adjuntado</span>
-                  </div>
-                </div>
-                <div class="cc-uploaded-file-actions">
-                  <label for="cc-oc-file" class="cc-btn-change-file" title="Cambiar archivo">
-                    <i class="fa-solid fa-arrows-rotate"></i> Cambiar
-                  </label>
-                  <button type="button" class="cc-btn-remove-file" (click)="removeOCFile($event)" title="Quitar archivo">
-                    <lucide-icon [img]="X" size="14"></lucide-icon> Quitar
-                  </button>
-                </div>
-              </div>
+            <div class="cc-dropzone" aria-disabled="true" style="opacity: 0.6; cursor: not-allowed;">
+              <span class="cc-dropzone-icon"><lucide-icon [img]="CloudUpload" size="24"></lucide-icon></span>
+              <span class="cc-dropzone-text">Carga de archivos pendiente</span>
+            </div>
+            @if (formData.OCFile) {
+              <small class="cc-card-note">Referencia guardada anteriormente: {{ formData.OCFile }}</small>
             }
-            <input id="cc-oc-file" type="file" accept=".pdf,.doc,.docx" style="display: none" (change)="onOCFileChange($event)">
           </div>
         </section>
       </div>
