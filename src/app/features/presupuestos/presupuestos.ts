@@ -30,9 +30,8 @@ export class PresupuestosComponent implements OnInit {
   // Estado general
   loading = signal<boolean>(false);
   search = signal<string>('');
-  searchInput = '';
 
-  // Filtros � propiedades planas para compatibilidad con [(ngModel)]
+  // Filtros — propiedades planas para compatibilidad con [(ngModel)]
   catalogos = signal<CatalogosFiltros | null>(null);
   empresas = signal<Empresa[]>([]);
   filterSearch = '';
@@ -98,16 +97,15 @@ export class PresupuestosComponent implements OnInit {
   }
 
   openEditPresupuesto(ppto: any) {
-    console.log('openEditPresupuesto called:', ppto);
     this.abrirPresupuestoEnForm(ppto, 1);
   } // 'Todos' | 'Materiales' | 'Mano de Obra' | 'Equipos & Subc.'
   showNuevaCategoria = signal(false);
   nuevaCategoriaDescripcion = '';
 
-  // Estado del layout Maestro-Detalle M�ltiple
+  // Estado del layout Maestro-Detalle Múltiple
   centrosCostos = signal<CentroCosto[]>([]);
 
-  // Getters en vez de computed() � se recalculan con el change detection normal de Angular
+  // Getters en vez de computed() — se recalculan con el change detection normal de Angular
   get centrosCostosFiltrados(): CentroCosto[] {
     let list = this.centrosCostos();
     const s = (this.filterSearch || '').toLowerCase().trim();
@@ -207,7 +205,7 @@ export class PresupuestosComponent implements OnInit {
   showForm = signal<boolean>(false);
   formStep = signal<number>(1);
 
-  // Modelo de Fases din�micas para Paso 2
+  // Modelo de Fases dinámicas para Paso 2
   formFases = signal<{ id?: number; idFase: string; nombre: string; idCategoria: string; categoria: string; subtotal: number }[]>([]);
   fasesMaestras = signal<FaseMaestra[]>([]);
   plantillasActivas = signal<Plantilla[]>([]);
@@ -222,7 +220,7 @@ export class PresupuestosComponent implements OnInit {
   editingFaseAsignada: DetalleFase | null = null;
   editingCategoriaAsignada: any | null = null;
 
-  // Modales directos y r�pidos para Fase y Categor�a (Dashboard)
+  // Modales directos y rápidos para Fase y Categoría (Dashboard)
   modalFaseOpen = signal<boolean>(false);
   modalFaseModo = signal<'new' | 'edit'>('new');
   modalFaseData = {
@@ -341,7 +339,7 @@ export class PresupuestosComponent implements OnInit {
   };
   categoriasDisponiblesModal = signal<FaseCategoriaMaestra[]>([]);
 
-  // Par�metros Financieros para Paso 3
+  // Parámetros Financieros para Paso 3
   pctGG = signal<number>(0.00);
   pctUtilidad = signal<number>(0.00);
   viaticos = signal<number>(0.00);
@@ -386,13 +384,13 @@ export class PresupuestosComponent implements OnInit {
     return this.formMontoGG + this.formMontoUtilidad;
   }
 
-  // Gu�as y t�tulos de pasos
+  // Guías y títulos de pasos
   stepTitles: { [key: number]: string } = {
     1: 'Etapa 1 de 5: Completando Datos Generales del Proyecto.',
     2: 'Etapa 2 de 5: Desglose de Fases y Costo Directo APU.',
-    3: 'Etapa 3 de 5: Liquidaci�n Financiera, M�rgenes e Impuestos.',
-    4: 'Etapa 4 de 5: Expediente T�cnico, Archivos y Revisiones.',
-    5: 'Etapa 5 de 5: Control, Comentarios y Aprobaci�n Final.'
+    3: 'Etapa 3 de 5: Liquidación Financiera, Márgenes e Impuestos.',
+    4: 'Etapa 4 de 5: Expediente Técnico, Archivos y Revisiones.',
+    5: 'Etapa 5 de 5: Control, Comentarios y Aprobación Final.'
   };
 
   get stepIndicatorText(): string {
@@ -441,7 +439,7 @@ export class PresupuestosComponent implements OnInit {
     const fase = this.fasesMaestras().find((item) => item.IdpptoFase === this.newFaseId);
     const categoria = this.categoriasFaseMaestra().find((item) => item.IdpptoFaseCategoria === this.newFaseCategoriaId);
     if (!fase || !categoria) {
-      alert('Seleccione una fase y su categor�a.');
+      alert('Seleccione una fase y su categoría.');
       return;
     }
     const monto = Number(this.newFaseSubtotal) || 0;
@@ -675,7 +673,7 @@ export class PresupuestosComponent implements OnInit {
     const fase = this.selectedFase();
     if (!ppto || !fase) return;
     if (!this.modalCategoriaData.IdpptoFaseCategoria) {
-      alert('Seleccione una categor�a.');
+      alert('Seleccione una categoría.');
       return;
     }
 
@@ -696,11 +694,11 @@ export class PresupuestosComponent implements OnInit {
           this.cerrarModalCategoria();
           this.recargarPresupuestoActivo();
         },
-        error: (err) => alert('Error al actualizar categor�a: ' + (err.error?.message || err.message)),
+        error: (err) => alert('Error al actualizar categoría: ' + (err.error?.message || err.message)),
       });
     } else {
       if (!fase.IdPresupuestoDetalle) {
-        alert('La fase seleccionada no tiene IdPresupuestoDetalle v�lido.');
+        alert('La fase seleccionada no tiene IdPresupuestoDetalle válido.');
         return;
       }
       this.presupuestosService.createCategoriaAsignada({
@@ -712,7 +710,7 @@ export class PresupuestosComponent implements OnInit {
           this.cerrarModalCategoria();
           this.recargarPresupuestoActivo();
         },
-        error: (err) => alert('Error al crear categor�a: ' + (err.error?.message || err.message)),
+        error: (err) => alert('Error al crear categoría: ' + (err.error?.message || err.message)),
       });
     }
   }
@@ -760,7 +758,7 @@ export class PresupuestosComponent implements OnInit {
     const categoriaMaestra = this.categoriasFaseMaestra().find((item) => item.IdpptoFaseCategoria === this.newFaseCategoriaId);
     const requiereCategoria = this.faseFormMode !== 'edit-fase';
     if (!presupuesto || !faseMaestra || (requiereCategoria && !categoriaMaestra)) {
-      alert(requiereCategoria ? 'Seleccione una fase y su categor�a.' : 'Seleccione una fase.');
+      alert(requiereCategoria ? 'Seleccione una fase y su categoría.' : 'Seleccione una fase.');
       return;
     }
 
@@ -788,7 +786,7 @@ export class PresupuestosComponent implements OnInit {
         IdpptoFaseCategoria: categoriaMaestra.IdpptoFaseCategoria,
       }).subscribe({
         next: () => this.finalizarEdicionFaseCategoria(),
-        error: (error) => alert('Error al actualizar categor�a: ' + (error.error?.message || error.message)),
+        error: (error) => alert('Error al actualizar categoría: ' + (error.error?.message || error.message)),
       });
       return;
     }
@@ -796,7 +794,7 @@ export class PresupuestosComponent implements OnInit {
     if (this.faseFormMode === 'new-categoria') {
       const faseAsignada = this.selectedFase();
       if (!faseAsignada?.IdPresupuestoDetalle) {
-        alert('Seleccione una fase v�lida para agregar la categor�a.');
+        alert('Seleccione una fase válida para agregar la categoría.');
         return;
       }
       this.presupuestosService.createCategoriaAsignada({
@@ -806,7 +804,7 @@ export class PresupuestosComponent implements OnInit {
         IdpptoFaseCategoria: categoriaMaestra.IdpptoFaseCategoria,
       }).subscribe({
         next: () => this.finalizarEdicionFaseCategoria(),
-        error: (error) => alert('Error al crear categor�a: ' + (error.error?.message || error.message)),
+        error: (error) => alert('Error al crear categoría: ' + (error.error?.message || error.message)),
       });
       return;
     }
@@ -820,7 +818,7 @@ export class PresupuestosComponent implements OnInit {
         IdpptoFaseCategoria: categoriaMaestra.IdpptoFaseCategoria,
       }).subscribe({
         next: () => this.finalizarEdicionFaseCategoria(),
-        error: (error) => alert('La fase fue creada, pero no se pudo crear su categor�a: ' + (error.error?.message || error.message)),
+        error: (error) => alert('La fase fue creada, pero no se pudo crear su categoría: ' + (error.error?.message || error.message)),
       }),
       error: (error) => alert('Error al crear fase: ' + (error.error?.message || error.message)),
     });
@@ -828,7 +826,7 @@ export class PresupuestosComponent implements OnInit {
 
   eliminarFase(fase: DetalleFase, event?: Event) {
     event?.stopPropagation();
-    if (!confirm(`�Eliminar la fase "${fase.NombreFase || fase.IdpptoFase}" y sus categor�as?`)) return;
+    if (!confirm(`¿Eliminar la fase "${fase.NombreFase || fase.IdpptoFase}" y sus categorías?`)) return;
     this.presupuestosService.deleteFaseAsignada(fase.id).subscribe({
       next: () => this.recargarPresupuestoActivo(),
       error: (error) => alert('Error al eliminar fase: ' + (error.error?.message || error.message)),
@@ -837,10 +835,10 @@ export class PresupuestosComponent implements OnInit {
 
   eliminarCategoria(categoria: any, event?: Event) {
     event?.stopPropagation();
-    if (!confirm(`�Eliminar la categor�a "${categoria.CategoriaInsumo || categoria.IdpptoFaseCategoria}"?`)) return;
+    if (!confirm(`¿Eliminar la categoría "${categoria.CategoriaInsumo || categoria.IdpptoFaseCategoria}"?`)) return;
     this.presupuestosService.deleteCategoriaAsignada(categoria.id).subscribe({
       next: () => this.recargarPresupuestoActivo(),
-      error: (error) => alert('Error al eliminar categor�a: ' + (error.error?.message || error.message)),
+      error: (error) => alert('Error al eliminar categoría: ' + (error.error?.message || error.message)),
     });
   }
 
@@ -906,7 +904,7 @@ export class PresupuestosComponent implements OnInit {
     const descripcion = this.nuevaCategoriaDescripcion.trim();
     const idFase = this.faseActivaCodigo;
     if (!idFase || !descripcion) {
-      alert('Ingrese la descripci�n de la categor�a.');
+      alert('Ingrese la descripción de la categoría.');
       return;
     }
 
@@ -921,7 +919,7 @@ export class PresupuestosComponent implements OnInit {
         this.loadFasesMaestras();
     this.loadPlantillasActivas();
       },
-      error: (error) => alert('Error al crear categor�a: ' + (error.error?.message || error.message)),
+      error: (error) => alert('Error al crear categoría: ' + (error.error?.message || error.message)),
     });
   }
 
@@ -1196,7 +1194,7 @@ export class PresupuestosComponent implements OnInit {
           if (this.selectedCC()) {
             this.onSelectCC(this.selectedCC()!);
           }
-          alert('Presupuesto actualizado con �xito.');
+          alert('Presupuesto actualizado con éxito.');
         },
         error: (err) => {
           this.loading.set(false);
@@ -1261,7 +1259,7 @@ export class PresupuestosComponent implements OnInit {
           },
           error: () => this.loading.set(false)
         });
-        // Si se agreg� Principal, cambiar default a Adicional para el pr�ximo
+        // Si se agregó Principal, cambiar default a Adicional para el próximo
         if (tipo === 'Principal') {
           this.formData.TipoPpto = 'Adicional';
         }
@@ -1276,7 +1274,7 @@ export class PresupuestosComponent implements OnInit {
 
   eliminarPresupuestoDeCC(p: PresupuestoPrincipal) {
     const id = String(p.IdPresupuesto || (p as any).id);
-    if (confirm(`�Eliminar el presupuesto "${id}"? Esta acci�n no se puede deshacer.`)) {
+    if (confirm(`¿Eliminar el presupuesto "${id}"? Esta acción no se puede deshacer.`)) {
       this.loading.set(true);
       this.presupuestosService.deletePresupuesto(id).subscribe({
         next: () => {
@@ -1319,7 +1317,7 @@ export class PresupuestosComponent implements OnInit {
       const mb = (file.size / (1024 * 1024)).toFixed(1);
       const size = file.size > 1024 * 1024 ? mb + ' MB' : kb + ' KB';
       const date = new Date().toLocaleDateString('es-PE', { day:'2-digit', month:'short', year:'numeric' });
-      this.filePresupuestoInfo.set(size + ' � ' + date);
+      this.filePresupuestoInfo.set(size + ' · ' + date);
     }
   }
 
@@ -1332,7 +1330,7 @@ export class PresupuestosComponent implements OnInit {
       const mb = (file.size / (1024 * 1024)).toFixed(1);
       const size = file.size > 1024 * 1024 ? mb + ' MB' : kb + ' KB';
       const date = new Date().toLocaleDateString('es-PE', { day:'2-digit', month:'short', year:'numeric' });
-      this.filePresupuestoInfo.set(size + ' � ' + date);
+      this.filePresupuestoInfo.set(size + ' · ' + date);
     }
   }
 
@@ -1352,7 +1350,7 @@ export class PresupuestosComponent implements OnInit {
       const mb = (file.size / (1024 * 1024)).toFixed(1);
       const size = file.size > 1024 * 1024 ? mb + ' MB' : kb + ' KB';
       const date = new Date().toLocaleDateString('es-PE', { day:'2-digit', month:'short', year:'numeric' });
-      this.fileOCInfo.set(size + ' � ' + date);
+      this.fileOCInfo.set(size + ' · ' + date);
     }
   }
 
@@ -1365,7 +1363,7 @@ export class PresupuestosComponent implements OnInit {
       const mb = (file.size / (1024 * 1024)).toFixed(1);
       const size = file.size > 1024 * 1024 ? mb + ' MB' : kb + ' KB';
       const date = new Date().toLocaleDateString('es-PE', { day:'2-digit', month:'short', year:'numeric' });
-      this.fileOCInfo.set(size + ' � ' + date);
+      this.fileOCInfo.set(size + ' · ' + date);
     }
   }
 
@@ -1419,7 +1417,7 @@ export class PresupuestosComponent implements OnInit {
           this.closeForm();
           this.recargarPresupuestosDelCCActual();
           this.loadCentrosCostos();
-          alert(`? Presupuesto ${payload.IdPresupuesto} actualizado con �xito.`);
+          alert(`? Presupuesto ${payload.IdPresupuesto} actualizado con éxito.`);
         },
         error: (err) => {
           this.loading.set(false);
@@ -1461,7 +1459,7 @@ export class PresupuestosComponent implements OnInit {
 
           this.recargarPresupuestosDelCCActual();
           this.loadCentrosCostos();
-          alert(`Presupuesto ${pptoCode} guardado y emitido con �xito.`);
+          alert(`Presupuesto ${pptoCode} guardado y emitido con éxito.`);
         },
         error: (err) => {
           this.loading.set(false);
@@ -1471,7 +1469,7 @@ export class PresupuestosComponent implements OnInit {
     }
   }
 
-  // Modal y formulario (legacy, se mantendr� para la funcionalidad anterior)
+  // Modal y formulario (legacy, se mantendrá para la funcionalidad anterior)
   showModal = signal<boolean>(false);
   editingId = signal<string | null>(null);
   formData: Partial<PresupuestoPrincipal> = this.emptyForm();
@@ -1479,12 +1477,9 @@ export class PresupuestosComponent implements OnInit {
   presupuestosDelCC = signal<PresupuestoPrincipal[]>([]);
   selectedPresupuestoId = signal<string | null>(null);
 
-  // Paginaci�n (legacy)
+  // Paginación (legacy)
   currentPage = signal<number>(1);
   pageSize = signal<number>(10);
-  totalRecords = signal<number>(0);
-
-  constructor() {}
 
   ngOnInit() {
     this.loadCatalogos();
@@ -1502,7 +1497,7 @@ export class PresupuestosComponent implements OnInit {
   loadCatalogos() {
     this.centrosCostosService.getCatalogosFiltros().subscribe({
       next: (cat) => this.catalogos.set(cat),
-      error: (e) => console.error('Error al cargar cat�logos', e)
+      error: (e) => console.error('Error al cargar catálogos', e)
     });
   }
 
@@ -1895,7 +1890,7 @@ export class PresupuestosComponent implements OnInit {
   }
 
   // ==========================================
-  // FUNCIONALIDAD LEGACY (Modal y Tabla Cl�sica)
+  // FUNCIONALIDAD LEGACY (Modal y Tabla Clásica)
   // ==========================================
 
   loadData() {
@@ -1916,47 +1911,6 @@ export class PresupuestosComponent implements OnInit {
     });
   }
 
-  onSearch() {
-    this.search.set(this.searchInput);
-    this.currentPage.set(1);
-    this.loadData();
-  }
-
-  clearSearch() {
-    this.searchInput = '';
-    this.search.set('');
-    this.currentPage.set(1);
-    this.loadData();
-  }
-
-  goToPage(page: number) {
-    this.currentPage.set(page);
-    this.loadData();
-  }
-
-  onPageSizeChange(newSize: any) {
-    this.pageSize.set(Number(newSize));
-    this.currentPage.set(1);
-    this.loadData();
-  }
-
-
-  openModal() {
-    this.editingId.set(null);
-    this.formData = this.emptyForm();
-    // Pre-rellenar con el CC activo si hay uno seleccionado
-    if (this.selectedCC()) {
-      const cc = this.selectedCC()!;
-      this.formData.CodCentroCto = cc.CodCentroCto;
-      this.formData.CodEmpresa = cc.CodEmpresa;
-      this.formData.IdPeriodo = cc.IdPeriodo;
-      this.formData.id_centro_costo = cc.id ?? cc.id_centro_costo;
-      this.formData.id_empresa = cc.id_empresa;
-      this.formData.periodo = String(cc.periodo ?? cc.IdPeriodo ?? '');
-    }
-    this.showModal.set(true);
-  }
-
   editModal(item: PresupuestoPrincipal) {
     this.abrirPresupuestoEnForm(item, 1);
   }
@@ -1967,34 +1921,9 @@ export class PresupuestosComponent implements OnInit {
     this.editingId.set(null);
   }
 
-  save() {
-    if (this.editingId() && !this.formData.IdPresupuesto) {
-      alert('El ID de Presupuesto es obligatorio.');
-      return;
-    }
-
-    const payload = { ...this.formData };
-    if (!this.editingId() && !String(payload.IdPresupuesto ?? '').trim()) {
-      delete payload.IdPresupuesto;
-    }
-
-    const id = this.editingId();
-    if (id) {
-      this.presupuestosService.updatePresupuesto(id, payload).subscribe({
-        next: () => { this.closeModal(); if (this.selectedCC()) this.onSelectCC(this.selectedCC()!); else this.loadData(); },
-        error: (err) => alert('Error al actualizar: ' + (err.error?.message || err.message))
-      });
-    } else {
-      this.presupuestosService.createPresupuesto(payload).subscribe({
-        next: () => { this.closeModal(); if (this.selectedCC()) this.onSelectCC(this.selectedCC()!); else this.loadData(); },
-        error: (err) => alert('Error al crear: ' + (err.error?.message || err.message))
-      });
-    }
-  }
-
   delete(id: string | number) {
     const idStr = String(id);
-    if (confirm(`�Eliminar el Presupuesto "${idStr}"? Esta acci�n no se puede deshacer.`)) {
+    if (confirm(`¿Eliminar el Presupuesto "${idStr}"? Esta acción no se puede deshacer.`)) {
       this.presupuestosService.deletePresupuesto(idStr).subscribe({
         next: () => { if (this.selectedCC()) this.onSelectCC(this.selectedCC()!); else this.loadData(); },
         error: (err) => alert('Error al eliminar: ' + (err.error?.message || err.message))
