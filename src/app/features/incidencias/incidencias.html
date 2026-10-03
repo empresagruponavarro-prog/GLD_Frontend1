@@ -54,7 +54,7 @@
       <div class="form-group">
         <label>ESTADO</label>
         <select class="form-control" [(ngModel)]="filters.estado" (change)="loadIncidencias()">
-          <option value="Todos los estados">Todos los estados</option>
+          <option value="">Todos los estados</option>
           <option value="PENDIENTE">PENDIENTE</option>
           <option value="EN PROCESO">EN PROCESO</option>
           <option value="RESUELTO">RESUELTO</option>
@@ -266,11 +266,11 @@
       <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem;">
         <div class="form-group">
           <label>LATITUD</label>
-          <input type="text" class="form-control" [(ngModel)]="formData.latitud" (change)="updateMarkerFromInputs()" placeholder="-12.09120000">
+          <input type="text" class="form-control" [(ngModel)]="latitud" (change)="updateMarkerFromInputs()" placeholder="-12.09120000">
         </div>
         <div class="form-group">
           <label>LONGITUD</label>
-          <input type="text" class="form-control" [(ngModel)]="formData.longitud" (change)="updateMarkerFromInputs()" placeholder="-76.95340000">
+          <input type="text" class="form-control" [(ngModel)]="longitud" (change)="updateMarkerFromInputs()" placeholder="-76.95340000">
         </div>
       </div>
 
@@ -334,14 +334,15 @@
 </div>
 
 <!-- Modal Detalle Ficha (Solo Lectura) -->
-<div class="modal-overlay" *ngIf="showDetailModal && selectedItem">
+@if (showDetailModal() && selectedItem(); as item) {
+<div class="modal-overlay">
   <div class="modal-content" style="max-width: 650px; max-height: 85vh; overflow-y: auto;">
     <div class="modal-header" style="background: linear-gradient(135deg, #059669 0%, #0284c7 100%); color: white;">
       <div>
         <h3 style="margin: 0; color: white; font-size: 1.1rem;">
           <i class="fa-solid fa-file-lines"></i> Detalles de Ficha de Caso
         </h3>
-        <small style="color: #e0f2fe; font-size: 0.75rem;">ID Registro: {{ selectedItem()?.id }}</small>
+        <small style="color: #e0f2fe; font-size: 0.75rem;">ID Registro: {{ item.id }}</small>
       </div>
       <button class="btn btn-secondary" style="padding: 0.2rem 0.5rem; color: white; background: rgba(255,255,255,0.2); border: none;" (click)="closeModals()">✕</button>
     </div>
@@ -350,33 +351,33 @@
       <div style="background: #f8fafc; padding: 0.85rem; border-radius: 8px; border: 1px solid var(--border-color);">
         <div style="font-weight: 700; color: #047857; margin-bottom: 0.4rem;">👤 I.- REGISTRADOR</div>
         <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0.5rem;">
-          <div><small style="color: var(--text-muted); display: block;">REGISTRADOR:</small> <strong>{{ selectedItem()?.promotor || '—' }}</strong></div>
-          <div><small style="color: var(--text-muted); display: block;">DOCUMENTO:</small> <strong>{{ selectedItem()?.docRegistrador || '—' }}</strong></div>
-          <div><small style="color: var(--text-muted); display: block;">CARGO:</small> <strong>{{ selectedItem()?.cargoRegistrador || '—' }}</strong></div>
+          <div><small style="color: var(--text-muted); display: block;">REGISTRADOR:</small> <strong>{{ item.promotor || '—' }}</strong></div>
+          <div><small style="color: var(--text-muted); display: block;">DOCUMENTO:</small> <strong>{{ item.docRegistrador || '—' }}</strong></div>
+          <div><small style="color: var(--text-muted); display: block;">CARGO:</small> <strong>{{ item.cargoRegistrador || '—' }}</strong></div>
         </div>
       </div>
 
       <div style="background: #f8fafc; padding: 0.85rem; border-radius: 8px; border: 1px solid var(--border-color);">
         <div style="font-weight: 700; color: #047857; margin-bottom: 0.4rem;">🧑‍🤝‍🧑 II.- SOLICITANTE / CLIENTE</div>
         <div style="display: grid; grid-template-columns: 1.5fr 1fr 1fr; gap: 0.5rem; margin-bottom: 0.4rem;">
-          <div><small style="color: var(--text-muted); display: block;">NOMBRES / EMPRESA:</small> <strong>{{ selectedItem()?.solicitante || '—' }}</strong></div>
-          <div><small style="color: var(--text-muted); display: block;">DOCUMENTO:</small> <strong>{{ selectedItem()?.docSolicitante || '—' }}</strong></div>
-          <div><small style="color: var(--text-muted); display: block;">TELÉFONO:</small> <strong>{{ selectedItem()?.telefonoSolicitante || '—' }}</strong></div>
+          <div><small style="color: var(--text-muted); display: block;">NOMBRES / EMPRESA:</small> <strong>{{ item.solicitante || '—' }}</strong></div>
+          <div><small style="color: var(--text-muted); display: block;">DOCUMENTO:</small> <strong>{{ item.docSolicitante || '—' }}</strong></div>
+          <div><small style="color: var(--text-muted); display: block;">TELÉFONO:</small> <strong>{{ item.telefonoSolicitante || '—' }}</strong></div>
         </div>
-        <div><small style="color: var(--text-muted); display: block;">DIRECCIÓN FISCAL:</small> <strong>{{ selectedItem()?.domicilioSolicitante || '—' }}</strong></div>
+        <div><small style="color: var(--text-muted); display: block;">DIRECCIÓN FISCAL:</small> <strong>{{ item.domicilioSolicitante || '—' }}</strong></div>
       </div>
 
       <div style="background: #f8fafc; padding: 0.85rem; border-radius: 8px; border: 1px solid var(--border-color);">
         <div style="font-weight: 700; color: #047857; margin-bottom: 0.4rem;">📍 III.- DETALLES DEL CASO / INCIDENCIA</div>
         <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0.5rem; margin-bottom: 0.4rem;">
-          <div><small style="color: var(--text-muted); display: block;">FECHA:</small> <strong>{{ selectedItem()?.fechaIncidencia || '—' }}</strong></div>
-          <div><small style="color: var(--text-muted); display: block;">HORA:</small> <strong>{{ selectedItem()?.horaIncidencia || '—' }}</strong></div>
-          <div><small style="color: var(--text-muted); display: block;">TIPIFICACIÓN:</small> <strong>{{ selectedItem()?.tipificacion || '—' }}</strong></div>
+          <div><small style="color: var(--text-muted); display: block;">FECHA:</small> <strong>{{ item.fechaIncidencia || '—' }}</strong></div>
+          <div><small style="color: var(--text-muted); display: block;">HORA:</small> <strong>{{ item.horaIncidencia || '—' }}</strong></div>
+          <div><small style="color: var(--text-muted); display: block;">TIPIFICACIÓN:</small> <strong>{{ item.tipificacion || '—' }}</strong></div>
         </div>
         <div style="margin-top: 0.4rem;">
           <small style="color: var(--text-muted); display: block;">DESCRIPCIÓN COMPLETA:</small>
           <div style="background: #ffffff; padding: 0.5rem; border-radius: 4px; border: 1px solid #cbd5e1; margin-top: 0.2rem;">
-            {{ selectedItem()?.incidencia || 'Sin descripción...' }}
+            {{ item.incidencia || 'Sin descripción...' }}
           </div>
         </div>
       </div>
@@ -387,3 +388,4 @@
     </div>
   </div>
 </div>
+}

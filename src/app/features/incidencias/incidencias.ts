@@ -48,8 +48,8 @@ export class IncidenciasComponent implements AfterViewChecked {
   filters = {
     fechaInicio: '',
     fechaFin: '',
-    promotor: 'Todos los promotores',
-    estado: 'Todos los estados',
+    promotor: '',
+    estado: '',
     solicitante: '',
     incidencia: '',
     representante: '',
@@ -81,7 +81,9 @@ export class IncidenciasComponent implements AfterViewChecked {
     estado: 'PENDIENTE',
   };
 
-  constructor() { this.loadIncidencias(); }
+  // Coordenadas reactivas: Leaflet las actualiza desde callbacks externos
+  latitud = signal<string>('-12.09120000');
+  longitud = signal<string>('-76.95340000');
 
   ngOnInit() {
     this.loadIncidencias();
@@ -99,8 +101,8 @@ export class IncidenciasComponent implements AfterViewChecked {
     const mapElement = document.getElementById('leaflet-map-container');
     if (!mapElement || typeof L === 'undefined') return;
 
-    const lat = Number(this.formData.latitud) || -12.0912;
-    const lng = Number(this.formData.longitud) || -76.9534;
+    const lat = Number(this.latitud()) || -12.0912;
+    const lng = Number(this.longitud()) || -76.9534;
 
     if (this.leafletMap) {
       this.leafletMap.remove();
@@ -133,16 +135,16 @@ export class IncidenciasComponent implements AfterViewChecked {
     // Event when dragging green marker ends
     this.leafletMarker.on('dragend', () => {
       const pos = this.leafletMarker.getLatLng();
-      this.formData.latitud = pos.lat.toFixed(8);
-      this.formData.longitud = pos.lng.toFixed(8);
+      this.latitud.set(pos.lat.toFixed(8));
+      this.longitud.set(pos.lng.toFixed(8));
     });
 
     // Event when clicking anywhere on map
     this.leafletMap.on('click', (e: any) => {
       const { lat, lng } = e.latlng;
       this.leafletMarker.setLatLng([lat, lng]);
-      this.formData.latitud = lat.toFixed(8);
-      this.formData.longitud = lng.toFixed(8);
+      this.latitud.set(lat.toFixed(8));
+      this.longitud.set(lng.toFixed(8));
     });
 
     setTimeout(() => {
@@ -151,8 +153,8 @@ export class IncidenciasComponent implements AfterViewChecked {
   }
 
   updateMarkerFromInputs() {
-    const lat = Number(this.formData.latitud);
-    const lng = Number(this.formData.longitud);
+    const lat = Number(this.latitud());
+    const lng = Number(this.longitud());
 
     if (!isNaN(lat) && !isNaN(lng) && this.leafletMarker && this.leafletMap) {
       this.leafletMarker.setLatLng([lat, lng]);
@@ -167,8 +169,8 @@ export class IncidenciasComponent implements AfterViewChecked {
         (position) => {
           const lat = position.coords.latitude.toFixed(8);
           const lng = position.coords.longitude.toFixed(8);
-          this.formData.latitud = lat;
-          this.formData.longitud = lng;
+          this.latitud.set(lat);
+          this.longitud.set(lng);
 
           if (this.leafletMarker && this.leafletMap) {
             this.leafletMarker.setLatLng([Number(lat), Number(lng)]);
@@ -205,8 +207,8 @@ export class IncidenciasComponent implements AfterViewChecked {
     this.filters = {
       fechaInicio: '',
       fechaFin: '',
-      promotor: 'Todos los promotores',
-      estado: 'Todos los estados',
+      promotor: '',
+      estado: '',
       solicitante: '',
       incidencia: '',
       representante: '',
@@ -241,6 +243,8 @@ export class IncidenciasComponent implements AfterViewChecked {
       representante: '',
       estado: 'PENDIENTE',
     };
+    this.latitud.set('-12.09120000');
+    this.longitud.set('-76.95340000');
     this.showFormModal.set(true);
     this.mapNeedsInit = true;
   }
@@ -248,6 +252,8 @@ export class IncidenciasComponent implements AfterViewChecked {
   openEditModal(item: Incidencia) {
     this.editingId.set(item.id!);
     this.formData = { ...item };
+    this.latitud.set(item.latitud ?? '');
+    this.longitud.set(item.longitud ?? '');
     this.showFormModal.set(true);
     this.mapNeedsInit = true;
   }
@@ -262,6 +268,9 @@ export class IncidenciasComponent implements AfterViewChecked {
       alert('Por favor complete los campos obligatorios (*).');
       return;
     }
+
+    this.formData.latitud = this.latitud();
+    this.formData.longitud = this.longitud();
 
     const editId = this.editingId();
     if (editId) {
