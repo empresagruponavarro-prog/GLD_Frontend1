@@ -83,9 +83,7 @@ export interface CreateDocumentoOrigen {
   forma_pago: string;
   moneda_id: string;
   moneda_simbolo: string;
-  monto: number;
   igv: number;
-  total: number;
   usuario: string;
   detalles: DetalleDocumentoOrigen[];
 }

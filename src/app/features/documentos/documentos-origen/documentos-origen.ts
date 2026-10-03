@@ -194,7 +194,16 @@ export class DocumentosOrigenComponent {
 
   openPdf(item: DocumentoOrigen) {
     if (!item.oc_pdf) return;
-    window.open(item.oc_pdf, '_blank');
+    let url: URL;
+    try {
+      url = new URL(item.oc_pdf, window.location.origin);
+    } catch {
+      return;
+    }
+    // Solo https: o rutas relativas (que resuelven al mismo origen de la app).
+    const esRelativa = url.origin === window.location.origin && !/^[a-z][a-z0-9+.-]*:/i.test(item.oc_pdf.trim());
+    if (url.protocol !== 'https:' && !esRelativa) return;
+    window.open(url.href, '_blank', 'noopener,noreferrer');
   }
 
   openModal() {
@@ -234,9 +243,7 @@ export class DocumentosOrigenComponent {
           forma_pago: doc.forma_pago ?? item.forma_pago ?? base.forma_pago,
           moneda_id: doc.moneda_id ?? item.moneda_id ?? base.moneda_id,
           moneda_simbolo: doc.moneda_simbolo ?? item.moneda_simbolo ?? base.moneda_simbolo,
-          monto: Number(doc.monto) || 0,
           igv: Number(doc.igv) || 0,
-          total: Number(doc.total) || 0,
         };
 
         const detalles = (doc.detalles || []).map((d) => ({
@@ -310,21 +317,13 @@ export class DocumentosOrigenComponent {
     this.formData.moneda_simbolo = moneda?.simbolo ?? '';
   }
 
-  recalcTotal() {
-    const monto = Number(this.formData.monto) || 0;
-    const igv = Number(this.formData.igv) || 0;
-    this.formData.total = Number((monto + igv).toFixed(2));
-  }
-
   save() {
-    this.recalcTotal();
     this.saving.set(true);
 
+    // monto y total los calcula el servidor a partir de los detalles.
     const payload: CreateDocumentoOrigen = {
       ...this.formData,
-      monto: Number(this.formData.monto) || 0,
       igv: Number(this.formData.igv) || 0,
-      total: Number(this.formData.total) || 0,
       fecha_emision: this.formData.fecha_emision ? new Date(this.formData.fecha_emision).toISOString() : '',
       detalles: this.detalles()
         .filter((d) => d.id_producto)
@@ -408,9 +407,7 @@ export class DocumentosOrigenComponent {
       forma_pago: 'Contado',
       moneda_id: 'PEN',
       moneda_simbolo: 'S/',
-      monto: 0,
       igv: 0,
-      total: 0,
       usuario: '',
       detalles: [],
     };

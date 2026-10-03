@@ -58,7 +58,7 @@
           placeholder="Ej. USR001"
           [disabled]="!!editingId()"
           [style.background]="editingId() ? '#f1f5f9' : ''">
-        <small *ngIf="editingId" style="color: var(--text-muted); font-size: 0.75rem;">El ID no se puede modificar.</small>
+        <small *ngIf="editingId()" style="color: var(--text-muted); font-size: 0.75rem;">El ID no se puede modificar.</small>
       </div>
       <div class="form-group">
         <label>Nombres Completos *</label>
@@ -78,8 +78,8 @@
         </select>
       </div>
       <div class="form-group" *ngIf="!editingId()">
-        <label>Contraseña</label>
-        <input type="password" class="form-control" [(ngModel)]="formData.Clave" placeholder="Dejar en blanco para usar 123456">
+        <label>Contraseña *</label>
+        <input type="password" class="form-control" [(ngModel)]="formData.Clave" placeholder="Ingrese una contraseña">
       </div>
     </div>
     <div class="modal-footer">

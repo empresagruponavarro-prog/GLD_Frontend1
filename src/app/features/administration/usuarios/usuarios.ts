@@ -71,6 +71,11 @@ export class UsuariosComponent {
     }
 
     const editId = this.editingId();
+    if (!editId && !this.formData.Clave) {
+      alert('La contraseña es obligatoria al crear un usuario.');
+      return;
+    }
+
     if (editId) {
       const updatePayload: any = {
         Nombres: this.formData.Nombres,
@@ -82,12 +87,12 @@ export class UsuariosComponent {
       }
       this.usuariosService.update(editId, updatePayload).subscribe({
         next: () => { this.closeModal(); this.loadUsuarios(); },
-        error: (err) => alert('Error al actualizar: ' + err.error?.message),
+        error: (err) => alert('Error al actualizar: ' + this.mensajeError(err)),
       });
     } else {
       this.usuariosService.create(this.formData).subscribe({
         next: () => { this.closeModal(); this.loadUsuarios(); },
-        error: (err) => alert('Error al crear: ' + err.error?.message),
+        error: (err) => alert('Error al crear: ' + this.mensajeError(err)),
       });
     }
   }
@@ -96,8 +101,15 @@ export class UsuariosComponent {
     if (confirm(`¿Eliminar el usuario "${id}"? Esta acción no se puede deshacer.`)) {
       this.usuariosService.delete(id).subscribe({
         next: () => this.loadUsuarios(),
-        error: (err) => alert('Error al eliminar: ' + err.error?.message),
+        error: (err) => alert('Error al eliminar: ' + this.mensajeError(err)),
       });
     }
+  }
+
+  /** Mensaje legible: el del backend (string o lista de validaciones), el del error HTTP o un texto genérico. */
+  private mensajeError(err: any): string {
+    const msg = err?.error?.message ?? err?.message;
+    if (Array.isArray(msg)) return msg.join(', ');
+    return msg || 'Error desconocido';
   }
 }
