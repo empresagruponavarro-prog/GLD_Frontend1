@@ -209,6 +209,10 @@ export class CentrosCostosDashboardComponent implements OnInit {
     this.resumen = null;
 
     const targetId = item.id ?? item.id_centro_costo ?? item.CodCentroCto;
+    if (targetId === undefined) {
+      this.loadingResumen = false;
+      return;
+    }
     this.dashboardService.getResumenFinanciero(targetId).subscribe({
       next: (data) => {
         this.resumen = data;

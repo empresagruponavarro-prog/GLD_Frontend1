@@ -552,7 +552,7 @@ export class PresupuestosComponent implements OnInit {
   abrirModalCategoria(modo: 'new' | 'edit', cat?: any) {
     const ppto = this.presupuestoActivo();
     const fase = this.selectedFase();
-    if (!ppto || !fase) {
+    if (!ppto || !fase?.IdpptoFase) {
       alert('Seleccione primero una fase en la tabla.');
       return;
     }
@@ -776,7 +776,7 @@ export class PresupuestosComponent implements OnInit {
       return;
     }
 
-    if (this.faseFormMode === 'edit-categoria' && this.editingCategoriaAsignada) {
+    if (this.faseFormMode === 'edit-categoria' && this.editingCategoriaAsignada && categoriaMaestra) {
       this.presupuestosService.updateCategoriaAsignada(this.editingCategoriaAsignada.id, {
         ...contexto,
         IdpptoFaseCategoria: categoriaMaestra.IdpptoFaseCategoria,
@@ -787,7 +787,7 @@ export class PresupuestosComponent implements OnInit {
       return;
     }
 
-    if (this.faseFormMode === 'new-categoria') {
+    if (this.faseFormMode === 'new-categoria' && categoriaMaestra) {
       const faseAsignada = this.selectedFase();
       if (!faseAsignada?.IdPresupuestoDetalle) {
         alert('Seleccione una fase válida para agregar la categoría.');
@@ -802,6 +802,11 @@ export class PresupuestosComponent implements OnInit {
         next: () => this.finalizarEdicionFaseCategoria(),
         error: (error) => alert('Error al crear categoría: ' + (error.error?.message || error.message)),
       });
+      return;
+    }
+
+    if (!categoriaMaestra) {
+      alert('Seleccione una fase y su categoría.');
       return;
     }
 

@@ -134,7 +134,7 @@ export class ObraCockpitComponent implements OnInit {
     hitoFrente: '',
     climaJornada: '',
     anotacion: '',
-    acuerdos: [],
+    acuerdos: [] as { titulo: string; detalle: string }[],
     sha256: '',
     fotos: [
       {

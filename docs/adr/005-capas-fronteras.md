@@ -1,6 +1,6 @@
 # ADR-005: Capas y fronteras
 
-**Estado:** Propuesto  
+**Estado:** Aceptado  
 **Decisión:** Arquitectura en capas explícitas con fronteras verificables: `layouts` + `core` + `shared/{ui,data-access,models,utils}` + `features`.
 
 ## Contexto

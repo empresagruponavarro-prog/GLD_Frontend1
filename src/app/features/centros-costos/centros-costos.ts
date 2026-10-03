@@ -227,6 +227,7 @@ export class CentrosCostosComponent {
 
   editModal(item: CentroCosto) {
     const id = item.id ?? item.id_centro_costo ?? item.CodCentroCto;
+    if (id === undefined) return;
     this.editingId.set(id);
     this.formData = {
       ...item,
@@ -255,6 +256,7 @@ export class CentrosCostosComponent {
       periodo: Number(d.periodo),
       id_empresa: d.id_empresa ? Number(d.id_empresa) : undefined,
       id_anexo: d.id_anexo ? Number(d.id_anexo) : undefined,
+      // @ts-expect-error TODO(strict): CodCliente puede ser undefined; hoy lo valida el backend
       CodCliente: d.CodCliente,
       CentroCosto: d.CentroCosto,
       FechaIncio: d.FechaIncio ?? '',
@@ -342,6 +344,7 @@ export class CentrosCostosComponent {
   delete(item: CentroCosto) {
     const nombre = item.CentroCosto || item.CodCentroCto;
     const targetId = item.id ?? item.id_centro_costo ?? item.CodCentroCto;
+    if (targetId === undefined) return;
 
     if (confirm(`¿Eliminar el Centro de Costo "${nombre}"? Esta acción no se puede deshacer.`)) {
       this.centrosCostosService.delete(targetId).subscribe({

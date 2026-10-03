@@ -1,6 +1,6 @@
 # ADR-001: Estilos y Tailwind
 
-**Estado:** Propuesto  
+**Estado:** Aceptado  
 **Decisión:** Opción A — Tailwind v4 compilado en build con `@theme` alimentado por tokens CSS.
 
 ## Contexto
