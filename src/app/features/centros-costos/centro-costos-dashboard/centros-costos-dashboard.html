@@ -10,8 +10,8 @@
       <button class="btn btn-outline" (click)="refreshData()" [disabled]="loadingCentros">
         <span [class.fa-spin]="loadingCentros">🔄</span> Actualizar
       </button>
-      <button class="btn btn-primary" (click)="exportAllTable()">
-        📥 Exportar Lista
+      <button class="btn btn-primary" (click)="exportAllTable()" [disabled]="exportingLista">
+        {{ exportingLista ? '⏳ Exportando...' : '📥 Exportar Lista' }}
       </button>
     </div>
   </header>

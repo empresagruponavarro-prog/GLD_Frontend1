@@ -1,5 +1,6 @@
 import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { Observable, finalize, forkJoin, map, of, switchMap } from 'rxjs';
 import { CentrosCostosDashboardService } from './centros-costos-dashboard.service';
 import { 
   CentroCostoItem, 
@@ -54,6 +55,7 @@ export class CentrosCostosDashboardComponent implements OnInit {
   loadingCentros: boolean = false;
   loadingResumen: boolean = false;
   isDetailOpen: boolean = false;
+  exportingLista: boolean = false;
 
   // Paginación de la tabla
   currentPage: number = 1;
@@ -225,14 +227,59 @@ export class CentrosCostosDashboardComponent implements OnInit {
     this.isDetailOpen = false;
   }
 
-  exportAllTable(): void {
-    if (this.centros.length === 0) {
-      alert('No hay registros para exportar.');
-      return;
-    }
+  // El backend limita pageSize a 100: se piden todas las páginas del resultado filtrado.
+  private static readonly EXPORT_PAGE_SIZE = 100;
 
+  private fetchAllFiltrados(): Observable<CentroCostoItem[]> {
+    const filtros = {
+      search: this.filtroSearch,
+      estado: this.filtroEstado,
+      empresa: this.filtroEmpresa,
+      periodo: this.filtroPeriodo,
+      cliente: this.filtroCliente,
+      centroCosto: this.filtroCentroCosto,
+      pptoEstado: this.filtroPptoEstado
+    };
+    const size = CentrosCostosDashboardComponent.EXPORT_PAGE_SIZE;
+    return this.dashboardService.getCentrosCostos(filtros, 1, size).pipe(
+      switchMap((first) => {
+        const pages = Math.ceil(first.total / size);
+        if (pages <= 1) return of(first.data);
+        const rest = Array.from({ length: pages - 1 }, (_, i) =>
+          this.dashboardService.getCentrosCostos(filtros, i + 2, size)
+        );
+        return forkJoin(rest).pipe(map((res) => [first.data, ...res.map((r) => r.data)].flat()));
+      })
+    );
+  }
+
+  exportAllTable(): void {
+    if (this.exportingLista) return;
+    this.exportingLista = true;
+    this.fetchAllFiltrados().pipe(
+      finalize(() => {
+        this.exportingLista = false;
+        this.cdr.detectChanges();
+      })
+    ).subscribe({
+      next: (items) => {
+        if (items.length === 0) {
+          alert('No hay registros para exportar.');
+          return;
+        }
+        this.descargarCsvLista(items);
+      },
+      error: (err) => {
+        console.error('Error al exportar la lista:', err);
+        alert('No se pudo exportar la lista. Intente nuevamente.');
+      }
+    });
+    this.cdr.detectChanges();
+  }
+
+  private descargarCsvLista(centros: CentroCostoItem[]): void {
     const headers = ['Empresa', 'IdPeriodo', 'CodCliente (Nombre)', 'Centro de costo Principal', 'CentroCosto', 'Estado', 'PresupuestoEstado'];
-    const rows = this.centros.map(c => [
+    const rows = centros.map(c => [
       `"${(c.Empresa || c.CodEmpresa || '').replace(/"/g, '""')}"`,
       c.periodo ?? c.IdPeriodo ?? '',
       `"${(c.Cliente || c.CodCliente || '').replace(/"/g, '""')}"`,
