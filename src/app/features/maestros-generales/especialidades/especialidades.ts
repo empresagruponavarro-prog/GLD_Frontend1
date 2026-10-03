@@ -1,12 +1,11 @@
-import { Component, OnInit, inject } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { Component, OnInit, inject, signal } from '@angular/core';
 import { EspecialidadesService } from './especialidades.service';
 import { Especialidad } from './interfaces/especialidades.interface';
 
 @Component({
   selector: 'app-especialidades',
   standalone: true,
-  imports: [CommonModule],
+  imports: [],
   template: `
     <div class="content-header">
       <div>
@@ -19,9 +18,6 @@ import { Especialidad } from './interfaces/especialidades.interface';
       <div class="table-card">
         <div class="table-toolbar">
           <span class="toolbar-title">Listado de especialidades</span>
-          <button class="btn btn-primary" type="button">
-            <i class="fa-solid fa-plus"></i> Nuevo
-          </button>
         </div>
 
         <table class="table table-sm">
@@ -33,14 +29,17 @@ import { Especialidad } from './interfaces/especialidades.interface';
             </tr>
           </thead>
           <tbody>
-            <tr *ngFor="let item of especialidades">
-              <td>{{ item.id }}</td>
-              <td>{{ item.tipoAnexo ?? '—' }}</td>
-              <td>{{ item.descripcion ?? '—' }}</td>
-            </tr>
-            <tr *ngIf="!especialidades.length">
-              <td colspan="3" class="text-muted text-center">Sin registros</td>
-            </tr>
+            @for (item of especialidades(); track item.id) {
+              <tr>
+                <td>{{ item.id }}</td>
+                <td>{{ item.tipoAnexo ?? '—' }}</td>
+                <td>{{ item.descripcion ?? '—' }}</td>
+              </tr>
+            } @empty {
+              <tr>
+                <td colspan="3" class="text-muted text-center">Sin registros</td>
+              </tr>
+            }
           </tbody>
         </table>
       </div>
@@ -49,15 +48,15 @@ import { Especialidad } from './interfaces/especialidades.interface';
 })
 export class EspecialidadesComponent implements OnInit {
   private readonly service = inject(EspecialidadesService);
-  especialidades: Especialidad[] = [];
+  especialidades = signal<Especialidad[]>([]);
 
   ngOnInit(): void {
     this.service.getAll({ page: 1, pageSize: 20 }).subscribe({
       next: (res) => {
-        this.especialidades = res.data ?? [];
+        this.especialidades.set(res.data ?? []);
       },
       error: () => {
-        this.especialidades = [];
+        this.especialidades.set([]);
       }
     });
   }
