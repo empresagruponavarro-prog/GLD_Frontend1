@@ -3,17 +3,8 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 
 import { Router } from '@angular/router';
-import { Observable, concatMap, finalize, map, of, switchMap, tap } from 'rxjs';
-import {
-  FilaFormFase,
-  ModoPlantilla,
-  completoAFilas,
-  crearFasesConCategorias,
-  describirFasesFallidas,
-  fusionarFilasPlantilla,
-  mensajeDeError,
-  plantillaAFilas,
-} from './presupuestos.orchestration';
+import { finalize, switchMap, tap } from 'rxjs';
+import { crearFasesConCategorias, describirFasesFallidas, mensajeDeError } from './presupuestos.orchestration';
 import { EmpresasService } from '../administration/empresas/empresas.service';
 import { Empresa } from '../administration/empresas/interfaces';
 import { PresupuestosService, Plantilla } from './presupuestos.service';
@@ -217,7 +208,7 @@ export class PresupuestosComponent implements OnInit {
   formStep = signal<number>(1);
 
   // Modelo de Fases dinámicas para Paso 2
-  formFases = signal<FilaFormFase[]>([]);
+  formFases = signal<{ id?: number; idFase: string; nombre: string; idCategoria: string; categoria: string; subtotal: number }[]>([]);
   fasesMaestras = signal<FaseMaestra[]>([]);
   plantillasActivas = signal<Plantilla[]>([]);
   selectedPlantilla = signal<string>('');
@@ -445,10 +436,6 @@ export class PresupuestosComponent implements OnInit {
     const categoria = this.categoriasFaseMaestra().find((item) => item.IdpptoFaseCategoria === this.newFaseCategoriaId);
     if (!fase || !categoria) {
       alert('Seleccione una fase y su categoría.');
-      return;
-    }
-    if (this.formFases().some(f => f.idFase === fase.IdpptoFase && f.idCategoria === categoria.IdpptoFaseCategoria)) {
-      alert('Esa fase y categoría ya están en la lista. Puede editar su monto en la tabla.');
       return;
     }
     const monto = Number(this.newFaseSubtotal) || 0;
@@ -758,10 +745,6 @@ export class PresupuestosComponent implements OnInit {
   }
 
   guardarFaseCategoria() {
-    if (this.editingFilaIndex !== null) {
-      this.actualizarFilaFormFase();
-      return;
-    }
     if (!this.editingFaseAsignada && !this.editingCategoriaAsignada && (!this.editingId() || !this.presupuestoActivo())) {
       this.addFormFase();
       return;
@@ -827,25 +810,6 @@ export class PresupuestosComponent implements OnInit {
       return;
     }
 
-    if (this.formFases().some(f => f.idFase === faseMaestra.IdpptoFase && f.idCategoria === categoriaMaestra.IdpptoFaseCategoria)) {
-      alert('Esa fase y categoría ya están en el presupuesto.');
-      return;
-    }
-    const faseExistente = this.formFases().find(f => f.idFase === faseMaestra.IdpptoFase && !!f.codigoFaseDetalle);
-    if (faseExistente) {
-      this.loading.set(true);
-      this.presupuestosService.createCategoriaAsignada({
-        ...contexto,
-        IdPresupuestoDetalle: faseExistente.codigoFaseDetalle,
-        IdPresupuestoDetalleCategoria: `DFC-${Date.now()}`,
-        IdpptoFaseCategoria: categoriaMaestra.IdpptoFaseCategoria,
-      }).pipe(finalize(() => this.loading.set(false))).subscribe({
-        next: () => this.finalizarEdicionFaseCategoria(),
-        error: (error) => alert('Error al crear categoría: ' + mensajeDeError(error)),
-      });
-      return;
-    }
-
     this.loading.set(true);
     crearFasesConCategorias(this.presupuestosService, contexto, [{
       idFase: faseMaestra.IdpptoFase,
@@ -884,7 +848,6 @@ export class PresupuestosComponent implements OnInit {
   }
 
   private finalizarEdicionFaseCategoria() {
-    this.editingFilaIndex = null;
     this.faseFormMode = 'new-fase';
     this.editingFaseAsignada = null;
     this.editingCategoriaAsignada = null;
@@ -903,7 +866,34 @@ export class PresupuestosComponent implements OnInit {
       this.presupuestosService.getPresupuestoCompleto(String(pptoId)).subscribe({
         next: (completo) => {
           this.presupuestoActivo.set(completo);
-          this.formFases.set(completoAFilas(completo));
+          const mappedFases: { id?: number; idFase: string; nombre: string; idCategoria: string; categoria: string; subtotal: number }[] = [];
+          if (completo.fases && Array.isArray(completo.fases)) {
+            completo.fases.forEach((f: any) => {
+              const fName = f.NombreFase || f.FaseProyecto || f.IdpptoFase;
+              if (f.categorias && Array.isArray(f.categorias) && f.categorias.length > 0) {
+                f.categorias.forEach((c: any) => {
+                  mappedFases.push({
+                    id: c.id,
+                    idFase: f.IdpptoFase,
+                    nombre: fName,
+                    idCategoria: c.IdpptoFaseCategoria,
+                    categoria: c.Descripcion || c.IdpptoFaseCategoria,
+                    subtotal: Number(c.CostoDirecto ?? c.SubTotalCategoria ?? 0)
+                  });
+                });
+              } else {
+                mappedFases.push({
+                  id: f.id,
+                  idFase: f.IdpptoFase,
+                  nombre: fName,
+                  idCategoria: '',
+                  categoria: 'General',
+                  subtotal: Number(f.CostoDirecto ?? 0)
+                });
+              }
+            });
+          }
+          this.formFases.set(mappedFases);
           this.recargarPresupuestosDelCCActual();
         }
       });
@@ -976,7 +966,6 @@ export class PresupuestosComponent implements OnInit {
   }
 
   cancelarEdicionFase() {
-    this.editingFilaIndex = null;
     this.faseFormMode = 'new-fase';
     this.editingFaseAsignada = null;
     this.editingCategoriaAsignada = null;
@@ -988,15 +977,6 @@ export class PresupuestosComponent implements OnInit {
   }
 
   
-  // ─── Filas del paso 2 (fases y categorías) ──────────────────────────────────
-  /** Índice de la fila de la tabla que se está editando en el formulario inferior. */
-  editingFilaIndex: number | null = null;
-
-  /** true si el wizard edita un presupuesto ya guardado: los cambios de fases se guardan al momento. */
-  private get fasesPersistidas(): boolean {
-    return !!this.editingId() && !!this.presupuestoActivo();
-  }
-
   updateFormFaseSubtotal(index: number, newSubtotal: number) {
     this.formFases.update(items => {
       const newItems = [...items];
@@ -1005,221 +985,8 @@ export class PresupuestosComponent implements OnInit {
     });
   }
 
-  /** Al salir del input de monto: si la fila ya existe en el servidor, guarda el nuevo monto. */
-  persistirSubtotalFila(index: number) {
-    if (!this.fasesPersistidas) return;
-    const fila = this.formFases()[index];
-    if (!fila) return;
-    const monto = Number(fila.subtotal) || 0;
-    const peticion = fila.idCategoriaDetalle
-      ? this.presupuestosService.updateCategoriaAsignada(fila.idCategoriaDetalle, { CostoDirecto: monto })
-      : fila.idFaseDetalle
-        ? this.presupuestosService.updateFaseAsignada(fila.idFaseDetalle, { CostoDirecto: monto })
-        : null;
-    peticion?.subscribe({
-      next: () => this.recargarPresupuestoActivo(),
-      error: (error) => alert('Error al actualizar el monto: ' + mensajeDeError(error)),
-    });
-  }
-
-  /** Carga la fila en el formulario inferior para cambiar su categoría o monto. */
-  editarFilaFormFase(index: number) {
-    const fila = this.formFases()[index];
-    if (!fila) return;
-    this.faseFormMode = 'new-fase';
-    this.editingFaseAsignada = null;
-    this.editingCategoriaAsignada = null;
-    this.editingFilaIndex = index;
-    this.newFaseId = fila.idFase;
-    this.newFaseSubtotal = Number(fila.subtotal) || 0;
-    this.onFaseMaestraChange(fila.idCategoria || undefined);
-    if (!fila.idCategoria) this.newFaseCategoriaId = '';
-  }
-
   removeFormFase(index: number) {
-    const fila = this.formFases()[index];
-    if (!fila) return;
-    if (this.editingFilaIndex !== null) this.cancelarEdicionFase();
-
-    // Presupuesto nuevo (o fila aún no guardada): solo se quita de la lista.
-    if (!this.fasesPersistidas || (!fila.idCategoriaDetalle && !fila.idFaseDetalle)) {
-      this.formFases.update(items => items.filter((_, i) => i !== index));
-      return;
-    }
-
-    const etiqueta = fila.idCategoriaDetalle
-      ? `la categoría "${fila.categoria}" de la fase "${fila.nombre}"`
-      : `la fase "${fila.nombre}"`;
-    if (!confirm(`¿Eliminar ${etiqueta} del presupuesto?`)) return;
-
-    const peticion = fila.idCategoriaDetalle
-      ? this.presupuestosService.deleteCategoriaAsignada(fila.idCategoriaDetalle)
-      : this.presupuestosService.deleteFaseAsignada(fila.idFaseDetalle!);
-    this.loading.set(true);
-    peticion.pipe(finalize(() => this.loading.set(false))).subscribe({
-      next: () => this.recargarPresupuestoActivo(),
-      error: (error) => alert('Error al eliminar: ' + mensajeDeError(error)),
-    });
-  }
-
-  /**
-   * Presupuesto guardado: mueve una fila a otra fase.
-   * - Si la fase origen solo tiene esta fila y la destino no existe → se cambia la fase en sitio.
-   * - Si no → se crea la fila en la fase destino (reutilizándola si ya existe) y se borra del origen.
-   */
-  private moverFilaAOtraFase(fila: FilaFormFase, idFase: string, idCategoria: string, monto: number) {
-    const presupuesto = this.presupuestoActivo()!;
-    const contexto = {
-      IdPresupuesto: String(presupuesto.IdPresupuesto),
-      id_empresa: presupuesto.id_empresa,
-      CodCentroCto: presupuesto.CodCentroCto,
-      id_centro_costo: presupuesto.id_centro_costo,
-    };
-    const filas = this.formFases();
-    const destino = filas.find(f => f.idFase === idFase && !!f.codigoFaseDetalle);
-    const hermanas = filas.filter(f => f !== fila && f.idFaseDetalle === fila.idFaseDetalle && !!f.idCategoriaDetalle);
-    const nombre = this.fasesMaestras().find(f => f.IdpptoFase === idFase)?.FaseProyecto || idFase;
-    const api = this.presupuestosService;
-
-    let pasos: Observable<unknown>;
-    if (!destino && hermanas.length === 0) {
-      // Cambio en sitio: la fase origen pasa a ser la fase destino.
-      const cambiarFase = api.updateFaseAsignada(fila.idFaseDetalle!, { IdpptoFase: idFase, CostoDirecto: monto });
-      if (fila.idCategoriaDetalle) {
-        pasos = cambiarFase.pipe(concatMap(() => api.updateCategoriaAsignada(fila.idCategoriaDetalle!, {
-          IdpptoFase: idFase,
-          ...(idCategoria ? { IdpptoFaseCategoria: idCategoria } : {}),
-          CostoDirecto: monto,
-        })));
-      } else if (idCategoria) {
-        pasos = cambiarFase.pipe(concatMap(() => api.createCategoriaAsignada({
-          ...contexto,
-          IdpptoFase: idFase,
-          IdPresupuestoDetalle: fila.codigoFaseDetalle,
-          IdPresupuestoDetalleCategoria: `DFC-${Date.now()}`,
-          IdpptoFaseCategoria: idCategoria,
-          CostoDirecto: monto,
-        })));
-      } else {
-        pasos = cambiarFase;
-      }
-    } else {
-      // Crear en destino y luego borrar del origen.
-      let crear: Observable<unknown>;
-      if (destino) {
-        crear = idCategoria
-          ? api.createCategoriaAsignada({
-            ...contexto,
-            IdpptoFase: idFase,
-            IdPresupuestoDetalle: destino.codigoFaseDetalle,
-            IdPresupuestoDetalleCategoria: `DFC-${Date.now()}`,
-            IdpptoFaseCategoria: idCategoria,
-            CostoDirecto: monto,
-          })
-          : of(null);
-      } else {
-        crear = crearFasesConCategorias(api, contexto, [{ idFase, nombre, idCategoria, subtotal: monto }]).pipe(
-          map((fallidas) => {
-            if (fallidas.length) throw new Error(describirFasesFallidas(fallidas));
-            return null;
-          }),
-        );
-      }
-      const borrarOrigen = hermanas.length === 0
-        ? api.deleteFaseAsignada(fila.idFaseDetalle!)
-        : api.deleteCategoriaAsignada(fila.idCategoriaDetalle!);
-      pasos = crear.pipe(concatMap(() => borrarOrigen));
-    }
-
-    this.loading.set(true);
-    pasos.pipe(finalize(() => this.loading.set(false))).subscribe({
-      next: () => {
-        this.cancelarEdicionFase();
-        this.recargarPresupuestoActivo();
-      },
-      error: (error) => {
-        alert('Error al mover la fila a la otra fase: ' + mensajeDeError(error));
-        this.recargarPresupuestoActivo();
-      },
-    });
-  }
-
-  /** Guarda los cambios de la fila en edición (local en presupuesto nuevo, en el servidor si ya existe). */
-  private actualizarFilaFormFase() {
-    const index = this.editingFilaIndex!;
-    const fila = this.formFases()[index];
-    if (!fila) {
-      this.cancelarEdicionFase();
-      return;
-    }
-    const idFase = this.newFaseId || fila.idFase;
-    const idCategoria = this.newFaseCategoriaId || '';
-    const fase = this.fasesMaestras().find(f => f.IdpptoFase === idFase);
-    const categoria = this.categoriasFaseMaestra().find(c => c.IdpptoFaseCategoria === idCategoria);
-    const monto = Number(this.newFaseSubtotal) || 0;
-    const persistida = this.fasesPersistidas && !!(fila.idCategoriaDetalle || fila.idFaseDetalle);
-
-    if (persistida && idFase !== fila.idFase) {
-      this.moverFilaAOtraFase(fila, idFase, idCategoria, monto);
-      return;
-    }
-    const duplicada = !!idCategoria && this.formFases().some(
-      (f, i) => i !== index && f.idFase === idFase && f.idCategoria === idCategoria,
-    );
-    if (duplicada) {
-      alert('Esa fase y categoría ya están en el presupuesto.');
-      return;
-    }
-
-    if (!persistida) {
-      this.formFases.update(items => items.map((f, i) => i !== index ? f : {
-        ...f,
-        idFase,
-        nombre: fase?.FaseProyecto || (idFase === fila.idFase ? fila.nombre : idFase),
-        idCategoria,
-        categoria: categoria?.Descripcion
-          || (idCategoria ? (idCategoria === fila.idCategoria ? fila.categoria : idCategoria) : '(Sin categoría)'),
-        subtotal: monto,
-      }));
-      this.cancelarEdicionFase();
-      return;
-    }
-
-    const presupuesto = this.presupuestoActivo()!;
-    let peticion: Observable<unknown>;
-    if (fila.idCategoriaDetalle) {
-      if (!idCategoria) {
-        alert('Seleccione una categoría.');
-        return;
-      }
-      peticion = this.presupuestosService.updateCategoriaAsignada(fila.idCategoriaDetalle, {
-        IdpptoFaseCategoria: idCategoria,
-        CostoDirecto: monto,
-      });
-    } else if (idCategoria) {
-      // Fase guardada sin categorías: se le añade la categoría elegida.
-      peticion = this.presupuestosService.createCategoriaAsignada({
-        IdPresupuesto: String(presupuesto.IdPresupuesto),
-        id_empresa: presupuesto.id_empresa,
-        CodCentroCto: presupuesto.CodCentroCto,
-        id_centro_costo: presupuesto.id_centro_costo,
-        IdpptoFase: fila.idFase,
-        IdPresupuestoDetalle: fila.codigoFaseDetalle,
-        IdPresupuestoDetalleCategoria: `DFC-${Date.now()}`,
-        IdpptoFaseCategoria: idCategoria,
-        CostoDirecto: monto,
-      });
-    } else {
-      peticion = this.presupuestosService.updateFaseAsignada(fila.idFaseDetalle!, { CostoDirecto: monto });
-    }
-    this.loading.set(true);
-    peticion.pipe(finalize(() => this.loading.set(false))).subscribe({
-      next: () => {
-        this.cancelarEdicionFase();
-        this.recargarPresupuestoActivo();
-      },
-      error: (error) => alert('Error al actualizar la fila: ' + mensajeDeError(error)),
-    });
+    this.formFases.update(items => items.filter((_, i) => i !== index));
   }
 
   openNewPresupuestoForm(centroCosto?: CentroCosto) {
@@ -1357,7 +1124,34 @@ export class PresupuestosComponent implements OnInit {
     this.presupuestosService.getPresupuestoCompleto(pptoId).subscribe({
       next: (completo) => {
         this.presupuestoActivo.set(completo);
-        this.formFases.set(completoAFilas(completo));
+        const mappedFases: { id?: number; idFase: string; nombre: string; idCategoria: string; categoria: string; subtotal: number }[] = [];
+        if (completo.fases && Array.isArray(completo.fases)) {
+          completo.fases.forEach((f: any) => {
+            const fName = f.NombreFase || f.FaseProyecto || f.IdpptoFase;
+            if (f.categorias && Array.isArray(f.categorias) && f.categorias.length > 0) {
+              f.categorias.forEach((c: any) => {
+                mappedFases.push({
+                  id: c.id,
+                  idFase: f.IdpptoFase,
+                  nombre: fName,
+                  idCategoria: c.IdpptoFaseCategoria,
+                  categoria: c.Descripcion || c.IdpptoFaseCategoria,
+                  subtotal: Number(c.CostoDirecto ?? c.SubTotalCategoria ?? 0)
+                });
+              });
+            } else {
+              mappedFases.push({
+                id: f.id,
+                idFase: f.IdpptoFase,
+                nombre: fName,
+                idCategoria: '',
+                categoria: 'General',
+                subtotal: Number(f.CostoDirecto ?? 0)
+              });
+            }
+          });
+        }
+        this.formFases.set(mappedFases);
         this.pctGG.set(Number(completo.GGPorcentaje ?? p.GGPorcentaje ?? 0));
         this.pctUtilidad.set(Number(completo.UtiliPorcentaje ?? p.UtiliPorcentaje ?? 0));
         this.viaticos.set(Number(completo.Viaticos ?? p.Viaticos ?? 0));
@@ -1513,7 +1307,6 @@ export class PresupuestosComponent implements OnInit {
   }
 
   closeForm() {
-    this.editingFilaIndex = null;
     this.showForm.set(false);
   }
 
@@ -1664,29 +1457,12 @@ export class PresupuestosComponent implements OnInit {
   
   // Modal de Plantillas
   showPlantillasModal = signal<boolean>(false);
-  modoPlantilla = signal<ModoPlantilla>('agregar');
-
-  /**
-   * Destino de la plantilla:
-   * - wizard de presupuesto nuevo → filas locales (se guardan al emitir el presupuesto);
-   * - wizard de edición o panel principal → se aplica en el servidor sobre el presupuesto activo.
-   */
-  get plantillaVaAlServidor(): boolean {
-    return this.showForm() ? this.fasesPersistidas : !!this.presupuestoActivo();
-  }
-
-  get hayFasesParaPlantilla(): boolean {
-    return this.showForm()
-      ? this.formFases().length > 0
-      : (this.presupuestoActivo()?.fases?.length ?? 0) > 0;
-  }
 
   abrirModalPlantillas() {
     if (this.plantillasActivas().length === 0) {
       this.loadPlantillasActivas();
     }
     this.selectedPlantilla.set('');
-    this.modoPlantilla.set('agregar');
     this.showPlantillasModal.set(true);
   }
 
@@ -1694,64 +1470,51 @@ export class PresupuestosComponent implements OnInit {
     this.showPlantillasModal.set(false);
   }
 
-  aplicarPlantillaSeleccionada() {
+  aplicarPlantillaLocal() {
     const id = this.selectedPlantilla();
     if (!id) return;
-    const modo: ModoPlantilla = this.hayFasesParaPlantilla ? this.modoPlantilla() : 'agregar';
-    if (modo === 'reemplazar' && this.plantillaVaAlServidor
-      && !confirm('Se eliminarán TODAS las fases y categorías actuales del presupuesto y se cargarán las de la plantilla. ¿Continuar?')) {
-      return;
-    }
-    if (this.editingFilaIndex !== null) this.cancelarEdicionFase();
-    if (this.plantillaVaAlServidor) {
-      this.aplicarPlantillaEnServidor(id, modo);
-    } else {
-      this.aplicarPlantillaLocal(id, modo);
-    }
-  }
-
-  /** Presupuesto nuevo: rellena las filas del paso 2 sin duplicar (se guardan al emitir). */
-  private aplicarPlantillaLocal(id: string, modo: ModoPlantilla) {
+    
     this.loading.set(true);
-    this.presupuestosService.getPlantillaCompleta(id).pipe(finalize(() => this.loading.set(false))).subscribe({
+    this.presupuestosService.getPlantillaCompleta(id).subscribe({
       next: (plantilla) => {
-        const r = fusionarFilasPlantilla(this.formFases(), plantillaAFilas(plantilla), modo);
-        this.formFases.set(r.filas);
+        const nuevosItems: { id?: number; idFase: string; nombre: string; idCategoria: string; categoria: string; subtotal: number }[] = [];
+        
+        plantilla.fases.forEach(fase => {
+          if (fase.categorias && fase.categorias.length > 0) {
+            fase.categorias.forEach(cat => {
+              nuevosItems.push({
+                idFase: fase.IdpptoFase,
+                nombre: fase.NombreFase || fase.IdpptoFase,
+                idCategoria: cat.IdpptoFaseCategoria,
+                categoria: cat.NombreCategoria || cat.IdpptoFaseCategoria,
+                subtotal: cat.CostoReferencial || 0
+              });
+            });
+          } else {
+            // Si la fase no tiene categorias agregamos una generica o solo la fase con idCategoria vacio
+            nuevosItems.push({
+                idFase: fase.IdpptoFase,
+                nombre: fase.NombreFase || fase.IdpptoFase,
+                idCategoria: '',
+                categoria: 'General',
+                subtotal: 0
+            });
+          }
+        });
+
+        // Add to current formFases or replace? Usually we want to replace or append. 
+        // Let's append to avoid deleting manually added ones.
+        this.formFases.update(items => [...items, ...nuevosItems]);
+        this.loading.set(false);
         this.cerrarModalPlantillas();
-        if (r.omitidas > 0) {
-          alert(`Plantilla aplicada: ${r.agregadas} fila(s) agregada(s). ${r.omitidas} ya estaban en la lista y se omitieron.`);
-        }
       },
-      error: (err) => alert('Error al cargar detalle de plantilla: ' + mensajeDeError(err)),
+      error: (err) => {
+        this.loading.set(false);
+        alert('Error al cargar detalle de plantilla');
+      }
     });
   }
 
-  /** Presupuesto ya guardado: el backend copia la plantilla en una transacción y sin duplicar. */
-  private aplicarPlantillaEnServidor(id: string, modo: ModoPlantilla) {
-    const presupuesto = this.presupuestoActivo();
-    const idPresupuesto = presupuesto?.IdPresupuesto;
-    if (!idPresupuesto) {
-      alert('Seleccione primero un presupuesto.');
-      return;
-    }
-    this.loading.set(true);
-    this.presupuestosService.aplicarPlantilla(String(idPresupuesto), {
-      IdPlantilla: id,
-      Modo: modo,
-      Usuario: this.especialista() || presupuesto?.Usuario || undefined,
-    }).pipe(finalize(() => this.loading.set(false))).subscribe({
-      next: (r) => {
-        this.cerrarModalPlantillas();
-        this.recargarPresupuestoActivo();
-        const omitidas = r.categoriasOmitidas ?? 0;
-        alert(
-          `Plantilla aplicada: ${r.fasesAgregadas} fase(s) y ${r.categoriasAgregadas} categoría(s) agregadas.`
-          + (omitidas ? `\n${omitidas} categoría(s) ya existían en el presupuesto y se omitieron.` : ''),
-        );
-      },
-      error: (err) => alert('Error al aplicar la plantilla: ' + mensajeDeError(err)),
-    });
-  }
 
   loadPlantillasActivas() {
     this.presupuestosService.getPlantillasActivas().subscribe({

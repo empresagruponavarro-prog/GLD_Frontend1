@@ -263,10 +263,6 @@
                 {{ ponderacionTotalFases }}%
               </strong>
             </span>
-            <button (click)="abrirModalPlantillas()" type="button" title="Cargar fases y categorías desde una plantilla" class="bg-white hover:bg-emerald-50 text-[#1e4838] border border-[#529b7b]/50 px-2 py-0.5 rounded text-[11px] font-semibold flex items-center space-x-1 shadow-2xs cursor-pointer transition">
-              <svg class="w-3 h-3 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2"/></svg>
-              <span>Aplicar Plantilla</span>
-            </button>
             <button (click)="abrirNuevaFase()" type="button" class="bg-white hover:bg-slate-50 text-slate-700 border border-slate-300 px-2 py-0.5 rounded text-[11px] font-semibold flex items-center space-x-1 shadow-2xs cursor-pointer transition">
               <svg class="w-3 h-3 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
               <span>Nueva Fase</span>
@@ -813,12 +809,12 @@
                 <th class="py-2 px-3 w-44">Categoría APU</th>
                 <th class="py-2 px-3 text-right w-36">Subtotal CD (S/)</th>
                 <th class="py-2 px-3 text-right w-16">% Inc.</th>
-                <th class="py-2 px-3 text-center w-20">Acciones</th>
+                <th class="py-2 px-3 text-center w-12">Quitar</th>
               </tr>
             </thead>
             <tbody class="divide-y divide-slate-100 text-[13px]">
               @for (fase of formFases(); track $index; let i = $index) {
-                <tr class="hover:bg-slate-50 transition" [class.bg-emerald-50]="editingFilaIndex === i">
+                <tr class="hover:bg-slate-50 transition">
                   <td class="py-2 px-3 font-mono text-[#2d634d] font-bold text-[12px]">{{ (i+1) < 10 ? '0'+(i+1) : (i+1) }}</td>
                   <td class="py-2 px-3 font-medium text-slate-800">{{ fase.nombre }}</td>
                   <td class="py-2 px-3">
@@ -832,7 +828,6 @@
                         <input type="number" 
                                [ngModel]="fase.subtotal" 
                                (ngModelChange)="updateFormFaseSubtotal(i, $event)"
-                               (change)="persistirSubtotalFila(i)"
                                class="w-[110px] text-right font-mono font-bold text-slate-900 text-[12px] border border-transparent hover:border-slate-300 focus:border-[#529b7b] focus:ring-1 focus:ring-[#529b7b] rounded bg-transparent focus:bg-white pl-6 pr-2 py-1 transition-all outline-none"
                                placeholder="0.00"
                                step="0.01">
@@ -842,20 +837,12 @@
                     {{ formCostoDirecto > 0 ? ((fase.subtotal / formCostoDirecto) * 100).toFixed(1) + '%' : '0.0%' }}
                   </td>
                   <td class="py-2 px-3 text-center">
-                    <div class="flex items-center justify-center gap-1">
-                    <button type="button" (click)="editarFilaFormFase(i)" title="Editar categoría / monto"
-                            class="w-6 h-6 rounded-full flex items-center justify-center text-slate-400 hover:bg-emerald-50 hover:text-emerald-700 transition cursor-pointer">
-                      <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path d="M15.232 5.232l3.536 3.536M4 20h4l10.5-10.5a2.5 2.5 0 00-3.536-3.536L4 16.5V20z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"/>
-                      </svg>
-                    </button>
-                    <button type="button" (click)="removeFormFase(i)" title="Eliminar fila"
-                            class="w-6 h-6 rounded-full flex items-center justify-center text-slate-400 hover:bg-red-50 hover:text-red-500 transition cursor-pointer">
+                    <button (click)="removeFormFase(i)" title="Quitar fase"
+                            class="w-6 h-6 rounded-full flex items-center justify-center text-slate-400 hover:bg-red-50 hover:text-red-500 transition mx-auto">
                       <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path d="M6 18L18 6M6 6l12 12" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"/>
                       </svg>
                     </button>
-                    </div>
                   </td>
                 </tr>
               }
@@ -898,16 +885,11 @@
                 <span class="text-slate-900 font-extrabold text-[13px]">
                   Editando {{ faseFormMode === 'edit-fase' ? 'Fase: ' + (editingFaseAsignada?.NombreFase || '') : 'Categoría' }}
                 </span>
-              } @else if (editingFilaIndex !== null) {
-                <span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-black bg-emerald-100 text-emerald-900 border border-emerald-300 shadow-2xs">
-                  MODO EDICIÓN
-                </span>
-                <span class="text-slate-900 font-extrabold text-[13px]">Editando fila {{ editingFilaIndex + 1 }}</span>
               } @else {
                 <span class="font-bold text-slate-600">+ Añadir nueva fase / partida</span>
               }
             </p>
-            @if (faseFormMode === 'edit-fase' || faseFormMode === 'edit-categoria' || editingFilaIndex !== null) {
+            @if (faseFormMode === 'edit-fase' || faseFormMode === 'edit-categoria') {
               <button (click)="cancelarEdicionFase()" type="button" 
                       class="text-[12px] font-bold text-slate-500 hover:text-red-600 underline cursor-pointer transition">
                 ✕ Cancelar edición
@@ -1011,7 +993,7 @@
                   <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path d="M12 6v6m0 0v6m0-6h6m-6 0H6" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"/>
                   </svg>
-                  <span class="font-bold">{{ editingFilaIndex !== null ? 'Actualizar' : 'Agregar' }}</span>
+                  <span class="font-bold">Agregar</span>
                 </button>
               </div>
             </div>
@@ -1706,31 +1688,7 @@
         
         <!-- Body -->
         <div class="p-5 overflow-y-auto">
-          <p class="text-sm text-slate-500 mb-4">
-            Seleccione una plantilla. Se cargarán sus fases y categorías
-            @if (plantillaVaAlServidor) {
-              <strong>directamente en el presupuesto guardado</strong>;
-            } @else {
-              en la tabla del paso 2;
-            }
-            luego podrá editar o eliminar cada fila.
-          </p>
-
-          @if (hayFasesParaPlantilla) {
-            <div class="mb-4 rounded-lg border border-amber-200 bg-amber-50 p-3">
-              <p class="text-[12px] font-bold text-amber-900 mb-2">El presupuesto ya tiene fases. ¿Qué hacer con ellas?</p>
-              <label class="flex items-start gap-2 text-[13px] text-slate-700 cursor-pointer mb-1.5">
-                <input type="radio" name="modo_plantilla" value="agregar" class="mt-0.5"
-                       [ngModel]="modoPlantilla()" (ngModelChange)="modoPlantilla.set($event)">
-                <span><strong>Agregar</strong> — conservar las actuales y añadir solo las fases/categorías que falten.</span>
-              </label>
-              <label class="flex items-start gap-2 text-[13px] text-slate-700 cursor-pointer">
-                <input type="radio" name="modo_plantilla" value="reemplazar" class="mt-0.5"
-                       [ngModel]="modoPlantilla()" (ngModelChange)="modoPlantilla.set($event)">
-                <span><strong>Reemplazar</strong> — quitar las actuales y dejar solo las de la plantilla.</span>
-              </label>
-            </div>
-          }
+          <p class="text-sm text-slate-500 mb-4">Seleccione una plantilla predefinida. Se cargarán sus fases y categorías al presupuesto de forma inmediata para ser ajustadas.</p>
           
           <div class="space-y-3">
             @for (plantilla of plantillasActivas(); track plantilla.IdPlantilla) {
@@ -1766,7 +1724,7 @@
           <button (click)="cerrarModalPlantillas()" class="px-4 py-2 text-sm font-medium text-slate-600 hover:text-slate-800 bg-white border border-slate-300 rounded-lg shadow-xs hover:bg-slate-50 cursor-pointer transition">
             Cancelar
           </button>
-          <button (click)="aplicarPlantillaSeleccionada()" [disabled]="!selectedPlantilla() || loading()"
+          <button (click)="aplicarPlantillaLocal()" [disabled]="!selectedPlantilla()"
                   class="px-4 py-2 text-sm font-bold text-white rounded-lg shadow-sm transition flex items-center gap-2"
                   [ngClass]="selectedPlantilla() ? 'bg-emerald-600 hover:bg-emerald-700 cursor-pointer' : 'bg-emerald-400 opacity-70 cursor-not-allowed'">
             @if (loading()) {

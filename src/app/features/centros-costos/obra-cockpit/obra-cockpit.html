@@ -416,7 +416,7 @@
         'bg-secondary-container text-on-secondary-container': plano.estado_aprobacion === 'En Revisión',
         'bg-error-container text-on-error-container': plano.estado_aprobacion === 'Observado',
         'bg-surface-container text-on-surface-variant': !plano.estado_aprobacion
-      }">{{ plano.estado_aprobacion ?? '—' }}</span>
+      }">{{ plano.estado_aprobacion || '—' }}</span>
     </td>
     <td class="py-2.5 px-2 font-mono text-[11px]">{{ plano.formato_peso ?? '—' }}</td>
     <td class="py-2.5 px-2 text-on-surface-variant">{{ plano.emitido_por ?? '—' }}</td>

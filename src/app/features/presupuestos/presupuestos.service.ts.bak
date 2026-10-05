@@ -45,18 +45,10 @@ export interface Plantilla {
 
 export interface AplicarPlantillaDto {
   IdPlantilla: string;
-  /** agregar (por defecto): conserva lo existente y no duplica. reemplazar: borra lo actual. */
-  Modo?: 'agregar' | 'reemplazar';
-  Usuario?: string;
-}
-
-export interface AplicarPlantillaResult {
-  success: boolean;
-  modo: 'agregar' | 'reemplazar';
-  fasesAgregadas: number;
-  categoriasAgregadas: number;
-  fasesOmitidas: number;
-  categoriasOmitidas: number;
+  CodCentroCto: string;
+  CodCentroCtoPrincipal: string;
+  id_empresa: number;
+  id_centro_costo: number;
 }
 
 
@@ -88,8 +80,8 @@ export class PresupuestosService {
     return this.http.get<Plantilla[]>(`${this.apiUrl}/plantillas/activas`);
   }
 
-  aplicarPlantilla(idPresupuesto: string, dto: AplicarPlantillaDto): Observable<AplicarPlantillaResult> {
-    return this.http.post<AplicarPlantillaResult>(`${this.apiUrl}/${encodeURIComponent(idPresupuesto)}/aplicar-plantilla`, dto);
+  aplicarPlantilla(idPresupuesto: string, dto: AplicarPlantillaDto): Observable<{ success: boolean; fasesAgregadas: number; categoriasAgregadas: number }> {
+    return this.http.post<{ success: boolean; fasesAgregadas: number; categoriasAgregadas: number }>(`${this.apiUrl}/${idPresupuesto}/aplicar-plantilla`, dto);
   }
 
   // Presupuestos Principales
