@@ -186,7 +186,7 @@
                     </td>
                     <td class="py-3.5 px-4 whitespace-nowrap">
                       <span [class]="isBaseContractual(ppto) ? 'bg-blue-50 text-blue-700 border-blue-200' : 'bg-[#b5ba78]/15 text-[#5c6031] border-[#b5ba78]/40'" class="px-2.5 py-1 rounded text-[10px] font-bold font-mono tracking-wider border">
-                        {{ isBaseContractual(ppto) ? 'BASE CONTRACTUAL' : (ppto.TipoPpto || 'ADICIONAL') }}
+                        {{ isBaseContractual(ppto) ? 'PRESUPUESTO PRINCIPAL' : (ppto.TipoPpto || 'ADICIONAL') }}
                       </span>
                     </td>
                     <td class="py-3.5 px-4">
@@ -294,7 +294,7 @@
               }
               @if (pptoSeleccionado) {
                 <span [class]="isBaseContractual(pptoSeleccionado) ? 'bg-blue-50 text-blue-700 border-blue-200' : 'bg-[#b5ba78]/15 text-[#5c6031] border-[#b5ba78]/40'" class="px-2 py-0.5 rounded text-[10px] font-mono font-bold border">
-                  {{ isBaseContractual(pptoSeleccionado) ? 'BASE CONTRACTUAL' : (pptoSeleccionado.TipoPpto || 'ADICIONAL') }}
+                  {{ isBaseContractual(pptoSeleccionado) ? 'PRESUPUESTO PRINCIPAL' : (pptoSeleccionado.TipoPpto || 'ADICIONAL') }}
                 </span>
               }
             </div>
@@ -595,7 +595,7 @@
           </div>
           <!-- Badge contador estilo Fases & Costos -->
           <span class="ml-auto bg-[#529b7b]/10 text-[#1e4838] border border-[#529b7b]/30 px-3 py-1 rounded-full text-[12px] font-bold">
-            {{ presupuestosDelCC().length }} presupuestos
+            {{ editingId() ? 'Editando 1 presupuesto' : presupuestosGrilla.length + ' presupuestos' }}
           </span>
         </div>
 
@@ -630,7 +630,7 @@
               </tr>
             </thead>
             <tbody class="divide-y divide-slate-100 text-[13px]">
-              @for (p of presupuestosDelCC(); track p.IdPresupuesto || p.id) {
+              @for (p of presupuestosGrilla; track p.IdPresupuesto || p.id) {
                 @let isCurrent = (editingId() === ((p.IdPresupuesto || p.id) + ''));
                 <tr class="hover:bg-slate-50 transition" [class.bg-emerald-50/50]="isCurrent">
                   <td class="py-2.5 px-3 font-medium text-slate-800">
@@ -692,7 +692,7 @@
               }
             </tbody>
           
-            @if (presupuestosDelCC().length > 0) {
+            @if (!editingId() && presupuestosGrilla.length > 0) {
               <tfoot class="bg-slate-50 border-t-2 border-slate-200 text-[12px] font-bold">
                 <tr>
                   <td colspan="4" class="py-2.5 px-3 text-right uppercase text-slate-500 tracking-wider text-[11px]">

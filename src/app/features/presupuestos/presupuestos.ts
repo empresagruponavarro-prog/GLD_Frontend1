@@ -1413,6 +1413,15 @@ export class PresupuestosComponent implements OnInit {
     }
   }
 
+  /** Filas de la grilla del paso 1: al editar, solo el presupuesto en edición. */
+  get presupuestosGrilla(): PresupuestoPrincipal[] {
+    const id = this.editingId();
+    const lista = this.presupuestosDelCC();
+    if (!id) return lista;
+    const actual = lista.filter(p => String(p.IdPresupuesto ?? p.id ?? '') === id);
+    return actual.length ? actual : [this.formData as PresupuestoPrincipal];
+  }
+
   agregarPresupuesto() {
     const cc = this.selectedCC();
     const idCc = cc?.id ?? cc?.id_centro_costo ?? this.formData.id_centro_costo;
@@ -1453,13 +1462,9 @@ export class PresupuestosComponent implements OnInit {
     };
 
     this.loading.set(true);
+    let creado: PresupuestoPrincipal | null = null;
     this.presupuestosService.createPresupuesto(payload).pipe(
-      // Si se agregó Principal, cambiar default a Adicional para el próximo
-      tap(() => {
-        if (tipo === 'Principal') {
-          this.formData.TipoPpto = 'Adicional';
-        }
-      }),
+      tap((c: any) => { creado = c; }),
       // Refrescar la lista solo después de que termine la escritura
       switchMap(() => this.presupuestosService.getPresupuestos(1, 100, '', undefined, Number(idCc))),
       finalize(() => this.loading.set(false)),
@@ -1469,6 +1474,13 @@ export class PresupuestosComponent implements OnInit {
         if ('data' in res && Array.isArray(res.data)) pptos = res.data;
         else if (Array.isArray(res) && res.length > 0) pptos = res;
         this.presupuestosDelCC.set(pptos);
+        // Continuar el wizard EDITANDO el presupuesto creado: así "Guardar" al final
+        // actualiza este registro en vez de crear un segundo (el "adicional" duplicado).
+        const c = creado as PresupuestoPrincipal | null;
+        if (c?.IdPresupuesto) {
+          const enLista = pptos.find(p => String(p.IdPresupuesto) === String(c.IdPresupuesto));
+          this.abrirPresupuestoEnForm(enLista ?? { ...payload, ...c }, 1);
+        }
       },
       error: (err) => {
         console.error('Error al agregar presupuesto:', err);
