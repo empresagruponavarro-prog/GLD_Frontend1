@@ -2062,6 +2062,12 @@ export class PresupuestosComponent implements OnInit {
     this.showFasesModal.set(false);
   }
 
+  /** Acción de la tabla: abre "Fases y Costos" del presupuesto y el selector de plantillas encima. */
+  cargarPlantillaEnPpto(ppto: PresupuestoPrincipal) {
+    this.abrirFasesModal(ppto);
+    this.abrirModalPlantillas();
+  }
+
   /** Expande la fase (la selecciona) o la colapsa si ya estaba abierta. */
   toggleFaseAcordeon(fase: DetalleFase) {
     this.filterCategoria = 'Todos';

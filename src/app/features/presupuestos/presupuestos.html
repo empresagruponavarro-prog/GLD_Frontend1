@@ -213,6 +213,9 @@
                           <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 5h6v4H4zM14 15h6v4h-6zM7 9v4a2 2 0 002 2h5"/></svg>
                           <span>Ver Fases</span>
                         </button>
+                        <button (click)="cargarPlantillaEnPpto(ppto)" type="button" class="p-1.5 rounded-md text-[#529b7b] hover:text-[#2d634d] hover:bg-[#edf2f0] border border-transparent hover:border-[#d1dcd7] transition cursor-pointer" title="Cargar Plantilla (Fases y Costos)">
+                          <svg class="w-4 h-4 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h11M4 12h11M4 18h7m9-3v6m-3-3h6"/></svg>
+                        </button>
                         <button (click)="openEditPresupuesto(ppto)" type="button" class="p-1.5 rounded-md text-slate-400 hover:text-slate-700 hover:bg-[#edf2f0] border border-transparent hover:border-[#d1dcd7] transition cursor-pointer" title="Editar Presupuesto">
                           <svg class="w-4 h-4 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
                         </button>
@@ -332,6 +335,18 @@
         <div class="px-3 py-2 rounded-lg bg-white border border-[#d1dcd7] flex items-center justify-between shadow-2xs">
           <span class="text-slate-500 font-medium">Partidas Totales:</span>
           <span class="font-mono font-bold text-slate-800 tabular-nums">{{ totalPartidasPpto }} partidas</span>
+        </div>
+      </div>
+      <!-- Resumen: Total Fases / Categorías -->
+      <div class="flex items-center gap-6 text-xs text-slate-500">
+        <div class="flex items-center gap-1.5">
+          <span class="text-slate-400 font-medium">Total Fases:</span>
+          <strong class="text-slate-800 font-mono font-bold">{{ presupuestoActivo()?.fases?.length || 0 }} Fases</strong>
+        </div>
+        <div class="h-3 w-px bg-slate-200"></div>
+        <div class="flex items-center gap-1.5">
+          <span class="text-slate-400 font-medium">Categorías:</span>
+          <strong class="text-slate-800 font-mono font-bold">{{ totalPartidasPpto }} Categorías</strong>
         </div>
       </div>
     </div>
