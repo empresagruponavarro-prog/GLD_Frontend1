@@ -2,6 +2,7 @@ import { Component, OnInit, signal, inject, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { DragDropModule, CdkDragDrop, moveItemInArray } from '@angular/cdk/drag-drop';
 import { FormsModule } from '@angular/forms';
+import { Observable, of, switchMap, map } from 'rxjs';
 import { PresupuestosService, Plantilla, PlantillaCompleta, PlantillaFaseDto, PlantillaCategoriaDto, FaseMaestra, FaseCategoriaMaestra } from '../presupuestos.service';
 
 @Component({
@@ -88,16 +89,83 @@ export class MantenimientoPlantillasComponent implements OnInit {
     });
   }
 
+  // ==========================================
+  // POP-UP "NUEVA PLANTILLA"
+  // ==========================================
+  showNuevaPlantillaModal = signal(false);
+  creandoPlantilla = signal(false);
+  nuevaForm = {
+    Nombre: '',
+    Descripcion: '',
+    Activo: true,
+    origen: 'vacia' as 'vacia' | 'copiar',
+    IdPlantillaOrigen: '',
+  };
+  nuevaError = signal('');
+
   nuevaPlantilla() {
-    const nombre = prompt('Nombre de la nueva plantilla:');
-    if (!nombre) return;
-    
-    this.service.createPlantilla({ Nombre: nombre, Descripcion: '' }).subscribe({
-      next: (res: Plantilla) => {
+    this.nuevaForm = { Nombre: '', Descripcion: '', Activo: true, origen: 'vacia', IdPlantillaOrigen: '' };
+    this.nuevaError.set('');
+    this.showNuevaPlantillaModal.set(true);
+  }
+
+  cerrarNuevaPlantilla() {
+    if (this.creandoPlantilla()) return;
+    this.showNuevaPlantillaModal.set(false);
+  }
+
+  get nombreDuplicado(): boolean {
+    const n = this.nuevaForm.Nombre.trim().toLowerCase();
+    return !!n && this.plantillas().some(p => (p.Nombre || '').trim().toLowerCase() === n);
+  }
+
+  get puedeCrearPlantilla(): boolean {
+    const f = this.nuevaForm;
+    if (!f.Nombre.trim() || this.nombreDuplicado || this.creandoPlantilla()) return false;
+    if (f.origen === 'copiar' && !f.IdPlantillaOrigen) return false;
+    return true;
+  }
+
+  confirmarNuevaPlantilla() {
+    if (!this.puedeCrearPlantilla) return;
+    const f = this.nuevaForm;
+    this.creandoPlantilla.set(true);
+    this.nuevaError.set('');
+
+    this.service.createPlantilla({ Nombre: f.Nombre.trim(), Descripcion: f.Descripcion.trim() }).pipe(
+      // Copiar estructura (fases + categorías + costos referenciales) desde otra plantilla
+      switchMap((creada: Plantilla) => {
+        if (f.origen !== 'copiar' || !f.IdPlantillaOrigen) return of(creada);
+        return this.service.getPlantillaCompleta(f.IdPlantillaOrigen).pipe(
+          switchMap(origen => {
+            const fases = (origen.fases || []).map((fa, i) => ({
+              IdpptoFase: fa.IdpptoFase,
+              Orden: i,
+              categorias: (fa.categorias || []).map(c => ({
+                IdpptoFaseCategoria: c.IdpptoFaseCategoria,
+                CostoReferencial: Number(c.CostoReferencial) || 0,
+              })),
+            }));
+            if (!fases.length) return of(creada);
+            return this.service.updatePlantillaFases(creada.IdPlantilla, fases as any).pipe(map(() => creada));
+          }),
+        );
+      }),
+      // Estado inicial (el backend la crea activa por defecto)
+      switchMap((creada: Plantilla): Observable<Plantilla> =>
+        f.Activo ? of(creada) : this.service.updatePlantilla(creada.IdPlantilla, { Activo: false }).pipe(map(() => creada)),
+      ),
+    ).subscribe({
+      next: (creada) => {
+        this.creandoPlantilla.set(false);
+        this.showNuevaPlantillaModal.set(false);
         this.loadPlantillas();
-        this.selectPlantilla(res);
+        this.selectPlantilla(creada);
       },
-      error: (err) => alert('Error creando plantilla')
+      error: (err) => {
+        this.creandoPlantilla.set(false);
+        this.nuevaError.set('Error creando plantilla: ' + (err.error?.message || err.message));
+      },
     });
   }
 

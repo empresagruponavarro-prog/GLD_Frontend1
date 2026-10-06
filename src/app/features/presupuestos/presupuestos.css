@@ -58,3 +58,8 @@
   background-color: rgba(15, 23, 27, 0.7);
   backdrop-filter: blur(4px);
 }
+
+/* Tarjeta de Centro de Costo activa: acento lateral sage */
+.cc-card-activa {
+  box-shadow: inset 4px 0 0 0 #529b7b;
+}

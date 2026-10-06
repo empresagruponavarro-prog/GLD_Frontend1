@@ -329,6 +329,107 @@
   </main>
 
 
+  <!-- POP-UP NUEVA PLANTILLA -->
+  @if (showNuevaPlantillaModal()) {
+    <div class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs animate-in fade-in duration-150" (click)="cerrarNuevaPlantilla()">
+      <form class="w-full max-w-lg bg-white rounded-lg shadow-2xl border border-[#d1dcd7] flex flex-col overflow-hidden" (click)="$event.stopPropagation()" (ngSubmit)="confirmarNuevaPlantilla()" autocomplete="off">
+        <!-- Header -->
+        <div class="px-6 py-4 bg-[#f6f8f7] border-b border-[#d1dcd7] flex items-center justify-between gap-3">
+          <div class="flex items-center gap-3">
+            <div class="h-9 w-9 rounded-lg bg-[#529b7b]/15 text-[#3d7e63] flex items-center justify-center border border-[#529b7b]/30 shrink-0">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 13h6m-3-3v6m5 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+            </div>
+            <div>
+              <h3 class="font-manrope text-base font-bold text-slate-900">Nueva Plantilla</h3>
+              <p class="text-[11px] text-slate-500">Estructura base de fases y categorías para presupuestos</p>
+            </div>
+          </div>
+          <button id="np-cerrar-x" type="button" (click)="cerrarNuevaPlantilla()" title="Cerrar" class="w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-slate-800 hover:bg-[#e3e9e6] transition cursor-pointer">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+          </button>
+        </div>
+
+        <!-- Body -->
+        <div class="p-6 space-y-4 text-xs">
+          <div>
+            <label for="np-nombre" class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Nombre <span class="text-rose-500">*</span></label>
+            <input id="np-nombre" name="Nombre" type="text" [(ngModel)]="nuevaForm.Nombre" maxlength="255" required autofocus
+                   placeholder="Ej. PLANTILLA TAMBO GLD"
+                   class="w-full h-9 px-3 rounded border bg-white text-slate-900 placeholder-slate-400 outline-none transition"
+                   [class]="nombreDuplicado ? 'border-rose-400 focus:border-rose-500' : 'border-[#d1dcd7] focus:border-[#529b7b]'">
+            @if (nombreDuplicado) {
+              <p class="mt-1 text-[11px] text-rose-600">Ya existe una plantilla con ese nombre.</p>
+            }
+          </div>
+
+          <div>
+            <label for="np-descripcion" class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Descripción</label>
+            <textarea id="np-descripcion" name="Descripcion" [(ngModel)]="nuevaForm.Descripcion" maxlength="500" rows="3"
+                      placeholder="Uso previsto, cliente o tipo de obra..."
+                      class="w-full px-3 py-2 rounded border border-[#d1dcd7] bg-white text-slate-900 placeholder-slate-400 outline-none focus:border-[#529b7b] resize-none transition"></textarea>
+            <div class="text-right text-[10px] text-slate-400 font-mono">{{ nuevaForm.Descripcion.length }}/500</div>
+          </div>
+
+          <div>
+            <span class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Estructura inicial</span>
+            <div class="grid grid-cols-2 gap-2">
+              <label class="flex items-start gap-2 p-3 rounded border cursor-pointer transition" [class]="nuevaForm.origen === 'vacia' ? 'border-[#529b7b] bg-[#529b7b]/8' : 'border-[#d1dcd7] hover:border-[#529b7b]/60'">
+                <input id="np-origen-vacia" type="radio" name="origen" value="vacia" [(ngModel)]="nuevaForm.origen" class="mt-0.5 text-[#529b7b] focus:ring-[#529b7b]">
+                <span>
+                  <span class="block font-bold text-slate-800">En blanco</span>
+                  <span class="block text-[11px] text-slate-500">Agregar fases después</span>
+                </span>
+              </label>
+              <label class="flex items-start gap-2 p-3 rounded border cursor-pointer transition" [class]="nuevaForm.origen === 'copiar' ? 'border-[#529b7b] bg-[#529b7b]/8' : 'border-[#d1dcd7] hover:border-[#529b7b]/60'">
+                <input id="np-origen-copiar" type="radio" name="origen" value="copiar" [(ngModel)]="nuevaForm.origen" class="mt-0.5 text-[#529b7b] focus:ring-[#529b7b]">
+                <span>
+                  <span class="block font-bold text-slate-800">Copiar de otra</span>
+                  <span class="block text-[11px] text-slate-500">Duplica fases y categorías</span>
+                </span>
+              </label>
+            </div>
+            @if (nuevaForm.origen === 'copiar') {
+              <select id="np-plantilla-origen" name="IdPlantillaOrigen" [(ngModel)]="nuevaForm.IdPlantillaOrigen"
+                      class="mt-2 w-full h-9 px-3 rounded border border-[#d1dcd7] bg-white text-slate-800 outline-none focus:border-[#529b7b] cursor-pointer">
+                <option value="" disabled>Seleccione la plantilla a copiar...</option>
+                @for (p of plantillas(); track p.IdPlantilla) {
+                  <option [value]="p.IdPlantilla">{{ p.Nombre }}{{ p.Activo ? '' : ' (inactiva)' }}</option>
+                }
+              </select>
+            }
+          </div>
+
+          <label class="flex items-center justify-between gap-3 p-3 rounded border border-[#d1dcd7] bg-[#f6f8f7] cursor-pointer">
+            <span>
+              <span class="block font-bold text-slate-800">Plantilla activa</span>
+              <span class="block text-[11px] text-slate-500">Las inactivas no aparecen al aplicar plantilla en un presupuesto</span>
+            </span>
+            <input id="np-activo" name="Activo" type="checkbox" [(ngModel)]="nuevaForm.Activo" class="w-4 h-4 rounded-sm text-[#529b7b] focus:ring-[#529b7b] border-slate-300">
+          </label>
+
+          @if (nuevaError()) {
+            <div class="p-2.5 rounded border border-rose-200 bg-rose-50 text-rose-700 text-[11px]">{{ nuevaError() }}</div>
+          }
+        </div>
+
+        <!-- Footer -->
+        <div class="px-6 py-4 bg-[#f6f8f7] border-t border-[#d1dcd7] flex justify-end gap-2.5">
+          <button id="np-cancelar" type="button" (click)="cerrarNuevaPlantilla()" [disabled]="creandoPlantilla()" class="px-4 py-2 rounded-lg bg-white hover:bg-[#edf2f0] text-slate-700 font-semibold text-xs border border-[#d1dcd7] transition cursor-pointer disabled:opacity-50">Cancelar</button>
+          <button id="np-crear" type="submit" [disabled]="!puedeCrearPlantilla" class="px-4 py-2 rounded-lg bg-[#529b7b] hover:bg-[#3d7e63] text-white font-semibold text-xs shadow-xs transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5">
+            @if (creandoPlantilla()) {
+              <svg class="w-3.5 h-3.5 animate-spin" fill="none" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="3" class="opacity-25"/><path fill="currentColor" class="opacity-75" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"/></svg>
+              <span>Creando...</span>
+            } @else {
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"/></svg>
+              <span>Crear Plantilla</span>
+            }
+          </button>
+        </div>
+      </form>
+    </div>
+  }
+
+
   <!-- MODAL SELECCIONAR FASE -->
   @if (showFaseModal()) {
     <div class="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/50 backdrop-blur-sm">

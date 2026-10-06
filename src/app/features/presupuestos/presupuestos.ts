@@ -2025,6 +2025,55 @@ export class PresupuestosComponent implements OnInit {
     return nats.size;
   }
 
+  // ==========================================
+  // MODAL "FASES Y ANÁLISIS DE COSTOS APU" (acordeón)
+  // ==========================================
+  showFasesModal = signal(false);
+
+  get pptoSeleccionado(): PresupuestoPrincipal | null {
+    const id = this.selectedPresupuestoId();
+    if (!id) return null;
+    return this.presupuestosDelCC().find(p => String(p.IdPresupuesto ?? p.id ?? '') === id) ?? null;
+  }
+
+  abrirFasesModal(ppto?: PresupuestoPrincipal) {
+    if (ppto) {
+      if (!this.isPptoSelected(ppto)) this.onSelectPresupuesto(ppto);
+    } else if (!this.selectedPresupuestoId()) {
+      alert('Seleccione primero un presupuesto.');
+      return;
+    }
+    this.showFasesModal.set(true);
+  }
+
+  cerrarFasesModal() {
+    this.showFasesModal.set(false);
+  }
+
+  /** Expande la fase (la selecciona) o la colapsa si ya estaba abierta. */
+  toggleFaseAcordeon(fase: DetalleFase) {
+    this.filterCategoria = 'Todos';
+    this.selectedFase.set(this.isFaseSeleccionada(fase) ? null : fase);
+  }
+
+  nuevaCategoriaEnFase(fase: DetalleFase, event?: Event) {
+    event?.stopPropagation();
+    this.selectedFase.set(fase);
+    this.abrirNuevaCategoria();
+  }
+
+  get totalPartidasPpto(): number {
+    return (this.presupuestoActivo()?.fases || []).reduce((acc, f) => acc + (f.categorias?.length || 0), 0);
+  }
+
+  estadoPptoClass(estado: string | undefined): string {
+    const st = (estado || '').toUpperCase();
+    if (st.includes('APROB')) return 'bg-[#529b7b]/12 text-[#2d634d] border-[#529b7b]/30';
+    if (st.includes('PEND') || st.includes('REVIS')) return 'bg-[#b5ba78]/15 text-[#5c6031] border-[#b5ba78]/40';
+    if (st.includes('RECHAZ') || st.includes('ANUL')) return 'bg-rose-50 text-rose-700 border-rose-200';
+    return 'bg-[#edf2f0] text-slate-500 border-[#d1dcd7]';
+  }
+
   onSelectFase(fase: DetalleFase) {
     this.selectedFase.set(fase);
   }
