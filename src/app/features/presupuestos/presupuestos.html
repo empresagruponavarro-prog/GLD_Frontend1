@@ -209,9 +209,8 @@
                     <td class="py-3.5 px-4" (click)="$event.stopPropagation()">
                       <!-- TODO(strict): $any() en delete(): IdPresupuesto e id son opcionales; un guard cambiaría el comportamiento -->
                       <div class="flex items-center justify-center gap-2">
-                        <button (click)="abrirFasesModal(ppto)" type="button" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#529b7b] text-white hover:bg-[#3d7e63] text-xs font-bold shadow-xs transition cursor-pointer whitespace-nowrap" title="Ver fases y categorías">
-                          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 5h6v4H4zM14 15h6v4h-6zM7 9v4a2 2 0 002 2h5"/></svg>
-                          <span>Ver Fases</span>
+                        <button (click)="abrirFasesModal(ppto)" type="button" class="p-1.5 rounded-md text-[#529b7b] hover:text-[#2d634d] hover:bg-[#edf2f0] border border-transparent hover:border-[#d1dcd7] transition cursor-pointer" title="Ver Fases y Categorías">
+                          <svg class="w-4 h-4 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 5h6v4H4zM14 15h6v4h-6zM7 9v4a2 2 0 002 2h5"/></svg>
                         </button>
                         <button (click)="cargarPlantillaEnPpto(ppto)" type="button" class="p-1.5 rounded-md text-[#529b7b] hover:text-[#2d634d] hover:bg-[#edf2f0] border border-transparent hover:border-[#d1dcd7] transition cursor-pointer" title="Cargar Plantilla (Fases y Costos)">
                           <svg class="w-4 h-4 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h11M4 12h11M4 18h7m9-3v6m-3-3h6"/></svg>
@@ -553,9 +552,9 @@
       <p class="text-[11px] text-[#529b7b]">{{ editingId() ? 'Edición Estructurada de Obra' : 'Creación de Nuevo Presupuesto' }}</p>
     </div>
     <div class="flex items-center gap-3">
-      <span class="inline-flex items-center gap-1.5 bg-amber-400/20 text-amber-300 border border-amber-400/40 px-3 py-1 rounded-full text-[12px] font-semibold">
-        <span class="w-1.5 h-1.5 rounded-full bg-amber-400 inline-block animate-pulse"></span>
-        PENDIENTE DE APROBACIÓN
+      <span [class]="estadoFormHeaderClass()" class="inline-flex items-center gap-1.5 border px-3 py-1 rounded-full text-[12px] font-semibold">
+        <span [class]="estadoFormDotClass()" class="w-1.5 h-1.5 rounded-full inline-block animate-pulse"></span>
+        {{ estadoFormLabel() }}
       </span>
       <button (click)="closeForm()"
               class="bg-slate-700/80 hover:bg-slate-600 text-white px-3.5 py-1.5 rounded-lg text-[12px] font-semibold transition-colors border border-slate-600/60 shadow-sm">
@@ -683,10 +682,13 @@
                   </td>
                   <td class="py-2.5 px-3 text-center">
                     <div class="flex items-center justify-center gap-1">
-                      <button type="button" (click)="abrirPresupuestoEnForm(p)"
-                              class="bg-[#1e4838] hover:bg-[#2d634d] text-white text-[11px] font-bold px-3 py-1 rounded transition shadow-2xs cursor-pointer flex items-center gap-1">
-                        <span>Fases</span>
-                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+                      <button type="button" (click)="abrirPresupuestoEnForm(p)" title="Ver Fases y Costos"
+                              class="w-6 h-6 rounded-full flex items-center justify-center text-[#529b7b] hover:bg-[#edf2f0] hover:text-[#1e4838] transition cursor-pointer">
+                        <svg class="w-3.5 h-3.5 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 5h6v4H4zM14 15h6v4h-6zM7 9v4a2 2 0 002 2h5"/></svg>
+                      </button>
+                      <button type="button" (click)="cargarPlantillaEnForm(p)" title="Cargar Plantilla (Fases y Costos)"
+                              class="w-6 h-6 rounded-full flex items-center justify-center text-[#529b7b] hover:bg-[#edf2f0] hover:text-[#1e4838] transition cursor-pointer">
+                        <svg class="w-3.5 h-3.5 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h11M4 12h11M4 18h7m9-3v6m-3-3h6"/></svg>
                       </button>
                       <button type="button" (click)="eliminarPresupuestoDeCC(p)" title="Eliminar presupuesto"
                               class="w-6 h-6 rounded-full flex items-center justify-center text-slate-400 hover:bg-red-50 hover:text-red-500 transition cursor-pointer">
@@ -1301,9 +1303,9 @@
 
       <div class="p-4 border-b border-slate-200">
         <p class="text-[11px] text-slate-400 mb-1">Estado Actual:</p>
-        <span class="inline-flex items-center gap-1.5 bg-amber-50 text-amber-800 border border-amber-200 px-2.5 py-1 rounded-full text-[11px] font-semibold">
-          <span class="w-1.5 h-1.5 rounded-full bg-amber-400 inline-block"></span>
-          {{ formData.Estado || 'PENDIENTE' }}
+        <span [class]="estadoFormLightClass()" class="inline-flex items-center gap-1.5 border px-2.5 py-1 rounded-full text-[11px] font-semibold">
+          <span [class]="estadoFormDotClass()" class="w-1.5 h-1.5 rounded-full inline-block"></span>
+          {{ estadoFormLabel() }}
         </span>
       </div>
 

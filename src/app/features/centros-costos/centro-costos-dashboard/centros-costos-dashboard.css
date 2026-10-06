@@ -224,7 +224,6 @@
 .col-empresa { max-width: 220px; overflow: hidden; text-overflow: ellipsis; }
 .col-periodo { width: 90px; }
 .col-cliente { max-width: 240px; overflow: hidden; text-overflow: ellipsis; }
-.col-principal { max-width: 200px; overflow: hidden; text-overflow: ellipsis; }
 .col-nombre { max-width: 260px; overflow: hidden; text-overflow: ellipsis; }
 .col-estado { width: 110px; }
 .col-ppto-estado { width: 130px; }

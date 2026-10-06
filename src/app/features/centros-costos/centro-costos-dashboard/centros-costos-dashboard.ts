@@ -22,7 +22,6 @@ export class CentrosCostosDashboardComponent implements OnInit {
     { key: 'Empresa', label: 'Empresa' },
     { key: 'IdPeriodo', label: 'Año' },
     { key: 'Cliente', label: 'Cliente' },
-    { key: 'CentroCostoPrincipal', label: 'Centro de costo Principal' },
     { key: 'CentroCosto', label: 'CentroCosto' },
     { key: 'Estado', label: 'Estado' },
     { key: 'PresupuestoEstado', label: 'PresupuestoEstado' },
@@ -282,12 +281,11 @@ export class CentrosCostosDashboardComponent implements OnInit {
   }
 
   private descargarCsvLista(centros: CentroCostoItem[]): void {
-    const headers = ['Empresa', 'IdPeriodo', 'CodCliente (Nombre)', 'Centro de costo Principal', 'CentroCosto', 'Estado', 'PresupuestoEstado'];
+    const headers = ['Empresa', 'IdPeriodo', 'CodCliente (Nombre)', 'CentroCosto', 'Estado', 'PresupuestoEstado'];
     const rows = centros.map(c => [
       `"${(c.Empresa || c.CodEmpresa || '').replace(/"/g, '""')}"`,
       c.periodo ?? c.IdPeriodo ?? '',
       `"${(c.Cliente || c.CodCliente || '').replace(/"/g, '""')}"`,
-      `"${(c.CentroCostoPrincipal || c.CodCentroCtoPrincipal || '').replace(/"/g, '""')}"`,
       `"${(c.CentroCosto || '').replace(/"/g, '""')}"`,
       c.Estado || '',
       c.PresupuestoEstado || ''

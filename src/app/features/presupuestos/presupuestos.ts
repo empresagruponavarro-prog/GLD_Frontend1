@@ -1373,6 +1373,12 @@ export class PresupuestosComponent implements OnInit {
     });
   }
 
+  /** Datos Generales: abre el paso Fases y Costos del presupuesto y el selector de plantillas. */
+  cargarPlantillaEnForm(p: PresupuestoPrincipal) {
+    this.abrirPresupuestoEnForm(p, 2);
+    this.abrirModalPlantillas();
+  }
+
     cambiarTipoPpto(tipo: string) {
     this.formData.TipoPpto = tipo;
     const current = (this.formData.Concepto || '').trim();
@@ -2082,6 +2088,53 @@ export class PresupuestosComponent implements OnInit {
 
   get totalPartidasPpto(): number {
     return (this.presupuestoActivo()?.fases || []).reduce((acc, f) => acc + (f.categorias?.length || 0), 0);
+  }
+
+  /** Clave normalizada del estado del formulario (PENDIENTE | REVISION | APROBADO | OBSERVADO). */
+  private estadoFormKey(): 'PENDIENTE' | 'REVISION' | 'APROBADO' | 'OBSERVADO' {
+    const st = String(this.formData?.Estado || 'PENDIENTE').toUpperCase();
+    if (st.includes('APROB')) return 'APROBADO';
+    if (st.includes('REVIS')) return 'REVISION';
+    if (st.includes('OBSERV')) return 'OBSERVADO';
+    return 'PENDIENTE';
+  }
+
+  estadoFormLabel(): string {
+    return {
+      PENDIENTE: 'PENDIENTE DE APROBACIÓN',
+      REVISION: 'EN REVISIÓN',
+      APROBADO: 'APROBADO',
+      OBSERVADO: 'OBSERVADO',
+    }[this.estadoFormKey()];
+  }
+
+  /** Badge sobre fondo oscuro (header del formulario). */
+  estadoFormHeaderClass(): string {
+    return {
+      PENDIENTE: 'bg-amber-400/20 text-amber-300 border-amber-400/40',
+      REVISION: 'bg-sky-400/20 text-sky-300 border-sky-400/40',
+      APROBADO: 'bg-emerald-400/20 text-emerald-300 border-emerald-400/40',
+      OBSERVADO: 'bg-rose-400/20 text-rose-300 border-rose-400/40',
+    }[this.estadoFormKey()];
+  }
+
+  /** Badge sobre fondo claro (panel lateral "Estado Actual"). */
+  estadoFormLightClass(): string {
+    return {
+      PENDIENTE: 'bg-amber-50 text-amber-800 border-amber-200',
+      REVISION: 'bg-sky-50 text-sky-800 border-sky-200',
+      APROBADO: 'bg-emerald-50 text-emerald-800 border-emerald-200',
+      OBSERVADO: 'bg-rose-50 text-rose-800 border-rose-200',
+    }[this.estadoFormKey()];
+  }
+
+  estadoFormDotClass(): string {
+    return {
+      PENDIENTE: 'bg-amber-400',
+      REVISION: 'bg-sky-400',
+      APROBADO: 'bg-emerald-400',
+      OBSERVADO: 'bg-rose-400',
+    }[this.estadoFormKey()];
   }
 
   estadoPptoClass(estado: string | undefined): string {
