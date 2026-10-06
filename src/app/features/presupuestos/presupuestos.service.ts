@@ -1,4 +1,4 @@
-﻿import { Service, inject } from '@angular/core';
+import { Service, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { 
@@ -41,6 +41,8 @@ export interface Plantilla {
   Descripcion?: string;
   Activo: boolean;
   FechaCreacion: string;
+  totalFases?: number;
+  totalCategorias?: number;
 }
 
 export interface AplicarPlantillaDto {

@@ -1047,14 +1047,20 @@ export class PresupuestosComponent implements OnInit {
       return;
     }
 
-    const etiqueta = fila.idCategoriaDetalle
-      ? `la categoría "${fila.categoria}" de la fase "${fila.nombre}"`
-      : `la fase "${fila.nombre}"`;
-    if (!confirm(`¿Eliminar ${etiqueta} del presupuesto?`)) return;
+    if (!confirm('¿Eliminar fila del presupuesto?')) return;
 
-    const peticion = fila.idCategoriaDetalle
+    // Verificar si es la última categoría de esta fase
+    const numCategoriasFase = fila.idFaseDetalle
+      ? this.formFases().filter(f => f.idFaseDetalle === fila.idFaseDetalle && !!f.idCategoriaDetalle).length
+      : 0;
+
+    const isLastCategory = numCategoriasFase <= 1;
+
+    // Si es la última categoría o si es una fila de fase sin categorías, borramos la fase completa
+    const peticion = (fila.idCategoriaDetalle && !isLastCategory)
       ? this.presupuestosService.deleteCategoriaAsignada(fila.idCategoriaDetalle)
       : this.presupuestosService.deleteFaseAsignada(fila.idFaseDetalle!);
+
     this.loading.set(true);
     peticion.pipe(finalize(() => this.loading.set(false))).subscribe({
       next: () => this.recargarPresupuestoActivo(),

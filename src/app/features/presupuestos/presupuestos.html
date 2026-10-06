@@ -1784,11 +1784,10 @@
                   <span class="block text-sm font-semibold" [ngClass]="selectedPlantilla() === plantilla.IdPlantilla ? 'text-emerald-800' : 'text-slate-800'">
                     {{ plantilla.Nombre }}
                   </span>
-                  @if (plantilla.Descripcion) {
-                    <span class="block text-xs mt-1" [ngClass]="selectedPlantilla() === plantilla.IdPlantilla ? 'text-emerald-600/80' : 'text-slate-500'">
-                      {{ plantilla.Descripcion }}
-                    </span>
-                  }
+                  <div class="flex items-center gap-4 text-xs mt-1" [ngClass]="selectedPlantilla() === plantilla.IdPlantilla ? 'text-emerald-700' : 'text-slate-600'">
+                    <p><span class="font-semibold text-slate-500">Total Fases:</span> <span class="font-bold">{{ plantilla.totalFases ?? 0 }}</span> Fases</p>
+                    <p><span class="font-semibold text-slate-500">Categorías:</span> <span class="font-bold">{{ plantilla.totalCategorias ?? 0 }}</span> Categorías</p>
+                  </div>
                 </div>
               </label>
             }
