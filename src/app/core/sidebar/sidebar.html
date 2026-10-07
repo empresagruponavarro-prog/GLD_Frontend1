@@ -38,6 +38,60 @@
 
 
 
+  <li>
+    <div class="sidebar-item has-sub" (click)="toggleAlmacen()">
+      <span><i class="fa-solid fa-warehouse"></i> Control de Almacén</span>
+      <i class="fa-solid" [class.fa-chevron-down]="!isAlmacenOpen" [class.fa-chevron-up]="isAlmacenOpen"></i>
+    </div>
+    <ul class="sidebar-submenu" *ngIf="isAlmacenOpen">
+      <li>
+        <a class="sidebar-subitem" routerLink="/almacen/consulta" routerLinkActive="active">
+          <i class="fa-solid fa-magnifying-glass"></i> Consulta
+        </a>
+      </li>
+      <li>
+        <a class="sidebar-subitem" routerLink="/almacen/stock" routerLinkActive="active">
+          <i class="fa-solid fa-boxes-stacked"></i> Stock actual
+        </a>
+      </li>
+      <li>
+        <a class="sidebar-subitem" routerLink="/almacen/ingresos" routerLinkActive="active">
+          <i class="fa-solid fa-arrow-right-to-bracket"></i> Entradas
+        </a>
+      </li>
+      <li>
+        <a class="sidebar-subitem" routerLink="/almacen/salidas" routerLinkActive="active">
+          <i class="fa-solid fa-arrow-right-from-bracket"></i> Salidas
+        </a>
+      </li>
+      <li>
+        <a class="sidebar-subitem" routerLink="/almacen/transferencias" routerLinkActive="active">
+          <i class="fa-solid fa-right-left"></i> Transferencias
+        </a>
+      </li>
+      <li>
+        <a class="sidebar-subitem" routerLink="/almacen/prestamos" routerLinkActive="active">
+          <i class="fa-solid fa-screwdriver-wrench"></i> Préstamos de equipos
+        </a>
+      </li>
+      <li>
+        <a class="sidebar-subitem" routerLink="/almacen/kardex" routerLinkActive="active">
+          <i class="fa-solid fa-list-ol"></i> Kardex
+        </a>
+      </li>
+      <li>
+        <a class="sidebar-subitem" routerLink="/almacen/inventario-inicial" routerLinkActive="active">
+          <i class="fa-solid fa-clipboard-check"></i> Inventario inicial
+        </a>
+      </li>
+      <li>
+        <a class="sidebar-subitem" routerLink="/almacen/almacenes" routerLinkActive="active">
+          <i class="fa-solid fa-warehouse"></i> Almacenes
+        </a>
+      </li>
+    </ul>
+  </li>
+
   <li class="menu-category">Módulos del Sistema</li>
   <li>
     <div class="sidebar-item has-sub" (click)="toggleMaestros()">

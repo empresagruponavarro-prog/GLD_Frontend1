@@ -1,0 +1,33 @@
+<div class="producto-picker">
+  <input
+    type="text"
+    class="form-control"
+    autocomplete="off"
+    [placeholder]="placeholder()"
+    [value]="isOpen() ? term() : label()"
+    (focus)="onFocus()"
+    (input)="onInput($event)"
+    (blur)="onBlur()"
+  />
+  @if (isOpen()) {
+    <ul class="producto-picker__list">
+      @if (isLoading()) {
+        <li class="producto-picker__hint"><i class="fa-solid fa-spinner fa-spin"></i> Buscando...</li>
+      } @else if (term().trim().length < 2) {
+        <li class="producto-picker__hint">Escriba al menos 2 caracteres</li>
+      } @else {
+        @for (row of results(); track row.id_producto) {
+          <li>
+            <button class="producto-picker__option" type="button" (mousedown)="$event.preventDefault(); pick(row)">
+              <strong>{{ row.codigo }}</strong>
+              <span class="producto-picker__desc">{{ row.descripcion }}</span>
+              <span class="producto-picker__meta">Disp. {{ row.disponible }} {{ row.unidad }}</span>
+            </button>
+          </li>
+        } @empty {
+          <li class="producto-picker__hint">Sin resultados</li>
+        }
+      }
+    </ul>
+  }
+</div>

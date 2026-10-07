@@ -1,0 +1,85 @@
+<div class="content-header">
+  <div>
+    <h1 class="content-title">Kardex</h1>
+    <p class="content-subtitle">
+      Movimientos valorizados en orden de registro con saldo corrido. Los préstamos no aparecen: no cambian el stock total.
+    </p>
+  </div>
+  <button class="btn btn-secondary" type="button" (click)="load()" [disabled]="isLoading()">
+    <i class="fa-solid fa-arrows-rotate" [class.fa-spin]="isLoading()"></i>
+    {{ isLoading() ? 'Cargando...' : 'Actualizar' }}
+  </button>
+</div>
+
+<div class="content-body">
+  <section class="toolbar-shell">
+    <div class="toolbar-search-row">
+      <div class="search-field" style="max-width: 460px">
+        <app-producto-picker [label]="productoLabel()" (picked)="onProductoPicked($event)" />
+      </div>
+      @if (productoId() !== null) {
+        <button class="toolbar-reset" type="button" (click)="clearProducto()">
+          <i class="fa-solid fa-xmark"></i> Quitar producto
+        </button>
+      }
+      <div class="toolbar-meta"><span>Mostrando</span><strong>{{ total() }}</strong><span>movimientos</span></div>
+    </div>
+    <div class="toolbar-filters-row">
+      <div class="toolbar-filters-left">
+        <select class="toolbar-select" [value]="almacenId() ?? ''" (change)="setAlmacen($any($event.target).value)">
+          <option value="">Todos los almacenes</option>
+          @for (a of almacenes(); track a.id) {
+            <option [value]="a.id">{{ a.nombre }}</option>
+          }
+        </select>
+        <label class="toolbar-check">Desde
+          <input type="date" class="toolbar-select" [value]="desde()" (change)="setFecha('desde', $any($event.target).value)" />
+        </label>
+        <label class="toolbar-check">Hasta
+          <input type="date" class="toolbar-select" [value]="hasta()" (change)="setFecha('hasta', $any($event.target).value)" />
+        </label>
+      </div>
+    </div>
+  </section>
+
+  <app-data-table
+    [columns]="columns"
+    [items]="items()"
+    [loading]="isLoading()"
+    [totalItems]="total()"
+    [currentPage]="page()"
+    [pageSize]="pageSize()"
+    [pageSizeOptions]="[20, 50, 100]"
+    [minWidth]="'1350px'"
+    emptyMessage="No hay movimientos para los filtros elegidos."
+    emptyIcon="fa-solid fa-list-ol"
+    [rowTemplate]="row"
+    (pageChange)="onPageChange($event)"
+    (pageSizeChange)="onPageSizeChange($event)"
+  />
+
+  <ng-template #row let-item>
+    <tr>
+      <td>{{ item.fecha }}</td>
+      <td>{{ motivoLabel[item.movimiento] ?? item.movimiento }}</td>
+      <td>
+        <strong>{{ item.documento }}</strong>
+        @if (item.documento_referencia) {
+          <div class="table-cell-subtitle">{{ item.documento_referencia }}</div>
+        }
+      </td>
+      <td>
+        <strong>{{ item.codigo }}</strong>
+        <div class="table-cell-subtitle">{{ item.descripcion }}</div>
+      </td>
+      <td>{{ item.almacen }}</td>
+      <td align="right">{{ item.entrada === '0' ? '' : fmtNum(item.entrada) }}</td>
+      <td align="right">{{ item.salida === '0' ? '' : fmtNum(item.salida) }}</td>
+      <td align="right">{{ fmtNum(item.saldo_almacen) }}</td>
+      <td align="right"><strong>{{ fmtNum(item.saldo_total) }}</strong></td>
+      <td align="right">{{ fmtMoney(item.costo_unitario) }}</td>
+      <td align="right">{{ fmtMoney(item.costo_promedio) }}</td>
+      <td>{{ item.contraparte ?? '—' }}</td>
+    </tr>
+  </ng-template>
+</div>

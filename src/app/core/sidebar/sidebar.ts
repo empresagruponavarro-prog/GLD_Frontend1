@@ -11,9 +11,14 @@ import { RouterModule } from '@angular/router';
 export class SidebarComponent {
   isMaestrosOpen = true;
   isDocumentosOpen = true;
+  isAlmacenOpen = true;
 
   toggleMaestros() {
     this.isMaestrosOpen = !this.isMaestrosOpen;
+  }
+
+  toggleAlmacen() {
+    this.isAlmacenOpen = !this.isAlmacenOpen;
   }
 
   toggleDocumentos() {

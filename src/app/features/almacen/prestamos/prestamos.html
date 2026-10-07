@@ -1,0 +1,253 @@
+<div class="content-header">
+  <div>
+    <h1 class="content-title">Préstamos de equipos</h1>
+    <p class="content-subtitle">
+      Entrega y retorno de equipos. Un préstamo no reduce el stock total: reduce lo disponible.
+    </p>
+  </div>
+  <div style="display: flex; gap: 0.5rem; align-items: center">
+    <button class="btn btn-primary" type="button" (click)="openCreate()">
+      <i class="fa-solid fa-plus"></i> Nuevo préstamo
+    </button>
+    <button class="btn btn-secondary" type="button" (click)="load()" [disabled]="isLoading()">
+      <i class="fa-solid fa-arrows-rotate" [class.fa-spin]="isLoading()"></i>
+      {{ isLoading() ? 'Cargando...' : 'Actualizar' }}
+    </button>
+  </div>
+</div>
+
+<div class="content-body">
+  <section class="toolbar-shell">
+    <div class="toolbar-search-row">
+      <div class="search-field">
+        <span class="search-icon"><i class="fa-solid fa-magnifying-glass"></i></span>
+        <input type="text" class="form-control search-input" placeholder="Buscar por número (PRE-...)" maxlength="20" [value]="fNumero()" (input)="onSearchNumero($any($event.target).value)" />
+      </div>
+      <div class="toolbar-meta"><span>Mostrando</span><strong>{{ total() }}</strong><span>préstamos</span></div>
+    </div>
+    <div class="toolbar-filters-row">
+      <div class="toolbar-filters-left">
+        <select class="toolbar-select" [value]="fEstado()" (change)="setEstado($any($event.target).value)">
+          <option value="">Todos los estados</option>
+          <option value="ABIERTO">Abierto</option>
+          <option value="PARCIAL">Parcial</option>
+          <option value="CERRADO">Cerrado</option>
+          <option value="ANULADO">Anulado</option>
+        </select>
+        <select class="toolbar-select" [value]="fPlazo()" (change)="setPlazo($any($event.target).value)">
+          <option value="">Todos los plazos</option>
+          @for (p of plazos; track p) {
+            <option [value]="p">{{ plazoLabel[p] }}</option>
+          }
+        </select>
+        <button class="toolbar-reset" type="button" (click)="resetFilters()">
+          <i class="fa-solid fa-rotate-left"></i> Restablecer
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <app-data-table
+    [columns]="columns"
+    [items]="items()"
+    [loading]="isLoading()"
+    [totalItems]="total()"
+    [currentPage]="page()"
+    [pageSize]="pageSize()"
+    [minWidth]="'1200px'"
+    emptyMessage="No hay préstamos registrados."
+    emptyIcon="fa-solid fa-screwdriver-wrench"
+    [rowTemplate]="row"
+    (pageChange)="onPageChange($event)"
+    (pageSizeChange)="onPageSizeChange($event)"
+  />
+
+  <ng-template #row let-item>
+    <tr>
+      <td><strong>{{ item.numero }}</strong></td>
+      <td>{{ item.fecha_prestamo }}</td>
+      <td>{{ item.responsable }}</td>
+      <td>{{ item.centro_costo ?? 'Stock general' }}</td>
+      <td>{{ item.almacen }}</td>
+      <td>{{ item.fecha_prevista_retorno }}</td>
+      <td align="center">{{ item.dias_fuera }}</td>
+      <td align="center"><span [class]="'badge ' + plazoBadge(item.estado_plazo)">{{ plazoLabel[item.estado_plazo] }}</span></td>
+      <td align="center">{{ item.estado }}</td>
+      <td align="center">
+        <button class="table-action-btn" type="button" title="Ver detalle" (click)="openDetail(item)">
+          <i class="fa-solid fa-eye"></i>
+        </button>
+        @if (canReturn(item)) {
+          <button class="table-action-btn table-action-btn--primary" type="button" title="Registrar retorno" (click)="openReturn(item)">
+            <i class="fa-solid fa-rotate-left"></i>
+          </button>
+        }
+        @if (item.estado === 'ABIERTO') {
+          <button class="table-action-btn table-action-btn--danger" type="button" title="Anular" (click)="anular(item)">
+            <i class="fa-solid fa-ban"></i>
+          </button>
+        }
+      </td>
+    </tr>
+  </ng-template>
+</div>
+
+<!-- Nuevo préstamo -->
+<app-modal [isOpen]="isFormOpen()" title="Nuevo préstamo" maxWidth="900px" [loading]="isSaving()" submitText="Registrar préstamo" (closed)="closeForm()" (saved)="save()">
+  <form class="pre-form" [formGroup]="form" (ngSubmit)="save()">
+    <div class="pre-form__grid">
+      <div class="form-group">
+        <label for="pre-fecha">Fecha <span class="required">*</span></label>
+        <input id="pre-fecha" type="date" class="form-control" formControlName="fecha_prestamo" />
+      </div>
+      <div class="form-group">
+        <label for="pre-dias">Días autorizados <span class="required">*</span></label>
+        <input id="pre-dias" type="number" min="1" class="form-control" formControlName="dias_autorizados" />
+      </div>
+      <div class="form-group">
+        <label for="pre-almacen">Almacén <span class="required">*</span></label>
+        <select id="pre-almacen" class="form-control" formControlName="id_almacen">
+          <option [ngValue]="null">— Seleccione —</option>
+          @for (a of almacenes(); track a.id) {
+            <option [ngValue]="a.id">{{ a.nombre }}</option>
+          }
+        </select>
+      </div>
+      <div class="form-group">
+        <label for="pre-responsable">Responsable que recibe <span class="required">*</span></label>
+        <app-search-select [options]="trabajadores()" placeholder="Buscar trabajador..." inputId="pre-responsable" formControlName="id_responsable" />
+      </div>
+      <div class="form-group">
+        <label for="pre-proyecto">Cliente / proyecto (centro de costos)</label>
+        <app-search-select [options]="centrosCostos()" placeholder="Vacío = stock general" inputId="pre-proyecto" formControlName="id_centro_costo" />
+      </div>
+      <div class="form-group">
+        <label for="pre-ref">Documento / vale</label>
+        <input id="pre-ref" class="form-control" formControlName="documento_referencia" maxlength="50" />
+      </div>
+      <div class="form-group pre-form__full">
+        <label for="pre-obs">Observaciones</label>
+        <input id="pre-obs" class="form-control" formControlName="observaciones" />
+      </div>
+    </div>
+
+    <h3 class="pre-form__section">Equipos</h3>
+    <div formArrayName="lineas" class="pre-lines">
+      <div class="pre-lines__head"><span>Equipo retornable</span><span>Cantidad</span><span></span></div>
+      @for (linea of lineas.controls; track linea; let i = $index) {
+        <div class="pre-lines__row" [formGroupName]="i">
+          <div>
+            <app-producto-picker clase="EQUIPO_RETORNABLE" placeholder="Buscar equipo por código o nombre..." [label]="linea.controls.etiqueta.value" (picked)="onEquipoPicked(linea, $event)" />
+            @if (linea.controls.id_producto.value) {
+              <small class="pre-lines__hint">Disponible: {{ fmtNum(linea.controls.disponible.value) }} {{ linea.controls.unidad.value }}</small>
+            }
+          </div>
+          <input class="form-control" inputmode="decimal" formControlName="cantidad" placeholder="1" [attr.aria-label]="'Cantidad línea ' + (i + 1)" />
+          <button class="table-action-btn table-action-btn--danger" type="button" title="Quitar línea" (click)="removeLinea(i)" [disabled]="lineas.length === 1">
+            <i class="fa-solid fa-trash"></i>
+          </button>
+        </div>
+      }
+      <button class="btn btn-secondary" type="button" style="align-self: flex-start" (click)="addLinea()">
+        <i class="fa-solid fa-plus"></i> Agregar equipo
+      </button>
+    </div>
+
+    @if (formError()) {
+      <p class="badge badge-danger pre-form__error" role="alert">{{ formError() }}</p>
+    }
+  </form>
+</app-modal>
+
+<!-- Retorno -->
+<app-modal [isOpen]="isReturnOpen()" [title]="'Registrar retorno ' + (returnTarget()?.numero ?? '')" maxWidth="900px" [loading]="isSaving()" submitText="Registrar retorno" (closed)="closeReturn()" (saved)="saveReturn()">
+  <form class="pre-form" [formGroup]="returnForm" (ngSubmit)="saveReturn()">
+    <div class="form-group" style="max-width: 220px">
+      <label for="ret-fecha">Fecha de retorno <span class="required">*</span></label>
+      <input id="ret-fecha" type="date" class="form-control" formControlName="fecha_retorno" />
+    </div>
+    <p class="pre-lines__hint">Indique solo lo que se devuelve hoy; lo demás queda pendiente. Si un equipo vuelve dañado o no operativo, quedará fuera del disponible.</p>
+    <div formArrayName="retornos" class="pre-lines">
+      @for (r of retornos.controls; track r; let i = $index) {
+        <div class="pre-ret__row" [formGroupName]="i">
+          <div class="pre-ret__name">
+            <strong>{{ r.controls.etiqueta.value }}</strong>
+            <small class="pre-lines__hint">Pendiente: {{ fmtNum(r.controls.pendiente.value) }}</small>
+          </div>
+          <div class="pre-ret__qty">
+            <input class="form-control" inputmode="decimal" formControlName="cantidad" placeholder="0" [attr.aria-label]="'Cantidad devuelta ' + r.controls.etiqueta.value" />
+            <button class="btn btn-secondary" type="button" title="Devolver todo lo pendiente" (click)="returnAll(r)">Todo</button>
+          </div>
+          <select class="form-control" formControlName="condicion" [attr.aria-label]="'Condición ' + r.controls.etiqueta.value">
+            @for (c of condiciones; track c) {
+              <option [value]="c">{{ condicionLabel[c] }}</option>
+            }
+          </select>
+          <input class="form-control" formControlName="observaciones" placeholder="Observaciones" />
+        </div>
+      }
+    </div>
+    @if (returnError()) {
+      <p class="badge badge-danger pre-form__error" role="alert">{{ returnError() }}</p>
+    }
+  </form>
+</app-modal>
+
+<!-- Detalle -->
+<app-modal [isOpen]="isDetailOpen()" [title]="detail()?.numero ?? 'Detalle'" maxWidth="860px" [showDefaultFooter]="false" (closed)="closeDetail()">
+  @if (detail(); as d) {
+    <dl class="pre-detail">
+      <div><dt>Fecha</dt><dd>{{ d.fecha_prestamo }}</dd></div>
+      <div><dt>Retorno previsto</dt><dd>{{ d.fecha_prevista_retorno }} ({{ d.dias_autorizados }} días)</dd></div>
+      <div><dt>Plazo</dt><dd><span [class]="'badge ' + plazoBadge(d.estado_plazo)">{{ plazoLabel[d.estado_plazo] }}</span></dd></div>
+      <div><dt>Responsable</dt><dd>{{ d.responsable }}</dd></div>
+      <div><dt>Proyecto</dt><dd>{{ d.centro_costo ?? 'Stock general' }}</dd></div>
+      <div><dt>Almacén</dt><dd>{{ d.almacen }}</dd></div>
+      <div><dt>Documento</dt><dd>{{ d.documento_referencia ?? '—' }}</dd></div>
+      <div><dt>Días fuera</dt><dd>{{ d.dias_fuera }}</dd></div>
+      <div><dt>Estado</dt><dd>{{ d.estado }}</dd></div>
+    </dl>
+    <h3 class="pre-form__section">Equipos</h3>
+    <div class="table-card">
+      <table class="table">
+        <thead>
+          <tr><th>Código</th><th>Equipo</th><th style="text-align: right">Prestado</th><th style="text-align: right">Devuelto</th><th style="text-align: right">Pendiente</th></tr>
+        </thead>
+        <tbody>
+          @for (l of d.lineas ?? []; track l.id) {
+            <tr>
+              <td><strong>{{ l.codigo }}</strong></td>
+              <td>{{ l.descripcion }}</td>
+              <td align="right">{{ fmtNum(l.cantidad) }}</td>
+              <td align="right">{{ fmtNum(l.cantidad_devuelta) }}</td>
+              <td align="right"><strong>{{ fmtNum(l.cantidad_pendiente) }}</strong></td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+    @if ((d.retornos ?? []).length > 0) {
+      <h3 class="pre-form__section">Retornos</h3>
+      <div class="table-card">
+        <table class="table">
+          <thead>
+            <tr><th>Fecha</th><th style="text-align: right">Cantidad</th><th>Condición</th><th>Observaciones</th></tr>
+          </thead>
+          <tbody>
+            @for (r of d.retornos ?? []; track r.id) {
+              <tr>
+                <td>{{ r.fecha_retorno }}</td>
+                <td align="right">{{ fmtNum(r.cantidad) }}</td>
+                <td>{{ condicionLabel[r.condicion] }}</td>
+                <td>{{ r.observaciones ?? '—' }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  }
+  <div modal-footer class="modal-footer">
+    <button class="btn btn-secondary" type="button" (click)="closeDetail()">Cerrar</button>
+  </div>
+</app-modal>

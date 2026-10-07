@@ -1,0 +1,77 @@
+.pre-form__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 0.25rem 1rem;
+}
+
+.pre-form__full {
+  grid-column: 1 / -1;
+}
+
+.pre-form__section {
+  margin: 1rem 0 0.5rem;
+  font-size: 0.95rem;
+}
+
+.pre-form__error {
+  margin-top: 0.75rem;
+  white-space: pre-line;
+}
+
+.pre-lines {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.pre-lines__head,
+.pre-lines__row {
+  display: grid;
+  grid-template-columns: minmax(260px, 1fr) 140px 40px;
+  gap: 0.6rem;
+  align-items: start;
+}
+
+.pre-lines__head {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.pre-lines__hint {
+  display: block;
+  margin-top: 0.15rem;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+.pre-ret__row {
+  display: grid;
+  grid-template-columns: minmax(200px, 1.4fr) 170px 150px minmax(140px, 1fr);
+  gap: 0.6rem;
+  align-items: start;
+  padding-bottom: 0.6rem;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.pre-ret__qty {
+  display: flex;
+  gap: 0.35rem;
+}
+
+.pre-detail {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 0.75rem 1.25rem;
+  margin: 0 0 1rem;
+}
+
+.pre-detail dt {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+.pre-detail dd {
+  margin: 0.1rem 0 0;
+  font-weight: 600;
+}

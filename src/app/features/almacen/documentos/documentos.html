@@ -1,0 +1,292 @@
+<div class="content-header">
+  <div>
+    <h1 class="content-title">{{ config.titulo }}</h1>
+    <p class="content-subtitle">{{ config.subtitulo }}</p>
+  </div>
+  <div style="display: flex; gap: 0.5rem; align-items: center">
+    <button class="btn btn-primary" type="button" (click)="openCreate()">
+      <i class="fa-solid fa-plus"></i> {{ config.nuevo }}
+    </button>
+    <button class="btn btn-secondary" type="button" (click)="load()" [disabled]="isLoading()">
+      <i class="fa-solid fa-arrows-rotate" [class.fa-spin]="isLoading()"></i>
+      {{ isLoading() ? 'Cargando...' : 'Actualizar' }}
+    </button>
+  </div>
+</div>
+
+<div class="content-body">
+  <section class="toolbar-shell">
+    <div class="toolbar-filters-row">
+      <div class="toolbar-filters-left">
+        <label class="toolbar-check">Desde
+          <input type="date" class="toolbar-select" [value]="fDesde()" (change)="applyFilter('desde', $any($event.target).value)" />
+        </label>
+        <label class="toolbar-check">Hasta
+          <input type="date" class="toolbar-select" [value]="fHasta()" (change)="applyFilter('hasta', $any($event.target).value)" />
+        </label>
+        <select class="toolbar-select" [value]="fAlmacen() ?? ''" (change)="applyFilter('almacen', $any($event.target).value)">
+          <option value="">Todos los almacenes</option>
+          @for (a of almacenes(); track a.id) {
+            <option [value]="a.id">{{ a.nombre }}</option>
+          }
+        </select>
+        @if (config.motivos.length > 1) {
+          <select class="toolbar-select" [value]="fMotivo()" (change)="applyFilter('motivo', $any($event.target).value)">
+            <option value="">Todos los motivos</option>
+            @for (m of config.motivos; track m) {
+              <option [value]="m">{{ motivoLabel[m] }}</option>
+            }
+          </select>
+        }
+        <select class="toolbar-select" [value]="fEstado()" (change)="applyFilter('estado', $any($event.target).value)">
+          <option value="">Todos los estados</option>
+          <option value="REGISTRADO">Registrado</option>
+          <option value="ANULADO">Anulado</option>
+        </select>
+        <button class="toolbar-reset" type="button" (click)="resetFilters()">
+          <i class="fa-solid fa-rotate-left"></i> Restablecer
+        </button>
+      </div>
+      <div class="toolbar-meta"><span>Mostrando</span><strong>{{ total() }}</strong><span>documentos</span></div>
+    </div>
+  </section>
+
+  <app-data-table
+    [columns]="columns"
+    [items]="items()"
+    [loading]="isLoading()"
+    [totalItems]="total()"
+    [currentPage]="page()"
+    [pageSize]="pageSize()"
+    [minWidth]="'1100px'"
+    emptyMessage="No hay documentos registrados."
+    [emptyIcon]="config.icono"
+    [rowTemplate]="row"
+    (pageChange)="onPageChange($event)"
+    (pageSizeChange)="onPageSizeChange($event)"
+  />
+
+  <ng-template #row let-item>
+    <tr>
+      <td><strong>{{ item.numero }}</strong></td>
+      <td>{{ item.fecha }}</td>
+      <td>{{ motivoLabel[item.motivo] }}</td>
+      <td>
+        @if (esTransferencia) {
+          {{ item.almacen }} → {{ item.almacen_destino }}
+        } @else {
+          {{ item.almacen }}
+        }
+      </td>
+      <td>{{ item.documento_referencia ?? '—' }}</td>
+      <td>{{ contraparte(item) }}</td>
+      <td align="center">{{ item.total_lineas }}</td>
+      <td align="center">
+        <span class="badge" [class.badge-completed]="item.estado === 'REGISTRADO'" [class.badge-danger]="item.estado === 'ANULADO'">
+          {{ item.estado === 'REGISTRADO' ? 'Registrado' : 'Anulado' }}
+        </span>
+        @if (item.id_documento_anula) {
+          <div class="table-cell-subtitle">Reversión</div>
+        }
+      </td>
+      <td align="center">
+        <button class="table-action-btn" type="button" title="Ver detalle" (click)="openDetail(item)">
+          <i class="fa-solid fa-eye"></i>
+        </button>
+        @if (item.estado === 'REGISTRADO' && !item.id_documento_anula) {
+          <button class="table-action-btn table-action-btn--danger" type="button" title="Anular" (click)="anular(item)">
+            <i class="fa-solid fa-ban"></i>
+          </button>
+        }
+      </td>
+    </tr>
+  </ng-template>
+</div>
+
+<!-- Formulario -->
+<app-modal
+  [isOpen]="isFormOpen()"
+  [title]="config.nuevo"
+  maxWidth="1000px"
+  [loading]="isSaving()"
+  submitText="Registrar"
+  (closed)="closeForm()"
+  (saved)="save()"
+>
+  <form class="doc-form" [formGroup]="form" (ngSubmit)="save()">
+    <div class="doc-form__grid">
+      <div class="form-group">
+        <label for="doc-fecha">Fecha <span class="required">*</span></label>
+        <input id="doc-fecha" type="date" class="form-control" formControlName="fecha" />
+      </div>
+
+      @if (config.motivos.length > 1) {
+        <div class="form-group">
+          <label for="doc-motivo">Motivo <span class="required">*</span></label>
+          <select id="doc-motivo" class="form-control" formControlName="motivo">
+            @for (m of config.motivos; track m) {
+              <option [value]="m">{{ motivoLabel[m] }}</option>
+            }
+          </select>
+        </div>
+      }
+
+      <div class="form-group">
+        <label for="doc-almacen">{{ esTransferencia ? 'Almacén origen' : 'Almacén' }} <span class="required">*</span></label>
+        <select id="doc-almacen" class="form-control" formControlName="id_almacen">
+          <option [ngValue]="null">— Seleccione —</option>
+          @for (a of almacenes(); track a.id) {
+            <option [ngValue]="a.id">{{ a.nombre }}</option>
+          }
+        </select>
+      </div>
+
+      @if (esTransferencia) {
+        <div class="form-group">
+          <label for="doc-destino">Almacén destino <span class="required">*</span></label>
+          <select id="doc-destino" class="form-control" formControlName="id_almacen_destino">
+            <option [ngValue]="null">— Seleccione —</option>
+            @for (a of almacenes(); track a.id) {
+              <option [ngValue]="a.id">{{ a.nombre }}</option>
+            }
+          </select>
+        </div>
+      }
+
+      @if (!esInventarioInicial && !esTransferencia) {
+        <div class="form-group">
+          <label for="doc-ref">{{ esSalida ? 'Vale / guía' : 'Documento (factura / guía)' }}</label>
+          <input id="doc-ref" class="form-control" formControlName="documento_referencia" maxlength="50" />
+        </div>
+      }
+
+      @if (muestraProveedor()) {
+        <div class="form-group">
+          <label for="doc-proveedor">Proveedor</label>
+          <app-search-select [options]="proveedores()" placeholder="Buscar proveedor..." inputId="doc-proveedor" formControlName="id_proveedor" />
+        </div>
+      }
+
+      @if (muestraProyecto) {
+        <div class="form-group">
+          <label for="doc-proyecto">Cliente / proyecto (centro de costos)</label>
+          <app-search-select [options]="centrosCostos()" placeholder="Vacío = stock general" inputId="doc-proyecto" formControlName="id_centro_costo" />
+        </div>
+      }
+
+      @if (esIngreso && !esInventarioInicial) {
+        <div class="form-group">
+          <label for="doc-recibido">Recibido por</label>
+          <app-search-select [options]="trabajadores()" placeholder="Buscar trabajador..." inputId="doc-recibido" formControlName="id_recibido_por" />
+        </div>
+      }
+
+      @if (esSalida) {
+        <div class="form-group">
+          <label for="doc-solicitado">Solicitado por</label>
+          <app-search-select [options]="trabajadores()" placeholder="Buscar trabajador..." inputId="doc-solicitado" formControlName="id_solicitado_por" />
+        </div>
+        <div class="form-group">
+          <label for="doc-entregado">Entregado a</label>
+          <app-search-select [options]="trabajadores()" placeholder="Buscar trabajador..." inputId="doc-entregado" formControlName="id_entregado_a" />
+        </div>
+        <div class="form-group doc-form__full">
+          <label for="doc-trabajo">Motivo / trabajo</label>
+          <input id="doc-trabajo" class="form-control" formControlName="motivo_trabajo" />
+        </div>
+      }
+
+      <div class="form-group doc-form__full">
+        <label for="doc-obs">Observaciones</label>
+        <input id="doc-obs" class="form-control" formControlName="observaciones" />
+      </div>
+    </div>
+
+    <h3 class="doc-form__section">Productos</h3>
+    <div class="doc-lines" formArrayName="lineas">
+      <div class="doc-lines__head" [class.doc-lines__head--costo]="muestraCosto">
+        <span>Producto</span>
+        <span>Cantidad</span>
+        @if (muestraCosto) {
+          <span>Costo unit. {{ costoObligatorio() ? '*' : '(opcional)' }}</span>
+        }
+        <span></span>
+      </div>
+      @for (linea of lineas.controls; track linea; let i = $index) {
+        <div class="doc-lines__row" [formGroupName]="i" [class.doc-lines__row--costo]="muestraCosto">
+          <div>
+            <app-producto-picker [label]="linea.controls.etiqueta.value" (picked)="onProductoPicked(linea, $event)" />
+            @if (linea.controls.id_producto.value && !esInventarioInicial) {
+              <small class="doc-lines__hint">Disponible total: {{ fmtNum(linea.controls.disponible.value) }} {{ linea.controls.unidad.value }}</small>
+            }
+          </div>
+          <div>
+            <input class="form-control" inputmode="decimal" formControlName="cantidad" placeholder="0" [attr.aria-label]="'Cantidad línea ' + (i + 1)" />
+            @if (linea.controls.unidad.value) {
+              <small class="doc-lines__hint">{{ linea.controls.unidad.value }}</small>
+            }
+          </div>
+          @if (muestraCosto) {
+            <input class="form-control" inputmode="decimal" formControlName="costo_unitario" placeholder="0.00" [attr.aria-label]="'Costo línea ' + (i + 1)" />
+          }
+          <button class="table-action-btn table-action-btn--danger" type="button" title="Quitar línea" (click)="removeLinea(i)" [disabled]="lineas.length === 1">
+            <i class="fa-solid fa-trash"></i>
+          </button>
+        </div>
+      }
+      <button class="btn btn-secondary doc-lines__add" type="button" (click)="addLinea()">
+        <i class="fa-solid fa-plus"></i> Agregar producto
+      </button>
+    </div>
+
+    @if (formError()) {
+      <p class="badge badge-danger doc-form__error" role="alert">{{ formError() }}</p>
+    }
+  </form>
+</app-modal>
+
+<!-- Detalle -->
+<app-modal [isOpen]="isDetailOpen()" [title]="detail()?.numero ?? 'Detalle'" maxWidth="860px" [showDefaultFooter]="false" (closed)="closeDetail()">
+  @if (detail(); as d) {
+    <dl class="doc-detail">
+      <div><dt>Fecha</dt><dd>{{ d.fecha }}</dd></div>
+      <div><dt>Motivo</dt><dd>{{ motivoLabel[d.motivo] }}</dd></div>
+      <div><dt>Almacén</dt><dd>{{ d.almacen }}@if (d.almacen_destino) { → {{ d.almacen_destino }} }</dd></div>
+      <div><dt>Referencia</dt><dd>{{ d.documento_referencia ?? '—' }}</dd></div>
+      <div><dt>Proveedor</dt><dd>{{ d.proveedor ?? '—' }}</dd></div>
+      <div><dt>Proyecto</dt><dd>{{ d.centro_costo ?? 'Stock general' }}</dd></div>
+      <div><dt>Recibido por</dt><dd>{{ d.recibido_por ?? '—' }}</dd></div>
+      <div><dt>Solicitado por</dt><dd>{{ d.solicitado_por ?? '—' }}</dd></div>
+      <div><dt>Entregado a</dt><dd>{{ d.entregado_a ?? '—' }}</dd></div>
+      <div class="doc-detail__full"><dt>Motivo / trabajo</dt><dd>{{ d.motivo_trabajo ?? '—' }}</dd></div>
+      <div class="doc-detail__full"><dt>Observaciones</dt><dd>{{ d.observaciones ?? '—' }}</dd></div>
+    </dl>
+    <div class="table-card">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Código</th>
+            <th>Producto</th>
+            <th style="text-align: right">Cantidad</th>
+            <th style="text-align: right">Costo unit.</th>
+            <th style="text-align: right">Total</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (l of d.lineas ?? []; track l.id) {
+            <tr>
+              <td><strong>{{ l.codigo }}</strong></td>
+              <td>{{ l.descripcion }}</td>
+              <td align="right">{{ fmtNum(l.cantidad) }} {{ l.unidad }}</td>
+              <td align="right">{{ l.costo_unitario === null ? '—' : fmtMoney(l.costo_unitario) }}</td>
+              <td align="right">{{ l.costo_unitario === null ? '—' : fmtMoney(+l.cantidad * +l.costo_unitario) }}</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+  <div modal-footer class="modal-footer">
+    <button class="btn btn-secondary" type="button" (click)="closeDetail()">Cerrar</button>
+  </div>
+</app-modal>

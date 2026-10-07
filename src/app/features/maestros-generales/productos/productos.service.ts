@@ -3,6 +3,8 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '@env';
 import {
+  Alternativa,
+  FamiliaOption,
   Producto,
   ProductoPaginated,
   ProductoQuery,
@@ -53,6 +55,25 @@ export class ProductosService {
 
   getCategoriasSelect(): Observable<SelectOption[]> {
     return this.http.get<SelectOption[]>(`${environment.apiUrl}/maestros/categoria/select`);
+  }
+
+  getFamiliasSelect(): Observable<FamiliaOption[]> {
+    return this.http.get<FamiliaOption[]>(`${environment.apiUrl}/maestros/familia-almacen/select`);
+  }
+
+  getAlmacenesSelect(): Observable<SelectOption[]> {
+    return this.http.get<SelectOption[]>(`${environment.apiUrl}/almacen/almacenes/select`);
+  }
+
+  getAlternativas(id: number): Observable<Alternativa[]> {
+    return this.http.get<Alternativa[]>(`${this.apiUrl}/${id}/alternativas`);
+  }
+
+  replaceAlternativas(
+    id: number,
+    alternativas: { id_producto_alternativo: number; prioridad: number }[],
+  ): Observable<Alternativa[]> {
+    return this.http.put<Alternativa[]>(`${this.apiUrl}/${id}/alternativas`, { alternativas });
   }
 
   getUnidadesMedidaSelect(): Observable<SelectOption[]> {

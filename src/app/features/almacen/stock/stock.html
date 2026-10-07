@@ -1,0 +1,131 @@
+<div class="content-header">
+  <div>
+    <h1 class="content-title">Stock actual</h1>
+    <p class="content-subtitle">
+      Existencias calculadas desde los movimientos. Disponible = stock − prestado − no operativo.
+    </p>
+  </div>
+  <div style="display: flex; gap: 0.5rem; align-items: center">
+    <button class="btn" [class.btn-primary]="vista() === 'stock'" [class.btn-secondary]="vista() !== 'stock'" type="button" (click)="setVista('stock')">
+      <i class="fa-solid fa-boxes-stacked"></i> Stock
+    </button>
+    <button class="btn" [class.btn-primary]="vista() === 'compra'" [class.btn-secondary]="vista() !== 'compra'" type="button" (click)="setVista('compra')">
+      <i class="fa-solid fa-cart-shopping"></i> Compra sugerida
+    </button>
+    <button class="btn btn-secondary" type="button" (click)="load()" [disabled]="isLoading()">
+      <i class="fa-solid fa-arrows-rotate" [class.fa-spin]="isLoading()"></i>
+    </button>
+  </div>
+</div>
+
+<div class="content-body">
+  <section class="toolbar-shell">
+    <div class="toolbar-search-row">
+      <div class="search-field">
+        <span class="search-icon"><i class="fa-solid fa-magnifying-glass"></i></span>
+        <input
+          type="text"
+          class="form-control search-input"
+          placeholder="Buscar por código o descripción..."
+          maxlength="255"
+          [value]="q()"
+          (input)="onSearch($any($event.target).value)"
+        />
+      </div>
+      <div class="toolbar-meta">
+        <span>Mostrando</span><strong>{{ total() }}</strong><span>productos</span>
+      </div>
+    </div>
+    <div class="toolbar-filters-row">
+      <div class="toolbar-filters-left">
+        <select class="toolbar-select" [value]="almacenId() ?? ''" (change)="setNumber('almacen', $any($event.target).value)">
+          <option value="">Todos los almacenes</option>
+          @for (a of almacenes(); track a.id) {
+            <option [value]="a.id">{{ a.nombre }}</option>
+          }
+        </select>
+        <select class="toolbar-select" [value]="familiaId() ?? ''" (change)="setNumber('familia', $any($event.target).value)">
+          <option value="">Todas las familias</option>
+          @for (f of familias(); track f.id) {
+            <option [value]="f.id">{{ f.nombre }}</option>
+          }
+        </select>
+        <select class="toolbar-select" [value]="clase()" (change)="setClase($any($event.target).value)">
+          <option value="">Todas las clases</option>
+          @for (c of clases; track c) {
+            <option [value]="c">{{ claseLabel[c] }}</option>
+          }
+        </select>
+        @if (vista() === 'stock') {
+          <select class="toolbar-select" [value]="alerta()" (change)="setAlerta($any($event.target).value)">
+            <option value="">Todas las alertas</option>
+            @for (a of alertas; track a) {
+              <option [value]="a">{{ alertaLabel[a] }}</option>
+            }
+          </select>
+          <label class="toolbar-check">
+            <input type="checkbox" [checked]="incluirSinStock()" (change)="toggleSinStock($any($event.target).checked)" />
+            Incluir sin existencias
+          </label>
+        }
+        <button class="toolbar-reset" type="button" (click)="reset()">
+          <i class="fa-solid fa-rotate-left"></i> Restablecer
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <app-data-table
+    [columns]="columns()"
+    [items]="items()"
+    [loading]="isLoading()"
+    [totalItems]="total()"
+    [currentPage]="page()"
+    [pageSize]="pageSize()"
+    [minWidth]="vista() === 'stock' ? '1300px' : '980px'"
+    [emptyMessage]="vista() === 'stock' ? 'No hay productos con existencias para estos filtros.' : 'No hay compras sugeridas.'"
+    emptyIcon="fa-solid fa-boxes-stacked"
+    [rowTemplate]="vista() === 'stock' ? stockRow : compraRow"
+    (pageChange)="onPageChange($event)"
+    (pageSizeChange)="onPageSizeChange($event)"
+  />
+
+  <ng-template #stockRow let-item>
+    <tr>
+      <td><strong>{{ item.codigo }}</strong></td>
+      <td>{{ item.descripcion }}</td>
+      <td>{{ claseLabel[item.clase_inventario] }}</td>
+      <td align="right">{{ fmtNum(item.stock_total) }}</td>
+      <td align="right">{{ fmtNum(item.prestado) }}</td>
+      <td align="right">{{ fmtNum(item.no_operativo) }}</td>
+      <td align="right"><strong>{{ fmtNum(item.disponible) }}</strong></td>
+      <td align="right">{{ fmtNum(item.stock_minimo) }} / {{ fmtNum(item.stock_objetivo) }}</td>
+      <td align="right">{{ fmtMoney(item.costo_promedio) }}</td>
+      <td align="right">{{ fmtMoney(item.valor_total) }}</td>
+      <td align="center"><span class="badge" [class]="'badge ' + alertaBadge(item.alerta)">{{ alertaLabel[item.alerta] }}</span></td>
+      <td align="center">
+        <a class="table-action-btn" title="Ver kardex" [routerLink]="['/almacen/kardex']" [queryParams]="{ producto: item.id_producto }">
+          <i class="fa-solid fa-list-ol"></i>
+        </a>
+      </td>
+    </tr>
+  </ng-template>
+
+  <ng-template #compraRow let-item>
+    <tr>
+      <td><strong>{{ item.codigo }}</strong></td>
+      <td>{{ item.descripcion }}</td>
+      <td>{{ item.unidad }}</td>
+      <td align="right">{{ fmtNum(item.disponible) }}</td>
+      <td align="right">{{ fmtNum(item.stock_minimo) }}</td>
+      <td align="right">{{ fmtNum(item.stock_objetivo) }}</td>
+      <td align="right"><strong>{{ fmtNum(item.compra_sugerida) }}</strong></td>
+      <td align="right">{{ fmtMoney(item.costo_promedio) }}</td>
+      <td align="center">
+        <a class="table-action-btn" title="Ver kardex" [routerLink]="['/almacen/kardex']" [queryParams]="{ producto: item.id_producto }">
+          <i class="fa-solid fa-list-ol"></i>
+        </a>
+      </td>
+    </tr>
+  </ng-template>
+</div>

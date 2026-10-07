@@ -1,0 +1,40 @@
+<div class="search-select">
+  <input
+    type="text"
+    class="form-control search-select__input"
+    [attr.id]="inputId() || null"
+    autocomplete="off"
+    [placeholder]="placeholder()"
+    [disabled]="isDisabled()"
+    [value]="isOpen() ? term() : selectedLabel()"
+    (focus)="onFocus()"
+    (input)="onInput($event)"
+    (blur)="onBlur()"
+  />
+  @if (selectedId() !== null && !isDisabled()) {
+    <button class="search-select__clear" type="button" aria-label="Quitar selección" (mousedown)="$event.preventDefault(); clear()">
+      <i class="fa-solid fa-xmark"></i>
+    </button>
+  }
+  @if (isOpen()) {
+    <ul class="search-select__list">
+      @for (option of filtered(); track option.id) {
+        <li>
+          <button
+            class="search-select__option"
+            [class.search-select__option--active]="option.id === selectedId()"
+            type="button"
+            (mousedown)="$event.preventDefault(); pick(option)"
+          >
+            {{ option.nombre }}
+          </button>
+        </li>
+      } @empty {
+        <li class="search-select__empty">Sin resultados</li>
+      }
+      @if (hasMore()) {
+        <li class="search-select__empty">Mostrando los primeros 50; escriba para filtrar</li>
+      }
+    </ul>
+  }
+</div>

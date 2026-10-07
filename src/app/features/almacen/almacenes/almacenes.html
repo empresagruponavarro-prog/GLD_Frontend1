@@ -1,0 +1,84 @@
+<div class="content-header">
+  <div>
+    <h1 class="content-title">Almacenes</h1>
+    <p class="content-subtitle">Ubicaciones donde se lleva el stock (Almacén General, Tambo, Aruma...).</p>
+  </div>
+  <div style="display: flex; gap: 0.5rem; align-items: center">
+    <button class="btn btn-primary" type="button" (click)="openCreate()">
+      <i class="fa-solid fa-plus"></i> Nuevo almacén
+    </button>
+    <button class="btn btn-secondary" type="button" (click)="load()" [disabled]="isLoading()">
+      <i class="fa-solid fa-arrows-rotate" [class.fa-spin]="isLoading()"></i>
+      {{ isLoading() ? 'Cargando...' : 'Actualizar' }}
+    </button>
+  </div>
+</div>
+
+<div class="content-body">
+  <app-data-table
+    [columns]="columns"
+    [items]="items()"
+    [loading]="isLoading()"
+    [totalItems]="total()"
+    [currentPage]="page()"
+    [pageSize]="pageSize()"
+    [minWidth]="'640px'"
+    emptyMessage="No hay almacenes registrados."
+    emptyIcon="fa-solid fa-warehouse"
+    [rowTemplate]="row"
+    (pageChange)="onPageChange($event)"
+    (pageSizeChange)="onPageSizeChange($event)"
+  />
+
+  <ng-template #row let-item>
+    <tr>
+      <td>{{ item.id }}</td>
+      <td><strong>{{ item.codigo }}</strong></td>
+      <td>{{ item.nombre }}</td>
+      <td align="center">
+        <span class="badge" [class.badge-completed]="item.estado" [class.badge-danger]="!item.estado">
+          {{ item.estado ? 'Activo' : 'Inactivo' }}
+        </span>
+      </td>
+      <td align="center">
+        <button class="table-action-btn table-action-btn--primary" type="button" title="Editar" (click)="openEdit(item)">
+          <i class="fa-solid fa-pen-to-square"></i>
+        </button>
+        @if (item.estado) {
+          <button class="table-action-btn table-action-btn--danger" type="button" title="Desactivar" (click)="deactivate(item)">
+            <i class="fa-solid fa-trash"></i>
+          </button>
+        }
+      </td>
+    </tr>
+  </ng-template>
+</div>
+
+<app-modal
+  [isOpen]="isModalOpen()"
+  [title]="editingId() !== null ? 'Editar almacén' : 'Nuevo almacén'"
+  maxWidth="480px"
+  [loading]="isSaving()"
+  (closed)="closeModal()"
+  (saved)="save()"
+>
+  <form [formGroup]="form" (ngSubmit)="save()">
+    <div class="form-group">
+      <label for="alm-codigo">Código <span class="required">*</span></label>
+      <input id="alm-codigo" class="form-control" formControlName="codigo" maxlength="20" placeholder="ALM-GENERAL" />
+    </div>
+    <div class="form-group">
+      <label for="alm-nombre">Nombre <span class="required">*</span></label>
+      <input id="alm-nombre" class="form-control" formControlName="nombre" placeholder="Almacén General" />
+    </div>
+    <div class="form-group">
+      <label>
+        <input type="checkbox" formControlName="estado" />
+        Activo
+      </label>
+    </div>
+    @if (formError()) {
+      <p class="badge badge-danger" role="alert" style="white-space: pre-line">{{ formError() }}</p>
+    }
+  </form>
+</app-modal>

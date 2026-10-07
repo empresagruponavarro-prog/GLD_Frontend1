@@ -1,0 +1,142 @@
+<div class="content-header">
+  <div>
+    <h1 class="content-title">Consulta de productos</h1>
+    <p class="content-subtitle">Busque por código o nombre: stock, disponibilidad, precio y alternativas.</p>
+  </div>
+</div>
+
+<div class="content-body">
+  <section class="toolbar-shell">
+    <form class="consulta-search" (submit)="$event.preventDefault(); search()">
+      <div class="search-field">
+        <span class="search-icon"><i class="fa-solid fa-magnifying-glass"></i></span>
+        <input
+          type="text"
+          class="form-control search-input"
+          placeholder="Código (CON-0001) o parte del nombre..."
+          maxlength="255"
+          [value]="term()"
+          (input)="onInput($event)"
+        />
+      </div>
+      <button class="btn btn-primary" type="submit" [disabled]="isLoading() || !term().trim()">
+        <i class="fa-solid fa-magnifying-glass"></i> {{ isLoading() ? 'Buscando...' : 'Consultar' }}
+      </button>
+    </form>
+  </section>
+
+  @if (errorText()) {
+    <p class="badge badge-danger" role="alert">{{ errorText() }}</p>
+  }
+  @if (notice()) {
+    <p class="badge badge-completed" role="status">{{ notice() }}</p>
+  }
+
+  @if (result(); as r) {
+    @if (r.producto; as p) {
+      <section class="consulta-card">
+        <header class="consulta-card__head">
+          <div>
+            <span class="consulta-card__code">{{ p.codigo }}</span>
+            <h2 class="consulta-card__title">{{ p.descripcion }}</h2>
+          </div>
+          <a class="btn btn-secondary" [routerLink]="['/almacen/kardex']" [queryParams]="{ producto: p.id }">
+            <i class="fa-solid fa-list-ol"></i> Ver kardex
+          </a>
+        </header>
+
+        <dl class="consulta-grid">
+          <div><dt>Categoría</dt><dd>{{ p.categoria }}</dd></div>
+          <div><dt>Familia</dt><dd>{{ p.familia ?? '—' }}</dd></div>
+          <div><dt>Clase</dt><dd>{{ claseLabel[p.clase_inventario] }}</dd></div>
+          <div><dt>Uso principal</dt><dd>{{ p.uso_principal ?? '—' }}</dd></div>
+          <div><dt>Unidad</dt><dd>{{ p.unidad }}</dd></div>
+          <div><dt>Ubicación habitual</dt><dd>{{ p.almacen_default ?? '—' }}</dd></div>
+          <div><dt>Stock total</dt><dd class="consulta-grid__num">{{ fmtNum(p.stock_total) }}</dd></div>
+          <div><dt>Disponible</dt><dd class="consulta-grid__num consulta-grid__num--strong">{{ fmtNum(p.disponible) }}</dd></div>
+          <div><dt>Precio promedio</dt><dd class="consulta-grid__num">S/ {{ fmtMoney(p.costo_promedio) }}</dd></div>
+          <div><dt>Mínimo / objetivo</dt><dd>{{ fmtNum(p.stock_minimo) }} / {{ fmtNum(p.stock_objetivo) }}</dd></div>
+        </dl>
+      </section>
+
+      <h3 class="consulta-section">Stock por almacén</h3>
+      <div class="table-card">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Almacén</th>
+              <th style="text-align: right">Stock</th>
+              <th style="text-align: right">Prestado</th>
+              <th style="text-align: right">No operativo</th>
+              <th style="text-align: right">Disponible</th>
+              <th style="width: 120px"></th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (s of r.stock_por_almacen; track s.id_almacen) {
+              <tr>
+                <td>{{ s.almacen }}</td>
+                <td align="right">{{ fmtNum(s.cantidad) }}</td>
+                <td align="right">{{ fmtNum(s.prestado) }}</td>
+                <td align="right">{{ fmtNum(s.no_operativo) }}</td>
+                <td align="right"><strong>{{ fmtNum(s.disponible) }}</strong></td>
+                <td align="center">
+                  @if (s.no_operativo !== '0') {
+                    <button class="btn btn-secondary" type="button" (click)="marcarOperativo(s)">Marcar operativo</button>
+                  }
+                </td>
+              </tr>
+            } @empty {
+              <tr><td colspan="6" class="consulta-empty">Sin existencias en ningún almacén.</td></tr>
+            }
+          </tbody>
+        </table>
+      </div>
+
+      <h3 class="consulta-section">Alternativas</h3>
+      <div class="table-card">
+        <table class="table">
+          <thead>
+            <tr>
+              <th style="width: 110px">Alternativa</th>
+              <th>Código</th>
+              <th>Producto</th>
+              <th style="text-align: right">Disponible</th>
+              <th style="text-align: right">Precio promedio</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (a of r.alternativas; track a.id_producto) {
+              <tr>
+                <td>Alternativa {{ a.prioridad }}</td>
+                <td><button class="consulta-link" type="button" (click)="pick(a.codigo)">{{ a.codigo }}</button></td>
+                <td>{{ a.descripcion }}</td>
+                <td align="right">{{ fmtNum(a.disponible) }}</td>
+                <td align="right">S/ {{ fmtMoney(a.costo_promedio) }}</td>
+              </tr>
+            } @empty {
+              <tr><td colspan="5" class="consulta-empty">Este producto no tiene alternativas registradas.</td></tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    } @else if (r.coincidencias.length > 0) {
+      <h3 class="consulta-section">Se encontraron varias coincidencias; elija una</h3>
+      <div class="table-card">
+        <table class="table">
+          <thead><tr><th style="width: 140px">Código</th><th>Descripción</th></tr></thead>
+          <tbody>
+            @for (c of r.coincidencias; track c.id) {
+              <tr>
+                <td><button class="consulta-link" type="button" (click)="pick(c.codigo)">{{ c.codigo }}</button></td>
+                <td>{{ c.descripcion }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    } @else {
+      <p class="consulta-empty">NO ENCONTRADO: no hay productos que coincidan con la búsqueda.</p>
+    }
+  }
+</div>
