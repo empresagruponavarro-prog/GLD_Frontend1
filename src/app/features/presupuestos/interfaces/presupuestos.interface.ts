@@ -112,6 +112,8 @@ export interface CategoriaAsignada {
 
 export interface DetalleFaseCate {
   id: number;
+  categoria?: any;
+  id_categoria?: number | null;
   IdPresupuestoDetalleCategoria?: string;
   IdPresupuestoDetalle?: string;
   IdPresupuesto?: string;
@@ -124,6 +126,7 @@ export interface DetalleFaseCate {
 
 export interface DetalleFase {
   id: number;
+  FaseProyecto?: string | null;
   IdPresupuestoDetalle: string;
   IdPresupuesto: string;
   id_empresa?: number;

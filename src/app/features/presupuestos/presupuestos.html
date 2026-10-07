@@ -439,8 +439,9 @@
                     <thead>
                       <tr class="bg-[#edf2f0] border-b border-[#d1dcd7] text-[10px] font-bold text-slate-500 uppercase tracking-wider">
                         <th class="py-2.5 px-3 w-16">ÍTEM</th>
-                        <th class="py-2.5 px-4">DESCRIPCIÓN DE LA PARTIDA / INSUMO</th>
-                        <th class="py-2.5 px-3">CATEGORÍA APU</th>
+                        <th class="py-2.5 px-4">FASE / PARTIDA</th>
+                        <th class="py-2.5 px-3">CATEGORÍA</th>
+                        <th class="py-2.5 px-3">SUB FASE / CATEGORÍA</th>
                         <th class="py-2.5 px-3 text-right">P.U. (S/)</th>
                         <th class="py-2.5 px-4 text-right">SUBTOTAL CD (S/)</th>
                         <th class="py-2.5 px-3 text-center">% INC.</th>
@@ -454,11 +455,14 @@
                         <tr class="hover:bg-[#529b7b]/5 transition" [class]="odd ? 'bg-[#f6f8f7]' : 'bg-white'">
                           <td class="py-2.5 px-3 font-mono font-bold text-[#2d634d]">{{ getFaseCode(fase) }}.{{ idx < 9 ? '0' + (idx + 1) : (idx + 1) }}</td>
                           <td class="py-2.5 px-4">
-                            <div class="font-bold text-slate-900">{{ cat.CategoriaInsumo || cat.IdpptoFaseCategoria }}</div>
+                            <div class="font-bold text-slate-900">{{ fase.NombreFase || fase.IdpptoFase }}</div>
                             <div class="text-[9px] font-mono text-slate-400">ID Detalle: {{ cat.IdPresupuestoDetalleCategoria || ('DF-' + cat.id) }}</div>
                           </td>
                           <td class="py-2.5 px-3">
-                            <span class="px-2 py-0.5 rounded text-[10px] font-mono font-semibold bg-[#edf2f0] text-slate-700 border border-[#d1dcd7] uppercase">{{ cat.CategoriaInsumo || cat.IdpptoFaseCategoria }}</span>
+                            <span class="px-2 py-0.5 rounded text-[10px] font-mono font-semibold bg-[#edf2f0] text-slate-700 border border-[#d1dcd7] uppercase">{{ cat.categoria?.descripcion || 'N/A' }}</span>
+                          </td>
+                          <td class="py-2.5 px-3">
+                            <span class="px-2 py-0.5 rounded text-[10px] font-mono font-semibold bg-[#529b7b]/10 text-[#2d634d] border border-[#529b7b]/25 uppercase">{{ cat.CategoriaInsumo || cat.IdpptoFaseCategoria }}</span>
                           </td>
                           <td class="py-2.5 px-3 text-right font-mono text-slate-700 tabular-nums">{{ (monto | number:'1.2-2') || '0.00' }}</td>
                           <td class="py-2.5 px-4 text-right font-mono font-bold text-slate-900 tabular-nums">S/ {{ (monto | number:'1.2-2') || '0.00' }}</td>
