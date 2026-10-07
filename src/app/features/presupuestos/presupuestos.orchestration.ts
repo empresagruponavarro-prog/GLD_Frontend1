@@ -1,4 +1,4 @@
-import { Observable, catchError, concat, concatMap, defer, map, of, toArray } from 'rxjs';
+﻿import { Observable, catchError, concat, concatMap, defer, map, of, toArray } from 'rxjs';
 
 /** Subconjunto de PresupuestosService que usa la orquestación (facilita simularlo en tests). */
 export interface FasesCategoriasWriter {
@@ -9,10 +9,12 @@ export interface FasesCategoriasWriter {
 export interface FaseCategoriaAGuardar {
   idFase: string;
   nombre: string;
-  /** Vacío = fase sin categoría (solo se crea la fase). */
+  /** Vacio = fase sin categoria (solo se crea la fase). */
   idCategoria: string;
   categoria?: string;
   subtotal: number;
+  id_categoria?: number;
+  categoriaRealDescripcion?: string;
 }
 
 export interface FaseFallida {
@@ -21,8 +23,8 @@ export interface FaseFallida {
 }
 
 /**
- * Fila del paso "Fases y costos" del wizard (una fila = fase + categoría).
- * - `idCategoriaDetalle`: id numérico de la categoría ya guardada (ppto_DetalleFasesCate).
+ * Fila del paso "Fases y costos" del wizard (una fila = fase + categoria).
+ * - `idCategoriaDetalle`: id numérico de la categoria ya guardada (ppto_DetalleFasesCate).
  * - `idFaseDetalle`: id numérico de la fase ya guardada (ppto_DetalleFases).
  * Si no tiene ninguno de los dos, la fila aún no existe en el servidor.
  */
@@ -33,9 +35,11 @@ export interface FilaFormFase {
   categoria: string;
   subtotal: number;
   idFaseDetalle?: number;
-  /** IdPresupuestoDetalle de la fase guardada (para colgarle categorías nuevas). */
+  /** IdPresupuestoDetalle de la fase guardada (para colgarle categorias nuevas). */
   codigoFaseDetalle?: string;
   idCategoriaDetalle?: number;
+  id_categoria?: number;
+  categoriaRealDescripcion?: string;
 }
 
 export type ModoPlantilla = 'agregar' | 'reemplazar';
@@ -63,7 +67,7 @@ function agruparPorFase(items: FaseCategoriaAGuardar[]): FaseCategoriaAGuardar[]
  * - Las filas sin `idCategoria` solo aportan la fase (no se crea una categoría vacía).
  * - Las categorías repetidas dentro de una misma fase se escriben una sola vez.
  * - Un fallo no detiene las siguientes fases; se devuelve la lista de fallos (vacía si todo
- *   se escribió). Emite una sola vez, al terminar todas las escrituras.
+ *   se escribio). Emite una sola vez, al terminar todas las escrituras.
  *
  * Los IDs generados en el cliente comparten un mismo sello de tiempo más el índice, de modo
  * que son únicos dentro de la operación (hasta que exista el endpoint transaccional, DATA-11).
@@ -100,7 +104,7 @@ export function crearFasesConCategorias(
           IdPresupuestoDetalle: idDetalle,
           IdPresupuestoDetalleCategoria: `DFC-${stamp}-${i}-${j}`,
           IdpptoFaseCategoria: cat.idCategoria,
-          CostoDirecto: Number(cat.subtotal) || 0,
+          CostoDirecto: Number(cat.subtotal) || 0, id_categoria: cat.id_categoria,
           SubTotalCategoria: Number(cat.subtotal) || 0,
         }),
       ).pipe(
@@ -127,10 +131,10 @@ export function crearFasesConCategorias(
 }
 
 export function describirFasesFallidas(fallidas: FaseFallida[]): string {
-  return fallidas.map((f) => `• ${f.nombre}: ${f.motivo}`).join('\n');
+  return fallidas.map((f) => `${f.nombre}: ${f.motivo}`).join('\n');
 }
 
-// ─── Plantillas ──────────────────────────────────────────────────────────────
+// Plantillas 
 
 interface PlantillaParaFilas {
   fases: {
@@ -140,14 +144,14 @@ interface PlantillaParaFilas {
   }[];
 }
 
-/** Convierte una plantilla en filas del wizard (una por categoría; una sin categoría si la fase no tiene). */
+/** Convierte una plantilla en filas del wizard (una por categoria; una sin categoria si la fase no tiene). */
 export function plantillaAFilas(plantilla: PlantillaParaFilas): FilaFormFase[] {
   const filas: FilaFormFase[] = [];
   for (const fase of plantilla.fases ?? []) {
     const nombre = fase.NombreFase || fase.IdpptoFase;
     const categorias = (fase.categorias ?? []).filter((c) => !!c.IdpptoFaseCategoria);
     if (categorias.length === 0) {
-      filas.push({ idFase: fase.IdpptoFase, nombre, idCategoria: '', categoria: '(Sin categoría)', subtotal: 0 });
+      filas.push({ idFase: fase.IdpptoFase, nombre, idCategoria: '', categoria: '(Sin categoria)', subtotal: 0 });
       continue;
     }
     for (const cat of categorias) {
@@ -168,8 +172,8 @@ const claveFila = (f: Pick<FilaFormFase, 'idFase' | 'idCategoria'>) => `${f.idFa
 /**
  * Combina las filas actuales con las de una plantilla sin duplicar.
  * - `reemplazar`: descarta las actuales.
- * - `agregar`: conserva las actuales y solo añade las filas (fase+categoría) que faltan.
- *   Si una fase ya tiene categorías, no se añade su fila "sin categoría".
+ * - `agregar`: conserva las actuales y solo anade las filas (fase+categoria) que faltan.
+ *   Si una fase ya tiene categorias, no se anade su fila "sin categoria".
  */
 export function fusionarFilasPlantilla(
   actuales: FilaFormFase[],
@@ -208,7 +212,7 @@ export function completoAFilas(completo: { fases?: any[] } | null | undefined): 
         idFase: f.IdpptoFase,
         nombre,
         idCategoria: '',
-        categoria: '(Sin categoría)',
+        categoria: '(Sin categorÃ­a)',
         subtotal: Number(f.CostoDirecto ?? 0),
         idFaseDetalle: f.id,
         codigoFaseDetalle: f.IdPresupuestoDetalle,
@@ -220,13 +224,14 @@ export function completoAFilas(completo: { fases?: any[] } | null | undefined): 
         idFase: f.IdpptoFase,
         nombre,
         idCategoria: c.IdpptoFaseCategoria || '',
-        categoria: c.Descripcion || c.CategoriaInsumo || c.IdpptoFaseCategoria || '(Sin categoría)',
+        categoria: c.Descripcion || c.CategoriaInsumo || c.IdpptoFaseCategoria || '(Sin categorÃ­a)',
         subtotal: Number(c.CostoDirecto ?? c.SubTotalCategoria ?? 0),
         idFaseDetalle: f.id,
         codigoFaseDetalle: f.IdPresupuestoDetalle,
-        idCategoriaDetalle: c.id,
+        idCategoriaDetalle: c.id, id_categoria: c.id_categoria, categoriaRealDescripcion: c.categoriaRealDescripcion || (c.categoria && c.categoria.nombre) || '',
       });
     }
   }
   return filas;
 }
+

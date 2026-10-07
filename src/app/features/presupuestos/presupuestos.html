@@ -849,7 +849,8 @@
               <tr>
                 <th class="py-2 px-3 w-8">#</th>
                 <th class="py-2 px-3">Fase / Partida</th>
-                <th class="py-2 px-3 w-44">Categoría APU</th>
+                <th class="py-2 px-3 w-64">Categoría</th>
+                <th class="py-2 px-3 w-44">Sub Fase / Partida</th>
                 <th class="py-2 px-3 text-right w-36">Subtotal CD (S/)</th>
                 <th class="py-2 px-3 text-right w-16">% Inc.</th>
                 <th class="py-2 px-3 text-center w-20">Acciones</th>
@@ -860,6 +861,11 @@
                 <tr class="hover:bg-slate-50 transition" [class.bg-emerald-50]="editingFilaIndex === i">
                   <td class="py-2 px-3 font-mono text-[#2d634d] font-bold text-[12px]">{{ (i+1) < 10 ? '0'+(i+1) : (i+1) }}</td>
                   <td class="py-2 px-3 font-medium text-slate-800">{{ fase.nombre }}</td>
+                  <td class="py-2 px-3">
+                    <div class="bg-slate-50 p-2 rounded border border-slate-100 text-[11px] font-semibold text-slate-700 whitespace-normal leading-snug">
+                      {{ fase.categoriaRealDescripcion || 'N/A' }}
+                    </div>
+                  </td>
                   <td class="py-2 px-3">
                     <span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium bg-[#529b7b]/10 text-[#2d634d] border border-[#529b7b]/25">
                       {{ fase.categoria }}
@@ -932,26 +938,43 @@
             <p class="text-[12px] uppercase tracking-wide flex items-center gap-2">
               @if (faseFormMode === 'edit-fase' || faseFormMode === 'edit-categoria') {
                 <span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-black bg-emerald-100 text-emerald-900 border border-emerald-300 shadow-2xs">
-                  ✏️ MODO EDICIÓN
+                  MODO EDICION
                 </span>
                 <span class="text-slate-900 font-extrabold text-[13px]">
-                  Editando {{ faseFormMode === 'edit-fase' ? 'Fase: ' + (editingFaseAsignada?.NombreFase || '') : 'Categoría' }}
+                  Editando {{ faseFormMode === 'edit-fase' ? 'Fase: ' + (editingFaseAsignada?.NombreFase || '') : 'Categoria' }}
                 </span>
               } @else if (editingFilaIndex !== null) {
                 <span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-black bg-emerald-100 text-emerald-900 border border-emerald-300 shadow-2xs">
-                  MODO EDICIÓN
+                  MODO EDICION
                 </span>
                 <span class="text-slate-900 font-extrabold text-[13px]">Editando fila {{ editingFilaIndex + 1 }}</span>
               } @else {
                 <span class="font-bold text-slate-600">+ Añadir nueva fase / partida</span>
               }
             </p>
-            @if (faseFormMode === 'edit-fase' || faseFormMode === 'edit-categoria' || editingFilaIndex !== null) {
-              <button (click)="cancelarEdicionFase()" type="button" 
-                      class="text-[12px] font-bold text-slate-500 hover:text-red-600 underline cursor-pointer transition">
-                ✕ Cancelar edición
-              </button>
-            }
+            <div class="flex items-center gap-3">
+              @if (faseFormMode === 'edit-fase' || faseFormMode === 'edit-categoria' || editingFilaIndex !== null) {
+                <button (click)="cancelarEdicionFase()" type="button" 
+                        class="text-[12px] font-bold text-slate-500 hover:text-red-600 underline cursor-pointer transition">
+                  ✕ Cancelar edición
+                </button>
+                <button (click)="guardarFaseCategoria()" type="button"
+                        class="px-4 py-2 rounded-lg text-[13px] bg-[#1e4838] hover:bg-[#153428] text-white font-black shadow-md flex items-center justify-center gap-1.5 whitespace-nowrap cursor-pointer transition">
+                  <svg class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path d="M5 13l4 4L19 7" stroke-linecap="round" stroke-linejoin="round" stroke-width="3"/>
+                  </svg>
+                  <span class="font-black tracking-wide">+ Guardar cambios</span>
+                </button>
+              } @else {
+                <button (click)="guardarFaseCategoria()" type="button"
+                        class="px-4 py-2 rounded-lg text-[13px] bg-[#1e4838] hover:bg-[#2d634d] text-white font-bold shadow-sm transition-all flex items-center justify-center gap-1.5 whitespace-nowrap cursor-pointer">
+                  <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path d="M12 4v16m8-8H4" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"/>
+                  </svg>
+                  <span>+ Agregar</span>
+                </button>
+              }
+            </div>
           </div>
 
                     @if (faseFormMode === 'edit-fase') {
@@ -1020,17 +1043,19 @@
             </div>
           } @else {
             <!-- MODO AGREGAR NORMAL -->
-            <div class="grid grid-cols-1 sm:grid-cols-12 gap-2.5 items-center">
-              <div class="sm:col-span-4">
+            <div class="grid grid-cols-1 sm:grid-cols-12 gap-2.5 items-end">
+              <div class="sm:col-span-3">
+                <label class="block text-[11px] font-bold text-slate-600 uppercase mb-1">Fase/partida</label>
                 <select [(ngModel)]="newFaseId" (ngModelChange)="onFaseMaestraChange()"
                         class="w-full border border-slate-300 rounded-lg px-3 py-2 text-[13px] focus:outline-none focus:ring-2 focus:ring-[#529b7b]/40 focus:border-[#529b7b] bg-white">
-                  <option value="">{{ fasesMaestras().length ? 'Seleccione Fase *' : '-- Sin fases configuradas para esta obra --' }}</option>
+                  <option value="">Seleccione Fase *</option>
                   @for (fase of fasesMaestras(); track fase.id || fase.IdpptoFase) {
                     <option [value]="fase.IdpptoFase">{{ fase.FaseProyecto || fase.IdpptoFase }}</option>
                   }
                 </select>
               </div>
               <div class="sm:col-span-3">
+                <label class="block text-[11px] font-bold text-slate-600 uppercase mb-1">Sub Fase/partida</label>
                 <select [(ngModel)]="newFaseCategoriaId" [disabled]="!newFaseId"
                         class="w-full border border-slate-300 rounded-lg px-3 py-2 text-[13px] focus:outline-none focus:ring-2 focus:ring-[#529b7b]/40 focus:border-[#529b7b] bg-white disabled:bg-slate-100 disabled:text-slate-400">
                   <option value="">{{ newFaseId ? 'Seleccione Categoría *' : 'Seleccione primero una Fase' }}</option>
@@ -1039,19 +1064,17 @@
                   }
                 </select>
               </div>
-              <div class="sm:col-span-2">
-                <input [(ngModel)]="newFaseSubtotal" type="number" placeholder="Monto S/."
-                       class="w-full border border-slate-300 rounded-lg px-3 py-2 text-[13px] focus:outline-none focus:ring-2 focus:ring-[#529b7b]/40 focus:border-[#529b7b] bg-white">
+              <div class="sm:col-span-3">
+                <label class="block text-[11px] font-bold text-slate-600 uppercase mb-1">Categoría</label>
+                <select [(ngModel)]="newFaseCategoriaRealId" [disabled]="!newFaseId" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-[13px] focus:outline-none focus:ring-2 focus:ring-[#529b7b]/40 focus:border-[#529b7b] bg-white disabled:bg-slate-100 disabled:text-slate-400">
+                  <option value="">{{ newFaseId ? 'Seleccione Categoría *' : 'Seleccione primero una Fase' }}</option>
+                  @for (cat of categoriasReal(); track cat.id) {<option [value]="cat.id">{{ cat.nombre }}</option>}
+                </select>
               </div>
               <div class="sm:col-span-3">
-                <button (click)="guardarFaseCategoria()"
-                        type="button"
-                        class="w-full px-3 py-2.5 rounded-lg text-[13px] bg-[#1e4838] hover:bg-[#2d634d] text-white font-bold shadow-sm transition-all flex items-center justify-center gap-1.5 whitespace-nowrap cursor-pointer">
-                  <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path d="M12 6v6m0 0v6m0-6h6m-6 0H6" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"/>
-                  </svg>
-                  <span class="font-bold">{{ editingFilaIndex !== null ? 'Actualizar' : 'Agregar' }}</span>
-                </button>
+                <label class="block text-[11px] font-bold text-slate-600 uppercase mb-1">Monto S/.</label>
+                <input [(ngModel)]="newFaseSubtotal" type="number" placeholder="Monto S/."
+                       class="w-full border border-slate-300 rounded-lg px-3 py-2 text-[13px] focus:outline-none focus:ring-2 focus:ring-[#529b7b]/40 focus:border-[#529b7b] bg-white">
               </div>
             </div>
           }

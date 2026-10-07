@@ -1,4 +1,4 @@
-import { Component, inject, signal, OnInit } from '@angular/core';
+﻿import { Component, inject, signal, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 
@@ -20,7 +20,7 @@ import { PresupuestosService, Plantilla } from './presupuestos.service';
 import { PresupuestoPrincipal, PaginatedResponse, DetalleFase, PresupuestoCompleto, FaseMaestra, FaseCategoriaMaestra } from './interfaces';
 import { DocumentosOrigenService } from '../documentos/documentos-origen/documentos-origen.service';
 import { DocumentoOrigenDetalleLinea } from '../documentos/documentos-origen/interfaces/documentos-origen.interface';
-import { CentrosCostosService } from '../centros-costos/centros-costos.service';
+import { CentrosCostosService } from '../centros-costos/centros-costos.service'; import { CategoriasService } from '../maestros-generales/categorias/categorias.service'; import { CategoriaSelect } from '../maestros-generales/categorias/interfaces/categorias.interface';
 import { CentroCosto, CatalogosFiltros } from '../centros-costos/interfaces/centros-costos.interface';
 
 @Component({
@@ -33,7 +33,7 @@ import { CentroCosto, CatalogosFiltros } from '../centros-costos/interfaces/cent
 })
 export class PresupuestosComponent implements OnInit {
   private presupuestosService = inject(PresupuestosService);
-  private centrosCostosService = inject(CentrosCostosService);
+  private centrosCostosService = inject(CentrosCostosService); private categoriasService = inject(CategoriasService);
   private empresasService = inject(EmpresasService);
   private router = inject(Router);
   private documentosOrigenService = inject(DocumentosOrigenService);
@@ -218,14 +218,14 @@ export class PresupuestosComponent implements OnInit {
 
   // Modelo de Fases dinámicas para Paso 2
   formFases = signal<FilaFormFase[]>([]);
-  fasesMaestras = signal<FaseMaestra[]>([]);
+  fasesMaestras = signal<FaseMaestra[]>([]); categoriasReal = signal<CategoriaSelect[]>([]);
   plantillasActivas = signal<Plantilla[]>([]);
   selectedPlantilla = signal<string>('');
   categoriasFaseMaestra = signal<FaseCategoriaMaestra[]>([]);
 
   // Quick Add para Fases
   newFaseId = '';
-  newFaseCategoriaId = '';
+  newFaseCategoriaId = ''; newFaseCategoriaRealId: number | '' = '';
   newFaseSubtotal: number | null = null;
   faseFormMode: 'new-fase' | 'new-categoria' | 'edit-fase' | 'edit-categoria' = 'new-fase';
   editingFaseAsignada: DetalleFase | null = null;
@@ -442,7 +442,7 @@ export class PresupuestosComponent implements OnInit {
 
   addFormFase() {
     const fase = this.fasesMaestras().find((item) => item.IdpptoFase === this.newFaseId);
-    const categoria = this.categoriasFaseMaestra().find((item) => item.IdpptoFaseCategoria === this.newFaseCategoriaId);
+    const categoria = this.categoriasFaseMaestra().find((item) => item.IdpptoFaseCategoria === this.newFaseCategoriaId); const catReal = this.categoriasReal().find((c) => c.id === Number(this.newFaseCategoriaRealId));
     if (!fase || !categoria) {
       alert('Seleccione una fase y su categoría.');
       return;
@@ -458,12 +458,12 @@ export class PresupuestosComponent implements OnInit {
         idFase: fase.IdpptoFase,
         nombre: fase.FaseProyecto || fase.IdpptoFase,
         idCategoria: categoria.IdpptoFaseCategoria,
-        categoria: categoria.Descripcion || categoria.IdpptoFaseCategoria,
+        categoria: categoria.Descripcion || categoria.IdpptoFaseCategoria, id_categoria: catReal?.id, categoriaRealDescripcion: catReal?.nombre || '',
         subtotal: monto
       }
     ]);
     this.newFaseId = '';
-    this.newFaseCategoriaId = '';
+    this.newFaseCategoriaId = ''; this.newFaseCategoriaRealId = '';
     this.categoriasFaseMaestra.set([]);
     this.newFaseSubtotal = null;
   }
@@ -536,7 +536,7 @@ export class PresupuestosComponent implements OnInit {
       id_empresa: ppto.id_empresa,
       CodCentroCto: ppto.CodCentroCto,
       id_centro_costo: ppto.id_centro_costo,
-      CostoDirecto: monto,
+      CostoDirecto: monto, id_categoria: this.newFaseCategoriaRealId ? Number(this.newFaseCategoriaRealId) : undefined,
     };
 
     if (this.modalFaseModo() === 'edit' && this.modalFaseData.id) {
@@ -693,7 +693,7 @@ export class PresupuestosComponent implements OnInit {
       id_empresa: ppto.id_empresa,
       CodCentroCto: ppto.CodCentroCto,
       id_centro_costo: ppto.id_centro_costo,
-      CostoDirecto: monto,
+      CostoDirecto: monto, id_categoria: this.newFaseCategoriaRealId ? Number(this.newFaseCategoriaRealId) : undefined,
       IdpptoFaseCategoria: this.modalCategoriaData.IdpptoFaseCategoria,
     };
 
@@ -782,7 +782,7 @@ export class PresupuestosComponent implements OnInit {
       id_empresa: presupuesto.id_empresa,
       CodCentroCto: presupuesto.CodCentroCto,
       id_centro_costo: presupuesto.id_centro_costo,
-      CostoDirecto: monto,
+      CostoDirecto: monto, id_categoria: this.newFaseCategoriaRealId ? Number(this.newFaseCategoriaRealId) : undefined,
     };
 
     if (this.faseFormMode === 'edit-fase' && this.editingFaseAsignada) {
@@ -851,7 +851,7 @@ export class PresupuestosComponent implements OnInit {
       idFase: faseMaestra.IdpptoFase,
       nombre: faseMaestra.FaseProyecto || faseMaestra.IdpptoFase,
       idCategoria: categoriaMaestra.IdpptoFaseCategoria,
-      subtotal: monto,
+      subtotal: monto, id_categoria: this.newFaseCategoriaRealId ? Number(this.newFaseCategoriaRealId) : undefined, categoriaRealDescripcion: this.categoriasReal().find(c => c.id === Number(this.newFaseCategoriaRealId))?.nombre || '',
     }]).pipe(finalize(() => this.loading.set(false))).subscribe({
       next: (fallidas) => {
         if (fallidas.length === 0) {
@@ -889,7 +889,7 @@ export class PresupuestosComponent implements OnInit {
     this.editingFaseAsignada = null;
     this.editingCategoriaAsignada = null;
     this.newFaseId = '';
-    this.newFaseCategoriaId = '';
+    this.newFaseCategoriaId = ''; this.newFaseCategoriaRealId = '';
     this.newFaseSubtotal = null;
     this.categoriasFaseMaestra.set([]);
     // NO llamar a closeForm() para no botar al usuario del modal
@@ -940,7 +940,7 @@ export class PresupuestosComponent implements OnInit {
 
     onFaseMaestraChange(preserveCategoriaId?: string) {
     if (!preserveCategoriaId) {
-      this.newFaseCategoriaId = '';
+      this.newFaseCategoriaId = ''; this.newFaseCategoriaRealId = '';
     }
     this.categoriasFaseMaestra.set([]);
     if (!this.newFaseId) return;
@@ -981,15 +981,15 @@ export class PresupuestosComponent implements OnInit {
     this.editingFaseAsignada = null;
     this.editingCategoriaAsignada = null;
     this.newFaseId = '';
-    this.newFaseCategoriaId = '';
+    this.newFaseCategoriaId = ''; this.newFaseCategoriaRealId = '';
     this.newFaseSubtotal = null;
     this.categoriasFaseMaestra.set([]);
     // NO llamar a closeForm()
   }
 
   
-  // ─── Filas del paso 2 (fases y categorías) ──────────────────────────────────
-  /** Índice de la fila de la tabla que se está editando en el formulario inferior. */
+  // â”€â”€â”€ Filas del paso 2 (fases y categorías) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  /** indice de la fila de la tabla que se está editando en el formulario inferior. */
   editingFilaIndex: number | null = null;
 
   /** true si el wizard edita un presupuesto ya guardado: los cambios de fases se guardan al momento. */
@@ -1033,7 +1033,7 @@ export class PresupuestosComponent implements OnInit {
     this.newFaseId = fila.idFase;
     this.newFaseSubtotal = Number(fila.subtotal) || 0;
     this.onFaseMaestraChange(fila.idCategoria || undefined);
-    if (!fila.idCategoria) this.newFaseCategoriaId = '';
+    if (!fila.idCategoria) this.newFaseCategoriaId = ''; this.newFaseCategoriaRealId = '';
   }
 
   removeFormFase(index: number) {
@@ -1070,8 +1070,8 @@ export class PresupuestosComponent implements OnInit {
 
   /**
    * Presupuesto guardado: mueve una fila a otra fase.
-   * - Si la fase origen solo tiene esta fila y la destino no existe → se cambia la fase en sitio.
-   * - Si no → se crea la fila en la fase destino (reutilizándola si ya existe) y se borra del origen.
+   * - Si la fase origen solo tiene esta fila y la destino no existe â†’ se cambia la fase en sitio.
+   * - Si no â†’ se crea la fila en la fase destino (reutilizándola si ya existe) y se borra del origen.
    */
   private moverFilaAOtraFase(fila: FilaFormFase, idFase: string, idCategoria: string, monto: number) {
     const presupuesto = this.presupuestoActivo()!;
@@ -1095,7 +1095,7 @@ export class PresupuestosComponent implements OnInit {
         pasos = cambiarFase.pipe(concatMap(() => api.updateCategoriaAsignada(fila.idCategoriaDetalle!, {
           IdpptoFase: idFase,
           ...(idCategoria ? { IdpptoFaseCategoria: idCategoria } : {}),
-          CostoDirecto: monto,
+          CostoDirecto: monto, id_categoria: this.newFaseCategoriaRealId ? Number(this.newFaseCategoriaRealId) : undefined,
         })));
       } else if (idCategoria) {
         pasos = cambiarFase.pipe(concatMap(() => api.createCategoriaAsignada({
@@ -1104,7 +1104,7 @@ export class PresupuestosComponent implements OnInit {
           IdPresupuestoDetalle: fila.codigoFaseDetalle,
           IdPresupuestoDetalleCategoria: `DFC-${Date.now()}`,
           IdpptoFaseCategoria: idCategoria,
-          CostoDirecto: monto,
+          CostoDirecto: monto, id_categoria: this.newFaseCategoriaRealId ? Number(this.newFaseCategoriaRealId) : undefined,
         })));
       } else {
         pasos = cambiarFase;
@@ -1120,7 +1120,7 @@ export class PresupuestosComponent implements OnInit {
             IdPresupuestoDetalle: destino.codigoFaseDetalle,
             IdPresupuestoDetalleCategoria: `DFC-${Date.now()}`,
             IdpptoFaseCategoria: idCategoria,
-            CostoDirecto: monto,
+            CostoDirecto: monto, id_categoria: this.newFaseCategoriaRealId ? Number(this.newFaseCategoriaRealId) : undefined,
           })
           : of(null);
       } else {
@@ -1185,7 +1185,7 @@ export class PresupuestosComponent implements OnInit {
         idCategoria,
         categoria: categoria?.Descripcion
           || (idCategoria ? (idCategoria === fila.idCategoria ? fila.categoria : idCategoria) : '(Sin categoría)'),
-        subtotal: monto,
+        subtotal: monto, id_categoria: this.newFaseCategoriaRealId ? Number(this.newFaseCategoriaRealId) : undefined, categoriaRealDescripcion: this.categoriasReal().find(c => c.id === Number(this.newFaseCategoriaRealId))?.nombre || '',
       }));
       this.cancelarEdicionFase();
       return;
@@ -1200,7 +1200,7 @@ export class PresupuestosComponent implements OnInit {
       }
       peticion = this.presupuestosService.updateCategoriaAsignada(fila.idCategoriaDetalle, {
         IdpptoFaseCategoria: idCategoria,
-        CostoDirecto: monto,
+        CostoDirecto: monto, id_categoria: this.newFaseCategoriaRealId ? Number(this.newFaseCategoriaRealId) : undefined,
       });
     } else if (idCategoria) {
       // Fase guardada sin categorías: se le añade la categoría elegida.
@@ -1213,7 +1213,7 @@ export class PresupuestosComponent implements OnInit {
         IdPresupuestoDetalle: fila.codigoFaseDetalle,
         IdPresupuestoDetalleCategoria: `DFC-${Date.now()}`,
         IdpptoFaseCategoria: idCategoria,
-        CostoDirecto: monto,
+        CostoDirecto: monto, id_categoria: this.newFaseCategoriaRealId ? Number(this.newFaseCategoriaRealId) : undefined,
       });
     } else {
       peticion = this.presupuestosService.updateFaseAsignada(fila.idFaseDetalle!, { CostoDirecto: monto });
@@ -1580,7 +1580,7 @@ export class PresupuestosComponent implements OnInit {
           this.loading.set(false);
           this.closeForm();
           this.recargarPresupuestosDelCCActual();
-          this.loadCentrosCostos();
+          this.loadCentrosCostos(); this.categoriasService.getSelect().subscribe(c => this.categoriasReal.set(c));
           alert(`? Presupuesto ${payload.IdPresupuesto} actualizado con éxito.`);
         },
         error: (err) => {
@@ -1608,7 +1608,7 @@ export class PresupuestosComponent implements OnInit {
         next: (fallidas) => {
           this.closeForm();
           this.recargarPresupuestosDelCCActual();
-          this.loadCentrosCostos();
+          this.loadCentrosCostos(); this.categoriasService.getSelect().subscribe(c => this.categoriasReal.set(c));
           if (fallidas.length === 0) {
             alert(`Presupuesto ${pptoCode} guardado y emitido con éxito.`);
           } else {
@@ -1639,7 +1639,7 @@ export class PresupuestosComponent implements OnInit {
     this.loadCatalogos();
     this.loadEmpresas();
     this.loadFasesMaestras();
-    this.loadCentrosCostos();
+    this.loadCentrosCostos(); this.categoriasService.getSelect().subscribe(c => this.categoriasReal.set(c));
 
     const navigationState = this.router.getCurrentNavigation()?.extras.state ?? history.state;
     const fromCC = navigationState?.['fromCC'] as CentroCosto | undefined;
@@ -1692,8 +1692,8 @@ export class PresupuestosComponent implements OnInit {
 
   /**
    * Destino de la plantilla:
-   * - wizard de presupuesto nuevo → filas locales (se guardan al emitir el presupuesto);
-   * - wizard de edición o panel principal → se aplica en el servidor sobre el presupuesto activo.
+   * - wizard de presupuesto nuevo â†’ filas locales (se guardan al emitir el presupuesto);
+   * - wizard de edición o panel principal â†’ se aplica en el servidor sobre el presupuesto activo.
    */
   get plantillaVaAlServidor(): boolean {
     return this.showForm() ? this.fasesPersistidas : !!this.presupuestoActivo();
@@ -2050,7 +2050,7 @@ export class PresupuestosComponent implements OnInit {
   }
 
   // ==========================================
-  // MODAL "FASES Y ANÁLISIS DE COSTOS APU" (acordeón)
+  // MODAL "FASES Y ANALISIS DE COSTOS APU" (acordeón)
   // ==========================================
   showFasesModal = signal(false);
 
@@ -2217,3 +2217,4 @@ export class PresupuestosComponent implements OnInit {
     }
   }
 }
+
