@@ -495,6 +495,19 @@ export class PresupuestosComponent implements OnInit {
     this.abrirModalCategoria('edit', categoria);
   }
 
+    actualizarCategoriaReal(fase: any, event: Event) {
+    const select = event.target as HTMLSelectElement;
+    const realId = select.value && select.value !== 'undefined' ? Number(select.value) : undefined;
+    fase.id_categoria = realId;
+    if (realId) {
+      const realDesc = this.categoriasReal().find((c: any) => c.id === realId)?.nombre || '';
+      fase.categoriaRealDescripcion = realDesc;
+    } else {
+      fase.categoriaRealDescripcion = undefined;
+    }
+    this.formFases.set([...this.formFases()]); // trigger reactivity
+  }
+
   abrirModalFase(modo: 'new' | 'edit', fase?: DetalleFase) {
     const ppto = this.presupuestoActivo();
     if (!ppto) {
