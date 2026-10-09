@@ -33,6 +33,7 @@
   <ng-template #row let-item>
     <tr>
       <td>{{ item.id }}</td>
+      <td><span class="text-sm text-slate-500 font-medium">{{ getEmpresaNombre(item.id_empresa) }}</span></td>
       <td><strong>{{ item.codigo }}</strong></td>
       <td>{{ item.nombre }}</td>
       <td align="center">
@@ -70,6 +71,16 @@
     <div class="form-group">
       <label for="alm-nombre">Nombre <span class="required">*</span></label>
       <input id="alm-nombre" class="form-control" formControlName="nombre" placeholder="Almacén General" />
+    </div>
+    
+    <div class="form-group">
+      <label for="alm-empresa">Empresa</label>
+      <select id="alm-empresa" class="form-control" formControlName="id_empresa">
+        <option [ngValue]="null">Todas las empresas</option>
+        @for (emp of empresas(); track emp.id) {
+          <option [ngValue]="emp.id">{{ emp.razon_social || emp.RazonSocial }}</option>
+        }
+      </select>
     </div>
     <div class="form-group">
       <label>

@@ -6,6 +6,8 @@ import { DataTable } from '../../../shared/interfaces';
 import { AlmacenService } from '../almacen.service';
 import { Almacen } from '../almacen.models';
 import { errorMessage } from '../almacen.utils';
+import { EmpresasService } from '../../administration/empresas/empresas.service';
+import { Empresa } from '../../administration/empresas/interfaces';
 
 @Component({
   selector: 'app-almacenes',
@@ -16,9 +18,11 @@ import { errorMessage } from '../almacen.utils';
 })
 export class AlmacenesComponent {
   private readonly service = inject(AlmacenService);
+  private readonly empresasService = inject(EmpresasService);
 
   protected readonly columns: DataTable[] = [
     { label: 'ID', width: '60px' },
+    { label: 'Empresa', width: '200px' },
     { label: 'Código', width: '160px' },
     { label: 'Nombre' },
     { label: 'Estado', align: 'center', width: '100px' },
@@ -26,6 +30,7 @@ export class AlmacenesComponent {
   ];
 
   protected readonly items = signal<Almacen[]>([]);
+  protected readonly empresas = signal<Empresa[]>([]);
   protected readonly total = signal(0);
   protected readonly page = signal(1);
   protected readonly pageSize = signal(20);
@@ -39,10 +44,12 @@ export class AlmacenesComponent {
     codigo: new FormControl('', { nonNullable: true, validators: [Validators.required, Validators.maxLength(20)] }),
     nombre: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
     estado: new FormControl(true, { nonNullable: true }),
+    id_empresa: new FormControl<number | null>(null),
   });
 
   constructor() {
     this.load();
+    this.empresasService.getAll().subscribe(res => this.empresas.set(res));
   }
 
   protected load(): void {
@@ -61,6 +68,12 @@ export class AlmacenesComponent {
     });
   }
 
+  protected getEmpresaNombre(id_empresa: number | null): string {
+    if (!id_empresa) return '—';
+    const emp = this.empresas().find(e => e.id === id_empresa);
+    return emp ? (emp.razon_social || emp.RazonSocial || 'Desconocida') : '—';
+  }
+
   protected onPageChange(page: number): void {
     this.page.set(page);
     this.load();
@@ -74,14 +87,14 @@ export class AlmacenesComponent {
 
   protected openCreate(): void {
     this.editingId.set(null);
-    this.form.reset({ codigo: '', nombre: '', estado: true });
+    this.form.reset({ codigo: '', nombre: '', estado: true, id_empresa: null });
     this.formError.set('');
     this.isModalOpen.set(true);
   }
 
   protected openEdit(item: Almacen): void {
     this.editingId.set(item.id);
-    this.form.reset({ codigo: item.codigo, nombre: item.nombre, estado: item.estado });
+    this.form.reset({ codigo: item.codigo, nombre: item.nombre, estado: item.estado, id_empresa: item.id_empresa });
     this.formError.set('');
     this.isModalOpen.set(true);
   }
@@ -97,7 +110,7 @@ export class AlmacenesComponent {
       return;
     }
     const value = this.form.getRawValue();
-    const payload = { codigo: value.codigo.trim(), nombre: value.nombre.trim(), estado: value.estado };
+    const payload = { codigo: value.codigo.trim(), nombre: value.nombre.trim(), estado: value.estado, id_empresa: value.id_empresa };
     const id = this.editingId();
     this.isSaving.set(true);
     const request$ = id === null ? this.service.createAlmacen(payload) : this.service.updateAlmacen(id, payload);
