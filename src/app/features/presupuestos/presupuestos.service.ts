@@ -32,6 +32,8 @@ export interface PlantillaCategoriaDto {
   IdpptoFaseCategoria: string;
   NombreCategoria?: string;
   CostoReferencial?: number;
+  id_categoria?: number;
+  categoria?: { id: number; descripcion: string };
 }
 
 export interface Plantilla {

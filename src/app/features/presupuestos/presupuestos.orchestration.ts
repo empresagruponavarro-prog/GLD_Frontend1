@@ -1,6 +1,6 @@
 import { Observable, catchError, concat, concatMap, defer, map, of, toArray } from 'rxjs';
 
-/** Subconjunto de PresupuestosService que usa la orquestación (facilita simularlo en tests). */
+/** Subconjunto de PresupuestosService que usa la orquestaciÃ³n (facilita simularlo en tests). */
 export interface FasesCategoriasWriter {
   createFaseAsignada(data: any): Observable<any>;
   createCategoriaAsignada(data: any): Observable<any>;
@@ -24,9 +24,9 @@ export interface FaseFallida {
 
 /**
  * Fila del paso "Fases y costos" del wizard (una fila = fase + categoria).
- * - `idCategoriaDetalle`: id numérico de la categoria ya guardada (ppto_DetalleFasesCate).
- * - `idFaseDetalle`: id numérico de la fase ya guardada (ppto_DetalleFases).
- * Si no tiene ninguno de los dos, la fila aún no existe en el servidor.
+ * - `idCategoriaDetalle`: id numerico de la categoria ya guardada (ppto_DetalleFasesCate).
+ * - `idFaseDetalle`: id numerico de la fase ya guardada (ppto_DetalleFases).
+ * Si no tiene ninguno de los dos, la fila aun no existe en el servidor.
  */
 export interface FilaFormFase {
   idFase: string;
@@ -48,7 +48,7 @@ export function mensajeDeError(error: any): string {
   return error?.error?.message || error?.message || 'Error desconocido';
 }
 
-/** Agrupa las filas por fase conservando el orden de aparición. */
+/** Agrupa las filas por fase conservando el orden de apariciÃ³n. */
 function agruparPorFase(items: FaseCategoriaAGuardar[]): FaseCategoriaAGuardar[][] {
   const grupos = new Map<string, FaseCategoriaAGuardar[]>();
   for (const item of items) {
@@ -60,17 +60,17 @@ function agruparPorFase(items: FaseCategoriaAGuardar[]): FaseCategoriaAGuardar[]
 }
 
 /**
- * Crea, en orden, cada fase (una sola vez por `idFase`) y luego sus categorías:
- * fase 1 ? categorías de la fase 1 ? fase 2 ? ...
+ * Crea, en orden, cada fase (una sola vez por `idFase`) y luego sus categorÃ­as:
+ * fase 1 â†’ categorÃ­as de la fase 1 â†’ fase 2 â†’ ...
  *
  * - El costo directo de la fase es la suma de sus filas.
- * - Las filas sin `idCategoria` solo aportan la fase (no se crea una categoría vacía).
- * - Las categorías repetidas dentro de una misma fase se escriben una sola vez.
- * - Un fallo no detiene las siguientes fases; se devuelve la lista de fallos (vacía si todo
+ * - Las filas sin `idCategoria` solo aportan la fase (no se crea una categorÃ­a vacÃ­a).
+ * - Las categorÃ­as repetidas dentro de una misma fase se escriben una sola vez.
+ * - Un fallo no detiene las siguientes fases; se devuelve la lista de fallos (vacÃ­a si todo
  *   se escribio). Emite una sola vez, al terminar todas las escrituras.
  *
- * Los IDs generados en el cliente comparten un mismo sello de tiempo más el índice, de modo
- * que son únicos dentro de la operación (hasta que exista el endpoint transaccional, DATA-11).
+ * Los IDs generados en el cliente comparten un mismo sello de tiempo mÃ¡s el Ã­ndice, de modo
+ * que son Ãºnicos dentro de la operaciÃ³n (hasta que exista el endpoint transaccional, DATA-11).
  */
 export function crearFasesConCategorias(
   api: FasesCategoriasWriter,

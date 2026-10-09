@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { DragDropModule, CdkDragDrop, moveItemInArray } from '@angular/cdk/drag-drop';
 import { FormsModule } from '@angular/forms';
 import { Observable, of, switchMap, map } from 'rxjs';
+import { CategoriasService } from '../../maestros-generales/categorias/categorias.service';
 import { PresupuestosService, Plantilla, PlantillaCompleta, PlantillaFaseDto, PlantillaCategoriaDto, FaseMaestra, FaseCategoriaMaestra } from '../presupuestos.service';
 
 @Component({
@@ -13,6 +14,7 @@ import { PresupuestosService, Plantilla, PlantillaCompleta, PlantillaFaseDto, Pl
 })
 export class MantenimientoPlantillasComponent implements OnInit {
   private service = inject(PresupuestosService);
+  private categoriasService = inject(CategoriasService);
 
   plantillas = signal<Plantilla[]>([]);
   selectedPlantilla = signal<PlantillaCompleta | null>(null);
@@ -51,6 +53,11 @@ export class MantenimientoPlantillasComponent implements OnInit {
 
   showFaseModal = signal(false);
   showCategoriaModal = signal(false);
+  categoriasDisponiblesModal = signal<any[]>([]);
+  categoriasReal = signal<any[]>([]);
+  selectedCategoriaReal = signal<number | string>('');
+  modalCategoriaModo = signal<'new' | 'edit'>('new');
+  modalCategoriaData = { id: 0, idx: -1 };
   targetFaseForCat = signal<PlantillaFaseDto | null>(null);
 
   selectedFaseMaestra = signal<string>('');
@@ -70,6 +77,7 @@ export class MantenimientoPlantillasComponent implements OnInit {
   }
 
   loadCatalogos() {
+    this.categoriasService.getSelect().subscribe((c: any) => this.categoriasReal.set(c));
     this.service.getFasesMaestras().subscribe(res => {
       const raw = res as FaseMaestra[] | { data: FaseMaestra[] };
       const f: FaseMaestra[] = Array.isArray(raw) ? raw : (raw as { data: FaseMaestra[] }).data ?? [];
@@ -227,10 +235,34 @@ export class MantenimientoPlantillasComponent implements OnInit {
     this.showFaseModal.set(false);
   }
 
-  addCategoria(fase: PlantillaFaseDto) {
+    abrirModalCategoria(modo: 'new' | 'edit', fase: PlantillaFaseDto, cat?: any) {
     this.targetFaseForCat.set(fase);
-    this.selectedCategoriaMaestra.set('');
+    this.modalCategoriaModo.set(modo);
+    
+    if (modo === 'edit' && cat) {
+      this.selectedCategoriaMaestra.set(cat.IdpptoFaseCategoria || '');
+      this.selectedCategoriaReal.set(cat.id_categoria || '');
+      const idx = fase.categorias.findIndex((c: any) => c === cat);
+      this.modalCategoriaData = { id: cat.id, idx };
+    } else {
+      this.selectedCategoriaMaestra.set('');
+      this.selectedCategoriaReal.set('');
+      this.modalCategoriaData = { id: 0, idx: -1 };
+    }
+
+    this.categoriasDisponiblesModal.set([]);
+    this.service.getCategoriasDeFase(fase.IdpptoFase).subscribe({
+      next: (res: any) => {
+        const list = Array.isArray(res) ? res : (res.data || []);
+        this.categoriasDisponiblesModal.set(list.filter((c: any) => c.IdpptoFase === fase.IdpptoFase));
+      },
+      error: () => this.categoriasDisponiblesModal.set([])
+    });
     this.showCategoriaModal.set(true);
+  }
+
+  addCategoria(fase: PlantillaFaseDto) {
+    this.abrirModalCategoria('new', fase);
   }
 
   confirmAddCategoria() {
@@ -238,15 +270,27 @@ export class MantenimientoPlantillasComponent implements OnInit {
     const idCat = this.selectedCategoriaMaestra();
     if (!fase || !idCat) return;
 
-    const catName = this.categoriasMaestras().find(c => c.IdpptoFaseCategoria === idCat)?.Descripcion || 'Cat Desconocida';
+    const catName = this.categoriasDisponiblesModal().find((c: any) => c.IdpptoFaseCategoria === idCat)?.Descripcion || 'Cat Desconocida';
+    const realId = this.selectedCategoriaReal() ? Number(this.selectedCategoriaReal()) : undefined;
+    const realDesc = this.categoriasReal().find((c: any) => c.id === realId)?.nombre || '';
     
-    fase.categorias.push({
-      id: 0,
-      IdPlantillaFase: fase.IdPlantillaFase ? fase.IdPlantillaFase : undefined as any,
-      IdpptoFaseCategoria: idCat,
-      NombreCategoria: catName,
-      CostoReferencial: 0
-    });
+    if (this.modalCategoriaModo() === 'edit' && this.modalCategoriaData.idx >= 0) {
+      fase.categorias[this.modalCategoriaData.idx].IdpptoFaseCategoria = idCat;
+      fase.categorias[this.modalCategoriaData.idx].NombreCategoria = catName;
+      fase.categorias[this.modalCategoriaData.idx].id_categoria = realId;
+      fase.categorias[this.modalCategoriaData.idx].categoria = realId ? { id: realId, descripcion: realDesc } : undefined;
+    } else {
+      fase.categorias.push({
+        id: 0,
+        IdPlantillaFase: fase.IdPlantillaFase ? fase.IdPlantillaFase : undefined as any,
+        IdpptoFaseCategoria: idCat,
+        NombreCategoria: catName,
+        CostoReferencial: 0,
+        id_categoria: realId,
+        categoria: realId ? { id: realId, descripcion: realDesc } : undefined
+      });
+    }
+    
     this.selectedPlantilla.set(JSON.parse(JSON.stringify(this.selectedPlantilla())));
     this.showCategoriaModal.set(false);
   }
@@ -254,6 +298,19 @@ export class MantenimientoPlantillasComponent implements OnInit {
   cancelAddCategoria() {
     this.showCategoriaModal.set(false);
     this.targetFaseForCat.set(null);
+  }
+
+    actualizarCategoriaReal(cat: any, event: Event) {
+    const select = event.target as HTMLSelectElement;
+    const realId = select.value && select.value !== 'undefined' ? Number(select.value) : undefined;
+    cat.id_categoria = realId;
+    if (realId) {
+      const realDesc = this.categoriasReal().find((c: any) => c.id === realId)?.nombre || '';
+      cat.categoria = { id: realId, descripcion: realDesc };
+    } else {
+      cat.categoria = undefined;
+    }
+    this.selectedPlantilla.set(JSON.parse(JSON.stringify(this.selectedPlantilla())));
   }
 
   removeFase(fase: PlantillaFaseDto) {

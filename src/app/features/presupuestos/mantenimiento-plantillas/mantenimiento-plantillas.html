@@ -222,7 +222,7 @@
                   </button>
 
                   <!-- Añadir Categoría -->
-                  <button type="button" title="Añadir Categoría" (click)="addCategoria(fase)" class="p-1.5 rounded-lg text-emerald-600 hover:text-emerald-800 hover:bg-emerald-50 active:scale-95 transition-all cursor-pointer">
+                  <button type="button" title="Añadir Sub Fase" (click)="addCategoria(fase)" class="p-1.5 rounded-lg text-emerald-600 hover:text-emerald-800 hover:bg-emerald-50 active:scale-95 transition-all cursor-pointer">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path></svg>
                   </button>
                 </div>
@@ -233,7 +233,8 @@
                 <table class="w-full text-left border-collapse">
                   <thead>
                     <tr class="border-b border-slate-100 bg-slate-50/70 text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
-                      <th scope="col" class="py-2.5 px-5">Nombre de la Categoría</th>
+                      <th scope="col" class="py-2.5 px-5">Categoría</th>
+                      <th scope="col" class="py-2.5 px-5">Sub Fase / Partida</th>
                       <th scope="col" class="w-48 py-2.5 px-3 text-right">Costo Referencial (S/)</th>
                       <th scope="col" class="w-16 py-2.5 pr-4 text-center">ACCIONES</th>
                     </tr>
@@ -250,9 +251,19 @@
                                 <path d="M7 19v-2h2v2H7zm0-6v-2h2v2H7zm0-6V5h2v2H7zm6 12v-2h2v2h-2zm0-6v-2h2v2h-2zm0-6V5h2v2h-2z"></path>
                               </svg>
                             </div>
-                            <span class="font-bold text-slate-800">{{ cat.NombreCategoria || cat.IdpptoFaseCategoria }}</span>
-                            <span class="text-[10px] font-mono text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded">{{ cat.IdpptoFaseCategoria }}</span>
+                            <select [(ngModel)]="cat.id_categoria" (change)="actualizarCategoriaReal(cat, $event)" class="bg-slate-50 p-1.5 rounded border border-slate-200 text-[11px] font-semibold text-slate-700 whitespace-normal leading-snug w-full min-w-[200px] focus:ring-1 focus:ring-[#529b7b] focus:border-[#529b7b] outline-none">
+                              <option [ngValue]="undefined">-- Seleccione Categoría --</option>
+                              <option [ngValue]="null">-- Seleccione Categoría --</option>
+                              @for (cr of categoriasReal(); track cr.id) {
+                                <option [ngValue]="cr.id">{{ cr.nombre || cr.descripcion }}</option>
+                              }
+                            </select>
                           </div>
+                        </td>
+                        <td class="py-3 px-5">
+                          <span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium bg-[#529b7b]/10 text-[#2d634d] border border-[#529b7b]/25 uppercase">
+                            {{ cat.NombreCategoria || cat.IdpptoFaseCategoria }}
+                          </span>
                         </td>
                         <td class="py-3 px-3 text-right">
                           <div class="inline-flex items-center relative">
@@ -262,13 +273,17 @@
                         </td>
                         <td class="py-3 pr-4 text-center">
                           <div class="flex items-center justify-center space-x-2">
+                            <!-- Editar -->
+                            <button type="button" title="Editar Sub Fase" (click)="abrirModalCategoria('edit', fase, cat)" class="p-1 rounded text-slate-400 hover:text-slate-700 hover:bg-slate-100 active:scale-95 transition-all cursor-pointer">
+                              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
+                            </button>
                             <!-- Eliminar -->
                             <button type="button" title="Eliminar" (click)="removeCategoria(fase, cat)" class="p-1 rounded text-slate-500 hover:text-rose-600 hover:bg-rose-50 active:scale-95 transition-all cursor-pointer">
                               <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
                             </button>
 
                             <!-- Añadir Categoría (+) -->
-                            <button type="button" title="Añadir Categoría" (click)="addCategoria(fase)" class="p-1 rounded text-emerald-600 hover:text-emerald-800 hover:bg-emerald-50 active:scale-95 transition-all cursor-pointer">
+                            <button type="button" title="Añadir Sub Fase" (click)="addCategoria(fase)" class="p-1 rounded text-emerald-600 hover:text-emerald-800 hover:bg-emerald-50 active:scale-95 transition-all cursor-pointer">
                               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"></path></svg>
                             </button>
                           </div>
@@ -458,22 +473,19 @@
     <div class="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/50 backdrop-blur-sm">
       <div class="bg-white rounded-xl shadow-2xl w-full max-w-md overflow-hidden flex flex-col">
         <div class="px-6 py-4 border-b border-slate-200 bg-slate-50">
-          <h3 class="font-bold text-slate-800 text-lg">Añadir Categoría</h3>
+          <h3 class="font-bold text-slate-800 text-lg">{{ modalCategoriaModo() === 'edit' ? 'Editar Sub Fase' : 'Añadir Sub Fase' }}</h3>
           <p class="text-xs text-slate-500 mt-1">A la fase: {{ targetFaseForCat()?.NombreFase }}</p>
         </div>
         <div class="p-6">
           <select [(ngModel)]="selectedCategoriaMaestra" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm text-slate-700 bg-white focus:ring-2 focus:ring-[#0e5941]/20 focus:border-[#0e5941] outline-none h-48" size="10">
-            @for (c of categoriasMaestras(); track c.IdpptoFaseCategoria) {
-              <!-- Filtrar categorias por la fase objetivo -->
-              @if (c.IdpptoFase === targetFaseForCat()?.IdpptoFase) {
-                <option [value]="c.IdpptoFaseCategoria">{{ c.IdpptoFaseCategoria }} - {{ c.Descripcion }}</option>
-              }
+            @for (c of categoriasDisponiblesModal(); track c.IdpptoFaseCategoria) {
+              <option [value]="c.IdpptoFaseCategoria">{{ c.IdpptoFaseCategoria }} - {{ c.Descripcion }}</option>
             }
           </select>
         </div>
         <div class="px-6 py-4 bg-slate-50 border-t border-slate-200 flex justify-end space-x-3">
           <button type="button" (click)="cancelAddCategoria()" class="px-4 py-2 rounded-lg text-slate-600 bg-white border border-slate-300 hover:bg-slate-50 font-medium text-sm transition-colors cursor-pointer">Cancelar</button>
-          <button type="button" (click)="confirmAddCategoria()" [disabled]="!selectedCategoriaMaestra()" class="px-4 py-2 rounded-lg text-white bg-[#0e5941] hover:bg-[#0a4231] disabled:opacity-50 disabled:cursor-not-allowed font-medium text-sm transition-colors cursor-pointer">Añadir Categoría</button>
+          <button type="button" (click)="confirmAddCategoria()" [disabled]="!selectedCategoriaMaestra()" class="px-4 py-2 rounded-lg text-white bg-[#0e5941] hover:bg-[#0a4231] disabled:opacity-50 disabled:cursor-not-allowed font-medium text-sm transition-colors cursor-pointer">{{ modalCategoriaModo() === 'edit' ? 'Guardar Cambios' : 'Añadir Sub Fase' }}</button>
         </div>
       </div>
     </div>
