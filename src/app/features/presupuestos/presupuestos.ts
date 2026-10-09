@@ -1779,7 +1779,7 @@ export class PresupuestosComponent implements OnInit {
 
   loadPlantillasActivas() {
     this.presupuestosService.getPlantillasActivas().subscribe({
-      next: (res) => this.plantillasActivas.set(res),
+      next: (res) => this.plantillasActivas.set(res.filter(p => p.Activo === true)),
       error: (err) => console.error('Error cargando plantillas', err)
     });
   }
