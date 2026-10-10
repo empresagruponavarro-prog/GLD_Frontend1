@@ -301,43 +301,57 @@
         </button>
       </p>
 
-      <div class="detalle-list">
-        @for (d of detalles(); track $index; let i = $index) {
-          <div class="detalle-row">
-            <div class="form-group detalle-producto">
-              <label>Producto/Servicio</label>
-              @if (d.etiqueta) {
-                <input class="form-control" [value]="d.etiqueta" readonly [attr.aria-label]="'Ítem ' + (i + 1)" />
-                @if (d.maximo !== undefined) {
-                  <small class="detalle-hint">Máximo a ordenar: {{ d.maximo }}</small>
-                }
-              } @else {
-              <select class="form-control" [ngModel]="d.id_producto" (ngModelChange)="updateDetalle(i, 'id_producto', $event)" [name]="'id_producto_' + i">
-                <option [ngValue]="0">Seleccione...</option>
-                @for (p of productos(); track p.id) {
-                  <option [ngValue]="p.id">
-                    {{ p.descripcion }}
-                  </option>
-                }
-              </select>
-              }
-            </div>
-
-            <div class="form-group">
-              <label>Cantidad</label>
-              <input type="number" class="form-control" step="any" min="0" [(ngModel)]="d.cantidad" (ngModelChange)="onDetalleChange()" [name]="'cantidad_' + i" [disabled]="recepcionBloqueada()" />
-            </div>
-
-            <div class="form-group">
-              <label>Precio</label>
-              <input type="number" class="form-control" step="any" min="0" [(ngModel)]="d.precio" (ngModelChange)="onDetalleChange()" [name]="'precio_' + i" [disabled]="recepcionBloqueada()" />
-            </div>
-
-            <button class="detalle-remove-btn" type="button" (click)="removeDetalle(i)" title="Quitar" [disabled]="recepcionBloqueada()">
-              <i class="fa-solid fa-trash"></i>
-            </button>
-          </div>
-        }
+      <div class="detalle-table-wrap">
+        <table class="detalle-table">
+          <thead>
+            <tr>
+              <th class="detalle-table__num">#</th>
+              <th>Producto / Servicio</th>
+              <th class="detalle-table__qty">Cantidad</th>
+              <th class="detalle-table__price">Precio</th>
+              <th class="detalle-table__sub">Subtotal</th>
+              <th class="detalle-table__act"></th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (d of detalles(); track $index; let i = $index) {
+              <tr>
+                <td class="detalle-table__num">{{ i + 1 }}</td>
+                <td>
+                  @if (d.etiqueta) {
+                    <input class="form-control" [value]="d.etiqueta" readonly [attr.aria-label]="'Ítem ' + (i + 1)" />
+                    @if (d.maximo !== undefined) {
+                      <small class="detalle-hint">Máximo a ordenar: {{ d.maximo }}</small>
+                    }
+                  } @else {
+                    <select class="form-control" [ngModel]="d.id_producto" (ngModelChange)="updateDetalle(i, 'id_producto', $event)" [name]="'id_producto_' + i" [attr.aria-label]="'Producto o servicio ' + (i + 1)">
+                      <option [ngValue]="0">Seleccione...</option>
+                      @for (p of productos(); track p.id) {
+                        <option [ngValue]="p.id">{{ p.descripcion }}</option>
+                      }
+                    </select>
+                  }
+                </td>
+                <td class="detalle-table__qty">
+                  <input type="number" class="form-control" step="any" min="0" [(ngModel)]="d.cantidad" (ngModelChange)="onDetalleChange()" [name]="'cantidad_' + i" [disabled]="recepcionBloqueada()" [attr.aria-label]="'Cantidad ' + (i + 1)" />
+                </td>
+                <td class="detalle-table__price">
+                  <input type="number" class="form-control" step="any" min="0" [(ngModel)]="d.precio" (ngModelChange)="onDetalleChange()" [name]="'precio_' + i" [disabled]="recepcionBloqueada()" [attr.aria-label]="'Precio ' + (i + 1)" />
+                </td>
+                <td class="detalle-table__sub">{{ (d.cantidad || 0) * (d.precio || 0) | number:'1.2-2' }}</td>
+                <td class="detalle-table__act">
+                  <button class="detalle-remove-btn" type="button" (click)="removeDetalle(i)" title="Quitar" [disabled]="recepcionBloqueada()">
+                    <i class="fa-solid fa-trash"></i>
+                  </button>
+                </td>
+              </tr>
+            } @empty {
+              <tr>
+                <td colspan="6" class="detalle-table__empty">Aún no agregó productos o servicios.</td>
+              </tr>
+            }
+          </tbody>
+        </table>
       </div>
 
       <div class="detalle-total">
