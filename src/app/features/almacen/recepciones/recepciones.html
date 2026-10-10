@@ -1,0 +1,164 @@
+<div class="content-header">
+  <div>
+    <h1 class="content-title">Recepción de compras</h1>
+    <p class="content-subtitle">Interne al almacén los productos de una orden de compra. Los servicios no ingresan a almacén.</p>
+  </div>
+  <div style="display: flex; gap: 0.5rem; align-items: center">
+    <button class="btn btn-secondary" type="button" (click)="load()" [disabled]="isLoading()">
+      <i class="fa-solid fa-arrows-rotate" [class.fa-spin]="isLoading()"></i>
+      {{ isLoading() ? 'Cargando...' : 'Actualizar' }}
+    </button>
+  </div>
+</div>
+
+<div class="content-body">
+  @if (message()) {
+    <p class="badge badge-completed" role="status" style="margin-bottom: 0.75rem">{{ message() }}</p>
+  }
+
+  <section class="toolbar-shell">
+    <div class="toolbar-filters-row">
+      <div class="toolbar-filters-left">
+        <input
+          type="text"
+          class="toolbar-select"
+          placeholder="Buscar por número o ID de la OC..."
+          maxlength="100"
+          [value]="search()"
+          (input)="onSearch($any($event.target).value)"
+        />
+      </div>
+      <div class="toolbar-meta"><span>Pendientes</span><strong>{{ items().length }}</strong><span>órdenes</span></div>
+    </div>
+  </section>
+
+  <app-data-table
+    [columns]="columns"
+    [items]="items()"
+    [loading]="isLoading()"
+    [totalItems]="items().length"
+    [currentPage]="1"
+    [pageSize]="500"
+    [pageSizeOptions]="[500]"
+    [minWidth]="'1100px'"
+    emptyMessage="No hay órdenes de compra pendientes de recibir."
+    emptyIcon="fa-solid fa-truck-ramp-box"
+    [rowTemplate]="row"
+  />
+
+  <ng-template #row let-item>
+    <tr>
+      <td><strong>{{ item.numero_oc ?? item.id_oc ?? item.id }}</strong></td>
+      <td>{{ item.fecha_emision ? item.fecha_emision.slice(0, 10) : '—' }}</td>
+      <td>{{ item.proveedor ?? '—' }}</td>
+      <td>{{ item.centro_costo ?? '—' }}</td>
+      <td>{{ item.numero_requerimiento ?? 'Sin requerimiento' }}</td>
+      <td align="right">{{ item.total === null ? '—' : (item.moneda_simbolo ?? '') + ' ' + fmtMoney(item.total) }}</td>
+      <td align="center">{{ item.lineas_pendientes }}</td>
+      <td align="center">
+        <button class="btn btn-primary" type="button" (click)="recibir(item)"><i class="fa-solid fa-truck-ramp-box"></i> Recibir</button>
+      </td>
+    </tr>
+  </ng-template>
+</div>
+
+<app-modal
+  [isOpen]="isModalOpen()"
+  [title]="'Recibir OC ' + (oc()?.numero_oc ?? oc()?.id_oc ?? '')"
+  maxWidth="980px"
+  [loading]="isSaving()"
+  submitText="Registrar recepción"
+  (closed)="closeModal()"
+  (saved)="save()"
+>
+  @if (oc(); as o) {
+    <dl class="recepcion-detail">
+      <div><dt>Proveedor</dt><dd>{{ o.proveedor ?? '—' }}</dd></div>
+      <div><dt>Centro de costos</dt><dd>{{ o.centro_costo ?? 'Stock general' }}</dd></div>
+      <div><dt>Requerimiento</dt><dd>{{ o.numero_requerimiento ?? 'Sin requerimiento' }}</dd></div>
+      <div><dt>Moneda</dt><dd>{{ o.moneda_simbolo ?? 'S/' }}</dd></div>
+    </dl>
+
+    <form class="recepcion-form" [formGroup]="form" (ngSubmit)="save()">
+      <div class="recepcion-form__grid">
+        <div class="form-group">
+          <label for="rec-fecha">Fecha <span class="required">*</span></label>
+          <input id="rec-fecha" type="date" class="form-control" formControlName="fecha" />
+        </div>
+        <div class="form-group">
+          <label for="rec-almacen">Almacén que recibe <span class="required">*</span></label>
+          <select id="rec-almacen" class="form-control" formControlName="id_almacen">
+            <option [ngValue]="null">— Seleccione —</option>
+            @for (a of almacenes(); track a.id) {
+              <option [ngValue]="a.id">{{ a.nombre }}</option>
+            }
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="rec-recibido">Recibido por</label>
+          <app-search-select [options]="trabajadores()" placeholder="Buscar trabajador..." inputId="rec-recibido" formControlName="id_recibido_por" />
+        </div>
+        @if (!o.es_soles) {
+          <div class="form-group">
+            <label for="rec-tc">Tipo de cambio <span class="required">*</span></label>
+            <input id="rec-tc" class="form-control" inputmode="decimal" formControlName="tipo_cambio" placeholder="Ej. 3.75" />
+            <small class="recepcion-form__hint">El costo en almacén es el precio de la OC × tipo de cambio (soles).</small>
+          </div>
+        }
+        <div class="form-group recepcion-form__full">
+          <label for="rec-obs">Observaciones</label>
+          <input id="rec-obs" class="form-control" formControlName="observaciones" maxlength="500" />
+        </div>
+      </div>
+
+      <div class="table-card">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Código</th>
+              <th>Producto</th>
+              <th style="text-align: right">Pedido</th>
+              <th style="text-align: right">Recibido</th>
+              <th style="text-align: right">Saldo</th>
+              <th style="text-align: right">Precio</th>
+              <th style="width: 140px">Recibir ahora</th>
+            </tr>
+          </thead>
+          <tbody formArrayName="lineas">
+            @for (l of o.lineas; track l.id_detalle; let i = $index) {
+              <tr [formGroupName]="i">
+                <td><strong>{{ l.codigo }}</strong></td>
+                <td>{{ l.descripcion }}</td>
+                <td align="right">{{ fmtNum(l.cantidad) }} {{ l.unidad }}</td>
+                <td align="right">{{ fmtNum(l.recibida) }}</td>
+                <td align="right"><strong>{{ fmtNum(l.saldo) }}</strong></td>
+                <td align="right">{{ l.precio === null ? '—' : fmtMoney(l.precio) }}</td>
+                <td>
+                  <input class="form-control" inputmode="decimal" formControlName="cantidad" [attr.aria-label]="'Cantidad a recibir de ' + l.descripcion" />
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+      <small class="recepcion-form__hint">Deje 0 en los productos que no llegaron; se pueden recibir en otra entrega.</small>
+
+      @if (o.no_recibibles.length) {
+        <div class="recepcion-form__no-recibibles">
+          <strong>No ingresan a almacén:</strong>
+          <ul>
+            @for (n of o.no_recibibles; track n.id_detalle) {
+              <li>{{ n.descripcion }} — {{ n.motivo }}</li>
+            }
+          </ul>
+        </div>
+      }
+    </form>
+  } @else if (!formError()) {
+    <p class="recepcion-form__hint"><i class="fa-solid fa-spinner fa-spin"></i> Cargando orden de compra...</p>
+  }
+
+  @if (formError()) {
+    <p class="badge badge-danger" role="alert" style="white-space: pre-line; margin-top: 0.75rem">{{ formError() }}</p>
+  }
+</app-modal>

@@ -1,0 +1,123 @@
+<div class="content-header">
+  <div>
+    <h1 class="content-title">Aprobación de requerimientos</h1>
+    <p class="content-subtitle">Requerimientos enviados que esperan una resolución. Solo los aprobados pueden generar órdenes de compra.</p>
+  </div>
+  <div style="display: flex; gap: 0.5rem; align-items: center">
+    <a class="btn btn-secondary" routerLink="/requerimientos"><i class="fa-solid fa-list"></i> Todos los requerimientos</a>
+    <button class="btn btn-secondary" type="button" (click)="load()" [disabled]="isLoading()">
+      <i class="fa-solid fa-arrows-rotate" [class.fa-spin]="isLoading()"></i>
+      {{ isLoading() ? 'Cargando...' : 'Actualizar' }}
+    </button>
+  </div>
+</div>
+
+<div class="content-body">
+  @if (message()) {
+    <p class="badge badge-completed" role="status" style="margin-bottom: 0.75rem">{{ message() }}</p>
+  }
+
+  <app-data-table
+    [columns]="columns"
+    [items]="items()"
+    [loading]="isLoading()"
+    [totalItems]="total()"
+    [currentPage]="page()"
+    [pageSize]="pageSize()"
+    [minWidth]="'1000px'"
+    emptyMessage="No hay requerimientos pendientes de aprobación."
+    emptyIcon="fa-solid fa-clipboard-check"
+    [rowTemplate]="row"
+    (pageChange)="onPageChange($event)"
+    (pageSizeChange)="onPageSizeChange($event)"
+  />
+
+  <ng-template #row let-item>
+    <tr>
+      <td><strong>{{ item.numero }}</strong></td>
+      <td>{{ item.fecha }}</td>
+      <td>{{ item.centro_costo ?? '—' }}</td>
+      <td>{{ item.solicitante ?? '—' }}</td>
+      <td>{{ item.justificacion }}</td>
+      <td align="center">{{ item.total_lineas }}</td>
+      <td align="center">
+        <button class="btn btn-primary" type="button" (click)="revisar(item)"><i class="fa-solid fa-clipboard-check"></i> Revisar</button>
+      </td>
+    </tr>
+  </ng-template>
+</div>
+
+<app-modal
+  [isOpen]="isModalOpen()"
+  [title]="seleccionado()?.numero ?? 'Revisión'"
+  maxWidth="960px"
+  [showDefaultFooter]="false"
+  (closed)="closeModal()"
+>
+  @if (seleccionado(); as r) {
+    <dl class="bandeja-detail">
+      <div><dt>Fecha</dt><dd>{{ r.fecha }}</dd></div>
+      <div><dt>Centro de costos</dt><dd>{{ r.centro_costo ?? '—' }}</dd></div>
+      <div><dt>Fase</dt><dd>{{ r.fase ?? '—' }}</dd></div>
+      <div><dt>Solicitante</dt><dd>{{ r.solicitante ?? '—' }}</dd></div>
+      <div><dt>Fecha requerida</dt><dd>{{ r.fecha_requerida ?? '—' }}</dd></div>
+      <div class="bandeja-detail__full"><dt>Justificación</dt><dd>{{ r.justificacion }}</dd></div>
+    </dl>
+
+    <form [formGroup]="revision" class="bandeja-form">
+      <div class="table-card">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Código</th>
+              <th>Descripción</th>
+              <th>Tipo</th>
+              <th style="text-align: right">Solicitado</th>
+              <th style="width: 150px">Aprobar</th>
+            </tr>
+          </thead>
+          <tbody formArrayName="lineas">
+            @for (l of r.lineas ?? []; track l.id; let i = $index) {
+              <tr [formGroupName]="i">
+                <td><strong>{{ l.codigo }}</strong></td>
+                <td>{{ l.descripcion }}</td>
+                <td>{{ l.tipo_producto === 'PRODUCTO' ? 'Producto' : 'Servicio' }}</td>
+                <td align="right">{{ fmtNum(l.cantidad) }} {{ l.unidad }}</td>
+                <td>
+                  <input class="form-control" inputmode="decimal" formControlName="cantidad_aprobada" [attr.aria-label]="'Cantidad a aprobar de ' + l.descripcion" />
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+      <small class="bandeja-form__hint">Use 0 para excluir una línea. No se puede aprobar más de lo solicitado.</small>
+
+      <div class="bandeja-form__grid">
+        <div class="form-group">
+          <label for="aprobador">Aprobador <span class="required">*</span></label>
+          <app-search-select [options]="trabajadores()" placeholder="Buscar trabajador..." inputId="aprobador" formControlName="id_aprobador" />
+        </div>
+        <div class="form-group bandeja-form__full">
+          <label for="comentario">Comentario (obligatorio al observar o rechazar)</label>
+          <textarea id="comentario" class="form-control" rows="2" formControlName="comentario"></textarea>
+        </div>
+      </div>
+    </form>
+  } @else if (!modalError()) {
+    <p class="bandeja-form__hint"><i class="fa-solid fa-spinner fa-spin"></i> Cargando requerimiento...</p>
+  }
+
+  @if (modalError()) {
+    <p class="badge badge-danger" role="alert" style="white-space: pre-line">{{ modalError() }}</p>
+  }
+
+  <div modal-footer class="modal-footer">
+    <button class="btn btn-secondary" type="button" (click)="closeModal()" [disabled]="isSaving()">Cerrar</button>
+    @if (seleccionado()) {
+      <button class="btn btn-secondary" type="button" (click)="observar()" [disabled]="isSaving()"><i class="fa-solid fa-comment-dots"></i> Observar</button>
+      <button class="btn btn-danger" type="button" (click)="rechazar()" [disabled]="isSaving()"><i class="fa-solid fa-xmark"></i> Rechazar</button>
+      <button class="btn btn-primary" type="button" (click)="aprobar()" [disabled]="isSaving()"><i class="fa-solid fa-check"></i> Aprobar</button>
+    }
+  </div>
+</app-modal>

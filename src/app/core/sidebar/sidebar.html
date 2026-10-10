@@ -33,6 +33,16 @@
           <i class="fa-solid fa-file-lines"></i> Documentos Origen
         </a>
       </li>
+      <li>
+        <a class="sidebar-subitem" routerLink="/requerimientos" routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}">
+          <i class="fa-solid fa-file-circle-plus"></i> Requerimientos (FUR)
+        </a>
+      </li>
+      <li>
+        <a class="sidebar-subitem" routerLink="/requerimientos/aprobacion" routerLinkActive="active">
+          <i class="fa-solid fa-clipboard-check"></i> Aprobaciones
+        </a>
+      </li>
     </ul>
   </li>
 
@@ -52,6 +62,11 @@
       <li>
         <a class="sidebar-subitem" routerLink="/almacen/stock" routerLinkActive="active">
           <i class="fa-solid fa-boxes-stacked"></i> Stock actual
+        </a>
+      </li>
+      <li>
+        <a class="sidebar-subitem" routerLink="/almacen/recepciones" routerLinkActive="active">
+          <i class="fa-solid fa-truck-ramp-box"></i> Recepción de compras
         </a>
       </li>
       <li>

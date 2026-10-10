@@ -1,0 +1,110 @@
+<div class="content-header">
+  <div>
+    <h1 class="content-title">Requerimientos (FUR)</h1>
+    <p class="content-subtitle">Formato único de requerimiento: se aprueba antes de generar la orden de compra.</p>
+  </div>
+  <div style="display: flex; gap: 0.5rem; align-items: center">
+    <a class="btn btn-primary" routerLink="/requerimientos/nuevo">
+      <i class="fa-solid fa-plus"></i> Nuevo requerimiento
+    </a>
+    <button class="btn btn-secondary" type="button" (click)="load()" [disabled]="isLoading()">
+      <i class="fa-solid fa-arrows-rotate" [class.fa-spin]="isLoading()"></i>
+      {{ isLoading() ? 'Cargando...' : 'Actualizar' }}
+    </button>
+  </div>
+</div>
+
+<div class="content-body">
+  @if (message()) {
+    <p class="badge badge-completed" role="status" style="margin-bottom: 0.75rem">{{ message() }}</p>
+  }
+
+  <section class="toolbar-shell">
+    <div class="toolbar-filters-row">
+      <div class="toolbar-filters-left">
+        <input
+          type="text"
+          class="toolbar-select"
+          placeholder="Buscar por número o justificación..."
+          maxlength="100"
+          [value]="fSearch()"
+          (input)="onSearch($any($event.target).value)"
+        />
+        <select class="toolbar-select" [value]="fEstado()" (change)="applyFilter('estado', $any($event.target).value)">
+          <option value="">Todos los estados</option>
+          @for (e of estados; track e) {
+            <option [value]="e">{{ estadoLabel[e] }}</option>
+          }
+        </select>
+        <label class="toolbar-check">Desde
+          <input type="date" class="toolbar-select" [value]="fDesde()" (change)="applyFilter('desde', $any($event.target).value)" />
+        </label>
+        <label class="toolbar-check">Hasta
+          <input type="date" class="toolbar-select" [value]="fHasta()" (change)="applyFilter('hasta', $any($event.target).value)" />
+        </label>
+        <button class="toolbar-reset" type="button" (click)="resetFilters()">
+          <i class="fa-solid fa-rotate-left"></i> Restablecer
+        </button>
+      </div>
+      <div class="toolbar-meta"><span>Mostrando</span><strong>{{ total() }}</strong><span>requerimientos</span></div>
+    </div>
+  </section>
+
+  <app-data-table
+    [columns]="columns"
+    [items]="items()"
+    [loading]="isLoading()"
+    [totalItems]="total()"
+    [currentPage]="page()"
+    [pageSize]="pageSize()"
+    [minWidth]="'1100px'"
+    emptyMessage="No hay requerimientos registrados."
+    emptyIcon="fa-solid fa-file-circle-plus"
+    [rowTemplate]="row"
+    (pageChange)="onPageChange($event)"
+    (pageSizeChange)="onPageSizeChange($event)"
+  />
+
+  <ng-template #row let-item>
+    <tr>
+      <td><strong>{{ item.numero }}</strong></td>
+      <td>{{ item.fecha }}</td>
+      <td>{{ item.centro_costo ?? '—' }}</td>
+      <td>{{ item.solicitante ?? '—' }}</td>
+      <td>{{ item.justificacion }}</td>
+      <td align="center">{{ item.total_lineas }}</td>
+      <td align="center">
+        <span [class]="'badge ' + estadoBadge(item.estado)">{{ estadoLabel[item.estado] }}</span>
+        @if (item.avance) {
+          <div class="table-cell-subtitle">
+            <span [class]="'badge ' + avanceBadge(item.avance)">{{ avanceLabel[item.avance] }}</span>
+          </div>
+        }
+      </td>
+      <td align="center">
+        <a class="table-action-btn" [routerLink]="['/requerimientos', item.id]" [title]="esEditable(item.estado) ? 'Ver / editar' : 'Ver detalle'">
+          <i class="fa-solid" [class.fa-pen-to-square]="esEditable(item.estado)" [class.fa-eye]="!esEditable(item.estado)"></i>
+        </a>
+        @if (esEditable(item.estado)) {
+          <button class="table-action-btn table-action-btn--primary" type="button" title="Enviar a aprobación" (click)="enviar(item)">
+            <i class="fa-solid fa-paper-plane"></i>
+          </button>
+        }
+        @if (canGenerarOc(item)) {
+          <a class="table-action-btn table-action-btn--primary" routerLink="/documentos/origen" [queryParams]="{ requerimiento: item.id }" title="Generar orden de compra">
+            <i class="fa-solid fa-file-invoice"></i>
+          </a>
+        }
+        @if (item.estado === 'BORRADOR') {
+          <button class="table-action-btn table-action-btn--danger" type="button" title="Eliminar borrador" (click)="eliminar(item)">
+            <i class="fa-solid fa-trash"></i>
+          </button>
+        } @else if (canAnular(item)) {
+          <button class="table-action-btn table-action-btn--danger" type="button" title="Anular" (click)="anular(item)">
+            <i class="fa-solid fa-ban"></i>
+          </button>
+        }
+      </td>
+    </tr>
+  </ng-template>
+</div>

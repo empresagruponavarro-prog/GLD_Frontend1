@@ -1,0 +1,226 @@
+<div class="content-header">
+  <div>
+    <h1 class="content-title">
+      {{ requerimiento()?.numero ?? 'Nuevo requerimiento' }}
+      @if (requerimiento(); as r) {
+        <span [class]="'badge ' + estadoBadge(r.estado)">{{ estadoLabel[r.estado] }}</span>
+        @if (r.avance) {
+          <span [class]="'badge ' + avanceBadge(r.avance)">{{ avanceLabel[r.avance] }}</span>
+        }
+      }
+    </h1>
+    <p class="content-subtitle">Formato único de requerimiento (FUR). Debe aprobarse antes de generar la orden de compra.</p>
+  </div>
+  <div style="display: flex; gap: 0.5rem; align-items: center">
+    <a class="btn btn-secondary" routerLink="/requerimientos"><i class="fa-solid fa-arrow-left"></i> Volver</a>
+  </div>
+</div>
+
+<div class="content-body">
+  @if (loadError()) {
+    <p class="badge badge-danger" role="alert">{{ loadError() }}</p>
+  } @else if (isLoading()) {
+    <p class="req-form__hint"><i class="fa-solid fa-spinner fa-spin"></i> Cargando requerimiento...</p>
+  } @else {
+    @if (ultimaObservacion(); as obs) {
+      <p class="req-form__observacion" role="status">
+        <i class="fa-solid fa-triangle-exclamation"></i>
+        <span><strong>Observado{{ obs.anexo ? ' por ' + obs.anexo : '' }}:</strong> {{ obs.comentario }}</span>
+      </p>
+    }
+
+    @if (soloLectura()) {
+      <!-- Lectura -->
+      @if (requerimiento(); as r) {
+        <dl class="req-detail">
+          <div><dt>Fecha</dt><dd>{{ r.fecha }}</dd></div>
+          <div><dt>Fecha requerida</dt><dd>{{ r.fecha_requerida ?? '—' }}</dd></div>
+          <div><dt>Centro de costos</dt><dd>{{ r.centro_costo ?? '—' }}</dd></div>
+          <div><dt>Fase</dt><dd>{{ r.fase ?? '—' }}</dd></div>
+          <div><dt>Solicitante</dt><dd>{{ r.solicitante ?? '—' }}</dd></div>
+          <div><dt>Área</dt><dd>{{ r.area ?? '—' }}</dd></div>
+          @if (r.aprobador) {
+            <div><dt>{{ r.estado === 'RECHAZADO' ? 'Rechazado por' : 'Aprobado por' }}</dt><dd>{{ r.aprobador }}</dd></div>
+            <div><dt>Fecha de resolución</dt><dd>{{ r.fecha_aprobacion?.slice(0, 10) ?? '—' }}</dd></div>
+          }
+          <div class="req-detail__full"><dt>Justificación</dt><dd>{{ r.justificacion }}</dd></div>
+          @if (r.comentario_aprobacion) {
+            <div class="req-detail__full"><dt>Comentario de la resolución</dt><dd>{{ r.comentario_aprobacion }}</dd></div>
+          }
+        </dl>
+
+        <h3 class="req-form__section">Ítems</h3>
+        <div class="table-card">
+          <table class="table">
+            <thead>
+              <tr>
+                <th>Código</th>
+                <th>Descripción</th>
+                <th>Tipo</th>
+                <th style="text-align: right">Pedido</th>
+                <th style="text-align: right">Aprobado</th>
+                <th style="text-align: right">Ordenado</th>
+                <th style="text-align: right">Por ordenar</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (l of r.lineas ?? []; track l.id) {
+                <tr>
+                  <td><strong>{{ l.codigo }}</strong></td>
+                  <td>{{ l.descripcion }}</td>
+                  <td>
+                    <span class="badge" [class.badge-progress]="l.tipo_producto === 'PRODUCTO'" [class.badge-pending]="l.tipo_producto === 'SERVICIO'">
+                      {{ l.tipo_producto === 'PRODUCTO' ? 'Producto' : 'Servicio' }}
+                    </span>
+                  </td>
+                  <td align="right">{{ fmtNum(l.cantidad) }} {{ l.unidad }}</td>
+                  <td align="right">{{ l.cantidad_aprobada === null ? '—' : fmtNum(l.cantidad_aprobada) }}</td>
+                  <td align="right">{{ fmtNum(l.cantidad_ordenada) }}</td>
+                  <td align="right"><strong>{{ r.estado === 'APROBADO' ? fmtNum(l.saldo_por_ordenar) : '—' }}</strong></td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    } @else {
+      <!-- Edición -->
+      <form class="req-form" [formGroup]="form" (ngSubmit)="save()">
+        <div class="req-form__grid">
+          <div class="form-group">
+            <label for="req-fecha">Fecha <span class="required">*</span></label>
+            <input id="req-fecha" type="date" class="form-control" formControlName="fecha" />
+          </div>
+          <div class="form-group">
+            <label for="req-requerida">Fecha requerida</label>
+            <input id="req-requerida" type="date" class="form-control" formControlName="fecha_requerida" />
+          </div>
+          <div class="form-group">
+            <label for="req-cc">Centro de costos <span class="required">*</span></label>
+            <app-search-select [options]="centrosCostos()" placeholder="Buscar centro de costos..." inputId="req-cc" formControlName="id_centro_costo" />
+          </div>
+          <div class="form-group">
+            <label for="req-fase">Fase</label>
+            <select id="req-fase" class="form-control" formControlName="id_fase">
+              <option [ngValue]="null">— Sin fase —</option>
+              @for (f of fases(); track f.id) {
+                <option [ngValue]="f.id">{{ f.descripcion }}</option>
+              }
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="req-solicitante">Solicitante <span class="required">*</span></label>
+            <app-search-select [options]="trabajadores()" placeholder="Buscar trabajador..." inputId="req-solicitante" formControlName="id_solicitante" />
+          </div>
+          <div class="form-group">
+            <label for="req-area">Área</label>
+            <input id="req-area" class="form-control" formControlName="area" maxlength="100" />
+          </div>
+          <div class="form-group req-form__full">
+            <label for="req-justificacion">Justificación <span class="required">*</span></label>
+            <textarea id="req-justificacion" class="form-control" rows="2" formControlName="justificacion"></textarea>
+          </div>
+        </div>
+
+        <h3 class="req-form__section">Ítems (productos y servicios)</h3>
+        <div class="req-lines" formArrayName="lineas">
+          <div class="req-lines__head">
+            <span>Producto o servicio</span>
+            <span>Cantidad</span>
+            <span>Precio ref.</span>
+            <span>Observación</span>
+            <span></span>
+          </div>
+          @for (linea of lineas.controls; track linea; let i = $index) {
+            <div class="req-lines__row" [formGroupName]="i">
+              <div>
+                <app-catalogo-picker [label]="linea.controls.etiqueta.value" (picked)="onItemPicked(linea, $event)" />
+                @if (linea.controls.tipo.value) {
+                  <small class="req-lines__hint">{{ linea.controls.tipo.value === 'PRODUCTO' ? 'Producto: ingresará a almacén' : 'Servicio: no ingresa a almacén' }}</small>
+                }
+              </div>
+              <input class="form-control" inputmode="decimal" formControlName="cantidad" placeholder="0" [attr.aria-label]="'Cantidad línea ' + (i + 1)" />
+              <input class="form-control" inputmode="decimal" formControlName="precio_referencial" placeholder="0.00" [attr.aria-label]="'Precio referencial línea ' + (i + 1)" />
+              <input class="form-control" formControlName="observaciones" [attr.aria-label]="'Observación línea ' + (i + 1)" />
+              <button class="table-action-btn table-action-btn--danger" type="button" title="Quitar línea" (click)="removeLinea(i)" [disabled]="lineas.length === 1">
+                <i class="fa-solid fa-trash"></i>
+              </button>
+            </div>
+          }
+          <button class="btn btn-secondary req-lines__add" type="button" (click)="addLinea()">
+            <i class="fa-solid fa-plus"></i> Agregar ítem
+          </button>
+        </div>
+
+        @if (formError()) {
+          <p class="badge badge-danger req-form__error" role="alert">{{ formError() }}</p>
+        }
+
+        <div class="req-form__actions">
+          <button class="btn btn-secondary" type="submit" [disabled]="isSaving()">
+            <i class="fa-solid fa-floppy-disk"></i> {{ isSaving() ? 'Guardando...' : 'Guardar borrador' }}
+          </button>
+          <button class="btn btn-primary" type="button" [disabled]="isSaving()" (click)="save(true)">
+            <i class="fa-solid fa-paper-plane"></i> Guardar y enviar a aprobación
+          </button>
+        </div>
+      </form>
+    }
+
+    @if (requerimiento(); as r) {
+      @if (r.ordenes_compra?.length) {
+        <h3 class="req-form__section">Órdenes de compra generadas</h3>
+        <div class="table-card">
+          <table class="table">
+            <thead>
+              <tr><th>OC</th><th>Número</th><th>Emisión</th><th style="text-align: right">Total</th></tr>
+            </thead>
+            <tbody>
+              @for (oc of r.ordenes_compra; track oc.id) {
+                <tr>
+                  <td><strong>{{ oc.id_oc ?? '—' }}</strong></td>
+                  <td>{{ oc.numero_oc ?? '—' }}</td>
+                  <td>{{ oc.fecha_emision?.slice(0, 10) ?? '—' }}</td>
+                  <td align="right">{{ oc.total === null ? '—' : fmtMoney(oc.total) }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+
+      <h3 class="req-form__section">Historial</h3>
+      <div class="table-card">
+        <table class="table">
+          <thead>
+            <tr><th>Fecha</th><th>Acción</th><th>Responsable</th><th>Comentario</th></tr>
+          </thead>
+          <tbody>
+            @for (e of r.eventos ?? []; track e.id) {
+              <tr>
+                <td>{{ e.created_at.slice(0, 16) }}</td>
+                <td>{{ accionLabel[e.accion] }}</td>
+                <td>{{ e.anexo ?? '—' }}</td>
+                <td>{{ e.comentario ?? '—' }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+
+      <div class="req-form__actions">
+        @if (puedeGenerarOc()) {
+          <button class="btn btn-primary" type="button" (click)="generarOc()">
+            <i class="fa-solid fa-file-invoice"></i> Generar orden de compra
+          </button>
+        }
+        @if (r.estado === 'ENVIADO') {
+          <a class="btn btn-secondary" routerLink="/requerimientos/aprobacion"><i class="fa-solid fa-clipboard-check"></i> Ir a la bandeja de aprobación</a>
+        }
+        @if (puedeAnular()) {
+          <button class="btn btn-danger" type="button" (click)="anular()"><i class="fa-solid fa-ban"></i> Anular requerimiento</button>
+        }
+      </div>
+    }
+  }
+</div>

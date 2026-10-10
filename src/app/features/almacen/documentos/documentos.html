@@ -80,6 +80,9 @@
       </td>
       <td>{{ item.documento_referencia ?? '—' }}</td>
       <td>{{ contraparte(item) }}</td>
+      @if (muestraOc) {
+        <td>{{ item.numero_oc ?? '—' }}</td>
+      }
       <td align="center">{{ item.total_lineas }}</td>
       <td align="center">
         <span class="badge" [class.badge-completed]="item.estado === 'REGISTRADO'" [class.badge-danger]="item.estado === 'ANULADO'">
@@ -253,6 +256,9 @@
       <div><dt>Motivo</dt><dd>{{ motivoLabel[d.motivo] }}</dd></div>
       <div><dt>Almacén</dt><dd>{{ d.almacen }}@if (d.almacen_destino) { → {{ d.almacen_destino }} }</dd></div>
       <div><dt>Referencia</dt><dd>{{ d.documento_referencia ?? '—' }}</dd></div>
+      @if (d.numero_oc) {
+        <div><dt>Orden de compra</dt><dd>{{ d.numero_oc }}</dd></div>
+      }
       <div><dt>Proveedor</dt><dd>{{ d.proveedor ?? '—' }}</dd></div>
       <div><dt>Proyecto</dt><dd>{{ d.centro_costo ?? 'Stock general' }}</dd></div>
       <div><dt>Recibido por</dt><dd>{{ d.recibido_por ?? '—' }}</dd></div>

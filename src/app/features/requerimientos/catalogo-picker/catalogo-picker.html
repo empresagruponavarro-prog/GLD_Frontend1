@@ -1,0 +1,36 @@
+<div class="catalogo-picker">
+  <input
+    type="text"
+    class="form-control"
+    autocomplete="off"
+    [placeholder]="placeholder()"
+    [disabled]="disabled()"
+    [value]="isOpen() ? term() : label()"
+    (focus)="onFocus()"
+    (input)="onInput($event)"
+    (blur)="onBlur()"
+  />
+  @if (isOpen()) {
+    <ul class="catalogo-picker__list">
+      @if (isLoading()) {
+        <li class="catalogo-picker__hint"><i class="fa-solid fa-spinner fa-spin"></i> Buscando...</li>
+      } @else if (term().trim().length < 2) {
+        <li class="catalogo-picker__hint">Escriba al menos 2 caracteres</li>
+      } @else {
+        @for (item of results(); track item.id) {
+          <li>
+            <button class="catalogo-picker__option" type="button" (mousedown)="$event.preventDefault(); pick(item)">
+              <strong>{{ item.codigo }}</strong>
+              <span class="catalogo-picker__desc">{{ item.descripcion }}</span>
+              <span class="badge" [class.badge-progress]="item.tipo_producto === 'PRODUCTO'" [class.badge-pending]="item.tipo_producto === 'SERVICIO'">
+                {{ item.tipo_producto === 'PRODUCTO' ? 'Producto' : 'Servicio' }}
+              </span>
+            </button>
+          </li>
+        } @empty {
+          <li class="catalogo-picker__hint">Sin resultados</li>
+        }
+      }
+    </ul>
+  }
+</div>

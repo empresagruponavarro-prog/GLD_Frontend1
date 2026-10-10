@@ -1,0 +1,47 @@
+.recepcion-detail {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 0.75rem 1.25rem;
+  margin: 0 0 1rem;
+}
+
+.recepcion-detail dt {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+.recepcion-detail dd {
+  margin: 0.1rem 0 0;
+  font-weight: 600;
+}
+
+.recepcion-form__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 0.25rem 1rem;
+  margin-bottom: 0.75rem;
+}
+
+.recepcion-form__full {
+  grid-column: 1 / -1;
+}
+
+.recepcion-form__hint {
+  display: block;
+  margin-top: 0.3rem;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+.recepcion-form__no-recibibles {
+  margin-top: 0.75rem;
+  padding: 0.6rem 0.85rem;
+  border-radius: 8px;
+  background: #f1f5f9;
+  font-size: 0.82rem;
+}
+
+.recepcion-form__no-recibibles ul {
+  margin: 0.25rem 0 0;
+  padding-left: 1.1rem;
+}

@@ -29,12 +29,23 @@ export interface DocumentoOrigen {
   fecha_creacion: string | null;
   hora_creacion: string | null;
   cotizacion: string | null;
+  id_requerimiento: number | null;
+  numero_requerimiento: string | null;
+  estado_recepcion: EstadoRecepcion | null;
 }
+
+export type EstadoRecepcion = 'PENDIENTE' | 'PARCIAL' | 'RECIBIDA' | 'SIN_BIENES';
 
 export interface DetalleDocumentoOrigen {
   id_producto: number;
   cantidad: number;
   precio: number;
+  /** Línea del requerimiento (FUR) que atiende; obligatoria si la OC nace de un requerimiento. */
+  id_requerimiento_detalle?: number;
+  /** Solo lectura en pantalla: texto del ítem cuando la OC nace de un requerimiento. */
+  etiqueta?: string;
+  /** Solo en pantalla: tope de cantidad (saldo del requerimiento) para validar antes de enviar. */
+  maximo?: number;
 }
 
 export interface DetalleDocumentoOrigenItem {
@@ -46,6 +57,9 @@ export interface DetalleDocumentoOrigenItem {
   cantidad: string | null;
   precio: string | null;
   monto: string | null;
+  id_requerimiento_detalle: number | null;
+  cantidad_recibida: string | null;
+  saldo_por_recibir: string | null;
 }
 
 export interface DocumentoOrigenDetalle {
@@ -65,6 +79,9 @@ export interface DocumentoOrigenDetalle {
   monto: string | null;
   igv: string | null;
   total: string | null;
+  id_requerimiento: number | null;
+  numero_requerimiento: string | null;
+  estado_recepcion: EstadoRecepcion | null;
   detalles: DetalleDocumentoOrigenItem[];
 }
 
@@ -85,6 +102,7 @@ export interface CreateDocumentoOrigen {
   moneda_simbolo: string;
   igv: number;
   usuario: string;
+  id_requerimiento?: number;
   detalles: DetalleDocumentoOrigen[];
 }
 

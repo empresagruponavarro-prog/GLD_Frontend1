@@ -20,6 +20,11 @@ import { DocumentosAlmacenComponent } from './features/almacen/documentos/docume
 import { KardexComponent } from './features/almacen/kardex/kardex';
 import { PrestamosComponent } from './features/almacen/prestamos/prestamos';
 import { StockActualComponent } from './features/almacen/stock/stock';
+import { RecepcionesComponent } from './features/almacen/recepciones/recepciones';
+
+import { BandejaAprobacionComponent } from './features/requerimientos/bandeja-aprobacion/bandeja-aprobacion';
+import { RequerimientoFormComponent } from './features/requerimientos/requerimiento-form/requerimiento-form';
+import { RequerimientosListaComponent } from './features/requerimientos/requerimientos-lista/requerimientos-lista';
 
 import { MantenimientoPlantillasComponent } from './features/presupuestos/mantenimiento-plantillas/mantenimiento-plantillas';
 
@@ -40,10 +45,15 @@ export const routes: Routes = [
   { path: 'maestros-generales/tipo-doc-identidad', component: TipoDocIdentidadComponent },
   { path: 'presupuestos', component: PresupuestosComponent },
   { path: 'documentos/origen', component: DocumentosOrigenComponent },
+  { path: 'requerimientos', component: RequerimientosListaComponent },
+  { path: 'requerimientos/aprobacion', component: BandejaAprobacionComponent },
+  { path: 'requerimientos/nuevo', component: RequerimientoFormComponent },
+  { path: 'requerimientos/:id', component: RequerimientoFormComponent },
   { path: 'almacen/consulta', component: ConsultaAlmacenComponent },
   { path: 'almacen/stock', component: StockActualComponent },
   { path: 'almacen/inventario-inicial', component: DocumentosAlmacenComponent, data: { tipo: 'inventario-inicial' } },
   { path: 'almacen/ingresos', component: DocumentosAlmacenComponent, data: { tipo: 'ingresos' } },
+  { path: 'almacen/recepciones', component: RecepcionesComponent },
   { path: 'almacen/salidas', component: DocumentosAlmacenComponent, data: { tipo: 'salidas' } },
   { path: 'almacen/transferencias', component: DocumentosAlmacenComponent, data: { tipo: 'transferencias' } },
   { path: 'almacen/prestamos', component: PrestamosComponent },

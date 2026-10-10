@@ -1,0 +1,94 @@
+.req-form__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 0.25rem 1rem;
+}
+
+.req-form__full {
+  grid-column: 1 / -1;
+}
+
+.req-form__section {
+  margin: 1.25rem 0 0.5rem;
+  font-size: 0.95rem;
+}
+
+.req-form__hint {
+  color: var(--text-muted);
+}
+
+.req-form__error {
+  margin-top: 0.75rem;
+  white-space: pre-line;
+}
+
+.req-form__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 1.25rem;
+}
+
+.req-form__observacion {
+  display: flex;
+  gap: 0.6rem;
+  align-items: flex-start;
+  margin: 0 0 1rem;
+  padding: 0.65rem 0.85rem;
+  border-radius: 8px;
+  background: #fef3c7;
+  color: #92400e;
+  font-size: 0.875rem;
+}
+
+.req-lines {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.req-lines__head,
+.req-lines__row {
+  display: grid;
+  grid-template-columns: minmax(280px, 1fr) 120px 120px minmax(160px, 0.6fr) 40px;
+  gap: 0.6rem;
+  align-items: start;
+}
+
+.req-lines__head {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.req-lines__hint {
+  display: block;
+  margin-top: 0.15rem;
+  font-size: 0.72rem;
+  color: var(--text-muted);
+}
+
+.req-lines__add {
+  align-self: flex-start;
+}
+
+.req-detail {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 0.75rem 1.25rem;
+  margin: 0 0 1rem;
+}
+
+.req-detail dt {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+.req-detail dd {
+  margin: 0.1rem 0 0;
+  font-weight: 600;
+}
+
+.req-detail__full {
+  grid-column: 1 / -1;
+}

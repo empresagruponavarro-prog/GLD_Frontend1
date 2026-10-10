@@ -1,9 +1,11 @@
 import { Component, inject, signal, computed } from '@angular/core';
+import { ActivatedRoute } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { DataTableComponent } from '../../../shared/components/data-table/data-table';
 import { ModalComponent } from '../../../shared/components/modal/modal';
 import { DataTable } from '../../../shared/interfaces';
+import { errorMessage } from '../../almacen/almacen.utils';
 import { CentroCostoSelect } from '../../centros-costos/interfaces/centros-costos.interface';
 import { CentrosCostosService } from '../../centros-costos/centros-costos.service';
 import { AnexoSelect } from '../../maestros-generales/anexos/interfaces/anexos.interface';
@@ -14,7 +16,9 @@ import { ProductoSelect, TipoProducto } from '../../maestros-generales/productos
 import { ProductosService } from '../../maestros-generales/productos/productos.service';
 import { FasePorCentroCosto } from '../../presupuestos/interfaces/presupuestos.interface';
 import { PresupuestosService } from '../../presupuestos/presupuestos.service';
-import { CreateDocumentoOrigen, DetalleDocumentoOrigen, DocumentoOrigen, DocumentoOrigenDetalle, DocumentoOrigenQuery } from './interfaces/documentos-origen.interface';
+import { Requerimiento } from '../../requerimientos/requerimientos.models';
+import { RequerimientosService } from '../../requerimientos/requerimientos.service';
+import { CreateDocumentoOrigen, DetalleDocumentoOrigen, DocumentoOrigen, DocumentoOrigenDetalle, DocumentoOrigenQuery, EstadoRecepcion } from './interfaces/documentos-origen.interface';
 import { DocumentosOrigenService } from './documentos-origen.service';
 
 const MESES = ['ENERO', 'FEBRERO', 'MARZO', 'ABRIL', 'MAYO', 'JUNIO', 'JULIO', 'AGOSTO', 'SEPTIEMBRE', 'OCTUBRE', 'NOVIEMBRE', 'DICIEMBRE'];
@@ -33,6 +37,15 @@ export class DocumentosOrigenComponent {
   private readonly anexosService = inject(AnexosService);
   private readonly productosService = inject(ProductosService);
   private readonly presupuestosService = inject(PresupuestosService);
+  private readonly requerimientosService = inject(RequerimientosService);
+  private readonly requerimientoInicial = inject(ActivatedRoute).snapshot.queryParamMap.get('requerimiento');
+
+  readonly estadoRecepcionLabel: Record<EstadoRecepcion, string> = {
+    PENDIENTE: 'Pendiente',
+    PARCIAL: 'Parcial',
+    RECIBIDA: 'Recibida',
+    SIN_BIENES: 'Solo servicios',
+  };
 
   readonly tiposOc = ['PRODUCTO', 'SERVICIO'];
   readonly formasPago = [
@@ -59,6 +72,14 @@ export class DocumentosOrigenComponent {
   formData: CreateDocumentoOrigen = this.emptyForm();
   detalles = signal<DetalleDocumentoOrigen[]>([]);
 
+  /** Requerimiento (FUR) de origen cuando la OC nace de uno; cambia el formulario a "modo FUR". */
+  furActual = signal<{ id: number; numero: string } | null>(null);
+  /** La OC ya tiene recepciones en almacén: solo se puede editar la cabecera. */
+  recepcionBloqueada = signal<boolean>(false);
+  showFurModal = signal<boolean>(false);
+  furPendientes = signal<Requerimiento[]>([]);
+  furLoading = signal<boolean>(false);
+
   totalDetalle = computed(() =>
     this.detalles().reduce(
       (sum, d) => sum + (Number(d.cantidad) || 0) * (Number(d.precio) || 0),
@@ -76,6 +97,8 @@ export class DocumentosOrigenComponent {
     { label: 'Emisión' },
     { label: 'Total', align: 'right' },
     { label: 'Moneda', align: 'center' },
+    { label: 'Requerimiento' },
+    { label: 'Recepción', align: 'center' },
     { label: 'Usuario' },
     { label: 'Acciones', width: '110px', align: 'center' }
   ];
@@ -115,6 +138,7 @@ export class DocumentosOrigenComponent {
 
   constructor() {
     this.load();
+    if (this.requerimientoInicial) this.usarRequerimiento(Number(this.requerimientoInicial));
   }
 
   buildFiltros(): DocumentoOrigenQuery {
@@ -208,6 +232,8 @@ export class DocumentosOrigenComponent {
 
   openModal() {
     this.editingId.set(null);
+    this.furActual.set(null);
+    this.recepcionBloqueada.set(false);
     this.formData = this.emptyForm();
     this.detalles.set([this.emptyDetalle()]);
     this.fases.set([]);
@@ -219,6 +245,8 @@ export class DocumentosOrigenComponent {
 
   openEdit(item: DocumentoOrigen) {
     this.editingId.set(item.id);
+    this.furActual.set(null);
+    this.recepcionBloqueada.set(false);
     this.saving.set(false);
     this.showModal.set(true);
     this.loadCatalogos();
@@ -246,12 +274,21 @@ export class DocumentosOrigenComponent {
           igv: Number(doc.igv) || 0,
         };
 
-        const detalles = (doc.detalles || []).map((d) => ({
+        const detalles: DetalleDocumentoOrigen[] = (doc.detalles || []).map((d) => ({
           id_producto: Number(d.id_producto) || 0,
           cantidad: Number(d.cantidad) || 0,
           precio: Number(d.precio) || 0,
+          ...(d.id_requerimiento_detalle ? { id_requerimiento_detalle: d.id_requerimiento_detalle } : {}),
+          etiqueta: `${d.producto_codigo ?? ''} — ${d.producto_descripcion ?? 'Sin descripción'}`,
         }));
         this.detalles.set(detalles.length ? detalles : [this.emptyDetalle()]);
+        this.recepcionBloqueada.set(doc.estado_recepcion === 'PARCIAL' || doc.estado_recepcion === 'RECIBIDA');
+
+        if (doc.id_requerimiento) {
+          this.formData.id_requerimiento = doc.id_requerimiento;
+          this.furActual.set({ id: doc.id_requerimiento, numero: doc.numero_requerimiento ?? `#${doc.id_requerimiento}` });
+          this.limitarPorSaldo(doc.id_requerimiento);
+        }
 
         this.loadProductos(this.formData.tipo_oc as TipoProducto);
         if (this.formData.id_centro_costo) {
@@ -285,6 +322,8 @@ export class DocumentosOrigenComponent {
 
   closeModal() {
     this.showModal.set(false);
+    this.furActual.set(null);
+    this.recepcionBloqueada.set(false);
   }
 
   onTipoOcChange(tipoOc: string) {
@@ -331,8 +370,17 @@ export class DocumentosOrigenComponent {
           id_producto: Number(d.id_producto),
           cantidad: Number(d.cantidad) || 0,
           precio: Number(d.precio) || 0,
+          ...(d.id_requerimiento_detalle ? { id_requerimiento_detalle: d.id_requerimiento_detalle } : {}),
         })),
     };
+    if (this.furActual()) {
+      const error = this.validarContraRequerimiento(payload.detalles);
+      if (error) {
+        this.saving.set(false);
+        alert(error);
+        return;
+      }
+    }
 
     const id = this.editingId();
     const request$ = id !== null
@@ -348,9 +396,105 @@ export class DocumentosOrigenComponent {
       error: (err) => {
         console.error(err);
         this.saving.set(false);
-        alert(id !== null ? 'Error al actualizar el documento origen.' : 'Error al crear el documento origen.');
+        alert(errorMessage(err));
       },
     });
+  }
+
+  // ---------------------------------------------------------------- desde requerimiento (FUR)
+
+  /** Abre el selector con los requerimientos aprobados que aún tienen cantidad por ordenar. */
+  openFurPicker() {
+    this.showFurModal.set(true);
+    this.furLoading.set(true);
+    this.requerimientosService.getPendientesOc().subscribe({
+      next: (rows) => {
+        this.furPendientes.set(rows);
+        this.furLoading.set(false);
+      },
+      error: (err) => {
+        this.furPendientes.set([]);
+        this.furLoading.set(false);
+        alert(errorMessage(err));
+      },
+    });
+  }
+
+  closeFurPicker() {
+    this.showFurModal.set(false);
+  }
+
+  /** Precarga el formulario con las líneas del FUR que todavía tienen saldo por ordenar. */
+  usarRequerimiento(id: number) {
+    this.showFurModal.set(false);
+    this.requerimientosService.getById(id).subscribe({
+      next: (fur) => {
+        if (fur.estado !== 'APROBADO') {
+          alert(`El requerimiento ${fur.numero} está ${fur.estado}; solo un requerimiento aprobado genera órdenes de compra.`);
+          return;
+        }
+        const lineas = (fur.lineas ?? []).filter((l) => Number(l.saldo_por_ordenar) > 0);
+        if (!lineas.length) {
+          alert(`El requerimiento ${fur.numero} no tiene cantidades pendientes de ordenar.`);
+          return;
+        }
+        const base = this.emptyForm();
+        this.editingId.set(null);
+        this.recepcionBloqueada.set(false);
+        this.furActual.set({ id: fur.id, numero: fur.numero });
+        this.formData = {
+          ...base,
+          id_requerimiento: fur.id,
+          tipo_oc: lineas.some((l) => l.tipo_producto === 'PRODUCTO') ? 'PRODUCTO' : 'SERVICIO',
+          id_centro_costo: fur.id_centro_costo,
+          id_fase: 0,
+        };
+        this.detalles.set(
+          lineas.map((l) => ({
+            id_producto: l.id_producto,
+            cantidad: Number(l.saldo_por_ordenar),
+            precio: Number(l.precio_referencial) || 0,
+            id_requerimiento_detalle: l.id,
+            etiqueta: `${l.codigo} — ${l.descripcion} (${l.tipo_producto === 'PRODUCTO' ? 'producto' : 'servicio'})`,
+            maximo: Number(l.saldo_por_ordenar),
+          })),
+        );
+        this.fases.set([]);
+        this.saving.set(false);
+        this.showModal.set(true);
+        this.loadCatalogos();
+        this.loadFases(fur.id_centro_costo, fur.id_fase ?? 0);
+      },
+      error: (err) => alert(errorMessage(err)),
+    });
+  }
+
+  /** Al editar una OC con requerimiento, el tope de cada línea es su saldo más lo que la propia OC ya ordenó. */
+  private limitarPorSaldo(idRequerimiento: number) {
+    this.requerimientosService.getById(idRequerimiento).subscribe({
+      next: (fur) => {
+        const saldoPorLinea = new Map((fur.lineas ?? []).map((l) => [l.id, Number(l.saldo_por_ordenar)]));
+        this.detalles.update((list) =>
+          list.map((d) =>
+            d.id_requerimiento_detalle
+              ? { ...d, maximo: (saldoPorLinea.get(d.id_requerimiento_detalle) ?? 0) + (Number(d.cantidad) || 0) }
+              : d,
+          ),
+        );
+      },
+      error: () => undefined,
+    });
+  }
+
+  private validarContraRequerimiento(detalles: DetalleDocumentoOrigen[]): string | null {
+    if (!detalles.length) return 'Una OC de requerimiento necesita al menos una línea.';
+    const maximos = new Map(this.detalles().map((d) => [d.id_requerimiento_detalle, d.maximo]));
+    for (const d of detalles) {
+      if (d.cantidad <= 0) return 'Todas las cantidades deben ser mayores a 0 (quite las líneas que no va a ordenar).';
+      const tope = maximos.get(d.id_requerimiento_detalle);
+      if (tope !== undefined && d.cantidad > tope) return `La cantidad ordenada (${d.cantidad}) supera el saldo aprobado del requerimiento (${tope}).`;
+    }
+    return null;
   }
 
   private loadCatalogos() {
@@ -387,7 +531,7 @@ export class DocumentosOrigenComponent {
     if (!confirm(`¿Eliminar el documento de origen ${label}? Esta acción no se puede deshacer.`)) return;
     this.service.delete(item.id).subscribe({
       next: () => this.load(),
-      error: () => alert('Error al eliminar el documento de origen.'),
+      error: (err) => alert(errorMessage(err)),
     });
   }
 

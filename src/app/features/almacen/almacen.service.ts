@@ -18,6 +18,9 @@ import {
   PrestamoPayload,
   PrestamoQuery,
   ProductoSelectOption,
+  RecepcionOrdenCompra,
+  RecepcionPayload,
+  RecepcionPendiente,
   RetornoPayload,
   SelectOption,
   StockQuery,
@@ -76,6 +79,17 @@ export class AlmacenService {
   }
   anularDocumento(ruta: RutaDocumento, id: number): Observable<Documento> {
     return this.http.post<Documento>(`${this.api}/${ruta}/${id}/anular`, {});
+  }
+
+  // ---- Recepción de compras (OC -> ingreso COMPRA)
+  getRecepcionesPendientes(search?: string): Observable<RecepcionPendiente[]> {
+    return this.http.get<RecepcionPendiente[]>(`${this.api}/recepciones/pendientes`, { params: toParams({ search }) });
+  }
+  getOrdenCompraParaRecepcion(id: number): Observable<RecepcionOrdenCompra> {
+    return this.http.get<RecepcionOrdenCompra>(`${this.api}/recepciones/orden-compra/${id}`);
+  }
+  recibirOrdenCompra(data: RecepcionPayload): Observable<Documento> {
+    return this.http.post<Documento>(`${this.api}/recepciones`, data);
   }
 
   // ---- Préstamos

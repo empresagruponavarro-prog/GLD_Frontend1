@@ -98,6 +98,7 @@ export class DocumentosAlmacenComponent {
 
   protected readonly config: TipoConfig = TIPOS[inject(ActivatedRoute).snapshot.data['tipo'] as RutaDocumento];
   protected readonly motivoLabel = MOTIVO_LABEL;
+  protected readonly muestraOc = this.config.ruta === 'ingresos';
   protected readonly fmtNum = fmtNum;
   protected readonly fmtMoney = fmtMoney;
 
@@ -108,6 +109,7 @@ export class DocumentosAlmacenComponent {
     { label: this.config.naturaleza === 'TRANSFERENCIA' ? 'Origen → destino' : 'Almacén', width: '180px' },
     { label: 'Referencia', width: '130px' },
     { label: 'Proveedor / proyecto' },
+    ...(this.config.ruta === 'ingresos' ? [{ label: 'OC', width: '110px' }] : []),
     { label: 'Líneas', align: 'center', width: '70px' },
     { label: 'Estado', align: 'center', width: '110px' },
     { label: 'Acciones', align: 'center', width: '120px' },

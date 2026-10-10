@@ -1,0 +1,37 @@
+.bandeja-detail {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 0.75rem 1.25rem;
+  margin: 0 0 1rem;
+}
+
+.bandeja-detail dt {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+.bandeja-detail dd {
+  margin: 0.1rem 0 0;
+  font-weight: 600;
+}
+
+.bandeja-detail__full {
+  grid-column: 1 / -1;
+}
+
+.bandeja-form__hint {
+  display: block;
+  margin: 0.4rem 0 0.75rem;
+  font-size: 0.78rem;
+  color: var(--text-muted);
+}
+
+.bandeja-form__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 0.25rem 1rem;
+}
+
+.bandeja-form__full {
+  grid-column: 1 / -1;
+}

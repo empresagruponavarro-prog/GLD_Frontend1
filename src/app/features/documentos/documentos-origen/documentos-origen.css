@@ -180,3 +180,33 @@
   border-color: #f87171;
   color: #b91c1c;
 }
+
+.documento-form-aviso {
+  display: flex;
+  gap: 0.6rem;
+  align-items: flex-start;
+  margin: 0 0 1rem;
+  padding: 0.65rem 0.85rem;
+  border-radius: 8px;
+  background: #dbeafe;
+  color: #1e40af;
+  font-size: 0.85rem;
+}
+
+.documento-form-aviso--alerta {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.documento-form-hint {
+  margin: 0 0 0.75rem;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+
+.detalle-hint {
+  display: block;
+  margin-top: 0.15rem;
+  font-size: 0.72rem;
+  color: var(--text-muted);
+}

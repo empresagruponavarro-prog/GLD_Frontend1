@@ -6,7 +6,11 @@
     </div>
 
     <div style="display: flex; gap: 0.5rem; align-items: center;">
-      <button class="btn btn-primary" type="button" (click)="openModal()">
+      <button class="btn btn-primary" type="button" (click)="openFurPicker()" title="Crear una OC a partir de un requerimiento aprobado">
+        <i class="fa-solid fa-file-circle-check"></i>
+        Desde requerimiento
+      </button>
+      <button class="btn btn-secondary" type="button" (click)="openModal()">
         <i class="fa-solid fa-plus"></i>
         Nuevo documento
       </button>
@@ -129,7 +133,7 @@
     [currentPage]="currentPage()"
     [pageSize]="pageSize()"
     [pageSizeOptions]="[10, 20, 50, 100]"
-    [minWidth]="'1400px'"
+    [minWidth]="'1600px'"
     emptyMessage="No hay documentos origen registrados."
     emptyIcon="fa-solid fa-folder-open"
     [rowTemplate]="documentoRow"
@@ -154,6 +158,16 @@
           {{ item.moneda_simbolo || item.moneda_id }}
         </span>
         <span *ngIf="!item.moneda_simbolo && !item.moneda_id">—</span>
+      </td>
+      <td>{{ item.numero_requerimiento || 'Sin requerimiento' }}</td>
+      <td style="text-align: center;">
+        @if (item.estado_recepcion) {
+          <span class="badge" [class.badge-completed]="item.estado_recepcion === 'RECIBIDA'" [class.badge-pending]="item.estado_recepcion === 'PARCIAL'" [class.badge-progress]="item.estado_recepcion === 'PENDIENTE' || item.estado_recepcion === 'SIN_BIENES'">
+            {{ estadoRecepcionLabel[item.estado_recepcion] }}
+          </span>
+        } @else {
+          —
+        }
       </td>
       <td>{{ item.usuario || '—' }}</td>
       <td style="text-align: center;">
@@ -198,6 +212,18 @@
     (closed)="closeModal()"
   >
     <div class="documento-form">
+      @if (furActual(); as fur) {
+        <p class="documento-form-aviso" role="status">
+          <i class="fa-solid fa-file-circle-check"></i>
+          Orden de compra del requerimiento <strong>{{ fur.numero }}</strong>. Solo puede ordenar hasta lo aprobado; el centro de costos y los ítems vienen del requerimiento.
+        </p>
+      }
+      @if (recepcionBloqueada()) {
+        <p class="documento-form-aviso documento-form-aviso--alerta" role="status">
+          <i class="fa-solid fa-lock"></i>
+          Esta OC ya tiene recepciones en almacén: el detalle no se puede modificar.
+        </p>
+      }
       <p class="documento-form-section-title">
         <i class="fa-solid fa-file-invoice"></i>
         Datos del Documento
@@ -206,14 +232,14 @@
       <div class="documento-form-grid">
         <div class="form-group">
           <label>Tipo OC</label>
-          <select class="form-control" [(ngModel)]="formData.tipo_oc" name="tipo_oc" (ngModelChange)="onTipoOcChange($event)">
+          <select class="form-control" [(ngModel)]="formData.tipo_oc" name="tipo_oc" (ngModelChange)="onTipoOcChange($event)" [disabled]="furActual() !== null || recepcionBloqueada()">
             <option *ngFor="let t of tiposOc" [value]="t">{{ t }}</option>
           </select>
         </div>
 
         <div class="form-group">
           <label>Centro de Costo</label>
-          <select class="form-control" [(ngModel)]="formData.id_centro_costo" name="id_centro_costo" (ngModelChange)="onCentroCostoChange($event)">
+          <select class="form-control" [(ngModel)]="formData.id_centro_costo" name="id_centro_costo" (ngModelChange)="onCentroCostoChange($event)" [disabled]="furActual() !== null">
             <option [ngValue]="0">Seleccione...</option>
             <option *ngFor="let cc of centrosCostos()" [ngValue]="cc.id">
               {{ cc.nombre }}
@@ -269,7 +295,7 @@
       <p class="documento-form-section-title">
         <i class="fa-solid fa-list-check"></i>
         Detalle
-        <button class="detalle-add-btn" type="button" (click)="addDetalle()">
+        <button class="detalle-add-btn" type="button" (click)="addDetalle()" [hidden]="furActual() !== null || recepcionBloqueada()">
           <i class="fa-solid fa-plus"></i>
           Agregar
         </button>
@@ -280,6 +306,12 @@
           <div class="detalle-row">
             <div class="form-group detalle-producto">
               <label>Producto/Servicio</label>
+              @if (d.etiqueta) {
+                <input class="form-control" [value]="d.etiqueta" readonly [attr.aria-label]="'Ítem ' + (i + 1)" />
+                @if (d.maximo !== undefined) {
+                  <small class="detalle-hint">Máximo a ordenar: {{ d.maximo }}</small>
+                }
+              } @else {
               <select class="form-control" [ngModel]="d.id_producto" (ngModelChange)="updateDetalle(i, 'id_producto', $event)" [name]="'id_producto_' + i">
                 <option [ngValue]="0">Seleccione...</option>
                 @for (p of productos(); track p.id) {
@@ -288,19 +320,20 @@
                   </option>
                 }
               </select>
+              }
             </div>
 
             <div class="form-group">
               <label>Cantidad</label>
-              <input type="number" class="form-control" step="any" min="0" [(ngModel)]="d.cantidad" (ngModelChange)="onDetalleChange()" [name]="'cantidad_' + i" />
+              <input type="number" class="form-control" step="any" min="0" [(ngModel)]="d.cantidad" (ngModelChange)="onDetalleChange()" [name]="'cantidad_' + i" [disabled]="recepcionBloqueada()" />
             </div>
 
             <div class="form-group">
               <label>Precio</label>
-              <input type="number" class="form-control" step="any" min="0" [(ngModel)]="d.precio" (ngModelChange)="onDetalleChange()" [name]="'precio_' + i" />
+              <input type="number" class="form-control" step="any" min="0" [(ngModel)]="d.precio" (ngModelChange)="onDetalleChange()" [name]="'precio_' + i" [disabled]="recepcionBloqueada()" />
             </div>
 
-            <button class="detalle-remove-btn" type="button" (click)="removeDetalle(i)" title="Quitar">
+            <button class="detalle-remove-btn" type="button" (click)="removeDetalle(i)" title="Quitar" [disabled]="recepcionBloqueada()">
               <i class="fa-solid fa-trash"></i>
             </button>
           </div>
@@ -319,6 +352,51 @@
         <i class="fa-solid" [class.fa-floppy-disk]="!saving()" [class.fa-spinner]="saving()" [class.fa-spin]="saving()"></i>
         {{ saving() ? 'Guardando...' : (editingId() !== null ? 'Guardar Cambios' : 'Crear Documento') }}
       </button>
+    </div>
+  </app-modal>
+
+  <app-modal
+    [isOpen]="showFurModal()"
+    title="Generar OC desde un requerimiento"
+    maxWidth="860px"
+    [showDefaultFooter]="false"
+    (closed)="closeFurPicker()"
+  >
+    <p class="documento-form-hint">Requerimientos aprobados con cantidades pendientes de ordenar.</p>
+    @if (furLoading()) {
+      <p class="documento-form-hint"><i class="fa-solid fa-spinner fa-spin"></i> Cargando...</p>
+    } @else {
+      <div class="table-card">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Número</th>
+              <th>Fecha</th>
+              <th>Centro de costos</th>
+              <th>Solicitante</th>
+              <th>Avance</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (fur of furPendientes(); track fur.id) {
+              <tr>
+                <td><strong>{{ fur.numero }}</strong></td>
+                <td>{{ fur.fecha }}</td>
+                <td>{{ fur.centro_costo ?? '—' }}</td>
+                <td>{{ fur.solicitante ?? '—' }}</td>
+                <td>{{ fur.avance === 'PARCIAL' ? 'Atención parcial' : 'Sin atender' }}</td>
+                <td align="right"><button class="btn btn-primary" type="button" (click)="usarRequerimiento(fur.id)">Usar</button></td>
+              </tr>
+            } @empty {
+              <tr><td colspan="6" style="text-align: center; color: var(--text-muted)">No hay requerimientos aprobados pendientes de ordenar.</td></tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+    <div modal-footer class="modal-footer">
+      <button class="btn btn-secondary" type="button" (click)="closeFurPicker()">Cerrar</button>
     </div>
   </app-modal>
 </div>

@@ -64,6 +64,7 @@ export interface DocumentoLinea {
   cantidad: string;
   costo_unitario: string | null;
   observaciones: string | null;
+  id_orden_compra_detalle: number | null;
 }
 
 export interface Documento {
@@ -91,6 +92,8 @@ export interface Documento {
   observaciones: string | null;
   estado: 'REGISTRADO' | 'ANULADO';
   id_documento_anula: number | null;
+  id_orden_compra: number | null;
+  numero_oc: string | null;
   created_at: string;
   total_lineas: number;
   lineas?: DocumentoLinea[];
@@ -363,4 +366,64 @@ export interface FamiliaOption {
   id: number;
   nombre: string;
   prefijo: string;
+}
+
+// ------------------------------------------------------------------ Recepción de compras
+export interface RecepcionPendiente {
+  id: number;
+  id_oc: string | null;
+  numero_oc: string | null;
+  fecha_emision: string | null;
+  proveedor: string | null;
+  id_centro_costo: number | null;
+  centro_costo: string | null;
+  numero_requerimiento: string | null;
+  moneda_simbolo: string | null;
+  total: string | null;
+  lineas_pendientes: number;
+}
+
+export interface RecepcionLinea {
+  id_detalle: number;
+  id_producto: number;
+  codigo: string;
+  descripcion: string;
+  unidad: string;
+  cantidad: string;
+  recibida: string;
+  saldo: string;
+  precio: string | null;
+}
+
+export interface RecepcionNoRecibible {
+  id_detalle: number;
+  descripcion: string;
+  motivo: string;
+}
+
+export interface RecepcionOrdenCompra {
+  id: number;
+  id_oc: string | null;
+  numero_oc: string | null;
+  fecha_emision: string | null;
+  id_proveedor: number | null;
+  proveedor: string | null;
+  id_centro_costo: number | null;
+  centro_costo: string | null;
+  numero_requerimiento: string | null;
+  moneda_simbolo: string | null;
+  es_soles: boolean;
+  total: string | null;
+  lineas: RecepcionLinea[];
+  no_recibibles: RecepcionNoRecibible[];
+}
+
+export interface RecepcionPayload {
+  id_orden_compra: number;
+  id_almacen: number;
+  fecha: string;
+  id_recibido_por?: number;
+  tipo_cambio?: string;
+  observaciones?: string;
+  lineas: { id_orden_compra_detalle: number; cantidad: string }[];
 }
