@@ -368,7 +368,7 @@
         <div class="p-6 space-y-4 text-xs">
           <div>
             <label for="np-nombre" class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Nombre <span class="text-rose-500">*</span></label>
-            <input id="np-nombre" name="Nombre" type="text" [(ngModel)]="nuevaForm.Nombre" maxlength="255" required autofocus
+            <input #nuevaNombreInput id="np-nombre" name="Nombre" type="text" [(ngModel)]="nuevaForm.Nombre" maxlength="255" required
                    placeholder="Ej. PLANTILLA TAMBO GLD"
                    class="w-full h-9 px-3 rounded border bg-white text-slate-900 placeholder-slate-400 outline-none transition"
                    [class]="nombreDuplicado ? 'border-rose-400 focus:border-rose-500' : 'border-[#d1dcd7] focus:border-[#529b7b]'">

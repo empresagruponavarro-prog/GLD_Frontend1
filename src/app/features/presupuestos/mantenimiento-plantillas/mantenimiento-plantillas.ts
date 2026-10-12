@@ -1,4 +1,4 @@
-import { Component, OnInit, signal, inject, computed } from '@angular/core';
+import { Component, ElementRef, Injector, OnInit, afterNextRender, signal, inject, computed, viewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { DragDropModule, CdkDragDrop, moveItemInArray } from '@angular/cdk/drag-drop';
 import { FormsModule } from '@angular/forms';
@@ -15,6 +15,7 @@ import { PresupuestosService, Plantilla, PlantillaCompleta, PlantillaFaseDto, Pl
 export class MantenimientoPlantillasComponent implements OnInit {
   private service = inject(PresupuestosService);
   private categoriasService = inject(CategoriasService);
+  private injector = inject(Injector);
 
   plantillas = signal<Plantilla[]>([]);
   selectedPlantilla = signal<PlantillaCompleta | null>(null);
@@ -110,11 +111,14 @@ export class MantenimientoPlantillasComponent implements OnInit {
     IdPlantillaOrigen: '',
   };
   nuevaError = signal('');
+  private nuevaNombreInput = viewChild<ElementRef<HTMLInputElement>>('nuevaNombreInput');
 
   nuevaPlantilla() {
     this.nuevaForm = { Nombre: '', Descripcion: '', Activo: true, origen: 'vacia', IdPlantillaOrigen: '' };
     this.nuevaError.set('');
     this.showNuevaPlantillaModal.set(true);
+    // Foco en "Nombre" al abrir el pop-up (sustituye al atributo autofocus).
+    afterNextRender(() => this.nuevaNombreInput()?.nativeElement.focus(), { injector: this.injector });
   }
 
   cerrarNuevaPlantilla() {

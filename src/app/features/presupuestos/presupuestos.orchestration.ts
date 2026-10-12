@@ -131,7 +131,7 @@ export function crearFasesConCategorias(
 }
 
 export function describirFasesFallidas(fallidas: FaseFallida[]): string {
-  return fallidas.map((f) => `${f.nombre}: ${f.motivo}`).join('\n');
+  return fallidas.map((f) => `• ${f.nombre}: ${f.motivo}`).join('\n');
 }
 
 // Plantillas 
@@ -151,7 +151,7 @@ export function plantillaAFilas(plantilla: PlantillaParaFilas): FilaFormFase[] {
     const nombre = fase.NombreFase || fase.IdpptoFase;
     const categorias = (fase.categorias ?? []).filter((c) => !!c.IdpptoFaseCategoria);
     if (categorias.length === 0) {
-      filas.push({ idFase: fase.IdpptoFase, nombre, idCategoria: '', categoria: '(Sin categoria)', subtotal: 0 });
+      filas.push({ idFase: fase.IdpptoFase, nombre, idCategoria: '', categoria: '(Sin categoría)', subtotal: 0 });
       continue;
     }
     for (const cat of categorias) {

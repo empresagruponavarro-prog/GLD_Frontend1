@@ -14,6 +14,26 @@ import {
   mensajeDeError,
   plantillaAFilas,
 } from './presupuestos.orchestration';
+import {
+  EstadoFase,
+  aNumero,
+  ajustarParametro,
+  comprasPorFase,
+  costoDirecto,
+  estaSobrepasado,
+  estadoFase,
+  igv,
+  montoGG,
+  montoUtilidad,
+  pctCompras,
+  pesoPorcentaje,
+  ponderacionFases,
+  saldoSinAsignar,
+  statsFase,
+  subtotalSinIgv,
+  sumarCampo,
+  totalConIgv,
+} from './presupuestos.calc';
 import { EmpresasService } from '../administration/empresas/empresas.service';
 import { Empresa } from '../administration/empresas/interfaces';
 import { PresupuestosService, Plantilla } from './presupuestos.service';
@@ -84,7 +104,7 @@ export class PresupuestosComponent implements OnInit {
   }
 
   get totalPortafolioActivo(): number {
-    return this.centrosCostos().reduce((acc, c) => acc + (Number(c.PresupuestoMonto) || 0), 0);
+    return sumarCampo(this.centrosCostos(), (c) => c.PresupuestoMonto);
   }
 
   
@@ -175,32 +195,19 @@ export class PresupuestosComponent implements OnInit {
   }
 
   getPesoFase(fase: DetalleFase): string {
-    const totalCd = Number(this.presupuestoActivo()?.CostoDirecto) || 0;
-    const faseCd = Number(fase.CostoDirecto) || 0;
-    if (totalCd <= 0 || faseCd <= 0) return '0.0%';
-    return ((faseCd / totalCd) * 100).toFixed(1) + '%';
+    return pesoPorcentaje(fase.CostoDirecto, this.presupuestoActivo()?.CostoDirecto);
   }
 
   get ponderacionTotalFases(): number {
-    const totalCd = Number(this.presupuestoActivo()?.CostoDirecto) || 0;
-    if (totalCd <= 0) return 0;
-    const fases = this.presupuestoActivo()?.fases || [];
-    const sumFasesCd = fases.reduce((acc, f) => acc + (Number(f.CostoDirecto) || 0), 0);
-    return Number(((sumFasesCd / totalCd) * 100).toFixed(1));
+    return ponderacionFases(this.presupuestoActivo()?.fases || [], this.presupuestoActivo()?.CostoDirecto);
   }
 
   get saldoSinAsignarFases(): number {
-    const totalCd = Number(this.presupuestoActivo()?.CostoDirecto) || 0;
-    const fases = this.presupuestoActivo()?.fases || [];
-    const sumFasesCd = fases.reduce((acc, f) => acc + (Number(f.CostoDirecto) || 0), 0);
-    return totalCd - sumFasesCd;
+    return saldoSinAsignar(this.presupuestoActivo()?.fases || [], this.presupuestoActivo()?.CostoDirecto);
   }
 
   getPesoCategoria(cat: any): string {
-    const faseCd = Number(this.selectedFase()?.CostoDirecto) || 0;
-    const catCd = Number(cat.CostoDirecto ?? cat.SubTotalCategoria) || 0;
-    if (faseCd <= 0 || catCd <= 0) return '0.0%';
-    return ((catCd / faseCd) * 100).toFixed(1) + '%';
+    return pesoPorcentaje(cat.CostoDirecto ?? cat.SubTotalCategoria, this.selectedFase()?.CostoDirecto);
   }
 
   getFaseCode(fase: DetalleFase | null): string {
@@ -248,7 +255,7 @@ export class PresupuestosComponent implements OnInit {
   totalComprasFase = signal<number>(0);
 
   get pptoFaseCostoDirecto(): number {
-    return Number(this.faseSeleccionadaCompras()?.CostoDirecto) || 0;
+    return aNumero(this.faseSeleccionadaCompras()?.CostoDirecto);
   }
 
   get saldoDisponibleFase(): number {
@@ -256,14 +263,11 @@ export class PresupuestosComponent implements OnInit {
   }
 
   get isFaseSobrepasada(): boolean {
-    return this.pptoFaseCostoDirecto > 0 && this.totalComprasFase() > this.pptoFaseCostoDirecto;
+    return estaSobrepasado(this.pptoFaseCostoDirecto, this.totalComprasFase());
   }
 
   get porcentajeComprometidoFase(): number {
-    if (this.pptoFaseCostoDirecto <= 0) {
-      return this.totalComprasFase() > 0 ? 100 : 0;
-    }
-    return (this.totalComprasFase() / this.pptoFaseCostoDirecto) * 100;
+    return pctCompras(this.pptoFaseCostoDirecto, this.totalComprasFase());
   }
 
   get totalOrdenesUnicasFase(): number {
@@ -295,32 +299,19 @@ export class PresupuestosComponent implements OnInit {
   }
 
   getPctComprasFase(fase: DetalleFase): number {
-    const cd = Number(fase?.CostoDirecto) || 0;
-    const compras = this.getComprasFaseMonto(fase);
-    if (cd <= 0) return compras > 0 ? 100 : 0;
-    return Math.min(100, Math.round((compras / cd) * 100));
+    return pctCompras(fase?.CostoDirecto, this.getComprasFaseMonto(fase), { redondear: true, tope100: true });
   }
 
   getPctRealComprasFase(fase: DetalleFase): number {
-    const cd = Number(fase?.CostoDirecto) || 0;
-    const compras = this.getComprasFaseMonto(fase);
-    if (cd <= 0) return compras > 0 ? 100 : 0;
-    return Math.round((compras / cd) * 100);
+    return pctCompras(fase?.CostoDirecto, this.getComprasFaseMonto(fase), { redondear: true });
   }
 
   isFaseRowSobrepasada(fase: DetalleFase): boolean {
-    const cd = Number(fase?.CostoDirecto) || 0;
-    const compras = this.getComprasFaseMonto(fase);
-    return cd > 0 && compras > cd;
+    return estaSobrepasado(fase?.CostoDirecto, this.getComprasFaseMonto(fase));
   }
 
-  getEstadoFaseText(fase: DetalleFase): string {
-    const compras = this.getComprasFaseMonto(fase);
-    const cd = Number(fase?.CostoDirecto) || 0;
-    if (compras <= 0) return 'Sin Iniciar';
-    if (cd > 0 && compras > cd) return 'Sobrecosto';
-    if (cd > 0 && compras >= cd) return 'Completado';
-    return 'En Curso';
+  getEstadoFaseText(fase: DetalleFase): EstadoFase {
+    return estadoFase(fase?.CostoDirecto, this.getComprasFaseMonto(fase));
   }
 
   getEstadoFaseClass(fase: DetalleFase): string {
@@ -362,27 +353,27 @@ export class PresupuestosComponent implements OnInit {
 
   // Getters Financieros Reactivos
   get formCostoDirecto(): number {
-    return this.formFases().reduce((acc, f) => acc + (Number(f.subtotal) || 0), 0);
+    return costoDirecto(this.formFases());
   }
 
   get formMontoGG(): number {
-    return this.formCostoDirecto * (this.pctGG() / 100);
+    return montoGG(this.formCostoDirecto, this.pctGG());
   }
 
   get formMontoUtilidad(): number {
-    return this.formCostoDirecto * (this.pctUtilidad() / 100);
+    return montoUtilidad(this.formCostoDirecto, this.pctUtilidad());
   }
 
   get formSubtotal(): number {
-    return (this.formCostoDirecto + this.formMontoGG + this.formMontoUtilidad + this.viaticos()) - this.descuento();
+    return subtotalSinIgv(this.formCostoDirecto, this.formMontoGG, this.formMontoUtilidad, this.viaticos(), this.descuento());
   }
 
   get formIGV(): number {
-    return this.formSubtotal * 0.18;
+    return igv(this.formSubtotal);
   }
 
   get formTotalGeneral(): number {
-    return this.formSubtotal + this.formIGV;
+    return totalConIgv(this.formSubtotal);
   }
 
   get formGGPlusUtilidad(): number {
@@ -426,17 +417,13 @@ export class PresupuestosComponent implements OnInit {
 
   adjustNumeric(field: 'gg' | 'utilidad' | 'viaticos' | 'descuento', delta: number) {
     if (field === 'gg') {
-      const v = Math.max(0, Number((this.pctGG() + delta).toFixed(2)));
-      this.pctGG.set(v);
+      this.pctGG.set(ajustarParametro(this.pctGG(), delta));
     } else if (field === 'utilidad') {
-      const v = Math.max(0, Number((this.pctUtilidad() + delta).toFixed(2)));
-      this.pctUtilidad.set(v);
+      this.pctUtilidad.set(ajustarParametro(this.pctUtilidad(), delta));
     } else if (field === 'viaticos') {
-      const v = Math.max(0, Number((this.viaticos() + delta).toFixed(2)));
-      this.viaticos.set(v);
+      this.viaticos.set(ajustarParametro(this.viaticos(), delta));
     } else if (field === 'descuento') {
-      const v = Math.max(0, Number((this.descuento() + delta).toFixed(2)));
-      this.descuento.set(v);
+      this.descuento.set(ajustarParametro(this.descuento(), delta));
     }
   }
 
@@ -643,7 +630,7 @@ export class PresupuestosComponent implements OnInit {
       next: (items) => {
         const list = items || [];
         this.comprasDetalleFase.set(list);
-        const sum = list.reduce((acc, it) => acc + (Number(it.monto) || 0), 0);
+        const sum = sumarCampo(list, (it) => it.monto);
         this.totalComprasFase.set(sum);
         if (faseId) {
           this.comprasPorFaseMap.update(prev => ({ ...prev, [Number(faseId)]: sum }));
@@ -662,17 +649,8 @@ export class PresupuestosComponent implements OnInit {
     this.loadingComprasCC.set(true);
     this.documentosOrigenService.getDetallePorFase(Number(idCentroCosto)).subscribe({
       next: (items) => {
-        const map: Record<number, number> = {};
-        let total = 0;
-        (items || []).forEach(it => {
-          const monto = Number(it.monto) || 0;
-          total += monto;
-          if (it.id_fase != null) {
-            const fid = Number(it.id_fase);
-            map[fid] = (map[fid] || 0) + monto;
-          }
-        });
-        this.comprasPorFaseMap.set(map);
+        const { porFase, total } = comprasPorFase(items || []);
+        this.comprasPorFaseMap.set(porFase);
         this.totalComprasCC.set(total);
         this.loadingComprasCC.set(false);
       },
@@ -1986,11 +1964,11 @@ export class PresupuestosComponent implements OnInit {
   // ==========================================
 
   get totalCostoDirectoCC(): number {
-    return this.presupuestosDelCC().reduce((acc, p) => acc + (Number(p.CostoDirecto) || 0), 0);
+    return sumarCampo(this.presupuestosDelCC(), (p) => p.CostoDirecto);
   }
 
   get totalPresupuestosCC(): number {
-    return this.presupuestosDelCC().reduce((acc, p) => acc + (Number(p.Total) || 0), 0);
+    return sumarCampo(this.presupuestosDelCC(), (p) => p.Total);
   }
 
   get saldoDisponibleCC(): number {
@@ -1998,8 +1976,7 @@ export class PresupuestosComponent implements OnInit {
   }
 
   get isCCPresupuestoSobrepasado(): boolean {
-    const total = this.totalPresupuestosCC;
-    return total > 0 && this.totalComprasCC() > total;
+    return estaSobrepasado(this.totalPresupuestosCC, this.totalComprasCC());
   }
 
   get totalCCs() {
@@ -2007,10 +1984,7 @@ export class PresupuestosComponent implements OnInit {
   }
 
   get totalPortafolio() {
-    return this.centrosCostosFiltrados.reduce((acc, cc) => {
-      const monto = Number(cc.PresupuestoMonto) || 0;
-      return acc + monto;
-    }, 0);
+    return sumarCampo(this.centrosCostosFiltrados, (cc) => cc.PresupuestoMonto);
   }
 
   get conteoEstados() {
@@ -2025,29 +1999,7 @@ export class PresupuestosComponent implements OnInit {
   }
 
   get statsFase() {
-    const p = this.presupuestoActivo();
-    const f = this.selectedFase();
-    if (!p) return null;
-
-    const cdTotal = Number(p.CostoDirecto) || 0;
-    const cdFase = f ? (Number(f.CostoDirecto) || 0) : cdTotal;
-    const ggPorcentaje = Number(p.GGPorcentaje) || 0;
-    const utilPorcentaje = Number(p.UtiliPorcentaje) || 0;
-    
-    // GG, Utilidad y Total calculados para la fase seleccionada
-    const gg = (cdFase * ggPorcentaje / 100);
-    const util = (cdFase * utilPorcentaje / 100);
-    const total = cdFase + gg + util;
-    
-    return {
-      cd: cdFase,
-      cdTotal,
-      ggPorcentaje,
-      utilPorcentaje,
-      gg,
-      util,
-      total
-    };
+    return statsFase(this.presupuestoActivo(), this.selectedFase());
   }
 
   get totalPartidas() {
