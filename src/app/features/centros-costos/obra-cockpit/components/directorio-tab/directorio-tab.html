@@ -15,7 +15,6 @@
     @if (residentes().length > 0) {
       @for (res of residentes(); track res.id) {
         <div class="rounded-xl bg-surface-container-lowest shadow-sm border border-surface-container p-4 flex flex-col justify-between relative overflow-hidden">
-          <div class="absolute top-0 right-0 w-24 h-24 bg-primary/10 rounded-bl-full pointer-events-none"></div>
           <div>
             <div class="flex items-center justify-between mb-2">
               <span class="px-2 py-0.5 rounded-full bg-primary-fixed text-on-primary-fixed-variant text-[10px] font-extrabold uppercase tracking-wide">{{ res.rol_obra }}</span>

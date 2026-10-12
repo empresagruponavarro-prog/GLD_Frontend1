@@ -65,6 +65,7 @@ export class ObraCockpitComponent implements OnInit {
   semanas = computed(() => this.cockpit()?.cronograma || []);
   kpis = computed(() => this.cockpit()?.kpis);
   cabecera = computed(() => this.cockpit()?.cabecera);
+  generales = computed(() => this.cockpit()?.generales);
   residentes = computed(() => this.cockpit()?.residentes || []);
   planos = computed(() => this.cockpit()?.planos || []);
   documentos = computed(() => this.cockpit()?.documentos || []);

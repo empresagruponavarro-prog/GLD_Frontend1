@@ -1,68 +1,162 @@
 <app-modal
   [isOpen]="isOpen()"
-  [title]="isEdit ? 'Editar residente / contacto' : 'Asignar nuevo residente / contacto'"
   maxWidth="680px"
+  [showHeader]="false"
   [showDefaultFooter]="false"
   (closed)="closed.emit()"
 >
-  <form modal-body [formGroup]="form" (ngSubmit)="onSubmit()" id="form-residente" class="grid grid-cols-1 md:grid-cols-2 gap-3">
-    <div class="form-group">
-      <label for="res-nombre">Nombre completo *</label>
-      <input id="res-nombre" type="text" class="form-control" formControlName="nombre_completo" placeholder="Ing. Nombre Apellido" />
+  <div modal-body class="-m-[10px]">
+    <!-- CUSTOM HEADER -->
+    <div class="flex items-center justify-between p-5 border-b border-surface-container/60">
+      <div class="flex items-center gap-4">
+        <div class="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center text-primary border border-primary/20 shadow-sm">
+          <span class="material-symbols-outlined text-2xl">contact_page</span>
+        </div>
+        <div class="flex items-center gap-3">
+          <h2 class="text-[17px] font-bold text-on-surface m-0 leading-none">{{ isEdit ? 'Editar residente / contacto' : 'Asignar nuevo residente / contacto' }}</h2>
+          <span class="px-2 py-0.5 rounded text-[10px] font-extrabold uppercase tracking-wide text-primary bg-primary/10 border border-primary/20">Obra Activa</span>
+        </div>
+      </div>
+      <button class="text-on-surface-variant hover:text-on-surface transition-colors p-1" (click)="closed.emit()">
+        <span class="material-symbols-outlined text-[22px]">close</span>
+      </button>
     </div>
-    <div class="form-group">
-      <label for="res-rol">Rol en obra *</label>
-      <input id="res-rol" type="text" class="form-control" formControlName="rol_obra" placeholder="Jefe de Obra, Residente IIEE..." />
-    </div>
-    <div class="form-group">
-      <label for="res-cip">CIP / CAP</label>
-      <input id="res-cip" type="text" class="form-control" formControlName="cip_cap" />
-    </div>
-    <div class="form-group">
-      <label for="res-especialidad">Especialidad</label>
-      <input id="res-especialidad" type="text" class="form-control" formControlName="especialidad" />
-    </div>
-    <div class="form-group">
-      <label for="res-telefono">Teléfono (WhatsApp)</label>
-      <input id="res-telefono" type="tel" class="form-control" formControlName="telefono" placeholder="987 654 321" />
-    </div>
-    <div class="form-group">
-      <label for="res-correo">Correo</label>
-      <input id="res-correo" type="email" class="form-control" formControlName="correo" />
-    </div>
-    <div class="form-group">
-      <label for="res-turno">Turno</label>
-      <input id="res-turno" type="text" class="form-control" formControlName="turno" />
-    </div>
-    <div class="form-group">
-      <label for="res-estado">Estado en planta</label>
-      <select id="res-estado" class="form-control" formControlName="estado_planta">
-        @for (e of estadosPlanta; track e) {
-          <option [value]="e">{{ e }}</option>
-        }
-      </select>
-    </div>
-    <div class="form-group">
-      <label for="res-orden">Orden de aparición</label>
-      <input id="res-orden" type="number" min="0" class="form-control" formControlName="orden" placeholder="Auto" />
-    </div>
-    @if (formError()) {
-      <p class="md:col-span-2 badge badge-danger" role="alert">{{ formError() }}</p>
-    }
-  </form>
 
-  <div modal-footer class="modal-footer">
+    <form [formGroup]="form" (ngSubmit)="onSubmit()" id="form-residente" class="p-5">
+      
+      <!-- TOP BOX: VINCULAR RRHH -->
+      <div class="rounded-xl border border-surface-container/80 bg-surface-container-lowest p-4 mb-5 shadow-sm">
+        <div class="mb-3">
+          <label class="text-[11px] font-bold text-on-surface-variant uppercase tracking-wider">Seleccionar perfil existente</label>
+        </div>
+      <div class="relative">
+        <select class="w-full h-10 px-3 rounded-lg border border-surface-container/80 bg-surface-container-lowest text-sm text-on-surface focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary appearance-none pr-10" formControlName="id_anexo">
+          <option [ngValue]="null">-- Ingreso Manual --</option>
+          @for (t of trabajadores(); track t.id) {
+            <option [ngValue]="t.id">{{ t.nombre }}</option>
+          }
+        </select>
+        <span class="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-on-surface-variant pointer-events-none text-[20px]">expand_more</span>
+      </div>
+      <p class="text-[11px] text-on-surface-variant mt-2.5 flex items-start gap-1.5">
+        <span class="material-symbols-outlined text-[14px] text-primary relative top-[1px]">info</span>
+        Seleccionar un anexo autocompletará automáticamente sus datos.
+      </p>
+    </div>
+
+    <!-- GRID OF FIELDS -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-x-5 gap-y-4">
+      
+      <!-- Nombre Completo -->
+      <div>
+        <label class="block text-[11px] font-bold text-on-surface-variant uppercase tracking-wider mb-1.5">Nombre completo <span class="text-error">*</span></label>
+        <div class="relative">
+          <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-[18px]">person</span>
+          <input type="text" class="w-full h-10 pl-9 pr-3 rounded-lg border border-surface-container/80 bg-surface-container-lowest text-sm text-on-surface focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary" formControlName="nombre_completo" placeholder="Ing. Nombre Apellido" />
+        </div>
+      </div>
+
+      <!-- Rol en obra -->
+      <div>
+        <label class="block text-[11px] font-bold text-on-surface-variant uppercase tracking-wider mb-1.5">Rol en obra <span class="text-error">*</span></label>
+        <div class="relative">
+          <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-[18px]">work</span>
+          <input type="text" class="w-full h-10 pl-9 pr-3 rounded-lg border border-surface-container/80 bg-surface-container-lowest text-sm text-on-surface focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary" formControlName="rol_obra" placeholder="Jefe de Obra, Residente IIEE" />
+        </div>
+      </div>
+
+      <!-- Especialidad -->
+      <div>
+        <label class="block text-[11px] font-bold text-on-surface-variant uppercase tracking-wider mb-1.5">Especialidad</label>
+        <div class="relative">
+          <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-[18px]">verified_user</span>
+          <input type="text" class="w-full h-10 pl-9 pr-3 rounded-lg border border-surface-container/80 bg-surface-container-lowest text-sm text-on-surface focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary" formControlName="especialidad" placeholder="Ej. Obras Civiles, Acabados, HVAC" />
+        </div>
+      </div>
+
+      <!-- Teléfono -->
+      <div>
+        <div class="flex items-center justify-between mb-1.5">
+          <label class="block text-[11px] font-bold text-on-surface-variant uppercase tracking-wider">Teléfono (WhatsApp) <span class="text-error">*</span></label>
+          <span class="text-[10px] font-semibold text-primary flex items-center gap-1"><span class="material-symbols-outlined text-[12px]">chat</span> Chat Directo</span>
+        </div>
+        <div class="flex">
+          <div class="h-10 px-3 bg-surface-container flex items-center justify-center border border-r-0 border-surface-container/80 rounded-l-lg text-sm text-on-surface-variant font-semibold">
+            +51
+          </div>
+          <input type="tel" class="w-full h-10 px-3 rounded-r-lg border border-surface-container/80 bg-surface-container-lowest text-sm text-on-surface focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary" formControlName="telefono" placeholder="987654321" maxlength="9" minlength="9" />
+        </div>
+      </div>
+
+      <!-- Correo -->
+      <div>
+        <label class="block text-[11px] font-bold text-on-surface-variant uppercase tracking-wider mb-1.5">Correo electrónico</label>
+        <div class="relative">
+          <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-[18px]">mail</span>
+          <input type="email" class="w-full h-10 pl-9 pr-3 rounded-lg border border-surface-container/80 bg-surface-container-lowest text-sm text-on-surface focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary" formControlName="correo" placeholder="usuario@gld.com.pe" />
+        </div>
+      </div>
+
+      <!-- Turno -->
+      <div>
+        <label class="block text-[11px] font-bold text-on-surface-variant uppercase tracking-wider mb-1.5">Turno y horario</label>
+        <div class="relative">
+          <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-[18px]">schedule</span>
+          <input type="text" class="w-full h-10 pl-9 pr-3 rounded-lg border border-surface-container/80 bg-surface-container-lowest text-sm text-on-surface focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary" formControlName="turno" placeholder="Lun - Sáb 07:00 - 18:00" />
+        </div>
+      </div>
+
+      <!-- Estado en Planta -->
+      <div>
+        <label class="block text-[11px] font-bold text-on-surface-variant uppercase tracking-wider mb-1.5">Estado en planta</label>
+        <div class="relative">
+          <div class="absolute left-3 top-1/2 -translate-y-1/2 flex items-center justify-center pointer-events-none">
+            <span class="w-2.5 h-2.5 rounded-full" [class.bg-primary]="form.get('estado_planta')?.value === 'En Planta'" [class.bg-outline]="form.get('estado_planta')?.value !== 'En Planta'"></span>
+          </div>
+          <select class="w-full h-10 pl-8 pr-10 rounded-lg border border-surface-container/80 bg-surface-container-lowest text-sm text-on-surface focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary appearance-none" formControlName="estado_planta">
+            @for (e of estadosPlanta; track e) {
+              <option [value]="e">{{ e }} {{ e === 'En Planta' ? '(Presente en Obra)' : '' }}</option>
+            }
+          </select>
+          <span class="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-on-surface-variant pointer-events-none text-[20px]">expand_more</span>
+        </div>
+      </div>
+
+      <!-- Orden de aparición -->
+      <div>
+        <div class="flex items-center justify-between mb-1.5">
+          <label class="block text-[11px] font-bold text-on-surface-variant uppercase tracking-wider">Orden de aparición</label>
+          <span class="text-[10px] text-on-surface-variant">Prioridad Directorio</span>
+        </div>
+        <input type="number" min="0" class="w-full h-10 px-3 rounded-lg border border-surface-container/80 bg-surface-container-lowest text-sm text-on-surface focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary" formControlName="orden" placeholder="Auto" />
+      </div>
+
+    </div>
+
+      @if (formError()) {
+        <div class="mt-4 p-3 rounded-lg bg-error-container text-on-error-container text-sm flex items-center gap-2">
+          <span class="material-symbols-outlined">error</span>
+          {{ formError() }}
+        </div>
+      }
+    </form>
+  </div>
+
+  <!-- CUSTOM FOOTER -->
+  <div modal-footer class="p-5 border-t border-surface-container/60 bg-surface-container-lowest rounded-b-[20px] flex items-center justify-end gap-3">
     @if (isEdit) {
-      <button type="button" id="btn-residente-eliminar" class="btn btn-danger mr-auto" (click)="onDelete()" [disabled]="isSaving()">
-        <i class="fa-solid fa-user-minus"></i> Desasignar
+      <button type="button" class="px-4 py-2 rounded-lg border border-error text-error text-sm font-semibold hover:bg-error/5 transition-colors mr-auto flex items-center gap-1.5" (click)="onDelete()" [disabled]="isSaving()">
+        <span class="material-symbols-outlined text-[18px]">person_remove</span> Desasignar
       </button>
     }
-    <button type="button" class="btn btn-secondary" (click)="closed.emit()" [disabled]="isSaving()">Cancelar</button>
-    <button type="submit" form="form-residente" id="btn-residente-guardar" class="btn btn-primary" [disabled]="isSaving()">
+    <button type="button" class="px-5 py-2 rounded-lg border border-surface-container text-on-surface text-sm font-semibold hover:bg-surface-container transition-colors" (click)="closed.emit()" [disabled]="isSaving()">
+      Cancelar
+    </button>
+    <button type="submit" form="form-residente" class="px-5 py-2 rounded-lg bg-primary text-on-primary text-sm font-semibold hover:opacity-95 transition-opacity flex items-center gap-1.5" [disabled]="isSaving()">
       @if (isSaving()) {
-        <i class="fa-solid fa-spinner fa-spin"></i> Guardando...
+        <span class="material-symbols-outlined animate-spin text-[18px]">progress_activity</span> Guardando...
       } @else {
-        <i class="fa-solid fa-floppy-disk"></i> Guardar
+        <span class="material-symbols-outlined text-[18px]">save</span> Guardar
       }
     </button>
   </div>

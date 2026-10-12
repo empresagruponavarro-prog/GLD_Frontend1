@@ -276,6 +276,6 @@
     <app-historial-planos-dialog [isOpen]="true" [idCentroCosto]="idCentroCosto()" [plano]="selectedPlano()" (closed)="showHistorialDialog.set(false)"></app-historial-planos-dialog>
   }
   @if (showGeneralesDialog()) {
-    <app-generales-dialog [isOpen]="true" [idCentroCosto]="idCentroCosto()" [cabecera]="cabecera()" (closed)="showGeneralesDialog.set(false)" (saved)="onDialogSaved()"></app-generales-dialog>
+    <app-generales-dialog [isOpen]="true" [idCentroCosto]="idCentroCosto()" [generales]="generales()" (closed)="showGeneralesDialog.set(false)" (saved)="onDialogSaved()"></app-generales-dialog>
   }
 </div>

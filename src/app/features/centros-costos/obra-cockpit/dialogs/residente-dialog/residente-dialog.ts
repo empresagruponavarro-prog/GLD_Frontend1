@@ -4,6 +4,8 @@ import { ModalComponent } from '@shared/components/modal/modal';
 import { errorMessage } from '@app/features/almacen/almacen.utils';
 import { sinVacios } from '../../obra.calc';
 import { ESTADOS_PLANTA, ObraResidente, ResidentePayload } from '../../obra.interface';
+import { AnexosService } from '@app/features/maestros-generales/anexos/anexos.service';
+import { AnexoSelect, SelectOption } from '@app/features/maestros-generales/anexos/interfaces/anexos.interface';
 import { ObraService } from '../../obra.service';
 
 @Component({
@@ -15,6 +17,7 @@ import { ObraService } from '../../obra.service';
 })
 export class ResidenteDialogComponent {
   readonly #service = inject(ObraService);
+  readonly #anexosService = inject(AnexosService);
 
   readonly isOpen = input(false);
   readonly idCentroCosto = input.required<number>();
@@ -24,15 +27,17 @@ export class ResidenteDialogComponent {
   readonly saved = output<void>();
 
   protected readonly estadosPlanta = ESTADOS_PLANTA;
+  protected readonly trabajadores = signal<AnexoSelect[]>([]);
+  protected readonly especialidades = signal<SelectOption[]>([]);
   protected readonly isSaving = signal(false);
   protected readonly formError = signal('');
 
   protected readonly form = new FormGroup({
+    id_anexo: new FormControl<number | null>(null),
     nombre_completo: new FormControl('', { nonNullable: true, validators: [Validators.required, Validators.maxLength(200)] }),
     rol_obra: new FormControl('', { nonNullable: true, validators: [Validators.required, Validators.maxLength(100)] }),
-    cip_cap: new FormControl('', { nonNullable: true, validators: [Validators.maxLength(50)] }),
     especialidad: new FormControl('', { nonNullable: true, validators: [Validators.maxLength(150)] }),
-    telefono: new FormControl('', { nonNullable: true, validators: [Validators.maxLength(50), Validators.pattern(/^[+\d\s()-]*$/)] }),
+    telefono: new FormControl('', { nonNullable: true, validators: [Validators.pattern(/^\d{9}$/)] }),
     correo: new FormControl('', { nonNullable: true, validators: [Validators.email, Validators.maxLength(150)] }),
     turno: new FormControl('', { nonNullable: true, validators: [Validators.maxLength(100)] }),
     estado_planta: new FormControl<string>('En Planta', { nonNullable: true }),
@@ -40,14 +45,32 @@ export class ResidenteDialogComponent {
   });
 
   constructor() {
+    this.#anexosService.getSelect('Trabajador').subscribe(res => this.trabajadores.set(res));
+    this.#anexosService.getEspecialidadesSelect().subscribe(res => this.especialidades.set(res));
+
+    this.form.controls.id_anexo.valueChanges.subscribe(id => {
+      if (id) {
+        this.#anexosService.getById(id).subscribe(anexo => {
+          const especialidadStr = this.especialidades().find(e => e.id === anexo.AnexoEspecialidadId)?.nombre || '';
+          this.form.patchValue({
+            nombre_completo: anexo.Anexo || anexo.NombreComercial || '',
+            rol_obra: especialidadStr,
+            telefono: anexo.Telefono || '',
+            correo: anexo.Correo || '',
+            especialidad: especialidadStr
+          });
+        });
+      }
+    });
+
     effect(() => {
       if (!this.isOpen()) return;
       this.formError.set('');
       const r = this.residente();
       this.form.reset({
+        id_anexo: r?.id_anexo ?? null,
         nombre_completo: r?.nombre_completo ?? '',
         rol_obra: r?.rol_obra ?? '',
-        cip_cap: r?.cip_cap ?? '',
         especialidad: r?.especialidad ?? '',
         telefono: r?.telefono ?? '',
         correo: r?.correo ?? '',
@@ -70,9 +93,9 @@ export class ResidenteDialogComponent {
     }
     const v = this.form.getRawValue();
     const payload = sinVacios<ResidentePayload>({
+      id_anexo: v.id_anexo ?? undefined,
       nombre_completo: v.nombre_completo.trim(),
       rol_obra: v.rol_obra.trim(),
-      cip_cap: v.cip_cap.trim(),
       especialidad: v.especialidad.trim(),
       telefono: v.telefono.trim(),
       correo: v.correo.trim(),
