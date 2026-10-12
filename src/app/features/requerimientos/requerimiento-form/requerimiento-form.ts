@@ -6,17 +6,22 @@ import { errorMessage, fmtMoney, fmtNum, todayISO } from '../../almacen/almacen.
 import { FasePorCentroCosto } from '../../presupuestos/interfaces/presupuestos.interface';
 import { PresupuestosService } from '../../presupuestos/presupuestos.service';
 import { CatalogoPickerComponent } from '../catalogo-picker/catalogo-picker';
+import { CotizacionesPanelComponent } from '../cotizaciones-panel/cotizaciones-panel';
 import {
   ACCION_LABEL,
   AVANCE_LABEL,
+  Area,
   ESTADO_LABEL,
   ItemCatalogo,
   Requerimiento,
   RequerimientoPayload,
   SelectOption,
+  TIPOS_REQUERIMIENTO,
+  TIPO_LABEL,
+  TipoRequerimiento,
 } from '../requerimientos.models';
 import { RequerimientosService } from '../requerimientos.service';
-import { avanceBadge, esEditable, estadoBadge } from '../requerimientos.utils';
+import { ESTADOS_ANULABLES, avanceBadge, esEditable, estadoBadge } from '../requerimientos.utils';
 
 const DECIMAL = /^\d{1,12}(\.\d{1,4})?$/;
 
@@ -28,6 +33,7 @@ function lineaGroup() {
     cantidad: new FormControl('', { nonNullable: true, validators: [Validators.required, Validators.pattern(DECIMAL)] }),
     precio_referencial: new FormControl('', { nonNullable: true }),
     observaciones: new FormControl('', { nonNullable: true }),
+    id_beneficiario: new FormControl<number | null>(null),
   });
 }
 
@@ -36,9 +42,10 @@ type LineaGroup = ReturnType<typeof lineaGroup>;
 @Component({
   selector: 'app-requerimiento-form',
   standalone: true,
-  imports: [ReactiveFormsModule, RouterLink, SearchSelectComponent, CatalogoPickerComponent],
+  imports: [ReactiveFormsModule, RouterLink, SearchSelectComponent, CatalogoPickerComponent, CotizacionesPanelComponent],
   templateUrl: './requerimiento-form.html',
   styleUrl: './requerimiento-form.css',
+  host: { class: 'page-scroll' },
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class RequerimientoFormComponent {
@@ -49,6 +56,8 @@ export class RequerimientoFormComponent {
 
   protected readonly estadoLabel = ESTADO_LABEL;
   protected readonly avanceLabel = AVANCE_LABEL;
+  protected readonly tipos = TIPOS_REQUERIMIENTO;
+  protected readonly tipoLabel = TIPO_LABEL;
   protected readonly accionLabel = ACCION_LABEL;
   protected readonly estadoBadge = estadoBadge;
   protected readonly avanceBadge = avanceBadge;
@@ -64,6 +73,11 @@ export class RequerimientoFormComponent {
   protected readonly centrosCostos = signal<SelectOption[]>([]);
   protected readonly trabajadores = signal<SelectOption[]>([]);
   protected readonly fases = signal<FasePorCentroCosto[]>([]);
+  protected readonly areas = signal<Area[]>([]);
+  protected readonly beneficiarios = signal<SelectOption[]>([]);
+  /** Tipo elegido en el formulario (cambia lo que se pide en cada línea). */
+  protected readonly tipoActual = signal<TipoRequerimiento>('COMPRA');
+  protected readonly esCompra = computed(() => this.tipoActual() === 'COMPRA');
 
   protected readonly esNuevo = this.idParam === null;
   /** Solo BORRADOR y OBSERVADO se pueden modificar; el resto es de lectura. */
@@ -78,11 +92,16 @@ export class RequerimientoFormComponent {
   });
   protected readonly puedeGenerarOc = computed(() => {
     const r = this.requerimiento();
-    return r?.estado === 'APROBADO' && r.avance !== 'ATENDIDO';
+    return r?.estado === 'APROBADO' && r.tipo === 'COMPRA' && r.avance !== 'ATENDIDO';
+  });
+  /** Las compras muestran sus cotizaciones desde que se envían. */
+  protected readonly muestraCotizaciones = computed(() => {
+    const r = this.requerimiento();
+    return r !== null && r.tipo === 'COMPRA' && r.estado !== 'BORRADOR';
   });
   protected readonly puedeAnular = computed(() => {
     const r = this.requerimiento();
-    return r !== null && ['ENVIADO', 'APROBADO', 'OBSERVADO'].includes(r.estado) && (r.ordenes_compra ?? []).length === 0;
+    return r !== null && ESTADOS_ANULABLES.includes(r.estado) && (r.ordenes_compra ?? []).every((o) => o.estado === 'ANULADO');
   });
 
   protected readonly form = new FormGroup({
@@ -91,7 +110,9 @@ export class RequerimientoFormComponent {
     id_centro_costo: new FormControl<number | null>(null, { validators: [Validators.required] }),
     id_fase: new FormControl<number | null>(null),
     id_solicitante: new FormControl<number | null>(null, { validators: [Validators.required] }),
-    area: new FormControl('', { nonNullable: true }),
+    tipo: new FormControl<TipoRequerimiento>('COMPRA', { nonNullable: true }),
+    id_area: new FormControl<number | null>(null),
+    id_beneficiario: new FormControl<number | null>(null),
     justificacion: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
     lineas: new FormArray<LineaGroup>([lineaGroup()]),
   });
@@ -99,6 +120,9 @@ export class RequerimientoFormComponent {
   constructor() {
     this.service.getCentrosCostosSelect().subscribe({ next: (r) => this.centrosCostos.set(r), error: () => this.centrosCostos.set([]) });
     this.service.getTrabajadoresSelect().subscribe({ next: (r) => this.trabajadores.set(r), error: () => this.trabajadores.set([]) });
+    this.service.getAreas().subscribe({ next: (r) => this.areas.set(r), error: () => this.areas.set([]) });
+    this.service.getAnexosSelect().subscribe({ next: (r) => this.beneficiarios.set(r), error: () => this.beneficiarios.set([]) });
+    this.form.controls.tipo.valueChanges.subscribe((t) => this.tipoActual.set(t));
     this.form.controls.id_centro_costo.valueChanges.subscribe((id) => {
       this.form.controls.id_fase.setValue(null, { emitEvent: false });
       this.loadFases(id);
@@ -132,11 +156,14 @@ export class RequerimientoFormComponent {
         fecha_requerida: r.fecha_requerida ?? '',
         id_centro_costo: r.id_centro_costo,
         id_solicitante: r.id_solicitante,
-        area: r.area ?? '',
+        tipo: r.tipo,
+        id_area: r.id_area,
+        id_beneficiario: r.id_beneficiario,
         justificacion: r.justificacion,
       },
       { emitEvent: false },
     );
+    this.tipoActual.set(r.tipo);
     this.loadFases(r.id_centro_costo, r.id_fase);
     this.lineas.clear();
     for (const l of r.lineas ?? []) {
@@ -148,6 +175,7 @@ export class RequerimientoFormComponent {
         cantidad: l.cantidad,
         precio_referencial: l.precio_referencial ?? '',
         observaciones: l.observaciones ?? '',
+        id_beneficiario: l.id_beneficiario,
       });
       this.lineas.push(g);
     }
@@ -232,6 +260,12 @@ export class RequerimientoFormComponent {
     });
   }
 
+  /** Tras registrar o cerrar cotizaciones se recarga el FUR (cambia de estado y de cotizaciones). */
+  protected onCotizacionesChanged(): void {
+    const r = this.requerimiento();
+    if (r) this.load(r.id);
+  }
+
   protected generarOc(): void {
     const r = this.requerimiento();
     if (r) void this.router.navigate(['/documentos/origen'], { queryParams: { requerimiento: r.id } });
@@ -243,12 +277,17 @@ export class RequerimientoFormComponent {
     if (!v.id_centro_costo) return 'Seleccione el centro de costos.';
     if (!v.id_solicitante) return 'Seleccione al solicitante.';
     if (!v.justificacion.trim()) return 'Indique la justificación del requerimiento.';
-    const productos = new Set<number>();
+    if (v.tipo !== 'COMPRA' && !v.id_beneficiario && v.lineas.some((l) => !l.id_beneficiario)) {
+      return 'Indique el beneficiario del requerimiento (o uno por línea).';
+    }
+    const vistos = new Set<string>();
     for (const [i, l] of v.lineas.entries()) {
       const n = i + 1;
       if (!l.id_producto) return `Línea ${n}: seleccione un producto o servicio.`;
-      if (productos.has(l.id_producto)) return `Línea ${n}: el ítem está repetido.`;
-      productos.add(l.id_producto);
+      const clave = v.tipo === 'COMPRA' ? String(l.id_producto) : `${l.id_producto}:${l.id_beneficiario ?? v.id_beneficiario ?? 0}`;
+      if (vistos.has(clave)) return v.tipo === 'COMPRA' ? `Línea ${n}: el ítem está repetido.` : `Línea ${n}: el concepto está repetido para el mismo beneficiario.`;
+      vistos.add(clave);
+      if (v.tipo !== 'COMPRA' && !(Number(l.precio_referencial) > 0)) return `Línea ${n}: indique el importe (precio) mayor a 0.`;
       if (!DECIMAL.test(l.cantidad.trim()) || Number(l.cantidad) <= 0) return `Línea ${n}: la cantidad debe ser mayor a 0 (hasta 4 decimales).`;
       const precio = l.precio_referencial.trim();
       if (precio !== '' && !DECIMAL.test(precio)) return `Línea ${n}: el precio referencial no es válido.`;
@@ -265,13 +304,16 @@ export class RequerimientoFormComponent {
       id_centro_costo: v.id_centro_costo as number,
       id_fase: v.id_fase ?? undefined,
       id_solicitante: v.id_solicitante as number,
-      area: text(v.area),
+      tipo: v.tipo,
+      id_beneficiario: v.id_beneficiario ?? undefined,
+      id_area: v.id_area ?? undefined,
       justificacion: v.justificacion.trim(),
       lineas: v.lineas.map((l) => ({
         id_producto: l.id_producto as number,
         cantidad: l.cantidad.trim(),
         precio_referencial: text(l.precio_referencial),
         observaciones: text(l.observaciones),
+        id_beneficiario: l.id_beneficiario ?? undefined,
       })),
     };
   }

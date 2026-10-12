@@ -1,0 +1,352 @@
+<div class="content-header">
+  <div>
+    <h1 class="content-title">Documentos de origen (compromisos de pago)</h1>
+    <p class="content-subtitle">
+      Órdenes de compra y de servicio, planillas, caja chica, gastos financieros y pagos de servicios. Aquí se controlan sus deducciones,
+      vencimiento y estado de pago.
+    </p>
+  </div>
+  <div style="display: flex; gap: 0.5rem; align-items: center">
+    <button class="btn btn-primary" type="button" (click)="nuevoDirecto()"><i class="fa-solid fa-plus"></i> Registro directo</button>
+    <a class="btn btn-secondary" routerLink="/tesoreria/programacion"><i class="fa-solid fa-calendar-check"></i> Programar pagos</a>
+    <button class="btn btn-secondary" type="button" (click)="load()" [disabled]="isLoading()">
+      <i class="fa-solid fa-arrows-rotate" [class.fa-spin]="isLoading()"></i>
+      {{ isLoading() ? 'Cargando...' : 'Actualizar' }}
+    </button>
+  </div>
+</div>
+
+<div class="content-body">
+  @if (message()) {
+    <p class="badge badge-completed" role="status" style="margin-bottom: 0.75rem">{{ message() }}</p>
+  }
+
+  <section class="toolbar-shell">
+    <div class="toolbar-filters-row">
+      <div class="toolbar-filters-left">
+        <input type="text" class="toolbar-select" placeholder="Buscar documento, proveedor, concepto o FUR..." maxlength="100" [value]="fSearch()" (input)="onSearch($any($event.target).value)" />
+        <select class="toolbar-select" [value]="fClase()" (change)="setFilter('clase', $any($event.target).value)" aria-label="Clase de documento">
+          <option value="">Todas las clases</option>
+          @for (c of clases; track c) {
+            <option [value]="c">{{ claseLabel[c] }}</option>
+          }
+        </select>
+        <select class="toolbar-select" [value]="fEstadoPago()" (change)="setFilter('estadoPago', $any($event.target).value)" aria-label="Estado de pago">
+          <option value="">Todo estado de pago</option>
+          @for (e of estadosPago; track e) {
+            <option [value]="e">{{ estadoPagoLabel[e] }}</option>
+          }
+        </select>
+        <select class="toolbar-select" [value]="fArea()" (change)="setFilter('area', $any($event.target).value)" aria-label="Área">
+          <option value="">Todas las áreas</option>
+          @for (a of areas(); track a.id) {
+            <option [value]="a.id">{{ a.nombre }}</option>
+          }
+        </select>
+        <select class="toolbar-select" [value]="fEstado()" (change)="setFilter('estado', $any($event.target).value)" aria-label="Estado del documento">
+          <option value="">Vigentes y anulados</option>
+          <option value="REGISTRADO">Solo vigentes</option>
+          <option value="ANULADO">Solo anulados</option>
+        </select>
+      </div>
+    </div>
+    <div class="toolbar-filters-row">
+      <div class="toolbar-filters-left">
+        <label class="toolbar-check">Emisión desde
+          <input type="date" class="toolbar-select" [value]="fDesde()" (change)="setFilter('desde', $any($event.target).value)" />
+        </label>
+        <label class="toolbar-check">hasta
+          <input type="date" class="toolbar-select" [value]="fHasta()" (change)="setFilter('hasta', $any($event.target).value)" />
+        </label>
+        <label class="toolbar-check">Vence hasta
+          <input type="date" class="toolbar-select" [value]="fVence()" (change)="setFilter('vence', $any($event.target).value)" />
+        </label>
+        <label class="toolbar-check">Importe de
+          <input type="number" min="0" class="toolbar-select adm-importe" [value]="fMontoMin()" (change)="setFilter('min', $any($event.target).value)" />
+        </label>
+        <label class="toolbar-check">a
+          <input type="number" min="0" class="toolbar-select adm-importe" [value]="fMontoMax()" (change)="setFilter('max', $any($event.target).value)" />
+        </label>
+        <button class="toolbar-reset" type="button" (click)="resetFilters()"><i class="fa-solid fa-rotate-left"></i> Restablecer</button>
+      </div>
+      <div class="toolbar-meta"><span>Mostrando</span><strong>{{ total() }}</strong><span>documentos</span></div>
+    </div>
+  </section>
+
+  <app-data-table
+    [columns]="columns"
+    [items]="items()"
+    [loading]="isLoading()"
+    [totalItems]="total()"
+    [currentPage]="page()"
+    [pageSize]="pageSize()"
+    [minWidth]="'1400px'"
+    emptyMessage="No hay documentos de origen con esos filtros."
+    emptyIcon="fa-solid fa-file-invoice-dollar"
+    [rowTemplate]="row"
+    (pageChange)="onPageChange($event)"
+    (pageSizeChange)="onPageSizeChange($event)"
+  />
+
+  <ng-template #row let-item>
+    <tr>
+      <td>
+        <strong>{{ item.numero_documento ?? item.numero_oc ?? '#' + item.id }}</strong>
+        <div class="table-cell-subtitle">{{ item.clase_documento ? claseLabel[item.clase_documento] : 'Sin clasificar' }}</div>
+        @if (item.numero_requerimiento) {
+          <div class="table-cell-subtitle">{{ item.numero_requerimiento }}</div>
+        }
+      </td>
+      <td>
+        {{ item.proveedor ?? '—' }}
+        <div class="table-cell-subtitle">{{ item.ruc ?? '' }}</div>
+      </td>
+      <td>
+        {{ item.centro_costo ?? '—' }}
+        <div class="table-cell-subtitle">{{ item.area_nombre ?? item.centro_costo_principal ?? '' }}</div>
+      </td>
+      <td>{{ item.fecha_emision ?? '—' }}</td>
+      <td align="right">{{ item.moneda_simbolo ?? 'S/' }} {{ fmtMoney(item.total) }}</td>
+      <td align="right"><strong>{{ fmtMoney(item.neto_proveedor) }}</strong></td>
+      <td align="right">{{ fmtMoney(item.saldo_por_pagar_proveedor) }}</td>
+      <td>
+        @if (item.vencimiento) {
+          {{ item.vencimiento }}
+        } @else if (item.pendiente_recepcion) {
+          <span class="table-cell-subtitle">Pendiente de recepción</span>
+        } @else {
+          —
+        }
+      </td>
+      <td align="center">
+        <span [class]="'badge ' + estadoPagoBadge(item.estado_pago)">{{ estadoPagoLabel[item.estado_pago] }}</span>
+        @if (item.fecha_ultimo_pago) {
+          <div class="table-cell-subtitle">Último pago {{ item.fecha_ultimo_pago }}</div>
+        }
+      </td>
+      <td align="center">
+        <button class="table-action-btn" type="button" title="Ver documento" (click)="abrir(item.id)"><i class="fa-solid fa-eye"></i></button>
+      </td>
+    </tr>
+  </ng-template>
+</div>
+
+<!-- Detalle -->
+<app-modal [isOpen]="isDetalleOpen()" [title]="detalle()?.numero_documento ?? 'Documento de origen'" maxWidth="1100px" [showDefaultFooter]="false" (closed)="cerrarDetalle()">
+  @if (detalle(); as d) {
+    <dl class="adm-detail">
+      <div><dt>Clase</dt><dd>{{ d.clase_documento ? claseLabel[d.clase_documento] : 'Sin clasificar' }}</dd></div>
+      <div><dt>Proveedor / beneficiario</dt><dd>{{ d.proveedor ?? '—' }}<br /><small>{{ d.ruc ?? '' }}</small></dd></div>
+      <div><dt>Centro de costos</dt><dd>{{ d.centro_costo ?? '—' }}</dd></div>
+      <div><dt>Área</dt><dd>{{ d.area_nombre ?? '—' }}</dd></div>
+      <div><dt>Requerimiento</dt><dd>{{ d.numero_requerimiento ?? 'Sin requerimiento' }}</dd></div>
+      <div><dt>Emisión</dt><dd>{{ d.fecha_emision ?? '—' }}</dd></div>
+      <div><dt>Forma de pago</dt><dd>{{ d.forma_pago ?? '—' }}</dd></div>
+      <div>
+        <dt>Vencimiento</dt>
+        <dd>{{ d.vencimiento ?? (d.pendiente_recepcion ? 'Pendiente de recepción en almacén' : '—') }}
+          @if (d.ultima_recepcion) {
+            <br /><small>Última recepción {{ d.ultima_recepcion }}</small>
+          }
+        </dd>
+      </div>
+      <div>
+        <dt>Estado</dt>
+        <dd>
+          <span [class]="'badge ' + estadoPagoBadge(d.estado_pago)">{{ estadoPagoLabel[d.estado_pago] }}</span>
+          @if (d.estado === 'ANULADO') {
+            <span class="badge badge-danger">Anulado</span>
+          }
+        </dd>
+      </div>
+      @if (d.comentarios) {
+        <div class="adm-detail__full"><dt>Concepto / comentarios</dt><dd style="white-space: pre-line">{{ d.comentarios }}</dd></div>
+      }
+    </dl>
+
+    <h3 class="adm-section">Montos y deducciones</h3>
+    <div class="adm-montos">
+      <div><span>Base imponible</span><strong>{{ fmtMoney(d.monto) }}</strong></div>
+      <div><span>IGV</span><strong>{{ fmtMoney(d.igv) }}</strong></div>
+      <div><span>Total</span><strong>{{ d.moneda_simbolo ?? 'S/' }} {{ fmtMoney(d.total) }}</strong></div>
+      <div><span>Detracción</span><strong>{{ d.detraccion_monto === null ? '—' : 'S/ ' + fmtMoney(d.detraccion_monto) }}</strong></div>
+      <div><span>Retención IGV</span><strong>{{ d.retencion_monto === null ? '—' : fmtMoney(d.retencion_monto) }}</strong></div>
+      <div class="adm-montos__neto"><span>Neto a pagar al proveedor</span><strong>{{ fmtMoney(d.neto_proveedor) }}</strong></div>
+      <div><span>Pagado</span><strong>{{ fmtMoney(d.pagado_proveedor) }}</strong></div>
+      <div><span>Saldo</span><strong>{{ fmtMoney(d.saldo_por_pagar_proveedor) }}</strong></div>
+    </div>
+    <p class="adm-hint"><i class="fa-solid fa-circle-info"></i> Retención: {{ d.retencion_motivo }}</p>
+
+    @if (!esAnulado()) {
+      <form class="adm-ded" [formGroup]="deducciones" (ngSubmit)="guardarDeducciones()">
+        <div class="adm-ded__grid">
+          <div class="form-group"><label for="ded-renta">Renta 4.ª categoría</label><input id="ded-renta" class="form-control" inputmode="decimal" formControlName="renta_4ta" /></div>
+          <div class="form-group"><label for="ded-dc">Descuento de compras</label><input id="ded-dc" class="form-control" inputmode="decimal" formControlName="dscto_compras" /></div>
+          <div class="form-group"><label for="ded-di">Descuento de intervención</label><input id="ded-di" class="form-control" inputmode="decimal" formControlName="dscto_intervencion" /></div>
+          <div class="form-group"><label for="ded-do">Otros descuentos</label><input id="ded-do" class="form-control" inputmode="decimal" formControlName="dscto_otros" /></div>
+          <div class="form-group"><label for="ded-det">Detracción (%) — 0 la quita</label><input id="ded-det" class="form-control" inputmode="decimal" formControlName="detraccion_porcentaje" /></div>
+          <div class="form-group">
+            <label for="ded-ret">Retención IGV</label>
+            <input id="ded-ret" class="form-control" inputmode="decimal" formControlName="retencion_monto" />
+            <label class="adm-check"><input type="checkbox" formControlName="retencion_auto" /> Calcular automáticamente (3 %)</label>
+          </div>
+          <div class="form-group adm-ded__check">
+            <label class="adm-check"><input type="checkbox" formControlName="afecto_igv" /> Afecto al IGV</label>
+          </div>
+          <div class="form-group"><label for="ded-dias">Días de crédito</label><input id="ded-dias" class="form-control" inputmode="numeric" formControlName="dias_credito" /></div>
+          <div class="form-group"><label for="ded-venc">Vencimiento manual</label><input id="ded-venc" type="date" class="form-control" formControlName="fecha_vencimiento" /></div>
+          <div class="form-group">
+            <label for="ded-area">Área</label>
+            <select id="ded-area" class="form-control" formControlName="id_area">
+              <option [ngValue]="null">— Sin área —</option>
+              @for (a of areas(); track a.id) {
+                <option [ngValue]="a.id">{{ a.nombre }}</option>
+              }
+            </select>
+          </div>
+        </div>
+        @if (tienePagos()) {
+          <small class="adm-hint">Con pagos registrados solo se pueden cambiar los días de crédito, el vencimiento y el área.</small>
+        }
+        <button class="btn btn-primary" type="submit" [disabled]="isSavingDetalle()"><i class="fa-solid fa-floppy-disk"></i> {{ isSavingDetalle() ? 'Guardando...' : 'Guardar cambios' }}</button>
+      </form>
+    }
+
+    @if (d.lineas.length) {
+      <h3 class="adm-section">Detalle</h3>
+      <div class="table-card">
+        <table class="table">
+          <thead><tr><th>Código</th><th>Descripción</th><th style="text-align: right">Cantidad</th><th style="text-align: right">Precio</th><th style="text-align: right">Monto</th></tr></thead>
+          <tbody>
+            @for (l of d.lineas; track l.id) {
+              <tr>
+                <td>{{ l.codigo ?? '—' }}</td>
+                <td>{{ l.descripcion ?? '—' }}</td>
+                <td align="right">{{ fmtNum(l.cantidad) }}</td>
+                <td align="right">{{ fmtMoney(l.precio) }}</td>
+                <td align="right">{{ fmtMoney(l.monto) }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+
+    <h3 class="adm-section">Programación y pagos</h3>
+    @if (d.programaciones.length === 0 && d.pagos.length === 0) {
+      <p class="adm-hint">Aún no hay pagos programados. <a routerLink="/tesoreria/programacion">Programar pagos</a>.</p>
+    }
+    @if (d.programaciones.length) {
+      <div class="table-card">
+        <table class="table">
+          <thead><tr><th>Fecha</th><th>Concepto</th><th style="text-align: right">Monto</th><th>Medio</th><th>Cuenta</th><th>Estado</th></tr></thead>
+          <tbody>
+            @for (p of d.programaciones; track p.id) {
+              <tr>
+                <td>{{ p.fecha_programada }}@if (p.urgente) { <span class="badge badge-pending">Urgente</span> }</td>
+                <td>{{ p.concepto === 'DETRACCION' ? 'Detracción' : 'Proveedor' }}</td>
+                <td align="right">{{ fmtMoney(p.monto) }}</td>
+                <td>{{ p.medio_pago }}</td>
+                <td>{{ p.cuenta ?? '—' }}</td>
+                <td>{{ p.estado }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+    @if (d.pagos.length) {
+      <div class="table-card" style="margin-top: 0.5rem">
+        <table class="table">
+          <thead><tr><th>Comprobante</th><th>Fecha</th><th>Concepto</th><th style="text-align: right">Monto</th><th>Cuenta</th><th>Operación</th><th>Estado</th><th></th></tr></thead>
+          <tbody>
+            @for (p of d.pagos; track p.id) {
+              <tr>
+                <td><strong>{{ p.numero }}</strong></td>
+                <td>{{ p.fecha_pago }}</td>
+                <td>{{ p.concepto === 'DETRACCION' ? 'Detracción' : 'Proveedor' }}</td>
+                <td align="right">{{ fmtMoney(p.monto) }}</td>
+                <td>{{ p.cuenta ?? '—' }}</td>
+                <td>{{ p.numero_operacion ?? '—' }}</td>
+                <td><span class="badge" [class.badge-danger]="p.estado === 'ANULADO'" [class.badge-completed]="p.estado === 'REGISTRADO'">{{ p.estado }}</span></td>
+                <td align="center"><a class="table-action-btn" [routerLink]="['/imprimir/comprobante-pago', p.id]" target="_blank" title="Imprimir comprobante"><i class="fa-solid fa-print"></i></a></td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  } @else if (!detalleError()) {
+    <p class="adm-hint"><i class="fa-solid fa-spinner fa-spin"></i> Cargando documento...</p>
+  }
+
+  @if (detalleError()) {
+    <p class="badge badge-danger" role="alert" style="white-space: pre-line">{{ detalleError() }}</p>
+  }
+
+  <div modal-footer class="modal-footer">
+    <button class="btn btn-secondary" type="button" (click)="cerrarDetalle()">Cerrar</button>
+    @if (detalle(); as d) {
+      <a class="btn btn-secondary" [routerLink]="['/imprimir/documento-origen', d.id]" target="_blank"><i class="fa-solid fa-print"></i> Imprimir</a>
+      <a class="btn btn-secondary" [routerLink]="['/imprimir/expediente', d.id]" target="_blank"><i class="fa-solid fa-folder-open"></i> Expediente</a>
+      @if (!esAnulado()) {
+        <button class="btn btn-danger" type="button" (click)="anular()"><i class="fa-solid fa-ban"></i> Anular documento</button>
+      }
+    }
+  </div>
+</app-modal>
+
+<!-- Registro directo -->
+<app-modal [isOpen]="isDirectoOpen()" title="Registro directo de documento de origen" maxWidth="900px" [showDefaultFooter]="false" (closed)="cerrarDirecto()">
+  <p class="adm-hint">Para gastos que no pasan por requerimiento: servicios, gastos financieros, planillas u otros. Se calculan IGV, detracción y retención.</p>
+  <form [formGroup]="directo" class="adm-ded__grid" (ngSubmit)="guardarDirecto()">
+    <div class="form-group">
+      <label for="dir-clase">Clase</label>
+      <select id="dir-clase" class="form-control" formControlName="clase_documento">
+        @for (c of clasesDirectas; track c) {
+          <option [value]="c">{{ claseLabel[c] }}</option>
+        }
+      </select>
+    </div>
+    <div class="form-group adm-ded__wide">
+      <label for="dir-anexo">Proveedor / beneficiario <span class="required">*</span></label>
+      <app-search-select [options]="anexos()" placeholder="Buscar..." inputId="dir-anexo" formControlName="id_anexo" />
+    </div>
+    <div class="form-group adm-ded__wide">
+      <label for="dir-concepto">Concepto <span class="required">*</span></label>
+      <input id="dir-concepto" class="form-control" formControlName="concepto" placeholder="Ej.: Recibo de luz octubre" />
+    </div>
+    <div class="form-group"><label for="dir-monto">Base imponible (sin IGV) <span class="required">*</span></label><input id="dir-monto" class="form-control" inputmode="decimal" formControlName="monto" /></div>
+    <div class="form-group">
+      <label for="dir-moneda">Moneda</label>
+      <select id="dir-moneda" class="form-control" formControlName="moneda_id"><option value="PEN">Soles (S/)</option><option value="USD">Dólares ($)</option></select>
+    </div>
+    <div class="form-group adm-ded__check"><label class="adm-check"><input type="checkbox" formControlName="afecto_igv" /> Afecto al IGV (18 %)</label></div>
+    <div class="form-group"><label for="dir-fecha">Fecha de emisión</label><input id="dir-fecha" type="date" class="form-control" formControlName="fecha_emision" /></div>
+    <div class="form-group"><label for="dir-forma">Forma de pago</label><input id="dir-forma" class="form-control" formControlName="forma_pago" /></div>
+    <div class="form-group"><label for="dir-dias">Días de crédito</label><input id="dir-dias" class="form-control" inputmode="numeric" formControlName="dias_credito" /></div>
+    <div class="form-group"><label for="dir-venc">Vencimiento manual</label><input id="dir-venc" type="date" class="form-control" formControlName="fecha_vencimiento" /></div>
+    <div class="form-group adm-ded__wide">
+      <label for="dir-cc">Centro de costos</label>
+      <app-search-select [options]="centrosCostos()" placeholder="Buscar centro de costos..." inputId="dir-cc" formControlName="id_centro_costo" />
+    </div>
+    <div class="form-group">
+      <label for="dir-area">Área</label>
+      <select id="dir-area" class="form-control" formControlName="id_area">
+        <option [ngValue]="null">— Sin área —</option>
+        @for (a of areas(); track a.id) {
+          <option [ngValue]="a.id">{{ a.nombre }}</option>
+        }
+      </select>
+    </div>
+    <div class="form-group"><label for="dir-det">Detracción % (vacío = proponer)</label><input id="dir-det" class="form-control" inputmode="decimal" formControlName="detraccion_porcentaje" /></div>
+    <div class="form-group"><label for="dir-renta">Renta 4.ª categoría</label><input id="dir-renta" class="form-control" inputmode="decimal" formControlName="renta_4ta" /></div>
+  </form>
+  @if (directoError()) {
+    <p class="badge badge-danger" role="alert" style="white-space: pre-line">{{ directoError() }}</p>
+  }
+  <div modal-footer class="modal-footer">
+    <button class="btn btn-secondary" type="button" (click)="cerrarDirecto()" [disabled]="isSavingDirecto()">Cancelar</button>
+    <button class="btn btn-primary" type="button" (click)="guardarDirecto()" [disabled]="isSavingDirecto()"><i class="fa-solid fa-floppy-disk"></i> {{ isSavingDirecto() ? 'Guardando...' : 'Registrar' }}</button>
+  </div>
+</app-modal>

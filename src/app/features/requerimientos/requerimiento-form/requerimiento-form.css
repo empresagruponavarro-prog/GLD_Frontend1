@@ -92,3 +92,8 @@
 .req-detail__full {
   grid-column: 1 / -1;
 }
+
+.req-lines--benef .req-lines__head,
+.req-lines--benef .req-lines__row {
+  grid-template-columns: minmax(240px, 1fr) 110px 120px minmax(140px, 0.6fr) minmax(200px, 0.8fr) 40px;
+}

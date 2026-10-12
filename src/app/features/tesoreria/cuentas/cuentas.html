@@ -1,0 +1,82 @@
+<div class="content-header">
+  <div>
+    <h1 class="content-title">Cuentas de pago</h1>
+    <p class="content-subtitle">Cajas, bancos y billeteras desde las que se paga. Registre aquí cada cuenta antes de programar pagos.</p>
+  </div>
+  <div style="display: flex; gap: 0.5rem; align-items: center">
+    <button class="btn btn-primary" type="button" (click)="nueva()"><i class="fa-solid fa-plus"></i> Nueva cuenta</button>
+  </div>
+</div>
+
+<div class="content-body">
+  @if (message()) {
+    <p class="badge badge-completed" role="status" style="margin-bottom: 0.75rem">{{ message() }}</p>
+  }
+
+  <div class="table-card">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Código</th>
+          <th>Nombre</th>
+          <th>Tipo</th>
+          <th>Banco</th>
+          <th>N.º de cuenta / CCI</th>
+          <th>Moneda</th>
+          <th style="text-align: center">Estado</th>
+          <th style="text-align: center">Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (c of items(); track c.id) {
+          <tr>
+            <td><strong>{{ c.codigo }}</strong></td>
+            <td>{{ c.nombre }}</td>
+            <td>{{ c.tipo }}</td>
+            <td>{{ c.banco ?? '—' }}</td>
+            <td>{{ c.numero_cuenta ?? '—' }}<div class="table-cell-subtitle">{{ c.cci ?? '' }}</div></td>
+            <td>{{ c.moneda_id }}</td>
+            <td align="center"><span class="badge" [class.badge-completed]="c.estado" [class.badge-danger]="!c.estado">{{ c.estado ? 'Activa' : 'Inactiva' }}</span></td>
+            <td align="center">
+              <button class="table-action-btn" type="button" title="Editar" (click)="editar(c)"><i class="fa-solid fa-pen-to-square"></i></button>
+              <button class="table-action-btn" type="button" [title]="c.estado ? 'Desactivar' : 'Activar'" (click)="alternarEstado(c)">
+                <i class="fa-solid" [class.fa-toggle-on]="c.estado" [class.fa-toggle-off]="!c.estado"></i>
+              </button>
+            </td>
+          </tr>
+        } @empty {
+          <tr><td colspan="8" align="center">{{ isLoading() ? 'Cargando...' : 'Aún no hay cuentas. Cree la primera con «Nueva cuenta».' }}</td></tr>
+        }
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<app-modal [isOpen]="isModalOpen()" [title]="editando() ? 'Editar cuenta' : 'Nueva cuenta'" maxWidth="640px" [showDefaultFooter]="false" (closed)="closeModal()">
+  <form [formGroup]="form" (ngSubmit)="guardar()" style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.25rem 1rem">
+    <div class="form-group"><label for="cta-codigo">Código <span class="required">*</span></label><input id="cta-codigo" class="form-control" formControlName="codigo" placeholder="BCP-SOL-01" style="text-transform: uppercase" /></div>
+    <div class="form-group"><label for="cta-nombre">Nombre <span class="required">*</span></label><input id="cta-nombre" class="form-control" formControlName="nombre" /></div>
+    <div class="form-group">
+      <label for="cta-tipo">Tipo</label>
+      <select id="cta-tipo" class="form-control" formControlName="tipo">
+        @for (t of tipos; track t) {
+          <option [value]="t">{{ t }}</option>
+        }
+      </select>
+    </div>
+    <div class="form-group"><label for="cta-moneda">Moneda <span class="required">*</span></label><input id="cta-moneda" class="form-control" formControlName="moneda_id" placeholder="PEN, USD" maxlength="10" /></div>
+    <div class="form-group"><label for="cta-banco">Banco</label><input id="cta-banco" class="form-control" formControlName="banco" /></div>
+    <div class="form-group"><label for="cta-num">N.º de cuenta</label><input id="cta-num" class="form-control" formControlName="numero_cuenta" maxlength="30" /></div>
+    <div class="form-group"><label for="cta-cci">CCI</label><input id="cta-cci" class="form-control" formControlName="cci" maxlength="30" /></div>
+    @if (editando()) {
+      <div class="form-group" style="display: flex; align-items: flex-end"><label><input type="checkbox" formControlName="estado" /> Cuenta activa</label></div>
+    }
+  </form>
+  @if (modalError()) {
+    <p class="badge badge-danger" role="alert" style="white-space: pre-line">{{ modalError() }}</p>
+  }
+  <div modal-footer class="modal-footer">
+    <button class="btn btn-secondary" type="button" (click)="closeModal()" [disabled]="isSaving()">Cancelar</button>
+    <button class="btn btn-primary" type="button" (click)="guardar()" [disabled]="isSaving()"><i class="fa-solid fa-floppy-disk"></i> {{ isSaving() ? 'Guardando...' : 'Guardar' }}</button>
+  </div>
+</app-modal>

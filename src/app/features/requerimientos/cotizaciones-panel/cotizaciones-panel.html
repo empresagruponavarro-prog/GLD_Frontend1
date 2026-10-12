@@ -1,0 +1,226 @@
+<section class="cot-panel">
+  <div class="cot-panel__head">
+    <h3 class="cot-panel__title">Cotizaciones ({{ cotizaciones().length }})</h3>
+    <div class="cot-panel__actions">
+      <a class="btn btn-secondary" [routerLink]="['/imprimir/cuadro-comparativo', requerimiento().id]" target="_blank">
+        <i class="fa-solid fa-print"></i> Cuadro comparativo
+      </a>
+      @if (puedeCotizar()) {
+        <button class="btn btn-secondary" type="button" (click)="nueva()"><i class="fa-solid fa-plus"></i> Registrar cotización</button>
+      }
+      @if (puedeCerrar()) {
+        <button class="btn btn-primary" type="button" (click)="cerrar()"><i class="fa-solid fa-lock"></i> Cerrar cuadro comparativo</button>
+      }
+      @if (puedeReabrir()) {
+        <button class="btn btn-secondary" type="button" (click)="reabrir()"><i class="fa-solid fa-lock-open"></i> Reabrir cotizaciones</button>
+      }
+    </div>
+  </div>
+
+  @if (puedeCotizar()) {
+    <p class="cot-panel__hint">
+      Registre de 1 a más cotizaciones. El sistema no elige al ganador: Administración lo define al aprobar, viendo precio,
+      forma y facilidades de pago, medio de pago y disponibilidad.
+    </p>
+  }
+  @if (message()) {
+    <p class="badge badge-completed" role="status">{{ message() }}</p>
+  }
+  @if (error()) {
+    <p class="badge badge-danger" role="alert">{{ error() }}</p>
+  }
+
+  @if (isLoading()) {
+    <p class="cot-panel__hint"><i class="fa-solid fa-spinner fa-spin"></i> Cargando cotizaciones...</p>
+  } @else if (cotizaciones().length === 0) {
+    <p class="cot-panel__hint">Aún no hay cotizaciones registradas.</p>
+  } @else {
+    <div class="table-card">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>N.º</th>
+            <th>Proveedor</th>
+            <th style="text-align: right">Total</th>
+            <th>Forma de pago</th>
+            <th>Medio</th>
+            <th>Disponibilidad</th>
+            <th>Validez</th>
+            <th style="text-align: center">Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (c of cotizaciones(); track c.id) {
+            <tr>
+              <td>
+                <strong>{{ c.numero }}</strong>
+                @if (c.es_ganadora) {
+                  <div><span class="badge badge-completed">Ganadora</span></div>
+                }
+              </td>
+              <td>
+                {{ c.proveedor ?? '—' }}
+                <div class="table-cell-subtitle">{{ c.fecha }}{{ c.referencia ? ' · ' + c.referencia : '' }}</div>
+              </td>
+              <td align="right">
+                <strong>{{ c.moneda_simbolo ?? c.moneda_id }} {{ fmtMoney(c.total) }}</strong>
+                <div class="table-cell-subtitle">
+                  {{ c.afecto_igv ? 'IGV ' + fmtMoney(c.igv) : 'No afecto al IGV' }}
+                </div>
+              </td>
+              <td>
+                {{ c.forma_pago }}
+                @if (c.dias_credito) {
+                  <div class="table-cell-subtitle">{{ c.dias_credito }} días</div>
+                }
+                @if (c.adelanto_porcentaje) {
+                  <div class="table-cell-subtitle">Adelanto {{ fmtNum(c.adelanto_porcentaje) }} %</div>
+                }
+              </td>
+              <td>{{ c.medio_pago ? medioLabel[c.medio_pago] : '—' }}</td>
+              <td>{{ c.plazo_entrega_dias === null ? '—' : c.plazo_entrega_dias === 0 ? 'Inmediata' : c.plazo_entrega_dias + ' días' }}</td>
+              <td>{{ c.validez_dias === null ? '—' : c.validez_dias + ' días' }}</td>
+              <td align="center">
+                @if (puedeCotizar()) {
+                  <button class="table-action-btn" type="button" title="Editar" (click)="editar(c)"><i class="fa-solid fa-pen-to-square"></i></button>
+                  <button class="table-action-btn table-action-btn--danger" type="button" title="Eliminar" (click)="eliminar(c)">
+                    <i class="fa-solid fa-trash"></i>
+                  </button>
+                }
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+</section>
+
+<app-modal
+  [isOpen]="isModalOpen()"
+  [title]="editando() ? 'Editar cotización ' + editando()!.numero : 'Registrar cotización'"
+  maxWidth="1100px"
+  [showDefaultFooter]="false"
+  (closed)="closeModal()"
+>
+  <form [formGroup]="form" class="cot-form" (ngSubmit)="guardar()">
+    <div class="cot-form__grid">
+      <div class="form-group cot-form__wide">
+        <label for="cot-proveedor">Proveedor <span class="required">*</span></label>
+        <app-search-select [options]="proveedores()" placeholder="Buscar proveedor..." inputId="cot-proveedor" formControlName="id_proveedor" />
+      </div>
+      <div class="form-group">
+        <label for="cot-fecha">Fecha <span class="required">*</span></label>
+        <input id="cot-fecha" type="date" class="form-control" formControlName="fecha" />
+      </div>
+      <div class="form-group">
+        <label for="cot-ref">N.º de su cotización</label>
+        <input id="cot-ref" class="form-control" maxlength="50" formControlName="referencia" />
+      </div>
+      <div class="form-group">
+        <label for="cot-moneda">Moneda</label>
+        <select id="cot-moneda" class="form-control" formControlName="moneda_id">
+          <option value="PEN">Soles (S/)</option>
+          <option value="USD">Dólares ($)</option>
+        </select>
+      </div>
+      <div class="form-group cot-form__check">
+        <label><input type="checkbox" formControlName="incluye_igv" /> Los precios ya incluyen IGV</label>
+        <label><input type="checkbox" formControlName="afecto_igv" /> Proveedor afecto al IGV</label>
+      </div>
+    </div>
+
+    <h4 class="cot-form__section">Condiciones de pago y entrega</h4>
+    <div class="cot-form__grid">
+      <div class="form-group">
+        <label for="cot-forma">Forma de pago <span class="required">*</span></label>
+        <input id="cot-forma" class="form-control" list="cot-formas" maxlength="50" formControlName="forma_pago" />
+        <datalist id="cot-formas">
+          <option value="Contado"></option>
+          <option value="Credito 7 dias"></option>
+          <option value="Credito 10 dias"></option>
+          <option value="Credito 15 dias"></option>
+          <option value="Credito 30 dias"></option>
+        </datalist>
+      </div>
+      <div class="form-group">
+        <label for="cot-dias">Días de crédito</label>
+        <input id="cot-dias" class="form-control" inputmode="numeric" formControlName="dias_credito" />
+      </div>
+      <div class="form-group">
+        <label for="cot-adelanto">Adelanto (%)</label>
+        <input id="cot-adelanto" class="form-control" inputmode="decimal" formControlName="adelanto_porcentaje" />
+      </div>
+      <div class="form-group">
+        <label for="cot-medio">Medio de pago que pide</label>
+        <select id="cot-medio" class="form-control" formControlName="medio_pago">
+          <option value="">— Sin definir —</option>
+          @for (m of medios; track m) {
+            <option [value]="m">{{ medioLabel[m] }}</option>
+          }
+        </select>
+      </div>
+      <div class="form-group">
+        <label for="cot-entrega">Disponibilidad (días; 0 = inmediata)</label>
+        <input id="cot-entrega" class="form-control" inputmode="numeric" formControlName="plazo_entrega_dias" />
+      </div>
+      <div class="form-group">
+        <label for="cot-validez">Validez de la oferta (días)</label>
+        <input id="cot-validez" class="form-control" inputmode="numeric" formControlName="validez_dias" />
+      </div>
+      <div class="form-group">
+        <label for="cot-garantia">Garantía</label>
+        <input id="cot-garantia" class="form-control" maxlength="100" formControlName="garantia" />
+      </div>
+      <div class="form-group">
+        <label for="cot-archivo">Enlace al PDF del proveedor</label>
+        <input id="cot-archivo" class="form-control" maxlength="255" formControlName="archivo_url" />
+      </div>
+      <div class="form-group cot-form__full">
+        <label for="cot-cond">Otras facilidades o condiciones</label>
+        <textarea id="cot-cond" class="form-control" rows="2" formControlName="condiciones"></textarea>
+      </div>
+    </div>
+
+    <h4 class="cot-form__section">Ítems cotizados</h4>
+    <div class="table-card">
+      <table class="table">
+        <thead>
+          <tr>
+            <th style="width: 70px">Cotiza</th>
+            <th>Ítem</th>
+            <th style="text-align: right">Solicitado</th>
+            <th style="width: 110px">Cantidad</th>
+            <th style="width: 130px">Precio unit.</th>
+            <th style="width: 110px">Días entrega</th>
+            <th style="width: 160px">Marca / modelo</th>
+          </tr>
+        </thead>
+        <tbody formArrayName="lineas">
+          @for (l of lineas.controls; track l; let i = $index) {
+            <tr [formGroupName]="i">
+              <td align="center"><input type="checkbox" formControlName="cotiza" [attr.aria-label]="'Cotiza ítem ' + (i + 1)" /></td>
+              <td>{{ l.controls.etiqueta.value }}</td>
+              <td align="right">{{ fmtNum(l.controls.solicitada.value) }} {{ l.controls.unidad.value }}</td>
+              <td><input class="form-control" inputmode="decimal" formControlName="cantidad" [attr.aria-label]="'Cantidad ítem ' + (i + 1)" /></td>
+              <td><input class="form-control" inputmode="decimal" formControlName="precio_unitario" placeholder="0.00" [attr.aria-label]="'Precio ítem ' + (i + 1)" /></td>
+              <td><input class="form-control" inputmode="numeric" formControlName="plazo_entrega_dias" [attr.aria-label]="'Entrega ítem ' + (i + 1)" /></td>
+              <td><input class="form-control" maxlength="100" formControlName="marca_modelo" [attr.aria-label]="'Marca ítem ' + (i + 1)" /></td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  </form>
+
+  @if (modalError()) {
+    <p class="badge badge-danger" role="alert" style="white-space: pre-line">{{ modalError() }}</p>
+  }
+
+  <div modal-footer class="modal-footer">
+    <button class="btn btn-secondary" type="button" (click)="closeModal()" [disabled]="isSaving()">Cancelar</button>
+    <button class="btn btn-primary" type="button" (click)="guardar()" [disabled]="isSaving()">
+      <i class="fa-solid fa-floppy-disk"></i> {{ isSaving() ? 'Guardando...' : 'Guardar cotización' }}
+    </button>
+  </div>
+</app-modal>

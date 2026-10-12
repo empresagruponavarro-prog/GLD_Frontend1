@@ -1,7 +1,10 @@
 <div class="content-header">
   <div>
     <h1 class="content-title">Aprobación de requerimientos</h1>
-    <p class="content-subtitle">Requerimientos enviados que esperan una resolución. Solo los aprobados pueden generar órdenes de compra.</p>
+    <p class="content-subtitle">
+      Compras con el cuadro comparativo cerrado (usted elige al ganador) y requerimientos de planillas, caja chica y gastos.
+      Al aprobar se generan los documentos de origen para su programación de pago.
+    </p>
   </div>
   <div style="display: flex; gap: 0.5rem; align-items: center">
     <a class="btn btn-secondary" routerLink="/requerimientos"><i class="fa-solid fa-list"></i> Todos los requerimientos</a>
@@ -24,7 +27,7 @@
     [totalItems]="total()"
     [currentPage]="page()"
     [pageSize]="pageSize()"
-    [minWidth]="'1000px'"
+    [minWidth]="'1150px'"
     emptyMessage="No hay requerimientos pendientes de aprobación."
     emptyIcon="fa-solid fa-clipboard-check"
     [rowTemplate]="row"
@@ -36,10 +39,16 @@
     <tr>
       <td><strong>{{ item.numero }}</strong></td>
       <td>{{ item.fecha }}</td>
+      <td>{{ tipoLabel[item.tipo] }}</td>
       <td>{{ item.centro_costo ?? '—' }}</td>
       <td>{{ item.solicitante ?? '—' }}</td>
-      <td>{{ item.justificacion }}</td>
-      <td align="center">{{ item.total_lineas }}</td>
+      <td>
+        {{ item.justificacion }}
+        @if (item.tipo === 'COMPRA') {
+          <div class="table-cell-subtitle">{{ item.total_cotizaciones }} cotizaci{{ item.total_cotizaciones === 1 ? 'ón' : 'ones' }} · {{ item.total_lineas }} ítems</div>
+        }
+      </td>
+      <td align="center"><span [class]="'badge ' + estadoBadge(item.estado)">{{ estadoLabel[item.estado] }}</span></td>
       <td align="center">
         <button class="btn btn-primary" type="button" (click)="revisar(item)"><i class="fa-solid fa-clipboard-check"></i> Revisar</button>
       </td>
@@ -50,21 +59,139 @@
 <app-modal
   [isOpen]="isModalOpen()"
   [title]="seleccionado()?.numero ?? 'Revisión'"
-  maxWidth="960px"
+  maxWidth="1200px"
   [showDefaultFooter]="false"
   (closed)="closeModal()"
 >
   @if (seleccionado(); as r) {
     <dl class="bandeja-detail">
       <div><dt>Fecha</dt><dd>{{ r.fecha }}</dd></div>
+      <div><dt>Tipo</dt><dd>{{ tipoLabel[r.tipo] }}</dd></div>
       <div><dt>Centro de costos</dt><dd>{{ r.centro_costo ?? '—' }}</dd></div>
       <div><dt>Fase</dt><dd>{{ r.fase ?? '—' }}</dd></div>
+      <div><dt>Área</dt><dd>{{ r.area_nombre ?? r.area ?? '—' }}</dd></div>
       <div><dt>Solicitante</dt><dd>{{ r.solicitante ?? '—' }}</dd></div>
+      @if (r.tipo !== 'COMPRA') {
+        <div><dt>Beneficiario</dt><dd>{{ r.beneficiario ?? 'Por línea' }}</dd></div>
+      }
       <div><dt>Fecha requerida</dt><dd>{{ r.fecha_requerida ?? '—' }}</dd></div>
       <div class="bandeja-detail__full"><dt>Justificación</dt><dd>{{ r.justificacion }}</dd></div>
     </dl>
 
+    @if (esCompra()) {
+      <h3 class="bandeja-section">Cuadro comparativo de cotizaciones</h3>
+      @if (cuadro(); as c) {
+        <p class="bandeja-form__hint">
+          El sistema no sugiere al ganador: compare precio, forma y facilidades de pago, medio de pago y disponibilidad y elija.
+          <a [routerLink]="['/imprimir/cuadro-comparativo', r.id]" target="_blank"><i class="fa-solid fa-print"></i> Imprimir cuadro</a>
+        </p>
+        <div class="table-card">
+          <table class="table bandeja-cuadro">
+            <thead>
+              <tr>
+                <th>Ítem</th>
+                <th style="text-align: right">Pedido</th>
+                @for (p of c.proveedores; track p.id_cotizacion) {
+                  <th [class.bandeja-cuadro__ganadora]="ganadora() === p.id_cotizacion">
+                    <div>{{ p.proveedor ?? '—' }}</div>
+                    <small>{{ p.numero }}</small>
+                    <div>
+                      <button class="btn" [class.btn-primary]="ganadora() === p.id_cotizacion" [class.btn-secondary]="ganadora() !== p.id_cotizacion" type="button" (click)="elegir(p)">
+                        <i class="fa-solid" [class.fa-circle-check]="ganadora() === p.id_cotizacion" [class.fa-circle]="ganadora() !== p.id_cotizacion"></i>
+                        {{ ganadora() === p.id_cotizacion ? 'Elegida' : 'Elegir' }}
+                      </button>
+                    </div>
+                  </th>
+                }
+              </tr>
+            </thead>
+            <tbody>
+              @for (l of c.lineas; track l.id_detalle) {
+                <tr>
+                  <td><strong>{{ l.codigo }}</strong> {{ l.descripcion }}</td>
+                  <td align="right">{{ fmtNum(l.cantidad) }} {{ l.unidad }}</td>
+                  @for (p of c.proveedores; track p.id_cotizacion) {
+                    @let o = oferta(l, p.id_cotizacion);
+                    <td align="right" [class.bandeja-cuadro__ganadora]="ganadora() === p.id_cotizacion">
+                      @if (o && o.cotiza) {
+                        <strong>{{ fmtMoney(o.precio_sin_igv) }}</strong>
+                        <div class="table-cell-subtitle">c/IGV {{ fmtMoney(o.precio_con_igv) }} · {{ fmtNum(o.cantidad) }} {{ l.unidad }}</div>
+                        @if (o.plazo_entrega_dias !== null) {
+                          <div class="table-cell-subtitle">{{ o.plazo_entrega_dias === 0 ? 'Entrega inmediata' : 'Entrega ' + o.plazo_entrega_dias + ' días' }}</div>
+                        }
+                      } @else {
+                        <span class="table-cell-subtitle">No cotiza</span>
+                      }
+                    </td>
+                  }
+                </tr>
+              }
+              <tr class="bandeja-cuadro__total">
+                <td colspan="2"><strong>Total sin IGV</strong></td>
+                @for (p of c.proveedores; track p.id_cotizacion) {
+                  <td align="right" [class.bandeja-cuadro__ganadora]="ganadora() === p.id_cotizacion">{{ p.moneda_simbolo ?? p.moneda_id }} {{ fmtMoney(p.total_sin_igv) }}</td>
+                }
+              </tr>
+              <tr class="bandeja-cuadro__total">
+                <td colspan="2"><strong>Total a pagar</strong> (con IGV si es afecto)</td>
+                @for (p of c.proveedores; track p.id_cotizacion) {
+                  <td align="right" [class.bandeja-cuadro__ganadora]="ganadora() === p.id_cotizacion">
+                    <strong>{{ p.moneda_simbolo ?? p.moneda_id }} {{ fmtMoney(p.total) }}</strong>
+                    @if (p.total_soles !== null && p.moneda_id !== 'PEN') {
+                      <div class="table-cell-subtitle">≈ S/ {{ fmtMoney(p.total_soles) }} (TC {{ p.tc_usado }})</div>
+                    }
+                    @if (!p.afecto_igv) {
+                      <div class="table-cell-subtitle">No afecto al IGV</div>
+                    }
+                  </td>
+                }
+              </tr>
+              <tr>
+                <td colspan="2">Forma de pago</td>
+                @for (p of c.proveedores; track p.id_cotizacion) {
+                  <td [class.bandeja-cuadro__ganadora]="ganadora() === p.id_cotizacion">
+                    {{ p.forma_pago }}{{ p.dias_credito ? ' (' + p.dias_credito + ' días)' : '' }}
+                    @if (p.adelanto_porcentaje) {
+                      <div class="table-cell-subtitle">Adelanto {{ fmtNum(p.adelanto_porcentaje) }} %</div>
+                    }
+                  </td>
+                }
+              </tr>
+              <tr>
+                <td colspan="2">Medio de pago</td>
+                @for (p of c.proveedores; track p.id_cotizacion) {
+                  <td [class.bandeja-cuadro__ganadora]="ganadora() === p.id_cotizacion">{{ p.medio_pago ? medioLabel[p.medio_pago] : '—' }}</td>
+                }
+              </tr>
+              <tr>
+                <td colspan="2">Disponibilidad</td>
+                @for (p of c.proveedores; track p.id_cotizacion) {
+                  <td [class.bandeja-cuadro__ganadora]="ganadora() === p.id_cotizacion">
+                    {{ p.plazo_entrega_dias === null ? '—' : p.plazo_entrega_dias === 0 ? 'Inmediata' : p.plazo_entrega_dias + ' días' }}
+                  </td>
+                }
+              </tr>
+              <tr>
+                <td colspan="2">Validez · Garantía · Otras condiciones</td>
+                @for (p of c.proveedores; track p.id_cotizacion) {
+                  <td [class.bandeja-cuadro__ganadora]="ganadora() === p.id_cotizacion">
+                    {{ p.validez_dias === null ? '—' : p.validez_dias + ' días' }} · {{ p.garantia ?? '—' }}
+                    @if (p.condiciones) {
+                      <div class="table-cell-subtitle">{{ p.condiciones }}</div>
+                    }
+                  </td>
+                }
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      } @else if (!modalError()) {
+        <p class="bandeja-form__hint"><i class="fa-solid fa-spinner fa-spin"></i> Cargando cuadro comparativo...</p>
+      }
+    }
+
     <form [formGroup]="revision" class="bandeja-form">
+      <h3 class="bandeja-section">{{ esCompra() ? 'Cantidades a aprobar' : 'Ítems' }}</h3>
       <div class="table-card">
         <table class="table">
           <thead>
@@ -72,6 +199,10 @@
               <th>Código</th>
               <th>Descripción</th>
               <th>Tipo</th>
+              @if (!esCompra()) {
+                <th>Beneficiario</th>
+                <th style="text-align: right">Importe</th>
+              }
               <th style="text-align: right">Solicitado</th>
               <th style="width: 150px">Aprobar</th>
             </tr>
@@ -82,6 +213,10 @@
                 <td><strong>{{ l.codigo }}</strong></td>
                 <td>{{ l.descripcion }}</td>
                 <td>{{ l.tipo_producto === 'PRODUCTO' ? 'Producto' : 'Servicio' }}</td>
+                @if (!esCompra()) {
+                  <td>{{ l.beneficiario ?? r.beneficiario ?? '—' }}</td>
+                  <td align="right">{{ l.precio_referencial === null ? '—' : fmtMoney(l.precio_referencial) }}</td>
+                }
                 <td align="right">{{ fmtNum(l.cantidad) }} {{ l.unidad }}</td>
                 <td>
                   <input class="form-control" inputmode="decimal" formControlName="cantidad_aprobada" [attr.aria-label]="'Cantidad a aprobar de ' + l.descripcion" />
@@ -91,13 +226,25 @@
           </tbody>
         </table>
       </div>
-      <small class="bandeja-form__hint">Use 0 para excluir una línea. No se puede aprobar más de lo solicitado.</small>
+      <small class="bandeja-form__hint">
+        Use 0 para excluir una línea. No se puede aprobar más de lo solicitado{{ esCompra() ? ' ni más de lo que ofrece el ganador (lo que no cotiza queda en 0)' : '' }}.
+      </small>
+
+      @if (vistaPrevia()) {
+        <p class="bandeja-preview" role="status"><i class="fa-solid fa-circle-info"></i> {{ vistaPrevia() }}</p>
+      }
 
       <div class="bandeja-form__grid">
         <div class="form-group">
           <label for="aprobador">Aprobador <span class="required">*</span></label>
           <app-search-select [options]="trabajadores()" placeholder="Buscar trabajador..." inputId="aprobador" formControlName="id_aprobador" />
         </div>
+        @if (esCompra()) {
+          <div class="form-group bandeja-form__full">
+            <label for="motivo">Motivo de la elección del ganador</label>
+            <textarea id="motivo" class="form-control" rows="2" formControlName="comentario_adjudicacion" placeholder="Ej.: entrega inmediata y crédito a 15 días"></textarea>
+          </div>
+        }
         <div class="form-group bandeja-form__full">
           <label for="comentario">Comentario (obligatorio al observar o rechazar)</label>
           <textarea id="comentario" class="form-control" rows="2" formControlName="comentario"></textarea>

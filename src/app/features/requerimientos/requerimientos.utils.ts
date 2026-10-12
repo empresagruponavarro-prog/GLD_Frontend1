@@ -13,6 +13,7 @@ export function estadoBadge(estado: EstadoRequerimiento): string {
     case 'APROBADO':
       return 'badge-completed';
     case 'ENVIADO':
+    case 'COTIZADO':
     case 'OBSERVADO':
       return 'badge-pending';
     case 'RECHAZADO':
@@ -34,3 +35,11 @@ export function avanceBadge(avance: AvanceRequerimiento): string {
       return 'badge-progress';
   }
 }
+
+/** ¿Este FUR pasa por cotizaciones antes de aprobarse? Solo las compras. */
+export function llevaCotizacion(tipo: string): boolean {
+  return tipo === 'COMPRA';
+}
+
+/** Estados desde los que el FUR se puede anular (con APROBADO solo si no tiene documentos vigentes). */
+export const ESTADOS_ANULABLES: readonly EstadoRequerimiento[] = ['BORRADOR', 'ENVIADO', 'OBSERVADO', 'COTIZADO', 'APROBADO'];

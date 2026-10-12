@@ -9,9 +9,14 @@
         }
       }
     </h1>
-    <p class="content-subtitle">Formato único de requerimiento (FUR). Debe aprobarse antes de generar la orden de compra.</p>
+    <p class="content-subtitle">
+      Formato único de requerimiento (FUR). Las compras se cotizan y luego Administración elige al ganador al aprobar; al aprobarse se generan los documentos de origen.
+    </p>
   </div>
   <div style="display: flex; gap: 0.5rem; align-items: center">
+    @if (requerimiento(); as r) {
+      <a class="btn btn-secondary" [routerLink]="['/imprimir/fur', r.id]" target="_blank"><i class="fa-solid fa-print"></i> Imprimir FUR</a>
+    }
     <a class="btn btn-secondary" routerLink="/requerimientos"><i class="fa-solid fa-arrow-left"></i> Volver</a>
   </div>
 </div>
@@ -38,7 +43,11 @@
           <div><dt>Centro de costos</dt><dd>{{ r.centro_costo ?? '—' }}</dd></div>
           <div><dt>Fase</dt><dd>{{ r.fase ?? '—' }}</dd></div>
           <div><dt>Solicitante</dt><dd>{{ r.solicitante ?? '—' }}</dd></div>
-          <div><dt>Área</dt><dd>{{ r.area ?? '—' }}</dd></div>
+          <div><dt>Tipo</dt><dd>{{ tipoLabel[r.tipo] }}</dd></div>
+          <div><dt>Área</dt><dd>{{ r.area_nombre ?? r.area ?? '—' }}</dd></div>
+          @if (r.tipo !== 'COMPRA') {
+            <div><dt>Beneficiario</dt><dd>{{ r.beneficiario ?? 'Por línea' }}</dd></div>
+          }
           @if (r.aprobador) {
             <div><dt>{{ r.estado === 'RECHAZADO' ? 'Rechazado por' : 'Aprobado por' }}</dt><dd>{{ r.aprobador }}</dd></div>
             <div><dt>Fecha de resolución</dt><dd>{{ r.fecha_aprobacion?.slice(0, 10) ?? '—' }}</dd></div>
@@ -57,6 +66,10 @@
                 <th>Código</th>
                 <th>Descripción</th>
                 <th>Tipo</th>
+                @if (r.tipo !== 'COMPRA') {
+                  <th>Beneficiario</th>
+                  <th style="text-align: right">Importe</th>
+                }
                 <th style="text-align: right">Pedido</th>
                 <th style="text-align: right">Aprobado</th>
                 <th style="text-align: right">Ordenado</th>
@@ -73,10 +86,14 @@
                       {{ l.tipo_producto === 'PRODUCTO' ? 'Producto' : 'Servicio' }}
                     </span>
                   </td>
+                  @if (r.tipo !== 'COMPRA') {
+                    <td>{{ l.beneficiario ?? r.beneficiario ?? '—' }}</td>
+                    <td align="right">{{ l.precio_referencial === null ? '—' : fmtMoney(l.precio_referencial) }}</td>
+                  }
                   <td align="right">{{ fmtNum(l.cantidad) }} {{ l.unidad }}</td>
                   <td align="right">{{ l.cantidad_aprobada === null ? '—' : fmtNum(l.cantidad_aprobada) }}</td>
                   <td align="right">{{ fmtNum(l.cantidad_ordenada) }}</td>
-                  <td align="right"><strong>{{ r.estado === 'APROBADO' ? fmtNum(l.saldo_por_ordenar) : '—' }}</strong></td>
+                  <td align="right"><strong>{{ r.estado === 'APROBADO' && r.tipo === 'COMPRA' ? fmtNum(l.saldo_por_ordenar) : '—' }}</strong></td>
                 </tr>
               }
             </tbody>
@@ -113,9 +130,28 @@
             <app-search-select [options]="trabajadores()" placeholder="Buscar trabajador..." inputId="req-solicitante" formControlName="id_solicitante" />
           </div>
           <div class="form-group">
-            <label for="req-area">Área</label>
-            <input id="req-area" class="form-control" formControlName="area" maxlength="100" />
+            <label for="req-tipo">Tipo de requerimiento</label>
+            <select id="req-tipo" class="form-control" formControlName="tipo">
+              @for (t of tipos; track t) {
+                <option [value]="t">{{ tipoLabel[t] }}</option>
+              }
+            </select>
           </div>
+          <div class="form-group">
+            <label for="req-area">Área</label>
+            <select id="req-area" class="form-control" formControlName="id_area">
+              <option [ngValue]="null">— Sin área —</option>
+              @for (a of areas(); track a.id) {
+                <option [ngValue]="a.id">{{ a.nombre }}</option>
+              }
+            </select>
+          </div>
+          @if (!esCompra()) {
+            <div class="form-group">
+              <label for="req-benef">Beneficiario (a quien se paga)</label>
+              <app-search-select [options]="beneficiarios()" placeholder="Buscar beneficiario..." inputId="req-benef" formControlName="id_beneficiario" />
+            </div>
+          }
           <div class="form-group req-form__full">
             <label for="req-justificacion">Justificación <span class="required">*</span></label>
             <textarea id="req-justificacion" class="form-control" rows="2" formControlName="justificacion"></textarea>
@@ -123,12 +159,15 @@
         </div>
 
         <h3 class="req-form__section">Ítems (productos y servicios)</h3>
-        <div class="req-lines" formArrayName="lineas">
+        <div class="req-lines" [class.req-lines--benef]="!esCompra()" formArrayName="lineas">
           <div class="req-lines__head">
-            <span>Producto o servicio</span>
+            <span>{{ esCompra() ? 'Producto o servicio' : 'Concepto' }}</span>
             <span>Cantidad</span>
-            <span>Precio ref.</span>
+            <span>{{ esCompra() ? 'Precio ref.' : 'Importe' }}</span>
             <span>Observación</span>
+            @if (!esCompra()) {
+              <span>Beneficiario (trabajador)</span>
+            }
             <span></span>
           </div>
           @for (linea of lineas.controls; track linea; let i = $index) {
@@ -142,6 +181,9 @@
               <input class="form-control" inputmode="decimal" formControlName="cantidad" placeholder="0" [attr.aria-label]="'Cantidad línea ' + (i + 1)" />
               <input class="form-control" inputmode="decimal" formControlName="precio_referencial" placeholder="0.00" [attr.aria-label]="'Precio referencial línea ' + (i + 1)" />
               <input class="form-control" formControlName="observaciones" [attr.aria-label]="'Observación línea ' + (i + 1)" />
+              @if (!esCompra()) {
+                <app-search-select [options]="beneficiarios()" placeholder="Igual al beneficiario general" formControlName="id_beneficiario" />
+              }
               <button class="table-action-btn table-action-btn--danger" type="button" title="Quitar línea" (click)="removeLinea(i)" [disabled]="lineas.length === 1">
                 <i class="fa-solid fa-trash"></i>
               </button>
@@ -168,20 +210,43 @@
     }
 
     @if (requerimiento(); as r) {
+      @if (muestraCotizaciones()) {
+        <app-cotizaciones-panel [requerimiento]="r" (changed)="onCotizacionesChanged()" />
+        @if (r.estado === 'COTIZADO') {
+          <p class="req-form__hint">
+            El cuadro comparativo está cerrado. Administración elegirá al ganador en
+            <a routerLink="/requerimientos/aprobacion">Aprobaciones</a>.
+          </p>
+        }
+        @if (r.comentario_adjudicacion) {
+          <p class="req-form__hint"><strong>Motivo de la elección del ganador:</strong> {{ r.comentario_adjudicacion }}</p>
+        }
+      }
+
       @if (r.ordenes_compra?.length) {
-        <h3 class="req-form__section">Órdenes de compra generadas</h3>
+        <h3 class="req-form__section">Documentos de origen generados</h3>
         <div class="table-card">
           <table class="table">
             <thead>
-              <tr><th>OC</th><th>Número</th><th>Emisión</th><th style="text-align: right">Total</th></tr>
+              <tr><th>Número</th><th>Clase</th><th>Emisión</th><th>Estado</th><th style="text-align: right">Total</th><th></th></tr>
             </thead>
             <tbody>
               @for (oc of r.ordenes_compra; track oc.id) {
                 <tr>
-                  <td><strong>{{ oc.id_oc ?? '—' }}</strong></td>
-                  <td>{{ oc.numero_oc ?? '—' }}</td>
+                  <td><strong>{{ oc.numero_documento ?? oc.numero_oc ?? oc.id_oc ?? '—' }}</strong></td>
+                  <td>{{ oc.clase_documento ?? '—' }}</td>
                   <td>{{ oc.fecha_emision?.slice(0, 10) ?? '—' }}</td>
+                  <td>
+                    <span class="badge" [class.badge-danger]="oc.estado === 'ANULADO'" [class.badge-completed]="oc.estado !== 'ANULADO'">
+                      {{ oc.estado ?? 'REGISTRADO' }}
+                    </span>
+                  </td>
                   <td align="right">{{ oc.total === null ? '—' : fmtMoney(oc.total) }}</td>
+                  <td align="center">
+                    <a class="table-action-btn" [routerLink]="['/documentos/administracion']" [queryParams]="{ documento: oc.id }" title="Ver documento, pagos y expediente">
+                      <i class="fa-solid fa-eye"></i>
+                    </a>
+                  </td>
                 </tr>
               }
             </tbody>
@@ -214,7 +279,7 @@
             <i class="fa-solid fa-file-invoice"></i> Generar orden de compra
           </button>
         }
-        @if (r.estado === 'ENVIADO') {
+        @if (r.estado === 'COTIZADO' || (r.estado === 'ENVIADO' && r.tipo !== 'COMPRA')) {
           <a class="btn btn-secondary" routerLink="/requerimientos/aprobacion"><i class="fa-solid fa-clipboard-check"></i> Ir a la bandeja de aprobación</a>
         }
         @if (puedeAnular()) {

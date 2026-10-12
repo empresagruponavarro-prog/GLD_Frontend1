@@ -1,13 +1,26 @@
-import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { FormArray, FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
+import { forkJoin } from 'rxjs';
 import { DataTableComponent } from '../../../shared/components/data-table/data-table';
 import { ModalComponent } from '../../../shared/components/modal/modal';
 import { SearchSelectComponent } from '../../../shared/components/search-select/search-select';
 import { DataTable } from '../../../shared/interfaces';
-import { errorMessage, fmtNum } from '../../almacen/almacen.utils';
-import { Requerimiento, RequerimientoLinea, SelectOption } from '../requerimientos.models';
+import { errorMessage, fmtMoney, fmtNum } from '../../almacen/almacen.utils';
+import {
+  CuadroComparativo,
+  CuadroLinea,
+  CuadroOferta,
+  CuadroProveedor,
+  ESTADO_LABEL,
+  MEDIO_PAGO_LABEL,
+  Requerimiento,
+  RequerimientoLinea,
+  SelectOption,
+  TIPO_LABEL,
+} from '../requerimientos.models';
 import { RequerimientosService } from '../requerimientos.service';
+import { estadoBadge } from '../requerimientos.utils';
 
 const DECIMAL = /^\d{1,12}(\.\d{1,4})?$/;
 
@@ -20,44 +33,81 @@ function aprobacionGroup(linea: RequerimientoLinea) {
 
 type AprobacionGroup = ReturnType<typeof aprobacionGroup>;
 
-/** Bandeja de requerimientos ENVIADOS: el aprobador revisa, ajusta cantidades y aprueba, observa o rechaza. */
+/**
+ * Bandeja de aprobación. Las compras llegan COTIZADAS: el aprobador ve el cuadro comparativo completo y elige
+ * al ganador (no necesariamente el más barato). Los demás tipos (planillas, caja chica…) llegan ENVIADOS.
+ */
 @Component({
   selector: 'app-bandeja-aprobacion',
   standalone: true,
   imports: [ReactiveFormsModule, RouterLink, DataTableComponent, ModalComponent, SearchSelectComponent],
   templateUrl: './bandeja-aprobacion.html',
   styleUrl: './bandeja-aprobacion.css',
+  host: { class: 'page-scroll' },
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class BandejaAprobacionComponent {
   private readonly service = inject(RequerimientosService);
 
   protected readonly fmtNum = fmtNum;
+  protected readonly fmtMoney = fmtMoney;
+  protected readonly estadoBadge = estadoBadge;
+  protected readonly estadoLabel = ESTADO_LABEL;
+  protected readonly tipoLabel = TIPO_LABEL;
+  protected readonly medioLabel = MEDIO_PAGO_LABEL;
   protected readonly columns: DataTable[] = [
     { label: 'Número', width: '120px' },
     { label: 'Fecha', width: '100px' },
+    { label: 'Tipo', width: '190px' },
     { label: 'Centro de costos' },
-    { label: 'Solicitante', width: '180px' },
+    { label: 'Solicitante', width: '170px' },
     { label: 'Justificación' },
-    { label: 'Líneas', align: 'center', width: '70px' },
+    { label: 'Estado', align: 'center', width: '110px' },
     { label: 'Acciones', align: 'center', width: '110px' },
   ];
 
-  protected readonly items = signal<Requerimiento[]>([]);
-  protected readonly total = signal(0);
+  private readonly todos = signal<Requerimiento[]>([]);
   protected readonly page = signal(1);
   protected readonly pageSize = signal(20);
+  protected readonly total = computed(() => this.todos().length);
+  protected readonly items = computed(() => {
+    const desde = (this.page() - 1) * this.pageSize();
+    return this.todos().slice(desde, desde + this.pageSize());
+  });
   protected readonly isLoading = signal(false);
   protected readonly message = signal('');
   protected readonly trabajadores = signal<SelectOption[]>([]);
 
   protected readonly seleccionado = signal<Requerimiento | null>(null);
+  protected readonly cuadro = signal<CuadroComparativo | null>(null);
+  protected readonly ganadora = signal<number | null>(null);
   protected readonly isModalOpen = signal(false);
   protected readonly isSaving = signal(false);
   protected readonly modalError = signal('');
+
+  protected readonly esCompra = computed(() => this.seleccionado()?.tipo === 'COMPRA');
+  protected readonly proveedorGanador = computed<CuadroProveedor | null>(
+    () => this.cuadro()?.proveedores.find((p) => p.id_cotizacion === this.ganadora()) ?? null,
+  );
+  /** Qué documentos se generarán con el ganador elegido (OC para bienes, OS para servicios). */
+  protected readonly vistaPrevia = computed(() => {
+    const r = this.seleccionado();
+    const g = this.proveedorGanador();
+    if (!r || !g) return '';
+    const lineas = r.lineas ?? [];
+    const bienes = lineas.filter((l) => l.tipo_producto === 'PRODUCTO' && this.cantidadAprobable(l.id) > 0).length;
+    const servicios = lineas.filter((l) => l.tipo_producto === 'SERVICIO' && this.cantidadAprobable(l.id) > 0).length;
+    const partes = [
+      bienes ? `una orden de compra (${bienes} ${bienes === 1 ? 'ítem' : 'ítems'})` : '',
+      servicios ? `una orden de servicio (${servicios} ${servicios === 1 ? 'ítem' : 'ítems'})` : '',
+    ].filter(Boolean);
+    return partes.length ? `Al aprobar se generará ${partes.join(' y ')} a nombre de ${g.proveedor ?? 'el proveedor'}.` : '';
+  });
+
   protected readonly revision = new FormGroup({
     id_aprobador: new FormControl<number | null>(null),
     comentario: new FormControl('', { nonNullable: true }),
+    comentario_adjudicacion: new FormControl('', { nonNullable: true }),
     lineas: new FormArray<AprobacionGroup>([]),
   });
 
@@ -72,15 +122,18 @@ export class BandejaAprobacionComponent {
 
   protected load(): void {
     this.isLoading.set(true);
-    this.service.getAll({ estado: 'ENVIADO', page: this.page(), pageSize: this.pageSize() }).subscribe({
-      next: (res) => {
-        this.items.set(res.data);
-        this.total.set(res.total);
+    forkJoin([
+      this.service.getAll({ estado: 'COTIZADO', pageSize: 100 }),
+      this.service.getAll({ estado: 'ENVIADO', pageSize: 100 }),
+    ]).subscribe({
+      next: ([cotizados, enviados]) => {
+        // Una compra ENVIADA todavía está en cotización: no es para esta bandeja.
+        const pendientes = [...cotizados.data, ...enviados.data.filter((r) => r.tipo !== 'COMPRA')];
+        this.todos.set(pendientes.sort((a, b) => b.fecha.localeCompare(a.fecha) || b.id - a.id));
         this.isLoading.set(false);
       },
       error: () => {
-        this.items.set([]);
-        this.total.set(0);
+        this.todos.set([]);
         this.isLoading.set(false);
       },
     });
@@ -88,25 +141,31 @@ export class BandejaAprobacionComponent {
 
   protected onPageChange(page: number): void {
     this.page.set(page);
-    this.load();
   }
 
   protected onPageSizeChange(size: number): void {
     this.pageSize.set(size);
     this.page.set(1);
-    this.load();
   }
 
   protected revisar(item: Requerimiento): void {
     this.modalError.set('');
     this.seleccionado.set(null);
+    this.cuadro.set(null);
+    this.ganadora.set(null);
     this.isModalOpen.set(true);
     this.service.getById(item.id).subscribe({
       next: (r) => {
-        this.seleccionado.set(r);
-        this.revision.reset({ id_aprobador: null, comentario: '' });
+        this.revision.reset({ id_aprobador: null, comentario: '', comentario_adjudicacion: '' });
         this.lineas.clear();
         for (const l of r.lineas ?? []) this.lineas.push(aprobacionGroup(l));
+        this.seleccionado.set(r);
+        if (r.tipo === 'COMPRA') {
+          this.service.getCuadroComparativo(r.id).subscribe({
+            next: (c) => this.cuadro.set(c),
+            error: (err) => this.modalError.set(errorMessage(err)),
+          });
+        }
       },
       error: (err) => this.modalError.set(errorMessage(err)),
     });
@@ -115,19 +174,48 @@ export class BandejaAprobacionComponent {
   protected closeModal(): void {
     this.isModalOpen.set(false);
     this.seleccionado.set(null);
+    this.cuadro.set(null);
   }
 
+  // ------------------------------------------------------- cuadro comparativo
+  protected oferta(linea: CuadroLinea, idCotizacion: number): CuadroOferta | undefined {
+    return linea.ofertas.find((o) => o.id_cotizacion === idCotizacion);
+  }
+
+  /** Elegir al ganador: las líneas que no cotiza quedan en 0 y las demás en lo que ofrece. */
+  protected elegir(p: CuadroProveedor): void {
+    this.ganadora.set(p.id_cotizacion);
+    this.modalError.set('');
+    for (const g of this.lineas.controls) {
+      g.controls.cantidad_aprobada.setValue(String(this.cantidadAprobable(g.controls.id_detalle.value, p.id_cotizacion)));
+    }
+  }
+
+  private cantidadAprobable(idDetalle: number, idCotizacion: number | null = this.ganadora()): number {
+    const linea = this.seleccionado()?.lineas?.find((l) => l.id === idDetalle);
+    const cuadro = this.cuadro();
+    if (!linea) return 0;
+    if (idCotizacion === null || !cuadro) return Number(linea.cantidad);
+    const o = cuadro.lineas.find((l) => l.id_detalle === idDetalle)?.ofertas.find((x) => x.id_cotizacion === idCotizacion);
+    return o && o.cotiza ? Math.min(Number(linea.cantidad), Number(o.cantidad)) : 0;
+  }
+
+  // ------------------------------------------------------------------ acciones
   protected aprobar(): void {
     const r = this.seleccionado();
     const idAprobador = this.revision.controls.id_aprobador.value;
     if (!r) return;
     if (!idAprobador) return this.modalError.set('Seleccione al aprobador.');
+    if (this.esCompra() && this.ganadora() === null) return this.modalError.set('Elija la cotización ganadora en el cuadro comparativo.');
     const lineas = this.lineas.getRawValue();
     for (const [i, l] of lineas.entries()) {
       const pedido = Number(r.lineas?.[i]?.cantidad ?? 0);
       const valor = l.cantidad_aprobada.trim();
       if (!DECIMAL.test(valor)) return this.modalError.set(`Línea ${i + 1}: la cantidad aprobada no es válida.`);
       if (Number(valor) > pedido) return this.modalError.set(`Línea ${i + 1}: no se puede aprobar más de lo solicitado (${fmtNum(pedido)}).`);
+      if (this.esCompra() && Number(valor) > this.cantidadAprobable(l.id_detalle)) {
+        return this.modalError.set(`Línea ${i + 1}: el ganador no ofrece esa cantidad (máximo ${fmtNum(this.cantidadAprobable(l.id_detalle))}).`);
+      }
     }
     if (!lineas.some((l) => Number(l.cantidad_aprobada) > 0)) {
       return this.modalError.set('Apruebe al menos una línea con cantidad mayor a 0, o rechace el requerimiento.');
@@ -136,9 +224,11 @@ export class BandejaAprobacionComponent {
       this.service.aprobar(r.id, {
         id_aprobador: idAprobador,
         comentario: this.revision.controls.comentario.value.trim() || undefined,
+        id_cotizacion_ganadora: this.esCompra() ? (this.ganadora() ?? undefined) : undefined,
+        comentario_adjudicacion: this.revision.controls.comentario_adjudicacion.value.trim() || undefined,
         lineas: lineas.map((l) => ({ id_detalle: l.id_detalle, cantidad_aprobada: l.cantidad_aprobada.trim() })),
       }),
-      `${r.numero} aprobado.`,
+      `${r.numero} aprobado: se generaron sus documentos de origen.`,
     );
   }
 

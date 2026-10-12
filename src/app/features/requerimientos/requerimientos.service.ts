@@ -3,7 +3,11 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable, forkJoin, map } from 'rxjs';
 import { environment } from '@env';
 import {
+  Area,
   AprobarPayload,
+  Cotizacion,
+  CotizacionPayload,
+  CuadroComparativo,
   ItemCatalogo,
   Paginated,
   Requerimiento,
@@ -60,6 +64,29 @@ export class RequerimientosService {
   anular(id: number, comentario?: string): Observable<Requerimiento> {
     return this.http.post<Requerimiento>(`${this.api}/${id}/anular`, { comentario });
   }
+  cerrarCotizacion(id: number, comentario?: string): Observable<Requerimiento> {
+    return this.http.post<Requerimiento>(`${this.api}/${id}/cerrar-cotizacion`, { comentario });
+  }
+  reabrirCotizacion(id: number, comentario?: string): Observable<Requerimiento> {
+    return this.http.post<Requerimiento>(`${this.api}/${id}/reabrir-cotizacion`, { comentario });
+  }
+
+  // ---- Cotizaciones y cuadro comparativo
+  getCotizaciones(id: number): Observable<Cotizacion[]> {
+    return this.http.get<Cotizacion[]>(`${this.api}/${id}/cotizaciones`);
+  }
+  createCotizacion(id: number, data: CotizacionPayload): Observable<Cotizacion> {
+    return this.http.post<Cotizacion>(`${this.api}/${id}/cotizaciones`, data);
+  }
+  updateCotizacion(id: number, idCot: number, data: Partial<CotizacionPayload>): Observable<Cotizacion> {
+    return this.http.patch<Cotizacion>(`${this.api}/${id}/cotizaciones/${idCot}`, data);
+  }
+  deleteCotizacion(id: number, idCot: number): Observable<{ deleted: boolean; id: number }> {
+    return this.http.delete<{ deleted: boolean; id: number }>(`${this.api}/${id}/cotizaciones/${idCot}`);
+  }
+  getCuadroComparativo(id: number): Observable<CuadroComparativo> {
+    return this.http.get<CuadroComparativo>(`${this.api}/${id}/cuadro-comparativo`);
+  }
 
   // ---- Catálogos
   getTrabajadoresSelect(): Observable<SelectOption[]> {
@@ -67,6 +94,16 @@ export class RequerimientosService {
   }
   getCentrosCostosSelect(): Observable<SelectOption[]> {
     return this.http.get<SelectOption[]>(`${environment.apiUrl}/centros-costos/select`);
+  }
+  getProveedoresSelect(): Observable<SelectOption[]> {
+    return this.http.get<SelectOption[]>(`${environment.apiUrl}/maestros/anexo/select`, { params: toParams({ tipoAnexo: 'Proveedor' }) });
+  }
+  /** Cualquier anexo (beneficiarios: trabajadores, proveedores, contratistas). */
+  getAnexosSelect(): Observable<SelectOption[]> {
+    return this.http.get<SelectOption[]>(`${environment.apiUrl}/maestros/anexo/select`);
+  }
+  getAreas(soloActivas = true): Observable<Area[]> {
+    return this.http.get<Area[]>(`${environment.apiUrl}/maestros/area`, { params: toParams({ activas: soloActivas }) });
   }
 
   /**

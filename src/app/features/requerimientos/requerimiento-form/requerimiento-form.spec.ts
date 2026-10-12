@@ -28,7 +28,7 @@ function setup(id: string | null = null) {
   const navigate = vi.spyOn(router, 'navigate').mockResolvedValue(true);
   const fixture = TestBed.createComponent(RequerimientoFormComponent);
   // Catálogos iniciales (centros de costos y trabajadores).
-  http.match((r) => r.url.endsWith('/select')).forEach((r) => r.flush([]));
+  http.match((r) => r.url.endsWith('/select') || r.url.endsWith('/area')).forEach((r) => r.flush([]));
   return { http, navigate, cmp: fixture.componentInstance as unknown as Internals };
 }
 
@@ -85,7 +85,7 @@ describe('RequerimientoFormComponent', () => {
       id_centro_costo: 4,
       id_fase: undefined,
       id_solicitante: 7,
-      area: undefined,
+      tipo: 'COMPRA',
       justificacion: 'Reposición de materiales',
       lineas: [{ id_producto: 10, cantidad: '3', precio_referencial: undefined, observaciones: 'urgente' }],
     });
@@ -126,6 +126,9 @@ describe('RequerimientoFormComponent', () => {
       id_fase: null,
       id_solicitante: 7,
       area: null,
+      tipo: 'COMPRA',
+      id_beneficiario: null,
+      id_area: null,
       justificacion: 'Original',
       estado: 'OBSERVADO',
       eventos: [],

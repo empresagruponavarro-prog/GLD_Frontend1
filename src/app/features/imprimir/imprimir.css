@@ -1,0 +1,154 @@
+:host {
+  display: block;
+  background: #e5e7eb;
+  min-height: 100vh;
+  padding: 1rem;
+}
+
+.imp-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+  max-width: 210mm;
+  margin: 0 auto 0.75rem;
+}
+
+.imp-toolbar__hint {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+.imp-page {
+  max-width: 210mm;
+  min-height: 280mm;
+  margin: 0 auto;
+  padding: 14mm;
+  background: #fff;
+  color: #111827;
+  font-size: 11px;
+  line-height: 1.35;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.15);
+}
+
+.imp-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 2px solid #111827;
+}
+
+.imp-header__fecha {
+  text-align: right;
+  color: #4b5563;
+}
+
+.imp-title {
+  margin: 0.8rem 0 0.2rem;
+  font-size: 15px;
+  text-align: center;
+  letter-spacing: 0.03em;
+}
+
+.imp-numero {
+  margin: 0 0 0.6rem;
+  text-align: center;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.imp-sub {
+  margin: 0.9rem 0 0.3rem;
+  font-size: 12px;
+}
+
+.imp-nota {
+  margin: 0.4rem 0;
+}
+
+.imp-error {
+  color: #991b1b;
+}
+
+.imp-grid,
+.imp-table,
+.imp-resumen {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 0.5rem 0;
+}
+
+.imp-grid th,
+.imp-grid td,
+.imp-table th,
+.imp-table td,
+.imp-resumen th,
+.imp-resumen td {
+  border: 1px solid #9ca3af;
+  padding: 3px 6px;
+  vertical-align: top;
+  text-align: left;
+}
+
+.imp-grid th,
+.imp-table thead th,
+.imp-resumen th {
+  background: #f3f4f6;
+}
+
+.imp-grid th {
+  width: 16%;
+}
+
+.imp-resumen {
+  width: 55%;
+  margin-left: auto;
+}
+
+.imp-resumen td,
+.num {
+  text-align: right !important;
+}
+
+.imp-total th,
+.imp-total td {
+  font-weight: 700;
+}
+
+.imp-ganadora {
+  background: #d1fae5 !important;
+}
+
+.imp-firmas {
+  display: flex;
+  justify-content: space-around;
+  gap: 1.5rem;
+  margin-top: 28mm;
+}
+
+.imp-firmas div {
+  flex: 1;
+  padding-top: 4px;
+  border-top: 1px solid #111827;
+  text-align: center;
+}
+
+@media print {
+  :host {
+    padding: 0;
+    background: #fff;
+  }
+
+  .no-print {
+    display: none !important;
+  }
+
+  .imp-page {
+    max-width: none;
+    min-height: 0;
+    margin: 0;
+    padding: 0;
+    box-shadow: none;
+  }
+}

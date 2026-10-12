@@ -10,15 +10,19 @@ import {
   EstadoRequerimiento,
   Requerimiento,
   RequerimientoQuery,
+  TIPOS_REQUERIMIENTO,
+  TIPO_LABEL,
+  TipoRequerimiento,
 } from '../requerimientos.models';
 import { RequerimientosService } from '../requerimientos.service';
-import { avanceBadge, esEditable, estadoBadge } from '../requerimientos.utils';
+import { ESTADOS_ANULABLES, avanceBadge, esEditable, estadoBadge } from '../requerimientos.utils';
 
 @Component({
   selector: 'app-requerimientos-lista',
   standalone: true,
   imports: [RouterLink, DataTableComponent],
   templateUrl: './requerimientos-lista.html',
+  host: { class: 'page-scroll' },
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class RequerimientosListaComponent {
@@ -27,6 +31,8 @@ export class RequerimientosListaComponent {
 
   protected readonly estados = ESTADOS_REQUERIMIENTO;
   protected readonly estadoLabel = ESTADO_LABEL;
+  protected readonly tipos = TIPOS_REQUERIMIENTO;
+  protected readonly tipoLabel = TIPO_LABEL;
   protected readonly avanceLabel = AVANCE_LABEL;
   protected readonly estadoBadge = estadoBadge;
   protected readonly avanceBadge = avanceBadge;
@@ -51,6 +57,7 @@ export class RequerimientosListaComponent {
   protected readonly message = signal('');
 
   protected readonly fEstado = signal<EstadoRequerimiento | ''>('');
+  protected readonly fTipo = signal<TipoRequerimiento | ''>('');
   protected readonly fDesde = signal('');
   protected readonly fHasta = signal('');
   protected readonly fSearch = signal('');
@@ -68,6 +75,7 @@ export class RequerimientosListaComponent {
       page: this.page(),
       pageSize: this.pageSize(),
       estado: this.fEstado() || undefined,
+      tipo: this.fTipo() || undefined,
       desde: this.fDesde() || undefined,
       hasta: this.fHasta() || undefined,
       search: this.fSearch().trim() || undefined,
@@ -86,8 +94,9 @@ export class RequerimientosListaComponent {
     });
   }
 
-  protected applyFilter(target: 'estado' | 'desde' | 'hasta', value: string): void {
+  protected applyFilter(target: 'estado' | 'tipo' | 'desde' | 'hasta', value: string): void {
     if (target === 'estado') this.fEstado.set(value as EstadoRequerimiento | '');
+    else if (target === 'tipo') this.fTipo.set(value as TipoRequerimiento | '');
     else if (target === 'desde') this.fDesde.set(value);
     else this.fHasta.set(value);
     this.page.set(1);
@@ -105,6 +114,7 @@ export class RequerimientosListaComponent {
 
   protected resetFilters(): void {
     this.fEstado.set('');
+    this.fTipo.set('');
     this.fDesde.set('');
     this.fHasta.set('');
     this.fSearch.set('');
@@ -124,11 +134,11 @@ export class RequerimientosListaComponent {
   }
 
   protected canAnular(item: Requerimiento): boolean {
-    return ['BORRADOR', 'ENVIADO', 'OBSERVADO', 'APROBADO'].includes(item.estado);
+    return ESTADOS_ANULABLES.includes(item.estado);
   }
 
   protected canGenerarOc(item: Requerimiento): boolean {
-    return item.estado === 'APROBADO' && item.avance !== 'ATENDIDO';
+    return item.estado === 'APROBADO' && item.tipo === 'COMPRA' && item.avance !== 'ATENDIDO';
   }
 
   protected enviar(item: Requerimiento): void {

@@ -1,0 +1,207 @@
+<div class="content-header">
+  <div>
+    <h1 class="content-title">Consulta de pagos y documentos de origen</h1>
+    <p class="content-subtitle">Tablero para la toma de decisiones. Todos los importes están en soles.</p>
+  </div>
+  <div style="display: flex; gap: 0.5rem; align-items: center">
+    <a class="btn btn-secondary" routerLink="/documentos/administracion"><i class="fa-solid fa-file-invoice-dollar"></i> Documentos de origen</a>
+    <a class="btn btn-secondary" routerLink="/tesoreria/programacion"><i class="fa-solid fa-calendar-check"></i> Programación</a>
+  </div>
+</div>
+
+<div class="content-body">
+  <div class="con-tabs" role="tablist">
+    <button type="button" role="tab" class="con-tab" [class.con-tab--active]="pestana() === 'tablero'" (click)="pestana.set('tablero')">Tablero</button>
+    <button type="button" role="tab" class="con-tab" [class.con-tab--active]="pestana() === 'retenciones'" (click)="pestana.set('retenciones')">Retenciones y detracciones</button>
+  </div>
+
+  @if (pestana() === 'tablero') {
+    <section class="toolbar-shell">
+      <div class="toolbar-filters-row">
+        <div class="toolbar-filters-left">
+          <label class="toolbar-check">Emisión desde <input type="date" class="toolbar-select" [value]="desde()" (change)="setFiltro('desde', $any($event.target).value)" /></label>
+          <label class="toolbar-check">hasta <input type="date" class="toolbar-select" [value]="hasta()" (change)="setFiltro('hasta', $any($event.target).value)" /></label>
+          <select class="toolbar-select" [value]="idArea()" (change)="setFiltro('area', $any($event.target).value)" aria-label="Área">
+            <option value="">Todas las áreas</option>
+            @for (a of areas(); track a.id) {
+              <option [value]="a.id">{{ a.nombre }}</option>
+            }
+          </select>
+          <select class="toolbar-select" [value]="idCentro()" (change)="setFiltro('centro', $any($event.target).value)" aria-label="Centro de costos">
+            <option value="">Todos los centros de costos</option>
+            @for (c of centrosCostos(); track c.id) {
+              <option [value]="c.id">{{ c.nombre }}</option>
+            }
+          </select>
+          <select class="toolbar-select" [value]="clase()" (change)="setFiltro('clase', $any($event.target).value)" aria-label="Clase">
+            <option value="">Todas las clases</option>
+            @for (c of clases; track c) {
+              <option [value]="c">{{ claseLabel[c] }}</option>
+            }
+          </select>
+          <button class="toolbar-reset" type="button" (click)="limpiar()"><i class="fa-solid fa-rotate-left"></i> Restablecer</button>
+        </div>
+      </div>
+    </section>
+
+    @if (error()) {
+      <p class="badge badge-danger" role="alert">{{ error() }}</p>
+    }
+    @if (isLoading() && !resumen()) {
+      <p class="con-hint"><i class="fa-solid fa-spinner fa-spin"></i> Cargando tablero...</p>
+    }
+
+    @if (resumen(); as r) {
+      @if (r.sin_tipo_cambio > 0) {
+        <p class="badge badge-pending">
+          <i class="fa-solid fa-triangle-exclamation"></i> {{ r.sin_tipo_cambio }} importes en dólares no se convirtieron por falta de tipo de cambio.
+          <a routerLink="/tesoreria/tipo-cambio">Registrar tipo de cambio</a>
+        </p>
+      }
+
+      <div class="con-kpis">
+        <div class="con-kpi"><span>Comprometido</span><strong>S/ {{ fmtMoney(r.kpis.comprometido) }}</strong><small>{{ r.kpis.documentos }} documentos vigentes</small></div>
+        <div class="con-kpi"><span>Programado</span><strong>S/ {{ fmtMoney(r.kpis.programado) }}</strong><small>pendiente de ejecutar</small></div>
+        <div class="con-kpi con-kpi--ok"><span>Pagado</span><strong>S/ {{ fmtMoney(r.kpis.pagado) }}</strong><small>comprobantes vigentes</small></div>
+        <div class="con-kpi con-kpi--warn"><span>Saldo por pagar</span><strong>S/ {{ fmtMoney(r.kpis.saldo_por_pagar) }}</strong><small>incluye detracciones</small></div>
+      </div>
+
+      <div class="con-grid">
+        <section class="con-card con-card--wide">
+          <h3>Comprometido vs. pagado por mes</h3>
+          @if (r.por_mes.length === 0) {
+            <p class="con-hint">Sin datos.</p>
+          }
+          @for (m of r.por_mes; track m.mes) {
+            <div class="con-mes">
+              <span class="con-mes__label">{{ m.mes }}</span>
+              <div class="con-mes__bars">
+                <div class="con-bar" [title]="'Comprometido S/ ' + fmtMoney(m.comprometido_soles)">
+                  <i class="con-bar__fill" [style.width.%]="pct(m.comprometido_soles, maxMes())"></i>
+                  <span>S/ {{ fmtMoney(m.comprometido_soles) }}</span>
+                </div>
+                <div class="con-bar con-bar--pagado" [title]="'Pagado S/ ' + fmtMoney(m.pagado_soles)">
+                  <i class="con-bar__fill" [style.width.%]="pct(m.pagado_soles, maxMes())"></i>
+                  <span>S/ {{ fmtMoney(m.pagado_soles) }}</span>
+                </div>
+              </div>
+            </div>
+          }
+          <p class="con-leyenda"><i class="con-dot"></i> Comprometido <i class="con-dot con-dot--pagado"></i> Pagado</p>
+        </section>
+
+        <section class="con-card">
+          <h3>Vencimientos del saldo por pagar</h3>
+          <ul class="con-venc">
+            <li class="con-venc--vencido"><span>Vencidos</span><strong>S/ {{ fmtMoney(r.vencimientos.vencidos.monto_soles) }}</strong><small>{{ r.vencimientos.vencidos.cantidad }} docs</small></li>
+            <li class="con-venc--semana"><span>Esta semana</span><strong>S/ {{ fmtMoney(r.vencimientos.esta_semana.monto_soles) }}</strong><small>{{ r.vencimientos.esta_semana.cantidad }} docs</small></li>
+            <li><span>Este mes</span><strong>S/ {{ fmtMoney(r.vencimientos.este_mes.monto_soles) }}</strong><small>{{ r.vencimientos.este_mes.cantidad }} docs</small></li>
+            <li><span>Más adelante</span><strong>S/ {{ fmtMoney(r.vencimientos.mas_adelante.monto_soles) }}</strong><small>{{ r.vencimientos.mas_adelante.cantidad }} docs</small></li>
+            <li><span>Sin fecha</span><strong>S/ {{ fmtMoney(r.vencimientos.sin_fecha.monto_soles) }}</strong><small>{{ r.vencimientos.sin_fecha.cantidad }} docs</small></li>
+          </ul>
+          @if (r.vencimientos.proximos.length) {
+            <table class="table con-table">
+              <thead><tr><th>Vence</th><th>Documento</th><th style="text-align: right">Saldo</th></tr></thead>
+              <tbody>
+                @for (p of r.vencimientos.proximos; track p.id) {
+                  <tr><td>{{ p.vencimiento }}</td><td>{{ p.numero_documento ?? '#' + p.id }}<div class="table-cell-subtitle">{{ p.proveedor }}</div></td><td align="right">S/ {{ fmtMoney(p.saldo_soles) }}</td></tr>
+                }
+              </tbody>
+            </table>
+          }
+        </section>
+
+        <section class="con-card">
+          <h3>Deuda por centro de costos</h3>
+          @for (f of r.deuda_por_centro_costo; track f.nombre) {
+            <div class="con-fila"><span class="con-fila__nombre" [title]="f.nombre">{{ f.nombre }}</span><div class="con-bar"><i class="con-bar__fill" [style.width.%]="pct(f.monto_soles, maximo(r.deuda_por_centro_costo))"></i><span>S/ {{ fmtMoney(f.monto_soles) }}</span></div></div>
+          } @empty {
+            <p class="con-hint">Sin deuda pendiente.</p>
+          }
+        </section>
+
+        <section class="con-card">
+          <h3>Deuda por grupo de centros de costos</h3>
+          @for (f of r.deuda_por_grupo_centro_costo; track f.nombre) {
+            <div class="con-fila"><span class="con-fila__nombre" [title]="f.nombre">{{ f.nombre }}</span><div class="con-bar"><i class="con-bar__fill" [style.width.%]="pct(f.monto_soles, maximo(r.deuda_por_grupo_centro_costo))"></i><span>S/ {{ fmtMoney(f.monto_soles) }}</span></div></div>
+          } @empty {
+            <p class="con-hint">Sin deuda pendiente.</p>
+          }
+        </section>
+
+        <section class="con-card">
+          <h3>Deuda por área</h3>
+          @for (f of r.deuda_por_area; track f.nombre) {
+            <div class="con-fila"><span class="con-fila__nombre" [title]="f.nombre">{{ f.nombre }}</span><div class="con-bar"><i class="con-bar__fill" [style.width.%]="pct(f.monto_soles, maximo(r.deuda_por_area))"></i><span>S/ {{ fmtMoney(f.monto_soles) }}</span></div></div>
+          } @empty {
+            <p class="con-hint">Sin deuda pendiente.</p>
+          }
+        </section>
+
+        <section class="con-card">
+          <h3>Pagado por proveedor (top 10)</h3>
+          @for (f of r.pagado_por_proveedor; track f.nombre) {
+            <div class="con-fila"><span class="con-fila__nombre" [title]="f.nombre">{{ f.nombre }}</span><div class="con-bar con-bar--pagado"><i class="con-bar__fill" [style.width.%]="pct(f.monto_soles, maximo(r.pagado_por_proveedor))"></i><span>S/ {{ fmtMoney(f.monto_soles) }}</span></div></div>
+          } @empty {
+            <p class="con-hint">Aún no hay pagos en el periodo.</p>
+          }
+        </section>
+
+        <section class="con-card">
+          <h3>Programado por cuenta</h3>
+          @for (f of r.programado_por_cuenta; track f.nombre) {
+            <div class="con-fila"><span class="con-fila__nombre" [title]="f.nombre">{{ f.nombre }}</span><div class="con-bar"><i class="con-bar__fill" [style.width.%]="pct(f.monto_soles, maximo(r.programado_por_cuenta))"></i><span>S/ {{ fmtMoney(f.monto_soles) }}</span></div></div>
+          } @empty {
+            <p class="con-hint">No hay pagos programados.</p>
+          }
+        </section>
+      </div>
+    }
+  } @else {
+    <section class="toolbar-shell">
+      <div class="toolbar-filters-row">
+        <div class="toolbar-filters-left">
+          <label class="toolbar-check">Periodo (mes de pago) <input type="month" class="toolbar-select" [value]="periodo()" (change)="setPeriodo($any($event.target).value)" /></label>
+        </div>
+      </div>
+    </section>
+    @if (isLoadingRet()) {
+      <p class="con-hint"><i class="fa-solid fa-spinner fa-spin"></i> Cargando...</p>
+    }
+    @if (retenciones(); as t) {
+      <div class="con-kpis">
+        <div class="con-kpi"><span>Retenciones del IGV (3 %)</span><strong>{{ fmtMoney(t.totales.retenciones) }}</strong><small>{{ t.retenciones.length }} documentos</small></div>
+        <div class="con-kpi"><span>Detracciones pagadas</span><strong>S/ {{ fmtMoney(t.totales.detracciones_soles) }}</strong><small>{{ t.detracciones.length }} pagos</small></div>
+      </div>
+      <p class="con-hint">{{ t.nota }}</p>
+
+      <h3 class="con-sub">Retenciones</h3>
+      <div class="table-card">
+        <table class="table">
+          <thead><tr><th>Primer pago</th><th>Documento</th><th>Proveedor</th><th>RUC</th><th style="text-align: right">Total</th><th style="text-align: right">Retención</th></tr></thead>
+          <tbody>
+            @for (r of t.retenciones; track r.id) {
+              <tr><td>{{ r.fecha_pago }}</td><td>{{ r.numero_documento ?? '#' + r.id }}</td><td>{{ r.proveedor ?? '—' }}</td><td>{{ r.ruc ?? '—' }}</td><td align="right">{{ r.moneda_simbolo ?? 'S/' }} {{ fmtMoney(r.total) }}</td><td align="right"><strong>{{ r.moneda_simbolo ?? 'S/' }} {{ fmtMoney(r.retencion_monto) }}</strong></td></tr>
+            } @empty {
+              <tr><td colspan="6" align="center">Sin retenciones en el periodo.</td></tr>
+            }
+          </tbody>
+        </table>
+      </div>
+
+      <h3 class="con-sub">Detracciones</h3>
+      <div class="table-card">
+        <table class="table">
+          <thead><tr><th>Fecha</th><th>Pago</th><th>Documento</th><th>Proveedor</th><th>RUC</th><th>Constancia</th><th style="text-align: right">Monto (S/)</th></tr></thead>
+          <tbody>
+            @for (d of t.detracciones; track d.id) {
+              <tr><td>{{ d.fecha_pago }}</td><td>{{ d.numero_pago }}</td><td>{{ d.numero_documento ?? '—' }}</td><td>{{ d.proveedor ?? '—' }}</td><td>{{ d.ruc ?? '—' }}</td><td>{{ d.constancia ?? '—' }}</td><td align="right"><strong>{{ fmtMoney(d.monto) }}</strong></td></tr>
+            } @empty {
+              <tr><td colspan="7" align="center">Sin detracciones pagadas en el periodo.</td></tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  }
+</div>

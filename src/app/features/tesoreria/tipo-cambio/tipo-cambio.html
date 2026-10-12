@@ -1,0 +1,52 @@
+<div class="content-header">
+  <div>
+    <h1 class="content-title">Tipo de cambio diario</h1>
+    <p class="content-subtitle">
+      Registre cada día el tipo de cambio. Para pagar deudas en dólares y calcular detracciones se usa el de <strong>venta</strong>;
+      si falta el del día se usa el último anterior.
+    </p>
+  </div>
+</div>
+
+<div class="content-body">
+  @if (faltaHoy()) {
+    <p class="badge badge-pending" role="status" style="margin-bottom: 0.75rem">
+      <i class="fa-solid fa-triangle-exclamation"></i> Aún no se registró el tipo de cambio en dólares de hoy ({{ hoy }}).
+    </p>
+  }
+
+  <form [formGroup]="form" (ngSubmit)="guardar()" class="tc-form" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 0.25rem 1rem; align-items: end; margin-bottom: 1rem">
+    <div class="form-group"><label for="tc-fecha">Fecha</label><input id="tc-fecha" type="date" class="form-control" formControlName="fecha" /></div>
+    <div class="form-group"><label for="tc-moneda">Moneda</label><input id="tc-moneda" class="form-control" formControlName="moneda_id" maxlength="10" /></div>
+    <div class="form-group"><label for="tc-compra">Compra</label><input id="tc-compra" class="form-control" inputmode="decimal" formControlName="compra" placeholder="3.7500" /></div>
+    <div class="form-group"><label for="tc-venta">Venta</label><input id="tc-venta" class="form-control" inputmode="decimal" formControlName="venta" placeholder="3.7800" /></div>
+    <div class="form-group"><button class="btn btn-primary" type="submit" [disabled]="isSaving()"><i class="fa-solid fa-floppy-disk"></i> {{ isSaving() ? 'Guardando...' : 'Guardar' }}</button></div>
+  </form>
+  @if (error()) {
+    <p class="badge badge-danger" role="alert">{{ error() }}</p>
+  }
+  @if (message()) {
+    <p class="badge badge-completed" role="status">{{ message() }}</p>
+  }
+
+  <div class="table-card">
+    <table class="table">
+      <thead>
+        <tr><th>Fecha</th><th>Moneda</th><th style="text-align: right">Compra</th><th style="text-align: right">Venta</th><th style="text-align: center">Acciones</th></tr>
+      </thead>
+      <tbody>
+        @for (t of items(); track t.id) {
+          <tr>
+            <td><strong>{{ t.fecha }}</strong></td>
+            <td>{{ t.moneda_id }}</td>
+            <td align="right">{{ t.compra }}</td>
+            <td align="right">{{ t.venta }}</td>
+            <td align="center"><button class="table-action-btn" type="button" title="Corregir" (click)="editar(t)"><i class="fa-solid fa-pen-to-square"></i></button></td>
+          </tr>
+        } @empty {
+          <tr><td colspan="5" align="center">{{ isLoading() ? 'Cargando...' : 'Aún no hay tipos de cambio registrados.' }}</td></tr>
+        }
+      </tbody>
+    </table>
+  </div>
+</div>

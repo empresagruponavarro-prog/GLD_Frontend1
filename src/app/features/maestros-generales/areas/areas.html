@@ -1,0 +1,46 @@
+<div class="content-header">
+  <div>
+    <h1 class="content-title">Áreas de la empresa</h1>
+    <p class="content-subtitle">Costos y Presupuesto, Oficina Técnica, Procura, Comercialización, Posventa, Almacén, Sistemas… Se usan al pedir y al pagar.</p>
+  </div>
+  <div style="display: flex; gap: 0.5rem; align-items: center">
+    <button class="btn btn-primary" type="button" (click)="nueva()"><i class="fa-solid fa-plus"></i> Nueva área</button>
+  </div>
+</div>
+
+<div class="content-body">
+  <div class="table-card">
+    <table class="table">
+      <thead><tr><th>Código</th><th>Nombre</th><th style="text-align: center">Estado</th><th style="text-align: center">Acciones</th></tr></thead>
+      <tbody>
+        @for (a of items(); track a.id) {
+          <tr>
+            <td><strong>{{ a.codigo }}</strong></td>
+            <td>{{ a.nombre }}</td>
+            <td align="center"><span class="badge" [class.badge-completed]="a.estado" [class.badge-danger]="!a.estado">{{ a.estado ? 'Activa' : 'Inactiva' }}</span></td>
+            <td align="center"><button class="table-action-btn" type="button" title="Editar" (click)="editar(a)"><i class="fa-solid fa-pen-to-square"></i></button></td>
+          </tr>
+        } @empty {
+          <tr><td colspan="4" align="center">{{ isLoading() ? 'Cargando...' : 'No hay áreas registradas.' }}</td></tr>
+        }
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<app-modal [isOpen]="isModalOpen()" [title]="editando() ? 'Editar área' : 'Nueva área'" maxWidth="480px" [showDefaultFooter]="false" (closed)="closeModal()">
+  <form [formGroup]="form" (ngSubmit)="guardar()">
+    <div class="form-group"><label for="area-codigo">Código <span class="required">*</span></label><input id="area-codigo" class="form-control" formControlName="codigo" maxlength="20" style="text-transform: uppercase" /></div>
+    <div class="form-group"><label for="area-nombre">Nombre <span class="required">*</span></label><input id="area-nombre" class="form-control" formControlName="nombre" maxlength="100" /></div>
+    @if (editando()) {
+      <div class="form-group"><label><input type="checkbox" formControlName="estado" /> Área activa</label></div>
+    }
+  </form>
+  @if (modalError()) {
+    <p class="badge badge-danger" role="alert" style="white-space: pre-line">{{ modalError() }}</p>
+  }
+  <div modal-footer class="modal-footer">
+    <button class="btn btn-secondary" type="button" (click)="closeModal()" [disabled]="isSaving()">Cancelar</button>
+    <button class="btn btn-primary" type="button" (click)="guardar()" [disabled]="isSaving()"><i class="fa-solid fa-floppy-disk"></i> {{ isSaving() ? 'Guardando...' : 'Guardar' }}</button>
+  </div>
+</app-modal>

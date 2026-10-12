@@ -35,3 +35,30 @@
 .bandeja-form__full {
   grid-column: 1 / -1;
 }
+
+.bandeja-section {
+  margin: 1.25rem 0 0.5rem;
+  font-size: 0.95rem;
+}
+
+.bandeja-cuadro th,
+.bandeja-cuadro td {
+  vertical-align: top;
+}
+
+.bandeja-cuadro__ganadora {
+  background: #ecfdf5;
+}
+
+.bandeja-cuadro__total td {
+  border-top: 2px solid var(--border-color, #e5e7eb);
+}
+
+.bandeja-preview {
+  margin: 0.5rem 0 0.75rem;
+  padding: 0.6rem 0.85rem;
+  border-radius: 8px;
+  background: #dbeafe;
+  color: #1e40af;
+  font-size: 0.85rem;
+}

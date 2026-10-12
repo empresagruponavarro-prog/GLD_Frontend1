@@ -12,6 +12,7 @@ export class SidebarComponent {
   isMaestrosOpen = true;
   isDocumentosOpen = true;
   isAlmacenOpen = true;
+  isTesoreriaOpen = true;
 
   toggleMaestros() {
     this.isMaestrosOpen = !this.isMaestrosOpen;
@@ -19,6 +20,10 @@ export class SidebarComponent {
 
   toggleAlmacen() {
     this.isAlmacenOpen = !this.isAlmacenOpen;
+  }
+
+  toggleTesoreria() {
+    this.isTesoreriaOpen = !this.isTesoreriaOpen;
   }
 
   toggleDocumentos() {

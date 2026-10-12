@@ -257,6 +257,21 @@
         />
       </div>
 
+      @if (formData.tipoAnexo === 'Proveedor') {
+        <div class="form-group">
+          <label>Cuenta de detracciones (Banco de la Nación)</label>
+          <input type="text" class="form-control" [(ngModel)]="formData.cuenta_detraccion" maxlength="30" />
+        </div>
+
+        <div class="form-group">
+          <label>Retención del IGV</label>
+          <label class="anexo-estado">
+            <input type="checkbox" [(ngModel)]="formData.exceptuado_retencion" />
+            <span>Exceptuado (buen contribuyente / agente de retención o percepción)</span>
+          </label>
+        </div>
+      }
+
       <div class="form-group">
         <label>Estado</label>
         <label class="anexo-estado">

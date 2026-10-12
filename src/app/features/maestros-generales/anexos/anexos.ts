@@ -186,6 +186,8 @@ export class AnexosComponent {
       Contacto: this.formData.Contacto || null,
       Telefono: this.formData.Telefono || null,
       Correo: this.formData.Correo || null,
+      cuenta_detraccion: this.formData.cuenta_detraccion || null,
+      exceptuado_retencion: !!this.formData.exceptuado_retencion,
       estado: this.formData.estado,
     };
 
@@ -264,6 +266,8 @@ export class AnexosComponent {
       Contacto: null,
       Telefono: null,
       Correo: null,
+      cuenta_detraccion: null,
+      exceptuado_retencion: false,
       estado: true,
     };
   }

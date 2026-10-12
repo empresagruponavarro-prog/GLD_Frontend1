@@ -1,3 +1,6 @@
+@if (isPrintView()) {
+  <router-outlet></router-outlet>
+} @else {
 <!-- Barra Superior (Header) con Botón de Menú Hamburguesa -->
 <header class="app-header">
   <div style="display: flex; align-items: center; gap: 0.75rem;">
@@ -25,3 +28,4 @@
     <router-outlet></router-outlet>
   </main>
 </div>
+}

@@ -12,6 +12,10 @@ export interface Anexo {
   Contacto: string | null;
   Telefono: string | null;
   Correo: string | null;
+  /** Cuenta de detracciones del proveedor (Banco de la Nación). */
+  cuenta_detraccion?: string | null;
+  /** Buen contribuyente o agente de retención/percepción: no se le retiene el IGV. */
+  exceptuado_retencion?: boolean;
   estado: boolean;
 }
 

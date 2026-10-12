@@ -1,0 +1,86 @@
+.adm-importe {
+  width: 120px;
+}
+
+.adm-detail {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: 0.75rem 1.25rem;
+  margin: 0 0 1rem;
+}
+
+.adm-detail dt {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+.adm-detail dd {
+  margin: 0.1rem 0 0;
+  font-weight: 600;
+}
+
+.adm-detail__full {
+  grid-column: 1 / -1;
+}
+
+.adm-section {
+  margin: 1.25rem 0 0.5rem;
+  font-size: 0.95rem;
+}
+
+.adm-hint {
+  color: var(--text-muted);
+  font-size: 0.82rem;
+  margin: 0.4rem 0;
+}
+
+.adm-montos {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 0.5rem;
+}
+
+.adm-montos > div {
+  display: flex;
+  flex-direction: column;
+  padding: 0.5rem 0.7rem;
+  border-radius: 8px;
+  background: #f3f4f6;
+}
+
+.adm-montos span {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+}
+
+.adm-montos__neto {
+  background: #d1fae5 !important;
+}
+
+.adm-ded {
+  margin-top: 0.75rem;
+}
+
+.adm-ded__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 0.25rem 1rem;
+  margin-bottom: 0.75rem;
+}
+
+.adm-ded__wide {
+  grid-column: span 2;
+}
+
+.adm-ded__check {
+  display: flex;
+  align-items: flex-end;
+}
+
+.adm-check {
+  display: flex;
+  gap: 0.4rem;
+  align-items: center;
+  font-size: 0.82rem;
+  margin-top: 0.3rem;
+}

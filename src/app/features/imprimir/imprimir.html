@@ -1,0 +1,220 @@
+<div class="imp-toolbar no-print">
+  <button class="btn btn-primary" type="button" (click)="imprimir()"><i class="fa-solid fa-print"></i> Imprimir / Guardar como PDF</button>
+  <button class="btn btn-secondary" type="button" (click)="cerrar()">Cerrar</button>
+  <span class="imp-toolbar__hint">En el cuadro de impresión elija «Guardar como PDF» como destino.</span>
+</div>
+
+<article class="imp-page">
+  <header class="imp-header">
+    <div>
+      <strong>{{ empresa()?.razon_social ?? 'GLD' }}</strong>
+      <div>{{ empresa()?.ruc ? 'RUC ' + empresa()?.ruc : '' }}</div>
+      <div>{{ empresa()?.domicilio_fiscal ?? '' }}</div>
+    </div>
+    <div class="imp-header__fecha">Emitido el {{ hoy }}</div>
+  </header>
+
+  <h1 class="imp-title">{{ titulo() }}</h1>
+
+  @if (error()) {
+    <p class="imp-error">{{ error() }}</p>
+  } @else if (isLoading()) {
+    <p>Cargando...</p>
+  } @else {
+    @switch (tipo) {
+      @case ('fur') {
+        @if (fur(); as r) {
+          <p class="imp-numero">{{ r.numero }}</p>
+          <table class="imp-grid">
+            <tr><th>Fecha</th><td>{{ r.fecha }}</td><th>Fecha requerida</th><td>{{ r.fecha_requerida ?? '—' }}</td></tr>
+            <tr><th>Tipo</th><td>{{ tipoLabel[r.tipo] }}</td><th>Estado</th><td>{{ r.estado }}</td></tr>
+            <tr><th>Centro de costos</th><td>{{ r.centro_costo ?? '—' }}</td><th>Fase</th><td>{{ r.fase ?? '—' }}</td></tr>
+            <tr><th>Solicitante</th><td>{{ r.solicitante ?? '—' }}</td><th>Área</th><td>{{ r.area_nombre ?? r.area ?? '—' }}</td></tr>
+            @if (r.tipo !== 'COMPRA') {
+              <tr><th>Beneficiario</th><td colspan="3">{{ r.beneficiario ?? 'Por línea' }}</td></tr>
+            }
+            <tr><th>Justificación</th><td colspan="3">{{ r.justificacion }}</td></tr>
+          </table>
+          <table class="imp-table">
+            <thead>
+              <tr>
+                <th>#</th><th>Código</th><th>Descripción</th><th>Unidad</th>
+                @if (r.tipo !== 'COMPRA') { <th>Beneficiario</th><th class="num">Importe</th> }
+                <th class="num">Cantidad</th><th class="num">Aprobado</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (l of r.lineas ?? []; track l.id; let i = $index) {
+                <tr>
+                  <td>{{ i + 1 }}</td><td>{{ l.codigo }}</td><td>{{ l.descripcion }}</td><td>{{ l.unidad }}</td>
+                  @if (r.tipo !== 'COMPRA') { <td>{{ l.beneficiario ?? r.beneficiario ?? '—' }}</td><td class="num">{{ l.precio_referencial === null ? '—' : fmtMoney(l.precio_referencial) }}</td> }
+                  <td class="num">{{ fmtNum(l.cantidad) }}</td><td class="num">{{ l.cantidad_aprobada === null ? '—' : fmtNum(l.cantidad_aprobada) }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+          @if (r.aprobador) {
+            <p class="imp-nota">{{ r.estado === 'RECHAZADO' ? 'Rechazado' : 'Resuelto' }} por {{ r.aprobador }} el {{ r.fecha_aprobacion?.slice(0, 10) }}. {{ r.comentario_aprobacion ?? '' }}</p>
+          }
+          <div class="imp-firmas"><div>Solicitante</div><div>Jefe de área</div><div>Administración</div></div>
+        }
+      }
+
+      @case ('cuadro-comparativo') {
+        @if (fur(); as r) {
+          @if (cuadro(); as c) {
+            <p class="imp-numero">{{ r.numero }} · {{ r.centro_costo ?? '' }}</p>
+            <p class="imp-nota">{{ r.justificacion }}</p>
+            <table class="imp-table imp-table--cuadro">
+              <thead>
+                <tr>
+                  <th>Ítem</th><th class="num">Cant.</th>
+                  @for (p of c.proveedores; track p.id_cotizacion) {
+                    <th class="num" [class.imp-ganadora]="p.es_ganadora">{{ p.proveedor }}<br /><small>{{ p.numero }}{{ p.es_ganadora ? ' · ELEGIDA' : '' }}</small></th>
+                  }
+                </tr>
+              </thead>
+              <tbody>
+                @for (l of c.lineas; track l.id_detalle) {
+                  <tr>
+                    <td>{{ l.codigo }} {{ l.descripcion }}</td><td class="num">{{ fmtNum(l.cantidad) }} {{ l.unidad }}</td>
+                    @for (p of c.proveedores; track p.id_cotizacion) {
+                      @let o = oferta(c, l.id_detalle, p.id_cotizacion);
+                      <td class="num" [class.imp-ganadora]="p.es_ganadora">
+                        @if (o && o.cotiza) { {{ fmtMoney(o.precio_sin_igv) }}<br /><small>c/IGV {{ fmtMoney(o.precio_con_igv) }}</small> } @else { No cotiza }
+                      </td>
+                    }
+                  </tr>
+                }
+                <tr class="imp-total"><td colspan="2">Total sin IGV</td>@for (p of c.proveedores; track p.id_cotizacion) { <td class="num" [class.imp-ganadora]="p.es_ganadora">{{ p.moneda_simbolo ?? p.moneda_id }} {{ fmtMoney(p.total_sin_igv) }}</td> }</tr>
+                <tr class="imp-total"><td colspan="2">Total a pagar</td>@for (p of c.proveedores; track p.id_cotizacion) { <td class="num" [class.imp-ganadora]="p.es_ganadora">{{ p.moneda_simbolo ?? p.moneda_id }} {{ fmtMoney(p.total) }}{{ p.afecto_igv ? '' : ' (no afecto)' }}</td> }</tr>
+                <tr><td colspan="2">Forma de pago</td>@for (p of c.proveedores; track p.id_cotizacion) { <td class="num" [class.imp-ganadora]="p.es_ganadora">{{ p.forma_pago }}{{ p.dias_credito ? ' (' + p.dias_credito + ' d)' : '' }}{{ p.adelanto_porcentaje ? ' · adel. ' + fmtNum(p.adelanto_porcentaje) + ' %' : '' }}</td> }</tr>
+                <tr><td colspan="2">Medio de pago</td>@for (p of c.proveedores; track p.id_cotizacion) { <td class="num" [class.imp-ganadora]="p.es_ganadora">{{ p.medio_pago ? medioLabel[p.medio_pago] : '—' }}</td> }</tr>
+                <tr><td colspan="2">Disponibilidad</td>@for (p of c.proveedores; track p.id_cotizacion) { <td class="num" [class.imp-ganadora]="p.es_ganadora">{{ p.plazo_entrega_dias === null ? '—' : p.plazo_entrega_dias === 0 ? 'Inmediata' : p.plazo_entrega_dias + ' días' }}</td> }</tr>
+                <tr><td colspan="2">Validez · Garantía</td>@for (p of c.proveedores; track p.id_cotizacion) { <td class="num" [class.imp-ganadora]="p.es_ganadora">{{ p.validez_dias === null ? '—' : p.validez_dias + ' d' }} · {{ p.garantia ?? '—' }}</td> }</tr>
+              </tbody>
+            </table>
+            @if (c.comentario_adjudicacion) {
+              <p class="imp-nota"><strong>Motivo de la elección:</strong> {{ c.comentario_adjudicacion }}</p>
+            }
+            <div class="imp-firmas"><div>Logística</div><div>Administración</div><div>Gerencia</div></div>
+          }
+        }
+      }
+
+      @case ('documento-origen') {
+        @if (documento(); as d) {
+          <p class="imp-numero">{{ d.numero_documento ?? d.numero_oc ?? '#' + d.id }} · {{ d.clase_documento ? claseLabel[d.clase_documento] : '' }}</p>
+          <table class="imp-grid">
+            <tr><th>Proveedor / beneficiario</th><td>{{ d.proveedor ?? '—' }}</td><th>RUC</th><td>{{ d.ruc ?? '—' }}</td></tr>
+            <tr><th>Centro de costos</th><td>{{ d.centro_costo ?? '—' }}</td><th>Área</th><td>{{ d.area_nombre ?? '—' }}</td></tr>
+            <tr><th>Emisión</th><td>{{ d.fecha_emision ?? '—' }}</td><th>Vencimiento</th><td>{{ d.vencimiento ?? '—' }}</td></tr>
+            <tr><th>Forma de pago</th><td>{{ d.forma_pago ?? '—' }}</td><th>Requerimiento</th><td>{{ d.numero_requerimiento ?? '—' }}</td></tr>
+            @if (d.comentarios) { <tr><th>Concepto</th><td colspan="3">{{ d.comentarios }}</td></tr> }
+          </table>
+          @if (d.lineas.length) {
+            <table class="imp-table">
+              <thead><tr><th>Código</th><th>Descripción</th><th class="num">Cant.</th><th class="num">Precio</th><th class="num">Monto</th></tr></thead>
+              <tbody>@for (l of d.lineas; track l.id) { <tr><td>{{ l.codigo }}</td><td>{{ l.descripcion }}</td><td class="num">{{ fmtNum(l.cantidad) }}</td><td class="num">{{ fmtMoney(l.precio) }}</td><td class="num">{{ fmtMoney(l.monto) }}</td></tr> }</tbody>
+            </table>
+          }
+          <table class="imp-resumen">
+            <tr><th>Base imponible</th><td>{{ d.moneda_simbolo ?? 'S/' }} {{ fmtMoney(d.monto) }}</td></tr>
+            <tr><th>IGV</th><td>{{ fmtMoney(d.igv) }}</td></tr>
+            <tr class="imp-total"><th>Total</th><td>{{ d.moneda_simbolo ?? 'S/' }} {{ fmtMoney(d.total) }}</td></tr>
+            <tr><th>Renta 4.ª y descuentos</th><td>- {{ fmtMoney(+d.renta_4ta + +d.dscto_compras + +d.dscto_intervencion + +d.dscto_otros) }}</td></tr>
+            <tr><th>Detracción (S/)</th><td>{{ d.detraccion_monto === null ? '—' : fmtMoney(d.detraccion_monto) }}</td></tr>
+            <tr><th>Retención IGV</th><td>{{ d.retencion_monto === null ? '—' : fmtMoney(d.retencion_monto) }}</td></tr>
+            <tr class="imp-total"><th>Neto a pagar al proveedor</th><td>{{ fmtMoney(d.neto_proveedor) }}</td></tr>
+          </table>
+          <div class="imp-firmas"><div>Elaborado por</div><div>Administración</div></div>
+        }
+      }
+
+      @case ('comprobante-pago') {
+        @if (pago(); as p) {
+          <p class="imp-numero">{{ p.numero }}{{ p.estado === 'ANULADO' ? ' · ANULADO' : '' }}</p>
+          <table class="imp-grid">
+            <tr><th>Fecha de pago</th><td>{{ p.fecha_pago }}</td><th>Concepto</th><td>{{ p.concepto === 'DETRACCION' ? 'Detracción' : 'Pago al proveedor' }}</td></tr>
+            <tr><th>Beneficiario</th><td>{{ p.proveedor ?? '—' }}</td><th>RUC</th><td>{{ p.ruc ?? '—' }}</td></tr>
+            <tr><th>Documento de origen</th><td>{{ p.numero_documento ?? '#' + p.id_documento_origen }}</td><th>Requerimiento</th><td>{{ p.numero_requerimiento ?? '—' }}</td></tr>
+            <tr><th>Centro de costos</th><td>{{ p.centro_costo ?? '—' }}</td><th>Medio de pago</th><td>{{ medioLabel[p.medio_pago] }}</td></tr>
+            <tr><th>Cuenta de pago</th><td>{{ p.cuenta ?? '—' }}{{ p.banco ? ' · ' + p.banco : '' }}</td><th>N.º de operación</th><td>{{ p.numero_operacion ?? '—' }}</td></tr>
+            @if (p.cuenta_destino) { <tr><th>Cuenta destino</th><td colspan="3">{{ p.cuenta_destino }}</td></tr> }
+            @if (p.observaciones) { <tr><th>Observaciones</th><td colspan="3">{{ p.observaciones }}</td></tr> }
+          </table>
+          <table class="imp-resumen">
+            <tr class="imp-total"><th>Monto pagado</th><td>{{ p.concepto === 'DETRACCION' ? 'S/' : (p.moneda_simbolo ?? 'S/') }} {{ fmtMoney(p.monto) }}</td></tr>
+            @if (p.tipo_cambio) {
+              <tr><th>Tipo de cambio</th><td>{{ p.tipo_cambio }}</td></tr>
+              <tr><th>Salió de la cuenta ({{ p.moneda_cuenta }})</th><td>{{ fmtMoney(p.monto_cuenta) }}</td></tr>
+            }
+          </table>
+          <div class="imp-firmas"><div>Tesorería{{ p.ejecutado_por ? ': ' + p.ejecutado_por : '' }}</div><div>Administración</div><div>Recibí conforme</div></div>
+        }
+      }
+
+      @default {
+        @if (expediente(); as e) {
+          <p class="imp-numero">{{ e.documento.numero_documento ?? '#' + e.documento.id }}</p>
+
+          @if (e.requerimiento; as r) {
+            <h2 class="imp-sub">1. Requerimiento {{ r.numero }} — {{ tipoLabel[r.tipo] }}</h2>
+            <p class="imp-nota">{{ r.justificacion }} · Solicitante: {{ r.solicitante ?? '—' }} · Centro de costos: {{ r.centro_costo ?? '—' }}</p>
+            <table class="imp-table">
+              <thead><tr><th>Código</th><th>Descripción</th><th class="num">Pedido</th><th class="num">Aprobado</th></tr></thead>
+              <tbody>@for (l of r.lineas ?? []; track l.id) { <tr><td>{{ l.codigo }}</td><td>{{ l.descripcion }}</td><td class="num">{{ fmtNum(l.cantidad) }}</td><td class="num">{{ l.cantidad_aprobada === null ? '—' : fmtNum(l.cantidad_aprobada) }}</td></tr> }</tbody>
+            </table>
+            <p class="imp-nota">Aprobado por {{ r.aprobador ?? '—' }} el {{ r.fecha_aprobacion?.slice(0, 10) ?? '—' }}. {{ r.comentario_adjudicacion ? 'Motivo de la elección: ' + r.comentario_adjudicacion : '' }}</p>
+          } @else {
+            <h2 class="imp-sub">1. Requerimiento</h2>
+            <p class="imp-nota">El documento se registró directamente, sin requerimiento.</p>
+          }
+
+          @if (e.cuadro_comparativo; as c) {
+            <h2 class="imp-sub">2. Cotizaciones</h2>
+            <table class="imp-table">
+              <thead><tr><th>N.º</th><th>Proveedor</th><th class="num">Total</th><th>Forma de pago</th><th>Disponibilidad</th><th></th></tr></thead>
+              <tbody>
+                @for (p of c.proveedores; track p.id_cotizacion) {
+                  <tr [class.imp-ganadora]="p.es_ganadora"><td>{{ p.numero }}</td><td>{{ p.proveedor }}</td><td class="num">{{ p.moneda_simbolo ?? p.moneda_id }} {{ fmtMoney(p.total) }}</td><td>{{ p.forma_pago }}{{ p.dias_credito ? ' (' + p.dias_credito + ' d)' : '' }}</td><td>{{ p.plazo_entrega_dias === null ? '—' : p.plazo_entrega_dias === 0 ? 'Inmediata' : p.plazo_entrega_dias + ' d' }}</td><td>{{ p.es_ganadora ? 'ELEGIDA' : '' }}</td></tr>
+                }
+              </tbody>
+            </table>
+          }
+
+          <h2 class="imp-sub">3. Documento de origen</h2>
+          <table class="imp-resumen">
+            <tr><th>Proveedor / beneficiario</th><td>{{ e.documento.proveedor ?? '—' }}</td></tr>
+            <tr><th>Total</th><td>{{ e.documento.moneda_simbolo ?? 'S/' }} {{ fmtMoney(e.documento.total) }}</td></tr>
+            <tr><th>Detracción (S/)</th><td>{{ e.documento.detraccion_monto === null ? '—' : fmtMoney(e.documento.detraccion_monto) }}</td></tr>
+            <tr><th>Retención IGV</th><td>{{ e.documento.retencion_monto === null ? '—' : fmtMoney(e.documento.retencion_monto) }}</td></tr>
+            <tr class="imp-total"><th>Neto a pagar</th><td>{{ fmtMoney(e.documento.neto_proveedor) }}</td></tr>
+          </table>
+
+          @if (e.recepciones.length) {
+            <h2 class="imp-sub">4. Recepciones en almacén</h2>
+            <table class="imp-table">
+              <thead><tr><th>Ingreso</th><th>Fecha</th><th>Estado</th><th class="num">Líneas</th></tr></thead>
+              <tbody>@for (rc of e.recepciones; track rc.id) { <tr><td>{{ rc.numero }}</td><td>{{ rc.fecha }}</td><td>{{ rc.estado }}</td><td class="num">{{ rc.lineas }}</td></tr> }</tbody>
+            </table>
+          }
+
+          <h2 class="imp-sub">5. Pagos</h2>
+          <table class="imp-table">
+            <thead><tr><th>Comprobante</th><th>Fecha</th><th>Concepto</th><th class="num">Monto</th><th>Cuenta</th><th>Operación</th><th>Estado</th></tr></thead>
+            <tbody>
+              @for (p of e.documento.pagos; track p.id) {
+                <tr><td>{{ p.numero }}</td><td>{{ p.fecha_pago }}</td><td>{{ p.concepto === 'DETRACCION' ? 'Detracción' : 'Proveedor' }}</td><td class="num">{{ fmtMoney(p.monto) }}</td><td>{{ p.cuenta ?? '—' }}</td><td>{{ p.numero_operacion ?? '—' }}</td><td>{{ p.estado }}</td></tr>
+              } @empty {
+                <tr><td colspan="7">Sin pagos registrados.</td></tr>
+              }
+            </tbody>
+          </table>
+          <p class="imp-nota"><strong>Estado:</strong> {{ e.documento.estado_pago }} · Saldo por pagar: {{ fmtMoney(e.documento.saldo_por_pagar_proveedor) }}</p>
+          <div class="imp-firmas"><div>Logística</div><div>Administración</div><div>Tesorería</div></div>
+        }
+      }
+    }
+  }
+</article>

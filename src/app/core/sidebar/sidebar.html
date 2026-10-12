@@ -29,8 +29,13 @@
     </div>
     <ul class="sidebar-submenu" *ngIf="isDocumentosOpen">
       <li>
+        <a class="sidebar-subitem" routerLink="/documentos/administracion" routerLinkActive="active">
+          <i class="fa-solid fa-file-invoice-dollar"></i> Compromisos de pago
+        </a>
+      </li>
+      <li>
         <a class="sidebar-subitem" routerLink="/documentos/origen" routerLinkActive="active">
-          <i class="fa-solid fa-file-lines"></i> Documentos Origen
+          <i class="fa-solid fa-file-lines"></i> Órdenes de compra
         </a>
       </li>
       <li>
@@ -47,6 +52,40 @@
   </li>
 
 
+
+  <li>
+    <div class="sidebar-item has-sub" (click)="toggleTesoreria()">
+      <span><i class="fa-solid fa-sack-dollar"></i> Tesorería</span>
+      <i class="fa-solid" [class.fa-chevron-down]="!isTesoreriaOpen" [class.fa-chevron-up]="isTesoreriaOpen"></i>
+    </div>
+    <ul class="sidebar-submenu" *ngIf="isTesoreriaOpen">
+      <li>
+        <a class="sidebar-subitem" routerLink="/tesoreria/consulta" routerLinkActive="active">
+          <i class="fa-solid fa-chart-column"></i> Consulta y tablero
+        </a>
+      </li>
+      <li>
+        <a class="sidebar-subitem" routerLink="/tesoreria/programacion" routerLinkActive="active">
+          <i class="fa-solid fa-calendar-check"></i> Programación de pagos
+        </a>
+      </li>
+      <li>
+        <a class="sidebar-subitem" routerLink="/tesoreria/pagos" routerLinkActive="active">
+          <i class="fa-solid fa-money-check-dollar"></i> Ejecución de pagos
+        </a>
+      </li>
+      <li>
+        <a class="sidebar-subitem" routerLink="/tesoreria/cuentas" routerLinkActive="active">
+          <i class="fa-solid fa-building-columns"></i> Cuentas de pago
+        </a>
+      </li>
+      <li>
+        <a class="sidebar-subitem" routerLink="/tesoreria/tipo-cambio" routerLinkActive="active">
+          <i class="fa-solid fa-dollar-sign"></i> Tipo de cambio
+        </a>
+      </li>
+    </ul>
+  </li>
 
   <li>
     <div class="sidebar-item has-sub" (click)="toggleAlmacen()">
@@ -127,6 +166,11 @@
       <li>
         <a class="sidebar-subitem" routerLink="/productos" routerLinkActive="active">
           <i class="fa-solid fa-box"></i> Productos
+        </a>
+      </li>
+      <li>
+        <a class="sidebar-subitem" routerLink="/maestros-generales/areas" routerLinkActive="active">
+          <i class="fa-solid fa-sitemap"></i> Áreas
         </a>
       </li>
       <li>

@@ -1,0 +1,146 @@
+<div class="content-header">
+  <div>
+    <h1 class="content-title">Ejecución de pagos</h1>
+    <p class="content-subtitle">Ejecute lo programado: se emite el comprobante de pago (CP-) y queda registrado en el expediente.</p>
+  </div>
+  <div style="display: flex; gap: 0.5rem; align-items: center">
+    <a class="btn btn-secondary" routerLink="/tesoreria/programacion"><i class="fa-solid fa-calendar-check"></i> Programación</a>
+  </div>
+</div>
+
+<div class="content-body">
+  @if (message()) {
+    <p class="badge badge-completed" role="status" style="margin-bottom: 0.75rem">{{ message() }}</p>
+  }
+  @if (error()) {
+    <p class="badge badge-danger" role="alert" style="margin-bottom: 0.75rem; white-space: pre-line">{{ error() }}</p>
+  }
+
+  <h3 style="margin: 0 0 0.5rem; font-size: 0.95rem">Pagos programados por ejecutar</h3>
+  <div class="toolbar-filters-left" style="margin-bottom: 0.5rem">
+    <label class="toolbar-check">Desde <input type="date" class="toolbar-select" [value]="desde()" (change)="setRango('desde', $any($event.target).value)" /></label>
+    <label class="toolbar-check">Hasta <input type="date" class="toolbar-select" [value]="hasta()" (change)="setRango('hasta', $any($event.target).value)" /></label>
+  </div>
+  <div class="table-card">
+    <table class="table">
+      <thead>
+        <tr><th>Fecha</th><th>Documento</th><th>Proveedor</th><th>Concepto</th><th style="text-align: right">Monto</th><th>Medio</th><th>Cuenta</th><th style="text-align: center">Acciones</th></tr>
+      </thead>
+      <tbody>
+        @for (p of programados(); track p.id) {
+          <tr>
+            <td>{{ p.fecha_programada }}@if (p.urgente) { <span class="badge badge-pending" [title]="p.observaciones ?? ''">Urgente</span> }</td>
+            <td><strong>{{ p.numero_documento ?? '#' + p.id_documento_origen }}</strong></td>
+            <td>{{ p.proveedor ?? '—' }}<div class="table-cell-subtitle">{{ p.cuenta_destino ?? '' }}</div></td>
+            <td>{{ p.concepto === 'DETRACCION' ? 'Detracción' : 'Proveedor' }}</td>
+            <td align="right"><strong>{{ p.concepto === 'DETRACCION' ? 'S/' : (p.moneda_simbolo ?? 'S/') }} {{ fmtMoney(p.monto) }}</strong></td>
+            <td>{{ medioLabel[p.medio_pago] }}</td>
+            <td>{{ p.cuenta ?? '— sin definir —' }}</td>
+            <td align="center"><button class="btn btn-primary" type="button" (click)="ejecutar(p)"><i class="fa-solid fa-money-check-dollar"></i> Ejecutar</button></td>
+          </tr>
+        } @empty {
+          <tr><td colspan="8" align="center">{{ isLoadingProg() ? 'Cargando...' : 'No hay pagos programados en ese rango.' }}</td></tr>
+        }
+      </tbody>
+    </table>
+  </div>
+
+  <h3 style="margin: 1.25rem 0 0.5rem; font-size: 0.95rem">Pagos ejecutados</h3>
+  <app-data-table
+    [columns]="columns"
+    [items]="pagos()"
+    [loading]="isLoading()"
+    [totalItems]="total()"
+    [currentPage]="page()"
+    [pageSize]="pageSize()"
+    [minWidth]="'1300px'"
+    emptyMessage="Aún no hay pagos ejecutados."
+    emptyIcon="fa-solid fa-money-check-dollar"
+    [rowTemplate]="row"
+    (pageChange)="onPageChange($event)"
+    (pageSizeChange)="onPageSizeChange($event)"
+  />
+
+  <ng-template #row let-item>
+    <tr>
+      <td><strong>{{ item.numero }}</strong></td>
+      <td>{{ item.fecha_pago }}</td>
+      <td>{{ item.numero_documento ?? '#' + item.id_documento_origen }}</td>
+      <td>{{ item.proveedor ?? '—' }}</td>
+      <td>{{ item.concepto === 'DETRACCION' ? 'Detracción' : 'Proveedor' }}</td>
+      <td align="right">
+        {{ item.concepto === 'DETRACCION' ? 'S/' : (item.moneda_simbolo ?? 'S/') }} {{ fmtMoney(item.monto) }}
+        @if (item.tipo_cambio) {
+          <div class="table-cell-subtitle">{{ item.moneda_cuenta }} {{ fmtMoney(item.monto_cuenta) }} (TC {{ item.tipo_cambio }})</div>
+        }
+      </td>
+      <td>{{ item.cuenta ?? '—' }}</td>
+      <td>{{ item.numero_operacion ?? '—' }}</td>
+      <td align="center"><span class="badge" [class.badge-completed]="item.estado === 'REGISTRADO'" [class.badge-danger]="item.estado === 'ANULADO'">{{ item.estado === 'REGISTRADO' ? 'Pagado' : 'Anulado' }}</span></td>
+      <td align="center">
+        <a class="table-action-btn" [routerLink]="['/imprimir/comprobante-pago', item.id]" target="_blank" title="Imprimir comprobante"><i class="fa-solid fa-print"></i></a>
+        @if (item.estado === 'REGISTRADO') {
+          <button class="table-action-btn table-action-btn--danger" type="button" title="Anular pago" (click)="anular(item)"><i class="fa-solid fa-ban"></i></button>
+        }
+      </td>
+    </tr>
+  </ng-template>
+</div>
+
+<app-modal [isOpen]="isModalOpen()" [title]="'Ejecutar pago — ' + (ejecutando()?.proveedor ?? '')" maxWidth="760px" [showDefaultFooter]="false" (closed)="closeModal()">
+  @if (ejecutando(); as p) {
+    <p class="table-cell-subtitle" style="margin-bottom: 0.75rem">
+      {{ p.numero_documento ?? '#' + p.id_documento_origen }} · {{ p.concepto === 'DETRACCION' ? 'Detracción' : 'Pago al proveedor' }} · programado S/ {{ fmtMoney(p.monto) }} para el {{ p.fecha_programada }}
+    </p>
+    <form [formGroup]="form" (ngSubmit)="confirmar()" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 0.25rem 1rem">
+      <div class="form-group"><label for="pg-fecha">Fecha de pago</label><input id="pg-fecha" type="date" class="form-control" formControlName="fecha_pago" /></div>
+      <div class="form-group">
+        <label for="pg-monto">Monto a pagar</label>
+        <input id="pg-monto" class="form-control" inputmode="decimal" formControlName="monto" />
+        <small class="table-cell-subtitle">Si paga menos, el resto queda programado.</small>
+      </div>
+      <div class="form-group">
+        <label for="pg-cuenta">Cuenta <span class="required">*</span></label>
+        <select id="pg-cuenta" class="form-control" formControlName="id_cuenta">
+          <option [ngValue]="null">— Seleccione —</option>
+          @for (c of cuentas(); track c.id) {
+            <option [ngValue]="c.id">{{ c.nombre }} ({{ c.moneda_id }})</option>
+          }
+        </select>
+      </div>
+      <div class="form-group">
+        <label for="pg-medio">Medio de pago</label>
+        <select id="pg-medio" class="form-control" formControlName="medio_pago">
+          @for (m of medios; track m) {
+            <option [value]="m">{{ medioLabel[m] }}</option>
+          }
+        </select>
+      </div>
+      <div class="form-group"><label for="pg-op">N.º de operación / cheque / constancia</label><input id="pg-op" class="form-control" formControlName="numero_operacion" maxlength="50" /></div>
+      @if (requiereTc()) {
+        <div class="form-group">
+          <label for="pg-tc">Tipo de cambio</label>
+          <input id="pg-tc" class="form-control" inputmode="decimal" formControlName="tipo_cambio" [placeholder]="tcDolar() ? 'Vigente: ' + tcDolar()!.venta : 'Registre el tipo de cambio'" />
+          <small class="table-cell-subtitle">La cuenta está en otra moneda. Vacío = tipo de cambio de venta del día.</small>
+        </div>
+      }
+      <div class="form-group">
+        <label for="pg-por">Ejecuta</label>
+        <select id="pg-por" class="form-control" formControlName="id_ejecutado_por">
+          <option [ngValue]="null">— Sin indicar —</option>
+          @for (t of trabajadores(); track t.id) {
+            <option [ngValue]="t.id">{{ t.nombre }}</option>
+          }
+        </select>
+      </div>
+      <div class="form-group" style="grid-column: 1 / -1"><label for="pg-obs">Observaciones</label><input id="pg-obs" class="form-control" formControlName="observaciones" /></div>
+    </form>
+  }
+  @if (modalError()) {
+    <p class="badge badge-danger" role="alert" style="white-space: pre-line">{{ modalError() }}</p>
+  }
+  <div modal-footer class="modal-footer">
+    <button class="btn btn-secondary" type="button" (click)="closeModal()" [disabled]="isSaving()">Cancelar</button>
+    <button class="btn btn-primary" type="button" (click)="confirmar()" [disabled]="isSaving()"><i class="fa-solid fa-check"></i> {{ isSaving() ? 'Registrando...' : 'Registrar pago' }}</button>
+  </div>
+</app-modal>

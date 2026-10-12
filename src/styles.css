@@ -1475,3 +1475,17 @@ app-sidebar, .app-sidebar {
   color: #b91c1c;
   border-color: #fca5a5;
 }
+
+/* Pantallas con scroll propio dentro de .app-content (que es overflow: hidden). Se activa con host: { class: 'page-scroll' }. */
+.page-scroll {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  height: 100%;
+  min-height: 0;
+}
+
+.page-scroll > .content-body {
+  overflow-y: auto;
+  min-height: 0;
+}

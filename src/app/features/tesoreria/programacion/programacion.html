@@ -1,0 +1,205 @@
+<div class="content-header">
+  <div>
+    <h1 class="content-title">Programación de pagos</h1>
+    <p class="content-subtitle">
+      Los pagos se programan los <strong>viernes</strong>. Marque los documentos, elija la fecha, el medio y la cuenta. La detracción se programa aparte.
+    </p>
+  </div>
+  <div style="display: flex; gap: 0.5rem; align-items: center">
+    <a class="btn btn-secondary" routerLink="/tesoreria/pagos"><i class="fa-solid fa-money-check-dollar"></i> Ejecutar pagos</a>
+    <button class="btn btn-primary" type="button" [disabled]="!haySeleccion()" (click)="abrirLote()">
+      <i class="fa-solid fa-calendar-check"></i> Programar seleccionados ({{ seleccion().size }})
+    </button>
+  </div>
+</div>
+
+<div class="content-body">
+  @if (message()) {
+    <p class="badge badge-completed" role="status" style="margin-bottom: 0.75rem">{{ message() }}</p>
+  }
+  @if (error()) {
+    <p class="badge badge-danger" role="alert" style="margin-bottom: 0.75rem">{{ error() }}</p>
+  }
+
+  <h3 class="prog-section">Documentos con saldo por programar</h3>
+  <section class="toolbar-shell">
+    <div class="toolbar-filters-row">
+      <div class="toolbar-filters-left">
+        <input type="text" class="toolbar-select" placeholder="Buscar documento o proveedor..." maxlength="100" [value]="fSearch()" (input)="onSearch($any($event.target).value)" />
+        <select class="toolbar-select" [value]="fClase()" (change)="setFilter('clase', $any($event.target).value)" aria-label="Clase">
+          <option value="">Todas las clases</option>
+          @for (c of clases; track c) {
+            <option [value]="c">{{ claseLabel[c] }}</option>
+          }
+        </select>
+        <label class="toolbar-check">Vence hasta
+          <input type="date" class="toolbar-select" [value]="fVence()" (change)="setFilter('vence', $any($event.target).value)" />
+        </label>
+      </div>
+      <div class="toolbar-meta"><strong>{{ total() }}</strong><span>documentos</span></div>
+    </div>
+  </section>
+
+  <app-data-table
+    [columns]="columns"
+    [items]="pendientes()"
+    [loading]="isLoading()"
+    [totalItems]="total()"
+    [currentPage]="page()"
+    [pageSize]="pageSize()"
+    [minWidth]="'1100px'"
+    emptyMessage="No hay documentos con saldo por programar."
+    emptyIcon="fa-solid fa-calendar-check"
+    [rowTemplate]="row"
+    (pageChange)="onPageChange($event)"
+    (pageSizeChange)="onPageSizeChange($event)"
+  />
+
+  <ng-template #row let-item>
+    <tr>
+      <td align="center"><input type="checkbox" [checked]="estaSeleccionado(item.id)" (change)="alternar(item.id)" [attr.aria-label]="'Seleccionar ' + (item.numero_documento ?? item.id)" /></td>
+      <td>
+        <strong>{{ item.numero_documento ?? '#' + item.id }}</strong>
+        <div class="table-cell-subtitle">{{ item.clase_documento ? claseLabel[item.clase_documento] : '' }}</div>
+      </td>
+      <td>{{ item.proveedor ?? '—' }}<div class="table-cell-subtitle">{{ item.ruc ?? '' }}</div></td>
+      <td>{{ item.centro_costo ?? '—' }}</td>
+      <td>
+        @if (item.vencimiento) {
+          {{ item.vencimiento }}
+        } @else if (item.pendiente_recepcion) {
+          <span class="table-cell-subtitle">Pendiente de recepción</span>
+        } @else {
+          —
+        }
+      </td>
+      <td align="right"><strong>{{ item.moneda_simbolo ?? 'S/' }} {{ fmtMoney(programable(item).proveedor) }}</strong></td>
+      <td align="right">{{ programable(item).detraccion > 0 ? 'S/ ' + fmtMoney(programable(item).detraccion) : '—' }}</td>
+    </tr>
+  </ng-template>
+
+  <h3 class="prog-section">Agenda de pagos programados</h3>
+  @if (agenda(); as a) {
+    @if (a.sin_tipo_cambio > 0) {
+      <p class="badge badge-pending">
+        <i class="fa-solid fa-triangle-exclamation"></i> {{ a.sin_tipo_cambio }} pagos en dólares no se convirtieron por falta de tipo de cambio.
+        <a routerLink="/tesoreria/tipo-cambio">Registrar tipo de cambio</a>
+      </p>
+    }
+    @if (a.totales_por_fecha.length) {
+      <div class="prog-fechas">
+        @for (f of a.totales_por_fecha; track f.fecha) {
+          <div class="prog-fecha">
+            <strong>{{ f.fecha }}</strong>
+            <span class="prog-fecha__total">S/ {{ fmtMoney(f.total_soles) }}</span>
+            <small>{{ f.cantidad }} {{ f.cantidad === 1 ? 'pago' : 'pagos' }}</small>
+            @for (c of f.por_cuenta; track c.cuenta) {
+              <small>{{ c.cuenta }}: S/ {{ fmtMoney(c.total_soles) }}</small>
+            }
+          </div>
+        }
+      </div>
+    }
+    <div class="table-card">
+      <table class="table">
+        <thead>
+          <tr><th>Fecha</th><th>Documento</th><th>Proveedor</th><th>Concepto</th><th style="text-align: right">Monto</th><th>Medio</th><th>Cuenta</th><th style="text-align: center">Acciones</th></tr>
+        </thead>
+        <tbody>
+          @for (p of a.items; track p.id) {
+            <tr>
+              <td>{{ p.fecha_programada }}@if (p.urgente) { <span class="badge badge-pending" [title]="p.observaciones ?? ''">Urgente</span> }</td>
+              <td><strong>{{ p.numero_documento ?? '#' + p.id_documento_origen }}</strong></td>
+              <td>{{ p.proveedor ?? '—' }}</td>
+              <td>{{ p.concepto === 'DETRACCION' ? 'Detracción' : 'Proveedor' }}</td>
+              <td align="right">{{ p.concepto === 'DETRACCION' ? 'S/' : (p.moneda_simbolo ?? 'S/') }} {{ fmtMoney(p.monto) }}</td>
+              <td>{{ medioLabel[p.medio_pago] }}</td>
+              <td>{{ p.cuenta ?? '—' }}</td>
+              <td align="center">
+                <button class="table-action-btn" type="button" title="Reprogramar" (click)="reprogramar(p)"><i class="fa-solid fa-calendar-day"></i></button>
+                <button class="table-action-btn table-action-btn--danger" type="button" title="Cancelar programación" (click)="cancelar(p)"><i class="fa-solid fa-ban"></i></button>
+              </td>
+            </tr>
+          } @empty {
+            <tr><td colspan="8" align="center">No hay pagos programados.</td></tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+</div>
+
+<app-modal [isOpen]="isModalOpen()" title="Programar pagos" maxWidth="900px" [showDefaultFooter]="false" (closed)="closeModal()">
+  <form [formGroup]="lote" (ngSubmit)="programar()">
+    <div class="prog-form__grid">
+      <div class="form-group">
+        <label for="prog-fecha">Fecha de pago</label>
+        <input id="prog-fecha" type="date" class="form-control" formControlName="fecha" list="prog-viernes" />
+        <datalist id="prog-viernes">
+          @for (f of viernes; track f) {
+            <option [value]="f"></option>
+          }
+        </datalist>
+        @if (!fechaEsViernes() && !lote.controls.urgente.value) {
+          <small class="prog-form__warn">No es viernes: marque «Pago urgente» e indique el motivo.</small>
+        }
+      </div>
+      <div class="form-group">
+        <label for="prog-medio">Medio de pago</label>
+        <select id="prog-medio" class="form-control" formControlName="medio_pago">
+          @for (m of medios; track m) {
+            <option [value]="m">{{ medioLabel[m] }}</option>
+          }
+        </select>
+        <small>La detracción siempre se programa como depósito.</small>
+      </div>
+      <div class="form-group">
+        <label for="prog-cuenta">Cuenta de pago</label>
+        <select id="prog-cuenta" class="form-control" formControlName="id_cuenta">
+          <option [ngValue]="null">— Definir al ejecutar —</option>
+          @for (c of cuentas(); track c.id) {
+            <option [ngValue]="c.id">{{ c.nombre }} ({{ c.moneda_id }})</option>
+          }
+        </select>
+      </div>
+      <div class="form-group">
+        <label for="prog-por">Programa</label>
+        <select id="prog-por" class="form-control" formControlName="id_programado_por">
+          <option [ngValue]="null">— Sin indicar —</option>
+          @for (t of trabajadores(); track t.id) {
+            <option [ngValue]="t.id">{{ t.nombre }}</option>
+          }
+        </select>
+      </div>
+      <div class="form-group prog-form__check"><label><input type="checkbox" formControlName="urgente" /> Pago urgente (fuera de viernes)</label></div>
+      <div class="form-group prog-form__full">
+        <label for="prog-obs">Observaciones {{ lote.controls.urgente.value ? '(motivo obligatorio)' : '' }}</label>
+        <input id="prog-obs" class="form-control" formControlName="observaciones" />
+      </div>
+    </div>
+
+    <div class="table-card">
+      <table class="table">
+        <thead><tr><th style="width: 60px">Incluir</th><th>Documento</th><th>Concepto</th><th style="text-align: right">Saldo por programar</th><th style="width: 150px">Monto a programar</th></tr></thead>
+        <tbody formArrayName="items">
+          @for (i of items.controls; track i; let idx = $index) {
+            <tr [formGroupName]="idx">
+              <td align="center"><input type="checkbox" formControlName="incluir" [attr.aria-label]="'Incluir ' + i.controls.etiqueta.value" /></td>
+              <td>{{ i.controls.etiqueta.value }}</td>
+              <td>{{ i.controls.concepto.value === 'DETRACCION' ? 'Detracción' : 'Proveedor' }}</td>
+              <td align="right">{{ i.controls.moneda.value }} {{ fmtMoney(i.controls.maximo.value) }}</td>
+              <td><input class="form-control" inputmode="decimal" formControlName="monto" [attr.aria-label]="'Monto ' + i.controls.etiqueta.value" /></td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  </form>
+  @if (modalError()) {
+    <p class="badge badge-danger" role="alert" style="white-space: pre-line">{{ modalError() }}</p>
+  }
+  <div modal-footer class="modal-footer">
+    <button class="btn btn-secondary" type="button" (click)="closeModal()" [disabled]="isSaving()">Cancelar</button>
+    <button class="btn btn-primary" type="button" (click)="programar()" [disabled]="isSaving()"><i class="fa-solid fa-calendar-check"></i> {{ isSaving() ? 'Programando...' : 'Programar pagos' }}</button>
+  </div>
+</app-modal>

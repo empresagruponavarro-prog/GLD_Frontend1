@@ -1,7 +1,9 @@
 <div class="content-header">
   <div>
     <h1 class="content-title">Requerimientos (FUR)</h1>
-    <p class="content-subtitle">Formato único de requerimiento: se aprueba antes de generar la orden de compra.</p>
+    <p class="content-subtitle">
+      Formato único de requerimiento: las compras se cotizan y se aprueban eligiendo al ganador; al aprobarse se generan los documentos de origen.
+    </p>
   </div>
   <div style="display: flex; gap: 0.5rem; align-items: center">
     <a class="btn btn-primary" routerLink="/requerimientos/nuevo">
@@ -34,6 +36,12 @@
           <option value="">Todos los estados</option>
           @for (e of estados; track e) {
             <option [value]="e">{{ estadoLabel[e] }}</option>
+          }
+        </select>
+        <select class="toolbar-select" [value]="fTipo()" (change)="applyFilter('tipo', $any($event.target).value)">
+          <option value="">Todos los tipos</option>
+          @for (t of tipos; track t) {
+            <option [value]="t">{{ tipoLabel[t] }}</option>
           }
         </select>
         <label class="toolbar-check">Desde
@@ -71,10 +79,16 @@
       <td>{{ item.fecha }}</td>
       <td>{{ item.centro_costo ?? '—' }}</td>
       <td>{{ item.solicitante ?? '—' }}</td>
-      <td>{{ item.justificacion }}</td>
+      <td>
+        {{ item.justificacion }}
+        <div class="table-cell-subtitle">{{ tipoLabel[item.tipo] }}{{ item.area_nombre ? ' · ' + item.area_nombre : '' }}</div>
+      </td>
       <td align="center">{{ item.total_lineas }}</td>
       <td align="center">
         <span [class]="'badge ' + estadoBadge(item.estado)">{{ estadoLabel[item.estado] }}</span>
+        @if (item.tipo === 'COMPRA' && item.total_cotizaciones > 0) {
+          <div class="table-cell-subtitle">{{ item.total_cotizaciones }} cotizaci{{ item.total_cotizaciones === 1 ? 'ón' : 'ones' }}</div>
+        }
         @if (item.avance) {
           <div class="table-cell-subtitle">
             <span [class]="'badge ' + avanceBadge(item.avance)">{{ avanceLabel[item.avance] }}</span>
