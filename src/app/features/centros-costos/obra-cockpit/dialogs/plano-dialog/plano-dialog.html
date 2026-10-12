@@ -1,0 +1,74 @@
+<app-modal [isOpen]="isOpen()" [title]="titulo()" maxWidth="720px" [showDefaultFooter]="false" (closed)="closed.emit()">
+  <form modal-body [formGroup]="form" (ngSubmit)="onSubmit()" id="form-plano" class="grid grid-cols-1 md:grid-cols-6 gap-3">
+    <div class="form-group md:col-span-2">
+      <label for="pla-codigo">Código *</label>
+      <input id="pla-codigo" type="text" class="form-control uppercase" formControlName="codigo_plano" placeholder="ARQ-01" />
+    </div>
+    <div class="form-group md:col-span-4">
+      <label for="pla-nombre">Nombre del plano *</label>
+      <input id="pla-nombre" type="text" class="form-control" formControlName="nombre_plano" />
+    </div>
+    <div class="form-group md:col-span-2">
+      <label for="pla-disciplina">Disciplina *</label>
+      <select id="pla-disciplina" class="form-control" formControlName="disciplina">
+        @for (d of disciplinas; track d) {
+          <option [value]="d">{{ d }}</option>
+        }
+      </select>
+    </div>
+    <div class="form-group md:col-span-2">
+      <label for="pla-version">Versión</label>
+      <input id="pla-version" type="text" class="form-control" formControlName="version"
+        [placeholder]="modo() === 'version' ? 'Auto: siguiente versión' : 'v1.0'" />
+    </div>
+    <div class="form-group md:col-span-2">
+      <label for="pla-estado">Estado de aprobación</label>
+      <select id="pla-estado" class="form-control" formControlName="estado_aprobacion">
+        @for (e of estadosAprobacion; track e) {
+          <option [value]="e">{{ e }}</option>
+        }
+      </select>
+    </div>
+    <div class="form-group md:col-span-2">
+      <label for="pla-vobo">Fecha visto bueno</label>
+      <input id="pla-vobo" type="date" class="form-control" formControlName="fecha_vobo" />
+    </div>
+    <div class="form-group md:col-span-2">
+      <label for="pla-formato">Formato / peso</label>
+      <input id="pla-formato" type="text" class="form-control" formControlName="formato_peso" placeholder="DWG + PDF (14 MB)" />
+    </div>
+    <div class="form-group md:col-span-2">
+      <label for="pla-emitido">Emitido por</label>
+      <input id="pla-emitido" type="text" class="form-control" formControlName="emitido_por" />
+    </div>
+    <div class="form-group md:col-span-6">
+      <label for="pla-url">Enlace al archivo</label>
+      <input id="pla-url" type="url" class="form-control" formControlName="archivo_url" placeholder="https://... (Drive, Dropbox, servidor)" />
+      <small class="text-[11px] text-on-surface-variant">La subida directa de archivos se habilitará en la Fase D. Por ahora puedes pegar un enlace.</small>
+    </div>
+    @if (modo() === 'version') {
+      <p class="md:col-span-6 text-[11px] text-on-surface-variant">
+        Al guardar, la versión <strong>{{ plano()?.version }}</strong> pasará al historial y la nueva quedará como vigente.
+      </p>
+    }
+    @if (formError()) {
+      <p class="md:col-span-6 badge badge-danger" role="alert">{{ formError() }}</p>
+    }
+  </form>
+
+  <div modal-footer class="modal-footer">
+    @if (modo() === 'editar') {
+      <button type="button" id="btn-plano-eliminar" class="btn btn-danger mr-auto" (click)="onDelete()" [disabled]="isSaving()">
+        <i class="fa-solid fa-trash"></i> Eliminar
+      </button>
+    }
+    <button type="button" class="btn btn-secondary" (click)="closed.emit()" [disabled]="isSaving()">Cancelar</button>
+    <button type="submit" form="form-plano" id="btn-plano-guardar" class="btn btn-primary" [disabled]="isSaving()">
+      @if (isSaving()) {
+        <i class="fa-solid fa-spinner fa-spin"></i> Guardando...
+      } @else {
+        <i class="fa-solid fa-floppy-disk"></i> {{ modo() === 'version' ? 'Emitir versión' : 'Guardar' }}
+      }
+    </button>
+  </div>
+</app-modal>

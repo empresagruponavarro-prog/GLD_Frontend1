@@ -1,0 +1,75 @@
+<app-modal
+  [isOpen]="isOpen()"
+  title="Ficha técnica de la obra"
+  maxWidth="760px"
+  [loading]="isSaving()"
+  (saved)="onSubmit()"
+  (closed)="closed.emit()"
+>
+  <form modal-body [formGroup]="form" (ngSubmit)="onSubmit()" id="form-generales" class="grid grid-cols-1 md:grid-cols-6 gap-3">
+    <h4 class="modal-section-title md:col-span-6">Expediente y ubicación</h4>
+    <div class="form-group md:col-span-2">
+      <label for="gen-expediente">Código de expediente</label>
+      <input id="gen-expediente" type="text" class="form-control" formControlName="expediente_codigo" placeholder="EXP-2026-..." />
+    </div>
+    <div class="form-group md:col-span-4">
+      <label for="gen-direccion">Dirección</label>
+      <input id="gen-direccion" type="text" class="form-control" formControlName="direccion" />
+    </div>
+    <div class="form-group md:col-span-2">
+      <label for="gen-departamento">Departamento</label>
+      <input id="gen-departamento" type="text" class="form-control" formControlName="departamento" />
+    </div>
+    <div class="form-group md:col-span-2">
+      <label for="gen-provincia">Provincia</label>
+      <input id="gen-provincia" type="text" class="form-control" formControlName="provincia" />
+    </div>
+    <div class="form-group md:col-span-2">
+      <label for="gen-distrito">Distrito</label>
+      <input id="gen-distrito" type="text" class="form-control" formControlName="distrito" />
+    </div>
+    <div class="form-group md:col-span-2">
+      <label for="gen-ubigeo">Ubigeo</label>
+      <input id="gen-ubigeo" type="text" class="form-control" formControlName="ubigeo_cod" />
+    </div>
+    <div class="form-group md:col-span-2">
+      <label for="gen-lat">Latitud</label>
+      <input id="gen-lat" type="number" step="0.000001" class="form-control" formControlName="latitud" placeholder="-12.2122" />
+    </div>
+    <div class="form-group md:col-span-2">
+      <label for="gen-lng">Longitud</label>
+      <input id="gen-lng" type="number" step="0.000001" class="form-control" formControlName="longitud" placeholder="-76.9339" />
+    </div>
+
+    <h4 class="modal-section-title md:col-span-6">Operación</h4>
+    <div class="form-group md:col-span-2">
+      <label for="gen-semanas">Semanas totales</label>
+      <input id="gen-semanas" type="number" min="1" class="form-control" formControlName="semanas_totales" />
+    </div>
+    <div class="form-group md:col-span-2">
+      <label for="gen-personal">Personal activo promedio</label>
+      <input id="gen-personal" type="number" min="0" class="form-control" formControlName="personal_activo_promedio" />
+    </div>
+    <div class="form-group md:col-span-2">
+      <label for="gen-turno">Turno de trabajo</label>
+      <input id="gen-turno" type="text" class="form-control" formControlName="turno_trabajo" />
+    </div>
+
+    <h4 class="modal-section-title md:col-span-6">Contacto del cliente</h4>
+    <div class="form-group md:col-span-2">
+      <label for="gen-cli-nombre">Nombre</label>
+      <input id="gen-cli-nombre" type="text" class="form-control" formControlName="contacto_cliente_nombre" />
+    </div>
+    <div class="form-group md:col-span-2">
+      <label for="gen-cli-telefono">Teléfono</label>
+      <input id="gen-cli-telefono" type="tel" class="form-control" formControlName="contacto_cliente_telefono" />
+    </div>
+    <div class="form-group md:col-span-2">
+      <label for="gen-cli-correo">Correo</label>
+      <input id="gen-cli-correo" type="email" class="form-control" formControlName="contacto_cliente_correo" />
+    </div>
+    @if (formError()) {
+      <p class="md:col-span-6 badge badge-danger" role="alert">{{ formError() }}</p>
+    }
+  </form>
+</app-modal>

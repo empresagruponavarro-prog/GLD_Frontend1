@@ -1,0 +1,70 @@
+<app-modal
+  [isOpen]="isOpen()"
+  [title]="isEdit ? 'Editar documento / acta' : 'Anexar documento técnico / acta'"
+  maxWidth="680px"
+  [showDefaultFooter]="false"
+  (closed)="closed.emit()"
+>
+  <form modal-body [formGroup]="form" (ngSubmit)="onSubmit()" id="form-documento" class="grid grid-cols-1 md:grid-cols-2 gap-3">
+    <div class="form-group md:col-span-2">
+      <label for="doc-titulo">Título *</label>
+      <input id="doc-titulo" type="text" class="form-control" formControlName="titulo" placeholder="Acta de entrega de terreno" />
+    </div>
+    <div class="form-group md:col-span-2">
+      <label for="doc-subtitulo">Descripción</label>
+      <input id="doc-subtitulo" type="text" class="form-control" formControlName="subtitulo" />
+    </div>
+    <div class="form-group">
+      <label for="doc-categoria">Categoría *</label>
+      <select id="doc-categoria" class="form-control" formControlName="categoria">
+        @for (c of categorias; track c) {
+          <option [value]="c">{{ c }}</option>
+        }
+      </select>
+    </div>
+    <div class="form-group">
+      <label for="doc-registro">Folio / N° registro</label>
+      <input id="doc-registro" type="text" class="form-control" formControlName="nro_registro" />
+    </div>
+    <div class="form-group">
+      <label for="doc-fecha">Fecha de emisión</label>
+      <input id="doc-fecha" type="date" class="form-control" formControlName="fecha_emision" />
+    </div>
+    <div class="form-group">
+      <label for="doc-vigencia">Vigencia / vencimiento</label>
+      <input id="doc-vigencia" type="text" class="form-control" formControlName="vigencia_texto" placeholder="Permanente, 15/11/2026..." />
+    </div>
+    <div class="form-group">
+      <label for="doc-estado">Estado</label>
+      <select id="doc-estado" class="form-control" formControlName="estado">
+        @for (e of estados; track e) {
+          <option [value]="e">{{ e }}</option>
+        }
+      </select>
+    </div>
+    <div class="form-group">
+      <label for="doc-url">Enlace al archivo</label>
+      <input id="doc-url" type="url" class="form-control" formControlName="archivo_url" placeholder="https://..." />
+    </div>
+    <small class="md:col-span-2 text-[11px] text-on-surface-variant">La subida directa de archivos se habilitará en la Fase D.</small>
+    @if (formError()) {
+      <p class="md:col-span-2 badge badge-danger" role="alert">{{ formError() }}</p>
+    }
+  </form>
+
+  <div modal-footer class="modal-footer">
+    @if (isEdit) {
+      <button type="button" id="btn-documento-eliminar" class="btn btn-danger mr-auto" (click)="onDelete()" [disabled]="isSaving()">
+        <i class="fa-solid fa-trash"></i> Eliminar
+      </button>
+    }
+    <button type="button" class="btn btn-secondary" (click)="closed.emit()" [disabled]="isSaving()">Cancelar</button>
+    <button type="submit" form="form-documento" id="btn-documento-guardar" class="btn btn-primary" [disabled]="isSaving()">
+      @if (isSaving()) {
+        <i class="fa-solid fa-spinner fa-spin"></i> Guardando...
+      } @else {
+        <i class="fa-solid fa-floppy-disk"></i> Guardar
+      }
+    </button>
+  </div>
+</app-modal>

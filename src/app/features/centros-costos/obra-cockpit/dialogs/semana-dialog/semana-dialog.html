@@ -1,0 +1,76 @@
+<app-modal
+  [isOpen]="isOpen()"
+  [title]="isEdit ? 'Editar ' + (semana()?.etiqueta_semana ?? 'semana') : 'Programar nueva semana / hito'"
+  maxWidth="720px"
+  [showDefaultFooter]="false"
+  (closed)="closed.emit()"
+>
+  <form modal-body [formGroup]="form" (ngSubmit)="onSubmit()" id="form-semana" class="grid grid-cols-1 md:grid-cols-6 gap-3">
+    <div class="form-group md:col-span-1">
+      <label for="sem-numero">N° semana</label>
+      <input id="sem-numero" type="number" min="1" class="form-control" formControlName="numero_semana" />
+    </div>
+    <div class="form-group md:col-span-2">
+      <label for="sem-etiqueta">Etiqueta</label>
+      <input id="sem-etiqueta" type="text" class="form-control" formControlName="etiqueta_semana" placeholder="Auto: SEM NN" />
+    </div>
+    <div class="form-group md:col-span-3">
+      <label for="sem-fase">Fase / actividad principal *</label>
+      <input id="sem-fase" type="text" class="form-control" formControlName="fase_principal" placeholder="Ej. Drywall y arquitectura" />
+    </div>
+    <div class="form-group md:col-span-2">
+      <label for="sem-inicio">Fecha inicio *</label>
+      <input id="sem-inicio" type="date" class="form-control" formControlName="fecha_inicio" />
+    </div>
+    <div class="form-group md:col-span-2">
+      <label for="sem-fin">Fecha fin *</label>
+      <input id="sem-fin" type="date" class="form-control" formControlName="fecha_fin" />
+    </div>
+    <div class="form-group md:col-span-2">
+      <label for="sem-estado">Estado</label>
+      <select id="sem-estado" class="form-control" formControlName="estado">
+        @for (e of estados; track e) {
+          <option [value]="e">{{ e }}</option>
+        }
+      </select>
+    </div>
+    <div class="form-group md:col-span-2">
+      <label for="sem-meta">% meta acumulada</label>
+      <input id="sem-meta" type="number" min="0" max="100" step="0.01" class="form-control" formControlName="porcentaje_meta" />
+    </div>
+    <div class="form-group md:col-span-2">
+      <label for="sem-real">% real acumulado</label>
+      <input id="sem-real" type="number" min="0" max="100" step="0.01" class="form-control" formControlName="porcentaje_real" />
+    </div>
+    <div class="form-group md:col-span-2">
+      <label for="sem-responsable">Responsable</label>
+      <input id="sem-responsable" type="text" class="form-control" formControlName="responsable_nombre" />
+    </div>
+    <div class="form-group md:col-span-6">
+      <label for="sem-descripcion">Detalle de actividades</label>
+      <textarea id="sem-descripcion" rows="3" class="form-control" formControlName="descripcion_actividades"></textarea>
+    </div>
+    <p class="md:col-span-6 text-[11px] text-on-surface-variant">
+      Los porcentajes son <strong>acumulados</strong> (Curva S): la meta de la semana 3 incluye lo programado en las semanas 1 y 2.
+    </p>
+    @if (formError()) {
+      <p class="md:col-span-6 badge badge-danger" role="alert">{{ formError() }}</p>
+    }
+  </form>
+
+  <div modal-footer class="modal-footer">
+    @if (isEdit) {
+      <button type="button" id="btn-semana-eliminar" class="btn btn-danger mr-auto" (click)="onDelete()" [disabled]="isSaving() || isDeleting()">
+        <i class="fa-solid fa-trash"></i> Eliminar
+      </button>
+    }
+    <button type="button" class="btn btn-secondary" (click)="closed.emit()" [disabled]="isSaving()">Cancelar</button>
+    <button type="submit" form="form-semana" id="btn-semana-guardar" class="btn btn-primary" [disabled]="isSaving() || isDeleting()">
+      @if (isSaving()) {
+        <i class="fa-solid fa-spinner fa-spin"></i> Guardando...
+      } @else {
+        <i class="fa-solid fa-floppy-disk"></i> Guardar
+      }
+    </button>
+  </div>
+</app-modal>

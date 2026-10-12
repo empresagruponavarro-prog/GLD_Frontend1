@@ -1,0 +1,131 @@
+<!-- KPIs del cronograma -->
+<div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+  <div class="p-3 bg-surface-container-lowest rounded-xl shadow-sm border border-surface-container">
+    <div class="flex items-center justify-between">
+      <span class="text-[10px] text-on-surface-variant uppercase font-medium tracking-wider">Duración total</span>
+      <span class="material-symbols-outlined text-primary text-base">date_range</span>
+    </div>
+    <div class="text-lg font-bold font-headline-xl text-on-surface mt-0.5">{{ kpis()?.dias_totales ?? 0 }} días</div>
+    <div class="text-[10px] text-on-surface-variant">
+      Inicio: {{ fechaInicio() ? (fechaInicio() | date: 'dd/MM/yyyy') : '—' }} · Fin: {{ fechaFin() ? (fechaFin() | date: 'dd/MM/yyyy') : '—' }}
+    </div>
+  </div>
+  <div class="p-3 bg-surface-container-lowest rounded-xl shadow-sm border border-surface-container">
+    <div class="flex items-center justify-between">
+      <span class="text-[10px] text-on-surface-variant uppercase font-medium tracking-wider">Avance físico global</span>
+      <span class="material-symbols-outlined text-primary text-base">trending_up</span>
+    </div>
+    <div class="text-lg font-bold font-headline-xl text-primary mt-0.5">{{ (kpis()?.avance_real_global ?? 0) | number: '1.0-2' }}%</div>
+    <div class="text-[10px] text-primary font-medium">Programado a la fecha: {{ (kpis()?.avance_meta_global ?? 0) | number: '1.0-2' }}%</div>
+  </div>
+  <div class="p-3 bg-surface-container-lowest rounded-xl shadow-sm border border-surface-container">
+    <div class="flex items-center justify-between">
+      <span class="text-[10px] text-on-surface-variant uppercase font-medium tracking-wider">Desviación</span>
+      <span class="material-symbols-outlined text-base" [class]="(kpis()?.desviacion ?? 0) < 0 ? 'text-error' : 'text-secondary'">timelapse</span>
+    </div>
+    <div class="text-lg font-bold font-headline-xl mt-0.5" [class]="(kpis()?.desviacion ?? 0) < 0 ? 'text-error' : 'text-secondary'">
+      {{ (kpis()?.desviacion ?? 0) > 0 ? '+' : '' }}{{ (kpis()?.desviacion ?? 0) | number: '1.0-2' }} pts
+    </div>
+    <div class="text-[10px] text-on-surface-variant font-medium">
+      {{ kpis()?.semanas_retrasadas ?? 0 }} semana(s) retrasada(s)
+    </div>
+  </div>
+  <div class="p-3 bg-surface-container-lowest rounded-xl shadow-sm border border-surface-container flex flex-col justify-center">
+    <button type="button" id="btn-nueva-semana" class="w-full py-2 px-3 rounded-lg bg-primary text-on-primary text-xs font-semibold shadow-sm hover:opacity-95 flex items-center justify-center gap-1.5 transition-all" (click)="nueva.emit()">
+      <span class="material-symbols-outlined text-sm">add_task</span>
+      <span>Programar nueva semana / hito</span>
+    </button>
+  </div>
+</div>
+
+<!-- Tabla semanal -->
+<div class="bg-surface-container-lowest rounded-xl shadow-sm border border-surface-container overflow-hidden">
+  <div class="p-3 bg-surface-container-low flex flex-wrap items-center justify-between gap-2 border-b border-surface-container">
+    <div class="flex items-center gap-2">
+      <span class="font-bold text-xs text-on-surface">Programación semanal maestra</span>
+      <span class="text-[11px] text-on-surface-variant">| Metas acumuladas (Curva S)</span>
+    </div>
+    <label class="sr-only" for="filtro-estado-semana">Filtrar por estado</label>
+    <select id="filtro-estado-semana" class="text-xs bg-surface-container-lowest border border-surface-container rounded-lg px-2.5 py-1 text-on-surface focus:outline-none shadow-sm" [value]="filtroEstado()" (change)="onFiltro($event)">
+      <option value="">Todos los estados</option>
+      @for (e of estados; track e) {
+        <option [value]="e">{{ e }}</option>
+      }
+    </select>
+  </div>
+  <div class="overflow-x-auto">
+    <table class="w-full text-left border-collapse text-xs">
+      <thead>
+        <tr class="bg-surface-container-high/60 text-on-surface-variant font-semibold text-[11px] uppercase tracking-wider">
+          <th class="py-2.5 px-3">Semana</th>
+          <th class="py-2.5 px-2.5">Rango fechas</th>
+          <th class="py-2.5 px-3">Fase / actividades</th>
+          <th class="py-2.5 px-2.5">Responsable</th>
+          <th class="py-2.5 px-3 min-w-[150px]">Progreso (meta vs real)</th>
+          <th class="py-2.5 px-2.5">Estado</th>
+          <th class="py-2.5 px-3 text-right">Acciones</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-surface-container">
+        @for (sem of semanasFiltradas(); track sem.id) {
+          <tr class="hover:bg-surface-container-low transition-colors">
+            <td class="py-2.5 px-3 font-mono font-bold" [class]="sem.numero_semana === kpis()?.semana_activa ? 'text-primary' : 'text-on-surface-variant'">
+              {{ sem.etiqueta_semana }}
+              @if (sem.numero_semana === kpis()?.semana_activa) {
+                <span class="w-2 h-2 rounded-full bg-primary animate-ping inline-block ml-1" title="Semana en curso"></span>
+              }
+            </td>
+            <td class="py-2.5 px-2.5 text-on-surface font-medium whitespace-nowrap">
+              {{ sem.fecha_inicio | date: 'dd/MM' }} - {{ sem.fecha_fin | date: 'dd/MM' }}
+            </td>
+            <td class="py-2.5 px-3">
+              <div class="font-semibold text-on-surface">{{ sem.fase_principal }}</div>
+              @if (sem.descripcion_actividades) {
+                <div class="text-[11px] text-on-surface-variant line-clamp-2">{{ sem.descripcion_actividades }}</div>
+              }
+            </td>
+            <td class="py-2.5 px-2.5 whitespace-nowrap">
+              <span class="inline-flex items-center gap-1 font-medium text-on-surface text-[11px]">
+                <span class="material-symbols-outlined text-xs text-primary">person</span> {{ sem.responsable_nombre || '—' }}
+              </span>
+            </td>
+            <td class="py-2.5 px-3">
+              <div class="flex items-center justify-between text-[10px] mb-0.5">
+                <span class="font-bold text-on-surface">{{ sem.porcentaje_real | number: '1.0-2' }}%</span>
+                <span class="text-on-surface-variant">Meta: {{ sem.porcentaje_meta | number: '1.0-2' }}%</span>
+              </div>
+              <div class="relative w-full bg-surface-container-high h-1.5 rounded-full overflow-hidden">
+                <div class="absolute inset-y-0 left-0 bg-secondary-container rounded-full" [style.width.%]="clampPct(sem.porcentaje_meta)"></div>
+                <div class="absolute inset-y-0 left-0 rounded-full" [class]="sem.porcentaje_real < sem.porcentaje_meta ? 'bg-error' : 'bg-primary'" [style.width.%]="clampPct(sem.porcentaje_real)"></div>
+              </div>
+            </td>
+            <td class="py-2.5 px-2.5">
+              <span class="px-2 py-0.5 rounded-md text-[10px] font-bold" [class]="estadoClass(sem.estado)">{{ sem.estado }}</span>
+            </td>
+            <td class="py-2.5 px-3 text-right">
+              <div class="flex items-center justify-end gap-1">
+                <button type="button" class="p-1 rounded hover:bg-surface-container text-on-surface-variant" (click)="evidencias.emit(sem)" title="Evidencia fotográfica (prototipo)">
+                  <span class="material-symbols-outlined text-base">photo_library</span>
+                </button>
+                <button type="button" class="p-1 rounded hover:bg-surface-container text-primary" (click)="editar.emit(sem)" title="Editar semana">
+                  <span class="material-symbols-outlined text-base">edit</span>
+                </button>
+              </div>
+            </td>
+          </tr>
+        } @empty {
+          <tr>
+            <td colspan="7" class="py-8 text-center text-xs text-on-surface-variant">
+              <span class="material-symbols-outlined text-2xl block mb-2 opacity-40">calendar_month</span>
+              @if (filtroEstado()) {
+                No hay semanas con estado "{{ filtroEstado() }}".
+              } @else {
+                No hay semanas registradas. Usa "Programar nueva semana" para empezar la Curva S.
+              }
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+</div>

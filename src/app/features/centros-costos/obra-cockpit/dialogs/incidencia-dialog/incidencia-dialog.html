@@ -1,0 +1,72 @@
+<app-modal
+  [isOpen]="isOpen()"
+  [title]="isEdit ? 'Editar incidencia ' + (incidencia()?.codigo_incidencia ?? '') : 'Reportar nueva incidencia / RFI'"
+  maxWidth="680px"
+  [showDefaultFooter]="false"
+  (closed)="closed.emit()"
+>
+  <form modal-body [formGroup]="form" (ngSubmit)="onSubmit()" id="form-incidencia" class="grid grid-cols-1 md:grid-cols-2 gap-3">
+    <div class="form-group md:col-span-2">
+      <label for="inc-titulo">Título *</label>
+      <input id="inc-titulo" type="text" class="form-control" formControlName="titulo" placeholder="Interferencia de ducto con viga eje 3-B" />
+    </div>
+    <div class="form-group md:col-span-2">
+      <label for="inc-descripcion">Descripción *</label>
+      <textarea id="inc-descripcion" rows="3" class="form-control" formControlName="descripcion"></textarea>
+    </div>
+    <div class="form-group">
+      <label for="inc-prioridad">Prioridad</label>
+      <select id="inc-prioridad" class="form-control" formControlName="prioridad">
+        @for (p of prioridades; track p) {
+          <option [value]="p">{{ p }}</option>
+        }
+      </select>
+    </div>
+    <div class="form-group">
+      <label for="inc-plazo">Plazo de resolución</label>
+      <input id="inc-plazo" type="text" class="form-control" formControlName="plazo_resolucion" placeholder="24 horas" />
+    </div>
+    <div class="form-group">
+      <label for="inc-responsable">Responsable</label>
+      <input id="inc-responsable" type="text" class="form-control" formControlName="responsable" list="inc-responsables" />
+      <datalist id="inc-responsables">
+        @for (r of responsables(); track r) {
+          <option [value]="r"></option>
+        }
+      </datalist>
+    </div>
+    @if (isEdit) {
+      <div class="form-group">
+        <label for="inc-estado">Estado</label>
+        <select id="inc-estado" class="form-control" formControlName="estado">
+          @for (e of estados; track e) {
+            <option [value]="e">{{ e }}</option>
+          }
+        </select>
+      </div>
+    }
+    <div class="form-group md:col-span-2">
+      <label for="inc-accion">Acción solicitada / ejecutada</label>
+      <textarea id="inc-accion" rows="2" class="form-control" formControlName="accion_solicitada_o_ejecutada"></textarea>
+    </div>
+    @if (formError()) {
+      <p class="md:col-span-2 badge badge-danger" role="alert">{{ formError() }}</p>
+    }
+  </form>
+
+  <div modal-footer class="modal-footer">
+    @if (isEdit) {
+      <button type="button" id="btn-incidencia-eliminar" class="btn btn-danger mr-auto" (click)="onDelete()" [disabled]="isSaving()">
+        <i class="fa-solid fa-trash"></i> Eliminar
+      </button>
+    }
+    <button type="button" class="btn btn-secondary" (click)="closed.emit()" [disabled]="isSaving()">Cancelar</button>
+    <button type="submit" form="form-incidencia" id="btn-incidencia-guardar" class="btn btn-primary" [disabled]="isSaving()">
+      @if (isSaving()) {
+        <i class="fa-solid fa-spinner fa-spin"></i> Guardando...
+      } @else {
+        <i class="fa-solid fa-floppy-disk"></i> {{ isEdit ? 'Guardar' : 'Reportar' }}
+      }
+    </button>
+  </div>
+</app-modal>

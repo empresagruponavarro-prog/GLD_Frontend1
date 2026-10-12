@@ -1,0 +1,69 @@
+<app-modal
+  [isOpen]="isOpen()"
+  [title]="isEdit ? 'Editar residente / contacto' : 'Asignar nuevo residente / contacto'"
+  maxWidth="680px"
+  [showDefaultFooter]="false"
+  (closed)="closed.emit()"
+>
+  <form modal-body [formGroup]="form" (ngSubmit)="onSubmit()" id="form-residente" class="grid grid-cols-1 md:grid-cols-2 gap-3">
+    <div class="form-group">
+      <label for="res-nombre">Nombre completo *</label>
+      <input id="res-nombre" type="text" class="form-control" formControlName="nombre_completo" placeholder="Ing. Nombre Apellido" />
+    </div>
+    <div class="form-group">
+      <label for="res-rol">Rol en obra *</label>
+      <input id="res-rol" type="text" class="form-control" formControlName="rol_obra" placeholder="Jefe de Obra, Residente IIEE..." />
+    </div>
+    <div class="form-group">
+      <label for="res-cip">CIP / CAP</label>
+      <input id="res-cip" type="text" class="form-control" formControlName="cip_cap" />
+    </div>
+    <div class="form-group">
+      <label for="res-especialidad">Especialidad</label>
+      <input id="res-especialidad" type="text" class="form-control" formControlName="especialidad" />
+    </div>
+    <div class="form-group">
+      <label for="res-telefono">Teléfono (WhatsApp)</label>
+      <input id="res-telefono" type="tel" class="form-control" formControlName="telefono" placeholder="987 654 321" />
+    </div>
+    <div class="form-group">
+      <label for="res-correo">Correo</label>
+      <input id="res-correo" type="email" class="form-control" formControlName="correo" />
+    </div>
+    <div class="form-group">
+      <label for="res-turno">Turno</label>
+      <input id="res-turno" type="text" class="form-control" formControlName="turno" />
+    </div>
+    <div class="form-group">
+      <label for="res-estado">Estado en planta</label>
+      <select id="res-estado" class="form-control" formControlName="estado_planta">
+        @for (e of estadosPlanta; track e) {
+          <option [value]="e">{{ e }}</option>
+        }
+      </select>
+    </div>
+    <div class="form-group">
+      <label for="res-orden">Orden de aparición</label>
+      <input id="res-orden" type="number" min="0" class="form-control" formControlName="orden" placeholder="Auto" />
+    </div>
+    @if (formError()) {
+      <p class="md:col-span-2 badge badge-danger" role="alert">{{ formError() }}</p>
+    }
+  </form>
+
+  <div modal-footer class="modal-footer">
+    @if (isEdit) {
+      <button type="button" id="btn-residente-eliminar" class="btn btn-danger mr-auto" (click)="onDelete()" [disabled]="isSaving()">
+        <i class="fa-solid fa-user-minus"></i> Desasignar
+      </button>
+    }
+    <button type="button" class="btn btn-secondary" (click)="closed.emit()" [disabled]="isSaving()">Cancelar</button>
+    <button type="submit" form="form-residente" id="btn-residente-guardar" class="btn btn-primary" [disabled]="isSaving()">
+      @if (isSaving()) {
+        <i class="fa-solid fa-spinner fa-spin"></i> Guardando...
+      } @else {
+        <i class="fa-solid fa-floppy-disk"></i> Guardar
+      }
+    </button>
+  </div>
+</app-modal>
