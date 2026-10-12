@@ -1,7 +1,7 @@
 import { Service, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable, map } from 'rxjs';
-import { CentroCosto, CatalogosFiltros, CentroCostoPrincipal, CentroCostoSelect, CreateCentroCostoDto, UpdateCentroCostoDto, PaginatedCentrosCostos, FiltrosCentrosCostos } from './interfaces';
+import { CentroCosto, CatalogosFiltros, CentroCostoPrincipal, CentroCostoSelect, CreateCentroCostoDto, UpdateCentroCostoDto, PaginatedCentrosCostos, FiltrosCentrosCostos, MetricasPresupuestosCC } from './interfaces';
 import { environment } from '@env';
 
 @Service()
@@ -22,6 +22,7 @@ export class CentrosCostosService {
       if (filtros.cliente?.trim() && filtros.cliente !== 'TODOS') params = params.set('cliente', filtros.cliente.trim());
       if (filtros.centroCosto?.trim()) params = params.set('centroCosto', filtros.centroCosto.trim());
       if (filtros.pptoEstado?.trim() && filtros.pptoEstado !== 'TODOS') params = params.set('pptoEstado', filtros.pptoEstado.trim());
+      if (filtros.pptoEstadoGrupo) params = params.set('pptoEstadoGrupo', filtros.pptoEstadoGrupo);
     }
 
     return this.http.get<any>(this.apiUrl, { params }).pipe(
@@ -56,6 +57,10 @@ export class CentrosCostosService {
         };
       })
     );
+  }
+
+  getMetricasPresupuestos(): Observable<MetricasPresupuestosCC> {
+    return this.http.get<MetricasPresupuestosCC>(`${this.apiUrl}/metricas/presupuestos`);
   }
 
   getPrincipales(): Observable<CentroCostoPrincipal[]> {

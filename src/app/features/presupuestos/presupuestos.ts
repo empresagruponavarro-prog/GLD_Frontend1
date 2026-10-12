@@ -1,9 +1,10 @@
-﻿import { Component, inject, signal, OnInit } from '@angular/core';
+﻿import { Component, computed, inject, signal, OnInit } from '@angular/core';
+import { rxResource, toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 
 import { Router } from '@angular/router';
-import { Observable, concatMap, finalize, map, of, switchMap, tap } from 'rxjs';
+import { Observable, concatMap, debounceTime, distinctUntilChanged, finalize, map, of, switchMap, tap } from 'rxjs';
 import {
   FilaFormFase,
   ModoPlantilla,
@@ -41,7 +42,34 @@ import { PresupuestoPrincipal, PaginatedResponse, DetalleFase, PresupuestoComple
 import { DocumentosOrigenService } from '../documentos/documentos-origen/documentos-origen.service';
 import { DocumentoOrigenDetalleLinea } from '../documentos/documentos-origen/interfaces/documentos-origen.interface';
 import { CentrosCostosService } from '../centros-costos/centros-costos.service'; import { CategoriasService } from '../maestros-generales/categorias/categorias.service'; import { CategoriaSelect } from '../maestros-generales/categorias/interfaces/categorias.interface';
-import { CentroCosto, CatalogosFiltros } from '../centros-costos/interfaces/centros-costos.interface';
+import {
+  CentroCosto,
+  CatalogosFiltros,
+  FiltrosCentrosCostos,
+  MetricasPresupuestosCC,
+  PptoEstadoGrupo,
+} from '../centros-costos/interfaces/centros-costos.interface';
+import { createPaginatedQuery } from '@shared/data-access/create-paginated-query';
+
+/** Filtros de la lista lateral de centros de costos, tal como los edita la toolbar. */
+interface FiltrosCC {
+  search: string;
+  empresa: string;
+  periodo: string;
+  cliente: string;
+  /** Estado exacto del presupuesto (combo "Estado"). */
+  estado: string;
+  /** Pastilla seleccionada; '' = todas. */
+  grupo: PptoEstadoGrupo | '';
+}
+
+const FILTROS_CC_VACIOS: FiltrosCC = { search: '', empresa: '', periodo: '', cliente: '', estado: '', grupo: '' };
+const CC_PAGE_SIZE = 50;
+
+function mismosFiltros(a: FiltrosCentrosCostos, b: FiltrosCentrosCostos): boolean {
+  const claves = new Set([...Object.keys(a), ...Object.keys(b)]) as Set<keyof FiltrosCentrosCostos>;
+  return [...claves].every((k) => a[k] === b[k]);
+}
 
 @Component({
   selector: 'app-presupuestos',
@@ -62,49 +90,60 @@ export class PresupuestosComponent implements OnInit {
   loading = signal<boolean>(false);
   search = signal<string>('');
 
-  // Filtros — propiedades planas para compatibilidad con [(ngModel)]
+  // Filtros del listado de centros de costos (se aplican en el servidor)
   catalogos = signal<CatalogosFiltros | null>(null);
   empresas = signal<Empresa[]>([]);
-  filterSearch = '';
-  filterEmpresa = '';
-  filterPeriodo = '';
-  filterCliente = '';
-  filterEstado = '';
+  filtrosCC = signal<FiltrosCC>(FILTROS_CC_VACIOS);
   filterCategoria = 'Todos';
-  statusPillFilter = signal<string>('');
   vistaActual = signal<'financiera' | 'operativa'>('financiera');
 
-  setStatusPill(st: string) {
-    if (this.statusPillFilter() === st) {
-      this.statusPillFilter.set('');
-    } else {
-      this.statusPillFilter.set(st);
-    }
+  /** La búsqueda espera 300 ms sin teclear antes de consultar al servidor. */
+  private busquedaCC = toSignal(
+    toObservable(computed(() => this.filtrosCC().search)).pipe(debounceTime(300), distinctUntilChanged()),
+    { initialValue: '' },
+  );
+
+  private filtrosCCServidor = computed<FiltrosCentrosCostos>(
+    () => {
+      const f = this.filtrosCC();
+      return {
+        search: this.busquedaCC(),
+        empresa: f.empresa,
+        periodo: f.periodo,
+        cliente: f.cliente,
+        pptoEstado: f.estado,
+        pptoEstadoGrupo: f.grupo || undefined,
+      };
+    },
+    { equal: mismosFiltros },
+  );
+
+  /** Lista lateral de centros de costos: paginada y filtrada en el servidor. */
+  ccQuery = createPaginatedQuery({
+    filters: this.filtrosCCServidor,
+    pageSize: CC_PAGE_SIZE,
+    load: ({ page, pageSize, ...filtros }) => this.centrosCostosService.getAll(page, pageSize, filtros),
+  });
+
+  /** Contadores de las pastillas y portafolio, sobre todos los centros de costos. */
+  private metricasCC = rxResource({ stream: () => this.centrosCostosService.getMetricasPresupuestos() });
+  private metricaCC = (campo: keyof MetricasPresupuestosCC) =>
+    computed(() => (this.metricasCC.hasValue() ? this.metricasCC.value()[campo] : 0));
+  countAbiertos = this.metricaCC('abiertos');
+  countEnCierre = this.metricaCC('enCierre');
+  countCerrados = this.metricaCC('cerrados');
+  totalPortafolioActivo = this.metricaCC('totalPortafolio');
+
+  setFiltroCC<K extends keyof FiltrosCC>(campo: K, valor: FiltrosCC[K]) {
+    this.filtrosCC.update((f) => ({ ...f, [campo]: valor }));
+  }
+
+  setStatusPill(grupo: PptoEstadoGrupo) {
+    this.setFiltroCC('grupo', this.filtrosCC().grupo === grupo ? '' : grupo);
   }
 
   setVista(v: 'financiera' | 'operativa') {
     this.vistaActual.set(v);
-  }
-
-
-
-  get countAbiertos(): number {
-    return this.centrosCostos().filter(c => {
-      const st = (c.PresupuestoEstado || c.Estado || '').toUpperCase();
-      return st.includes('ABIERTO') || st.includes('APROBADO');
-    }).length;
-  }
-
-  get countEnCierre(): number {
-    return this.centrosCostos().filter(c => (c.PresupuestoEstado || c.Estado || '').toUpperCase().includes('CIERRE')).length;
-  }
-
-  get countCerrados(): number {
-    return this.centrosCostos().filter(c => (c.PresupuestoEstado || c.Estado || '').toUpperCase().includes('CERRADO')).length;
-  }
-
-  get totalPortafolioActivo(): number {
-    return sumarCampo(this.centrosCostos(), (c) => c.PresupuestoMonto);
   }
 
   
@@ -134,41 +173,8 @@ export class PresupuestosComponent implements OnInit {
   nuevaCategoriaDescripcion = '';
 
   // Estado del layout Maestro-Detalle Múltiple
+  /** Centros de costos para el combo del wizard (no depende de los filtros de la lista lateral). */
   centrosCostos = signal<CentroCosto[]>([]);
-
-  // Getters en vez de computed() — se recalculan con el change detection normal de Angular
-  get centrosCostosFiltrados(): CentroCosto[] {
-    let list = this.centrosCostos();
-    const s = (this.filterSearch || '').toLowerCase().trim();
-    const emp = this.filterEmpresa;
-    const per = this.filterPeriodo;
-    const cli = this.filterCliente;
-    const est = this.filterEstado;
-    const pill = this.statusPillFilter();
-
-    if (s) {
-      list = list.filter(cc =>
-        (cc.CodCentroCto && cc.CodCentroCto.toLowerCase().includes(s)) ||
-        (cc.CentroCosto && cc.CentroCosto.toLowerCase().includes(s)) ||
-        (cc.Cliente && cc.Cliente.toLowerCase().includes(s))
-      );
-    }
-    if (emp) list = list.filter(cc => cc.CodEmpresa === emp || cc.Empresa === emp);
-    if (per) list = list.filter(cc => String(cc.IdPeriodo) === String(per));
-    if (cli) list = list.filter(cc => cc.CodCliente === cli || cc.Cliente === cli);
-    if (est) list = list.filter(cc => (cc.PresupuestoEstado || cc.Estado) === est);
-    if (pill) {
-      list = list.filter(cc => {
-        const st = (cc.PresupuestoEstado || cc.Estado || '').toUpperCase();
-        if (pill === 'Abierto') return st.includes('ABIERTO') || st.includes('APROBADO');
-        if (pill === 'En Cierre') return st.includes('CIERRE');
-        if (pill === 'Cerrado') return st.includes('CERRADO');
-        return true;
-      });
-    }
-
-    return list;
-  }
 
   selectedCC = signal<CentroCosto | null>(null);
 
@@ -1787,13 +1793,8 @@ export class PresupuestosComponent implements OnInit {
   }
 
   limpiarFiltros() {
-    this.filterSearch = '';
-    this.filterEmpresa = '';
-    this.filterPeriodo = '';
-    this.filterCliente = '';
-    this.filterEstado = '';
+    this.filtrosCC.set(FILTROS_CC_VACIOS);
     this.filterCategoria = 'Todos';
-    this.statusPillFilter.set('');
   }
 
   emptyForm(): Partial<PresupuestoPrincipal> {
@@ -1851,8 +1852,11 @@ export class PresupuestosComponent implements OnInit {
   }
 
     loadCentrosCostos() {
+    // Lista lateral y contadores (no hacen nada si ya están cargando, p. ej. en ngOnInit).
+    this.ccQuery.reload();
+    this.metricasCC.reload();
     this.loading.set(true);
-    // Cargamos todos los centros de costos (hasta 2000) para mostrar la lista completa
+    // Combo del wizard y selección actual. TODO(PRES-03): pasar al catálogo /centros-costos/select.
     this.centrosCostosService.getAll(1, 100).subscribe({
       next: (res) => {
         const list = res.data || [];
@@ -1977,25 +1981,6 @@ export class PresupuestosComponent implements OnInit {
 
   get isCCPresupuestoSobrepasado(): boolean {
     return estaSobrepasado(this.totalPresupuestosCC, this.totalComprasCC());
-  }
-
-  get totalCCs() {
-    return this.centrosCostosFiltrados.length;
-  }
-
-  get totalPortafolio() {
-    return sumarCampo(this.centrosCostosFiltrados, (cc) => cc.PresupuestoMonto);
-  }
-
-  get conteoEstados() {
-    const ccs = this.centrosCostosFiltrados;
-    const abiertas = ccs.filter(c => {
-      const e = (c.PresupuestoEstado || c.Estado || '').toUpperCase();
-      return e === 'ABIERTO' || e === 'ACTIVO';
-    }).length;
-    const enCierre = ccs.filter(c => (c.PresupuestoEstado || c.Estado || '').toUpperCase() === 'EN CIERRE').length;
-    const cerradas = ccs.filter(c => (c.PresupuestoEstado || c.Estado || '').toUpperCase() === 'CERRADO').length;
-    return { abiertas, enCierre, cerradas };
   }
 
   get statsFase() {

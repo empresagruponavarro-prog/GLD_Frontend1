@@ -81,6 +81,19 @@ export interface FiltrosCentrosCostos {
   cliente?: string;
   centroCosto?: string;
   pptoEstado?: string;
+  pptoEstadoGrupo?: PptoEstadoGrupo;
+}
+
+/** Grupos de estado de presupuesto: abierto = ABIERTO o APROBADO, cierre, cerrado. */
+export type PptoEstadoGrupo = 'abierto' | 'cierre' | 'cerrado';
+
+/** `GET /centros-costos/metricas/presupuestos`: conteos por grupo y portafolio de todos los CC. */
+export interface MetricasPresupuestosCC {
+  total: number;
+  abiertos: number;
+  enCierre: number;
+  cerrados: number;
+  totalPortafolio: number;
 }
 
 export interface ResumenFinanciero {
