@@ -1,0 +1,141 @@
+<app-modal
+  [isOpen]="isOpen()"
+  [showHeader]="false"
+  [showDefaultFooter]="false"
+  maxWidth="640px"
+  (closed)="closed.emit()"
+>
+  <div modal-body class="p-1 sm:p-2">
+    @if (incidencia(); as inc) {
+      <!-- Header de Resolución -->
+      <div class="flex items-start justify-between pb-3.5 border-b border-slate-100">
+        <div class="flex items-center gap-3">
+          <div class="w-11 h-11 rounded-xl bg-emerald-50 text-emerald-600 border border-emerald-200 flex items-center justify-center shrink-0 shadow-2xs">
+            <span class="material-symbols-outlined text-2xl">task_alt</span>
+          </div>
+          <div>
+            <div class="flex items-center gap-2">
+              <span class="px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200/60">
+                SistemaGLD · Cierre de Incidencia
+              </span>
+              <span class="font-mono text-xs font-bold text-slate-700 bg-slate-100 px-2 py-0.5 rounded border border-slate-200">
+                #{{ inc.codigo_incidencia }}
+              </span>
+            </div>
+            <h2 class="text-base font-bold text-slate-900 leading-tight mt-1">
+              Resolver y dar conformidad técnica
+            </h2>
+            <div class="flex items-center gap-2 text-xs text-slate-500 mt-0.5">
+              <span class="w-2 h-2 rounded-full bg-purple-600 shrink-0 inline-block"></span>
+              <span class="font-medium text-slate-700">CC-{{ idCentroCosto() }}: {{ nombreObra() || 'Obra' }}</span>
+            </div>
+          </div>
+        </div>
+        <button
+          type="button"
+          class="text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg p-1.5 transition-colors cursor-pointer"
+          (click)="closed.emit()"
+          aria-label="Cerrar modal"
+        >
+          <span class="material-symbols-outlined text-xl">close</span>
+        </button>
+      </div>
+
+      <!-- Resumen del Problema -->
+      <div class="p-3 my-3 rounded-xl border border-slate-200 bg-slate-50/70">
+        <div class="flex items-center justify-between mb-1">
+          <span class="text-[10px] font-bold uppercase tracking-wider text-slate-500">Incidencia Original</span>
+          <span class="text-[10px] font-bold uppercase px-2 py-0.5 rounded bg-slate-200 text-slate-700">
+            {{ inc.prioridad }} PRIORIDAD
+          </span>
+        </div>
+        <h3 class="text-xs font-bold text-slate-900 mb-1">{{ inc.titulo }}</h3>
+        <p class="text-[11px] text-slate-600 line-clamp-2">{{ inc.descripcion }}</p>
+      </div>
+
+      <!-- Formulario de Resolución -->
+      <form [formGroup]="form" (ngSubmit)="onSubmit()" id="form-resolver" class="space-y-3.5">
+        <!-- Acción Ejecutada / Solución Técnica Definitiva -->
+        <div>
+          <div class="flex items-center justify-between mb-1.5">
+            <label for="res-accion" class="text-[11px] font-bold uppercase tracking-wider text-slate-700">
+              ACCIÓN EJECUTADA / SOLUCIÓN TÉCNICA APLICADA <span class="text-rose-500">*</span>
+            </label>
+            <span class="text-[10px] text-emerald-600 font-semibold">Sustento oficial</span>
+          </div>
+          <textarea
+            id="res-accion"
+            rows="3"
+            class="w-full p-3 rounded-lg border border-slate-200 bg-white text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:border-emerald-600 focus:ring-1 focus:ring-emerald-600 transition-all shadow-2xs leading-relaxed"
+            formControlName="accion_solicitada_o_ejecutada"
+            placeholder="Describe la solución técnica aplicada en campo, acuerdos con proyectistas, modificaciones aprobadas o materiales reemplazados..."
+          ></textarea>
+        </div>
+
+        <!-- Responsable que da conformidad -->
+        <div>
+          <div class="flex items-center justify-between mb-1.5">
+            <label for="res-responsable" class="text-[11px] font-bold uppercase tracking-wider text-slate-700">
+              RESPONSABLE DE LA CONFORMIDAD / CIERRE
+            </label>
+            <span class="text-[10px] text-slate-400">Escribe o selecciona</span>
+          </div>
+          <div class="relative">
+            <input
+              id="res-responsable"
+              type="text"
+              class="h-10 w-full px-3.5 rounded-lg border border-slate-200 bg-white text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:border-emerald-600 focus:ring-1 focus:ring-emerald-600 transition-all shadow-2xs"
+              formControlName="responsable"
+              list="resolver-responsables-datalist"
+              placeholder="Ing. Residente o supervisor que valida..."
+              autocomplete="off"
+            />
+            <datalist id="resolver-responsables-datalist">
+              @for (r of responsables(); track r) {
+                <option [value]="r"></option>
+              }
+            </datalist>
+          </div>
+        </div>
+
+        @if (formError()) {
+          <div class="p-3 rounded-lg bg-rose-50 border border-rose-200 text-rose-700 text-xs flex items-center gap-2" role="alert">
+            <span class="material-symbols-outlined text-base">error</span>
+            <span>{{ formError() }}</span>
+          </div>
+        }
+
+        <!-- Nota informativa -->
+        <div class="p-2.5 rounded-lg bg-emerald-50/60 border border-emerald-200/60 text-[11px] text-emerald-800 flex items-center gap-2">
+          <span class="material-symbols-outlined text-base text-emerald-600 shrink-0">check_circle</span>
+          <span>Al confirmar, la incidencia pasará inmediatamente a estado <strong>RESUELTA</strong> con fecha y hora auditada.</span>
+        </div>
+
+        <!-- Botones de Acción -->
+        <div class="flex items-center justify-end gap-2.5 pt-3 border-t border-slate-100">
+          <button
+            type="button"
+            class="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold transition-colors cursor-pointer"
+            (click)="closed.emit()"
+            [disabled]="isSaving()"
+          >
+            Cancelar
+          </button>
+          <button
+            type="submit"
+            form="form-resolver"
+            [disabled]="isSaving()"
+            class="px-5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold shadow-xs flex items-center gap-2 transition-all cursor-pointer disabled:opacity-50"
+          >
+            @if (isSaving()) {
+              <i class="fa-solid fa-spinner fa-spin"></i> Guardando...
+            } @else {
+              <span class="material-symbols-outlined text-sm">verified</span>
+              <span>Confirmar y Resolver Incidencia</span>
+            }
+          </button>
+        </div>
+      </form>
+    }
+  </div>
+</app-modal>

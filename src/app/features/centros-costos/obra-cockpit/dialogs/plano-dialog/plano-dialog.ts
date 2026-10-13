@@ -18,6 +18,33 @@ import { ObraService } from '../../obra.service';
 
 export type ModoPlano = 'crear' | 'editar' | 'version';
 
+export const PREFIJOS_DISCIPLINA: Record<string, string> = {
+  Arquitectura: 'ARQ',
+  Estructuras: 'EST',
+  Eléctricas: 'IE',
+  Sanitarias: 'IS',
+  Mecánicas: 'MEC',
+  Comunicaciones: 'COM',
+  Otros: 'PLN',
+};
+
+export function generarSiguienteCodigoPlano(disciplina: string, planos: readonly ObraPlano[]): string {
+  const prefijo = PREFIJOS_DISCIPLINA[disciplina] || 'PLN';
+  const regex = new RegExp(`^${prefijo}-(\\d+)`, 'i');
+  let maxNum = 0;
+  for (const p of planos) {
+    const match = p.codigo_plano.match(regex);
+    if (match) {
+      const num = parseInt(match[1], 10);
+      if (!isNaN(num) && num > maxNum) {
+        maxNum = num;
+      }
+    }
+  }
+  const siguiente = maxNum + 1;
+  return `${prefijo}-${siguiente.toString().padStart(2, '0')}`;
+}
+
 /** Nombre legible de un archivo guardado: quita carpeta y prefijo uuid_. */
 function nombreArchivo(archivoUrl: string | undefined | null): string {
   if (!archivoUrl) return '';
@@ -40,6 +67,8 @@ export class PlanoDialogComponent {
   readonly nombreObra = input<string>('');
   readonly plano = input<ObraPlano | null>(null);
   readonly modo = input<ModoPlano>('crear');
+  readonly planosExistentes = input<readonly ObraPlano[]>([]);
+  readonly responsables = input<readonly string[]>([]);
 
   readonly closed = output<void>();
   readonly saved = output<void>();
@@ -89,7 +118,7 @@ export class PlanoDialogComponent {
     nombre_plano: new FormControl('', { nonNullable: true, validators: [Validators.required, Validators.maxLength(255)] }),
     disciplina: new FormControl<string>('Arquitectura', { nonNullable: true, validators: [Validators.required] }),
     version: new FormControl('', { nonNullable: true, validators: [Validators.maxLength(20)] }),
-    estado_aprobacion: new FormControl<string>('Aprobado Obra', { nonNullable: true }),
+    estado_aprobacion: new FormControl<string>('En Revisión', { nonNullable: true }),
     fecha_vobo: new FormControl('', { nonNullable: true }),
     formato_peso: new FormControl('', { nonNullable: true, validators: [Validators.maxLength(50)] }),
     archivo_url: new FormControl('', { nonNullable: true, validators: [Validators.maxLength(1000)] }),
@@ -113,12 +142,15 @@ export class PlanoDialogComponent {
       this.formError.set('');
       const p = this.plano();
       const modo = this.modo();
+      const disciplinaInicial = p?.disciplina ?? 'Arquitectura';
+      const codigoInicial = p?.codigo_plano || (modo === 'crear' ? generarSiguienteCodigoPlano(disciplinaInicial, this.planosExistentes()) : '');
+
       this.form.reset({
-        codigo_plano: p?.codigo_plano ?? '',
+        codigo_plano: codigoInicial,
         nombre_plano: p?.nombre_plano ?? '',
-        disciplina: p?.disciplina ?? 'Arquitectura',
+        disciplina: disciplinaInicial,
         version: modo === 'crear' ? 'v1.0' : modo === 'editar' ? (p?.version ?? '') : '',
-        estado_aprobacion: modo === 'version' ? 'En Revisión' : (p?.estado_aprobacion ?? 'Aprobado Obra'),
+        estado_aprobacion: modo === 'crear' || modo === 'version' ? 'En Revisión' : (p?.estado_aprobacion ?? 'En Revisión'),
         fecha_vobo: modo === 'version' ? '' : (p?.fecha_vobo ?? ''),
         formato_peso: modo === 'version' ? '' : (p?.formato_peso ?? ''),
         archivo_url: modo === 'version' ? '' : (p?.archivo_url ?? ''),
@@ -139,6 +171,22 @@ export class PlanoDialogComponent {
         else c.version.enable();
       }
     });
+  }
+
+  /** Al cambiar de disciplina, si estamos en modo crear autogeneramos el correlativo */
+  protected onDisciplinaChange(event: Event): void {
+    const select = event.target as HTMLSelectElement;
+    if (this.modo() === 'crear') {
+      const cod = generarSiguienteCodigoPlano(select.value, this.planosExistentes());
+      this.form.controls.codigo_plano.setValue(cod);
+    }
+  }
+
+  /** Permite al usuario regenerar el código automáticamente en base a la disciplina actual */
+  protected regenerarCodigo(): void {
+    const disc = this.form.controls.disciplina.value || 'Arquitectura';
+    const cod = generarSiguienteCodigoPlano(disc, this.planosExistentes());
+    this.form.controls.codigo_plano.setValue(cod);
   }
 
   /** Quita el archivo actual del formulario y descarta si había subida pendiente. */

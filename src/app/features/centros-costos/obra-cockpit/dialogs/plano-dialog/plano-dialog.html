@@ -39,7 +39,7 @@
             <label for="pla-codigo" class="text-[11px] font-bold uppercase tracking-wider text-slate-700">
               CÓDIGO <span class="text-rose-500">*</span>
             </label>
-            <span class="text-[11px] text-slate-400">Ej: ARQ-01, ELEC-02</span>
+            <span class="text-[11px] text-emerald-600 font-medium">Autogenerado</span>
           </div>
           <div
             class="h-10 flex items-center px-3 rounded-lg border border-slate-200 bg-white focus-within:border-emerald-600 focus-within:ring-1 focus-within:ring-emerald-600 transition-all shadow-2xs">
@@ -47,6 +47,12 @@
             <input id="pla-codigo" type="text" formControlName="codigo_plano"
               class="w-full p-0 text-xs font-bold text-slate-800 uppercase border-0 focus:ring-0 bg-transparent focus:outline-none"
               placeholder="ARQ-01" />
+            @if (modo() === 'crear') {
+              <button type="button" (click)="regenerarCodigo()" title="Regenerar código autoincrementable"
+                class="text-slate-400 hover:text-emerald-600 p-1 rounded transition-colors cursor-pointer ml-1">
+                <span class="material-symbols-outlined text-base">refresh</span>
+              </button>
+            }
           </div>
         </div>
 
@@ -72,7 +78,7 @@
             class="block text-[11px] font-bold uppercase tracking-wider text-slate-700 mb-1.5">
             DISCIPLINA <span class="text-rose-500">*</span>
           </label>
-          <select id="pla-disciplina" formControlName="disciplina"
+          <select id="pla-disciplina" formControlName="disciplina" (change)="onDisciplinaChange($event)"
             class="h-10 w-full px-3 py-2 text-xs text-slate-800 rounded-lg border border-slate-200 bg-white focus:outline-none focus:border-emerald-600 focus:ring-1 focus:ring-emerald-600 shadow-2xs transition-all cursor-pointer">
             @for (opt of disciplinasOpciones; track opt.value) {
             <option [value]="opt.value">{{ opt.label }}</option>
@@ -104,8 +110,8 @@
           </label>
           <select id="pla-estado" formControlName="estado_aprobacion"
             class="h-10 w-full px-3 py-2 text-xs font-semibold text-slate-800 rounded-lg border border-slate-200 bg-white focus:outline-none focus:border-emerald-600 focus:ring-1 focus:ring-emerald-600 shadow-2xs transition-all cursor-pointer">
-            <option value="Aprobado Obra">🟢 Aprobado Obra</option>
             <option value="En Revisión">🟡 En Revisión</option>
+            <option value="Aprobado Obra">🟢 Aprobado Obra</option>
             <option value="Observado">🔴 Observado</option>
             <option value="Para Construcción">🔵 Para Construcción</option>
           </select>
@@ -136,14 +142,24 @@
             placeholder="DWG + PDF (14.2 MB)" />
         </div>
 
-        <!-- Emitido por / Proyectista (col-4) -->
+        <!-- Emitido por / Trabajador o Responsable (col-4) -->
         <div class="md:col-span-4">
-          <label for="pla-emitido" class="block text-[11px] font-bold uppercase tracking-wider text-slate-700 mb-1.5">
-            EMITIDO POR / PROYECTISTA
-          </label>
-          <input id="pla-emitido" type="text" formControlName="emitido_por"
-            class="h-10 w-full px-3 py-2 text-xs text-slate-800 rounded-lg border border-slate-200 bg-white focus:outline-none focus:border-emerald-600 focus:ring-1 focus:ring-emerald-600 shadow-2xs transition-all"
-            placeholder="Arq. Daniel Zapata " />
+          <div class="flex items-center justify-between mb-1.5">
+            <label for="pla-emitido" class="text-[11px] font-bold uppercase tracking-wider text-slate-700">
+              EMITIDO POR / RESPONSABLE
+            </label>
+            <span class="text-[10px] text-slate-400">Escribe o selecciona</span>
+          </div>
+          <div class="relative">
+            <input id="pla-emitido" type="text" list="responsables-plano-list" formControlName="emitido_por"
+              class="h-10 w-full px-3 py-2 text-xs text-slate-800 rounded-lg border border-slate-200 bg-white focus:outline-none focus:border-emerald-600 focus:ring-1 focus:ring-emerald-600 shadow-2xs transition-all"
+              placeholder="Escribe o selecciona trabajador..." autocomplete="off" />
+            <datalist id="responsables-plano-list">
+              @for (resp of responsables(); track resp) {
+                <option [value]="resp"></option>
+              }
+            </datalist>
+          </div>
         </div>
       </div>
 

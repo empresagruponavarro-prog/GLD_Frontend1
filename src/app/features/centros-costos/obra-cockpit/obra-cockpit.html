@@ -266,7 +266,7 @@
     <app-residente-dialog [isOpen]="true" [idCentroCosto]="idCentroCosto()" [residente]="selectedResidente()" (closed)="showResidenteDialog.set(false)" (saved)="onDialogSaved()"></app-residente-dialog>
   }
   @if (showPlanoDialog()) {
-    <app-plano-dialog [isOpen]="true" [idCentroCosto]="idCentroCosto()" [nombreObra]="cockpit()?.nombre_obra || ''" [plano]="selectedPlano()" [modo]="planoDialogModo()" (closed)="showPlanoDialog.set(false)" (saved)="onDialogSaved()"></app-plano-dialog>
+    <app-plano-dialog [isOpen]="true" [idCentroCosto]="idCentroCosto()" [nombreObra]="cockpit()?.nombre_obra || ''" [plano]="selectedPlano()" [modo]="planoDialogModo()" [planosExistentes]="planos()" [responsables]="responsablesPlano()" (closed)="showPlanoDialog.set(false)" (saved)="onDialogSaved()"></app-plano-dialog>
   }
   @if (showPlanoVisorDialog()) {
     <app-plano-visor-dialog [isOpen]="true" [idCentroCosto]="idCentroCosto()" [plano]="selectedPlanoParaVer()" (closed)="showPlanoVisorDialog.set(false)" (nuevaVersion)="onNuevaVersionPlano($event)"></app-plano-visor-dialog>
@@ -282,6 +282,12 @@
   }
   @if (showIncidenciaDialog()) {
     <app-incidencia-dialog [isOpen]="true" [idCentroCosto]="idCentroCosto()" [nombreObra]="cockpit()?.nombre_obra || ''" [incidencia]="selectedIncidencia()" [responsables]="responsablesIncidencia()" (closed)="showIncidenciaDialog.set(false)" (saved)="onDialogSaved()"></app-incidencia-dialog>
+  }
+  @if (showIncidenciaDetalleDialog()) {
+    <app-incidencia-detalle-dialog [isOpen]="true" [idCentroCosto]="idCentroCosto()" [nombreObra]="cockpit()?.nombre_obra || ''" [incidencia]="incidenciaParaDetalle()" (closed)="showIncidenciaDetalleDialog.set(false)" (editar)="onEditarDesdeDetalle($event)" (resolver)="onResolverDesdeDetalle($event)"></app-incidencia-detalle-dialog>
+  }
+  @if (showIncidenciaResolverDialog()) {
+    <app-incidencia-resolver-dialog [isOpen]="true" [idCentroCosto]="idCentroCosto()" [nombreObra]="cockpit()?.nombre_obra || ''" [incidencia]="incidenciaParaResolver()" [responsables]="responsablesIncidencia()" (closed)="showIncidenciaResolverDialog.set(false)" (saved)="onDialogSaved()"></app-incidencia-resolver-dialog>
   }
   @if (showHistorialDialog()) {
     <app-historial-planos-dialog [isOpen]="true" [idCentroCosto]="idCentroCosto()" [plano]="selectedPlano()" (closed)="showHistorialDialog.set(false)" (verPlano)="onVerPlano($event)" (nuevaVersion)="onNuevaVersionPlano($event)"></app-historial-planos-dialog>

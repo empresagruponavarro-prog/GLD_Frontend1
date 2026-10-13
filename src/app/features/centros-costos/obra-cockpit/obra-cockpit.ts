@@ -27,6 +27,8 @@ import { DocumentoDialogComponent } from './dialogs/documento-dialog/documento-d
 import { DocumentoVistaDialogComponent } from './dialogs/documento-vista-dialog/documento-vista-dialog';
 import { DocumentoEliminarDialogComponent } from './dialogs/documento-eliminar-dialog/documento-eliminar-dialog';
 import { IncidenciaDialogComponent } from './dialogs/incidencia-dialog/incidencia-dialog';
+import { IncidenciaDetalleDialogComponent } from './dialogs/incidencia-detalle-dialog/incidencia-detalle-dialog';
+import { IncidenciaResolverDialogComponent } from './dialogs/incidencia-resolver-dialog/incidencia-resolver-dialog';
 import { GeneralesDialogComponent } from './dialogs/generales-dialog/generales-dialog';
 
 @Component({
@@ -36,7 +38,7 @@ import { GeneralesDialogComponent } from './dialogs/generales-dialog/generales-d
     CommonModule, RouterLink,
     CronogramaTabComponent, DirectorioTabComponent, PlanosTabComponent, DocumentosTabComponent, IncidenciasTabComponent,
     SemanaDialogComponent, SemanaAvanceDialogComponent, GeneradorSemanasDialogComponent, ResidenteDialogComponent, PlanoDialogComponent, PlanoVisorDialogComponent, HistorialPlanosDialogComponent,
-    DocumentoDialogComponent, DocumentoVistaDialogComponent, DocumentoEliminarDialogComponent, IncidenciaDialogComponent, GeneralesDialogComponent
+    DocumentoDialogComponent, DocumentoVistaDialogComponent, DocumentoEliminarDialogComponent, IncidenciaDialogComponent, IncidenciaDetalleDialogComponent, IncidenciaResolverDialogComponent, GeneralesDialogComponent
   ],
   templateUrl: './obra-cockpit.html',
 })
@@ -61,6 +63,8 @@ export class ObraCockpitComponent implements OnInit {
   showHistorialDialog = signal(false);
   showDocumentoDialog = signal(false);
   showIncidenciaDialog = signal(false);
+  showIncidenciaDetalleDialog = signal(false);
+  showIncidenciaResolverDialog = signal(false);
   showGeneralesDialog = signal(false);
 
   // Selected items for editing
@@ -79,6 +83,8 @@ export class ObraCockpitComponent implements OnInit {
   eliminandoDocumento = signal(false);
   errorEliminarDocumento = signal('');
   selectedIncidencia = signal<ObraIncidencia | null>(null);
+  incidenciaParaDetalle = signal<ObraIncidencia | null>(null);
+  incidenciaParaResolver = signal<ObraIncidencia | null>(null);
 
   // Computed data for tabs
   semanas = computed(() => this.cockpit()?.cronograma || []);
@@ -89,6 +95,12 @@ export class ObraCockpitComponent implements OnInit {
   /** Nombres de residentes: sugerencias para el responsable de una incidencia (también se puede escribir otro). */
   responsablesIncidencia = computed(() => this.residentes().map((r) => r.nombre_completo));
   planos = computed(() => this.cockpit()?.planos || []);
+  /** Nombres de trabajadores y responsables sugeridos para planos (residentes y proyectistas previos). */
+  responsablesPlano = computed(() => {
+    const deResidentes = this.residentes().map((r) => r.nombre_completo);
+    const dePlanos = this.planos().map((p) => p.emitido_por).filter((e): e is string => !!e && e.trim().length > 0);
+    return Array.from(new Set([...deResidentes, ...dePlanos])).sort();
+  });
   documentos = computed(() => this.cockpit()?.documentos || []);
   incidencias = computed(() => this.cockpit()?.incidencias || []);
 
@@ -138,6 +150,8 @@ export class ObraCockpitComponent implements OnInit {
     this.showPlanoDialog.set(false);
     this.showDocumentoDialog.set(false);
     this.showIncidenciaDialog.set(false);
+    this.showIncidenciaDetalleDialog.set(false);
+    this.showIncidenciaResolverDialog.set(false);
     this.showGeneralesDialog.set(false);
     this.showHistorialDialog.set(false);
     
@@ -326,11 +340,21 @@ export class ObraCockpitComponent implements OnInit {
     this.showIncidenciaDialog.set(true);
   }
   onVerBitacora(inc: ObraIncidencia): void {
-    this.selectedIncidencia.set(inc);
-    this.showIncidenciaDialog.set(true); // maybe different dialog later
+    this.incidenciaParaDetalle.set(inc);
+    this.showIncidenciaDetalleDialog.set(true);
   }
   onResolverIncidencia(inc: ObraIncidencia): void {
+    this.incidenciaParaResolver.set(inc);
+    this.showIncidenciaResolverDialog.set(true);
+  }
+  onEditarDesdeDetalle(inc: ObraIncidencia): void {
+    this.showIncidenciaDetalleDialog.set(false);
     this.selectedIncidencia.set(inc);
     this.showIncidenciaDialog.set(true);
+  }
+  onResolverDesdeDetalle(inc: ObraIncidencia): void {
+    this.showIncidenciaDetalleDialog.set(false);
+    this.incidenciaParaResolver.set(inc);
+    this.showIncidenciaResolverDialog.set(true);
   }
 }

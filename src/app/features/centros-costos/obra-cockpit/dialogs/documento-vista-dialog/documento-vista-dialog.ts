@@ -2,13 +2,14 @@ import { ChangeDetectionStrategy, Component, DestroyRef, computed, effect, injec
 import { DatePipe } from '@angular/common';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { Subscription } from 'rxjs';
+import { renderAsync } from 'docx-preview';
 import { ModalComponent } from '@shared/components/modal/modal';
 import { estadoDocumentoClass, iconoArchivo, iconoCategoriaDocumento, nombreArchivoDocumento } from '../../obra.calc';
 import { ObraDocumento } from '../../obra.interface';
 import { ObraService } from '../../obra.service';
 
 /** Qué se muestra en el área de vista previa. */
-export type TipoVista = 'cargando' | 'pdf' | 'imagen' | 'externo' | 'sin-vista' | 'sin-archivo' | 'error';
+export type TipoVista = 'cargando' | 'pdf' | 'imagen' | 'docx' | 'externo' | 'sin-vista' | 'sin-archivo' | 'error';
 
 const REGEX_HTTP = /^https?:\/\//i;
 const TIPO_IMAGEN: Record<string, string> = { jpg: 'image/jpeg', jpeg: 'image/jpeg', png: 'image/png' };
@@ -125,7 +126,8 @@ export class DocumentoVistaDialogComponent {
     const ext = this.archivoInfo().extension.toLowerCase();
     const esPdf = ext === 'pdf';
     const tipoImagen = TIPO_IMAGEN[ext];
-    if (!esPdf && !tipoImagen) {
+    const esDocx = ext === 'docx';
+    if (!esPdf && !tipoImagen && !esDocx) {
       this.tipo.set('sin-vista');
       return;
     }
@@ -134,18 +136,42 @@ export class DocumentoVistaDialogComponent {
     this.#peticion = this.#service.descargarArchivoDocumento(this.idCentroCosto(), d.id, true).subscribe({
       next: (recibido) => {
         // El tipo se fija aquí según la extensión: no se depende de lo que informe el servidor.
-        const blob = new Blob([recibido], { type: esPdf ? 'application/pdf' : tipoImagen });
+        const mimeType = esPdf
+          ? 'application/pdf'
+          : esDocx
+          ? 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+          : tipoImagen;
+        const blob = new Blob([recibido], { type: mimeType });
         this.#blob = blob;
         this.#blobUrl = URL.createObjectURL(blob);
         if (esPdf) {
           this.urlPdf.set(this.#sanitizer.bypassSecurityTrustResourceUrl(this.#blobUrl));
           this.tipo.set('pdf');
-        } else {
+        } else if (tipoImagen) {
           this.urlImagen.set(this.#blobUrl);
           this.tipo.set('imagen');
+        } else if (esDocx) {
+          this.tipo.set('docx');
+          setTimeout(() => this.#renderizarDocx(blob), 50);
         }
       },
       error: () => this.tipo.set('error'),
+    });
+  }
+
+  #renderizarDocx(blob: Blob): void {
+    const contenedor = document.getElementById('docx-preview-container');
+    if (!contenedor) return;
+    contenedor.innerHTML = '';
+    renderAsync(blob, contenedor, undefined, {
+      inWrapper: true,
+      ignoreWidth: false,
+      ignoreHeight: false,
+      breakPages: true,
+      useBase64URL: true,
+    }).catch((err) => {
+      console.error('Error renderizando archivo DOCX con docx-preview', err);
+      this.tipo.set('error');
     });
   }
 

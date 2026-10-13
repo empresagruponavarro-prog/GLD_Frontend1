@@ -1,0 +1,205 @@
+<app-modal
+  [isOpen]="isOpen()"
+  [showHeader]="false"
+  [showDefaultFooter]="false"
+  maxWidth="780px"
+  (closed)="closed.emit()"
+>
+  <div modal-body class="p-1 sm:p-2">
+    @if (incidencia(); as inc) {
+      <!-- Header de la Ficha Técnica -->
+      <div class="flex items-start justify-between pb-3.5 border-b border-slate-100">
+        <div class="flex items-center gap-3">
+          <div
+            class="w-11 h-11 rounded-xl flex items-center justify-center shrink-0 shadow-2xs border"
+            [ngClass]="esResuelta() ? 'bg-emerald-50 text-emerald-600 border-emerald-200' : 'bg-amber-50 text-amber-600 border-amber-200'"
+          >
+            <span class="material-symbols-outlined text-2xl">
+              {{ esResuelta() ? 'task_alt' : 'warning' }}
+            </span>
+          </div>
+          <div>
+            <div class="flex items-center gap-2">
+              <span class="px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200/60">
+                SistemaGLD · Ficha RFI
+              </span>
+              <span class="font-mono text-xs font-bold text-slate-700 bg-slate-100 px-2 py-0.5 rounded border border-slate-200">
+                #{{ inc.codigo_incidencia }}
+              </span>
+              <span
+                class="px-2.5 py-0.5 rounded-full text-[10px] font-bold tracking-wide uppercase border"
+                [ngClass]="esResuelta() ? 'bg-emerald-100 text-emerald-800 border-emerald-300' : 'bg-amber-100 text-amber-800 border-amber-300'"
+              >
+                {{ inc.estado || 'PENDIENTE' }}
+              </span>
+            </div>
+            <h2 class="text-base font-bold text-slate-900 leading-tight mt-1.5">
+              {{ inc.titulo }}
+            </h2>
+            <div class="flex items-center gap-2 text-xs text-slate-500 mt-0.5">
+              <span class="w-2 h-2 rounded-full bg-purple-600 shrink-0 inline-block"></span>
+              <span class="font-medium text-slate-700">CC-{{ idCentroCosto() }}: {{ nombreObra() || 'Obra' }}</span>
+              <span class="text-slate-300">•</span>
+              <span>Bitácora Oficial de Cambios en Obra</span>
+            </div>
+          </div>
+        </div>
+        <button
+          type="button"
+          class="text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg p-1.5 transition-colors cursor-pointer"
+          (click)="closed.emit()"
+          aria-label="Cerrar modal"
+        >
+          <span class="material-symbols-outlined text-xl">close</span>
+        </button>
+      </div>
+
+      <!-- Contenido Principal de la Ficha -->
+      <div class="space-y-4 pt-4">
+        <!-- Badges de Severidad y Plazos -->
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <!-- Prioridad -->
+          <div class="p-2.5 rounded-xl border border-slate-200 bg-slate-50/60">
+            <span class="text-[10px] font-bold uppercase tracking-wider text-slate-500 block mb-1">
+              Nivel de Severidad
+            </span>
+            <div class="flex items-center gap-1.5">
+              <span class="px-2 py-0.5 rounded text-xs font-bold uppercase border" [ngClass]="prioridadColor()">
+                {{ inc.prioridad || 'MEDIA' }} PRIORIDAD
+              </span>
+            </div>
+          </div>
+
+          <!-- Plazo Solicitado -->
+          <div class="p-2.5 rounded-xl border border-slate-200 bg-slate-50/60">
+            <span class="text-[10px] font-bold uppercase tracking-wider text-slate-500 block mb-1">
+              Plazo de Resolución
+            </span>
+            <div class="flex items-center gap-1.5 text-xs font-semibold text-slate-800">
+              <span class="material-symbols-outlined text-slate-400 text-sm">schedule</span>
+              <span>{{ inc.plazo_resolucion || 'No especificado' }}</span>
+            </div>
+          </div>
+
+          <!-- Fecha de Reporte -->
+          <div class="p-2.5 rounded-xl border border-slate-200 bg-slate-50/60">
+            <span class="text-[10px] font-bold uppercase tracking-wider text-slate-500 block mb-1">
+              Fecha de Registro
+            </span>
+            <div class="flex items-center gap-1.5 text-xs font-semibold text-slate-800">
+              <span class="material-symbols-outlined text-slate-400 text-sm">calendar_today</span>
+              <span>{{ inc.fecha_reporte | date:'dd/MM/yyyy · HH:mm' }}</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Responsable y Proyectistas -->
+        <div class="p-3 rounded-xl border border-slate-200 bg-white shadow-2xs">
+          <span class="text-[10px] font-bold uppercase tracking-wider text-slate-500 block mb-2">
+            Responsable Asignado / Encargado de Solución
+          </span>
+          <div class="flex items-center gap-3">
+            <div class="w-8 h-8 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center font-bold text-xs shrink-0">
+              {{ (inc.responsable || 'A')[0] | uppercase }}
+            </div>
+            <div>
+              <div class="text-xs font-bold text-slate-900">
+                {{ inc.responsable || 'Sin responsable asignado' }}
+              </div>
+              <div class="text-[11px] text-slate-500">
+                Responsable técnico registrado para seguimiento en campo
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Descripción Técnica del Problema -->
+        <div class="p-3.5 rounded-xl border border-slate-200 bg-white shadow-2xs">
+          <div class="flex items-center justify-between mb-1.5">
+            <span class="text-[10px] font-bold uppercase tracking-wider text-slate-700">
+              Descripción Técnica Detallada (Ejes, Cotas y Planos)
+            </span>
+            <span class="text-[10px] text-slate-400">Libro de incidencias</span>
+          </div>
+          <p class="text-xs text-slate-800 whitespace-pre-line leading-relaxed bg-slate-50 p-3 rounded-lg border border-slate-100">
+            {{ inc.descripcion || 'Sin descripción detallada.' }}
+          </p>
+        </div>
+
+        <!-- Acción solicitada / Propuesta de mitigación -->
+        @if (inc.accion_solicitada_o_ejecutada) {
+          <div
+            class="p-3.5 rounded-xl border shadow-2xs"
+            [ngClass]="esResuelta() ? 'bg-emerald-50/50 border-emerald-200' : 'bg-amber-50/40 border-amber-200'"
+          >
+            <div class="flex items-center justify-between mb-1.5">
+              <span
+                class="text-[10px] font-bold uppercase tracking-wider"
+                [ngClass]="esResuelta() ? 'text-emerald-800' : 'text-amber-800'"
+              >
+                {{ esResuelta() ? 'Solución Técnica Ejecutada / Conformidad' : 'Acción Solicitada / Propuesta en Obra' }}
+              </span>
+              @if (esResuelta() && inc.fecha_resolucion) {
+                <span class="text-[10px] text-emerald-700 font-medium">
+                  Resuelto el {{ inc.fecha_resolucion | date:'dd/MM/yyyy HH:mm' }}
+                </span>
+              }
+            </div>
+            <p class="text-xs whitespace-pre-line leading-relaxed" [ngClass]="esResuelta() ? 'text-emerald-900' : 'text-slate-800'">
+              {{ inc.accion_solicitada_o_ejecutada }}
+            </p>
+          </div>
+        }
+
+        <!-- Trazabilidad del Sistema -->
+        <div class="p-3 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-600 flex items-center justify-between">
+          <div class="flex items-center gap-2">
+            <span class="material-symbols-outlined text-emerald-600 text-base">verified</span>
+            <span>Auditoría de Incidencia y Registro RFI certificado por SistemaGLD</span>
+          </div>
+          <button
+            type="button"
+            (click)="onImprimir()"
+            class="inline-flex items-center gap-1 text-[11px] font-semibold text-slate-700 hover:text-emerald-700 transition-colors cursor-pointer"
+          >
+            <span class="material-symbols-outlined text-sm">print</span>
+            <span>Imprimir Ficha</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Footer con Acciones -->
+      <div class="flex items-center justify-between pt-4 mt-4 border-t border-slate-100">
+        <button
+          type="button"
+          (click)="onEditar()"
+          class="px-4 py-2 rounded-xl border border-slate-200 text-slate-700 hover:bg-slate-50 text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
+        >
+          <span class="material-symbols-outlined text-sm">edit</span>
+          <span>Editar Datos</span>
+        </button>
+
+        <div class="flex items-center gap-2.5">
+          <button
+            type="button"
+            class="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold transition-colors cursor-pointer"
+            (click)="closed.emit()"
+          >
+            Cerrar
+          </button>
+
+          @if (!esResuelta()) {
+            <button
+              type="button"
+              (click)="onResolver()"
+              class="px-5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold shadow-xs flex items-center gap-1.5 transition-all cursor-pointer"
+            >
+              <span class="material-symbols-outlined text-sm">task_alt</span>
+              <span>Resolver Incidencia</span>
+            </button>
+          }
+        </div>
+      </div>
+    }
+  </div>
+</app-modal>

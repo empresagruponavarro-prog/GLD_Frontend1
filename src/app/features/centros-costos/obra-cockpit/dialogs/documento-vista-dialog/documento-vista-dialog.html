@@ -69,6 +69,11 @@
           @case ('imagen') {
             <img class="max-w-full max-h-full object-contain" [src]="urlImagen()" [alt]="'Vista previa de ' + doc.titulo" />
           }
+          @case ('docx') {
+            <div class="w-full h-full overflow-y-auto bg-slate-200/90 p-3 sm:p-5 scrollbar-thin">
+              <div id="docx-preview-container" class="max-w-[850px] mx-auto bg-white shadow-md rounded-xs min-h-full"></div>
+            </div>
+          }
           @case ('externo') {
             <div class="flex flex-col items-center gap-3 px-6 text-center max-w-md">
               <div class="w-14 h-14 rounded-2xl bg-white border border-slate-200 text-primary flex items-center justify-center" aria-hidden="true">
@@ -125,7 +130,7 @@
       }
     </span>
     <div class="flex items-center gap-2.5 ml-auto">
-      @if (tipo() === 'pdf' || tipo() === 'imagen' || tipo() === 'externo') {
+      @if (tipo() === 'pdf' || tipo() === 'imagen' || tipo() === 'externo' || tipo() === 'docx') {
         <button type="button" class="inline-flex items-center gap-1.5 px-4 h-10 rounded-xl border border-slate-200 bg-white text-sm font-semibold text-on-surface hover:bg-slate-50 cursor-pointer" (click)="abrirEnPestana()">
           <span class="material-symbols-outlined text-[18px]" aria-hidden="true">open_in_new</span> Abrir en pestaña nueva
         </button>
