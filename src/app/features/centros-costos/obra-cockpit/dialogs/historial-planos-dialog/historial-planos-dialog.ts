@@ -23,6 +23,8 @@ export class HistorialPlanosDialogComponent {
   readonly closed = output<void>();
   /** Solicita emitir una nueva versión del plano vigente. */
   readonly nuevaVersion = output<ObraPlano>();
+  /** Solicita abrir el visor seguro para una versión del plano. */
+  readonly verPlano = output<ObraPlano>();
 
   protected readonly estadoPlanoClass = estadoPlanoClass;
   protected readonly versiones = signal<ObraPlano[]>([]);
@@ -50,5 +52,10 @@ export class HistorialPlanosDialogComponent {
 
   protected vigente(): ObraPlano | undefined {
     return this.versiones().find((v) => v.es_vigente);
+  }
+
+  /** URL del archivo de una versión (se sirve desde el backend; los enlaces externos redirigen). */
+  protected archivoUrl(v: ObraPlano): string {
+    return this.#service.archivoPlanoUrl(this.idCentroCosto(), v.id, true);
   }
 }

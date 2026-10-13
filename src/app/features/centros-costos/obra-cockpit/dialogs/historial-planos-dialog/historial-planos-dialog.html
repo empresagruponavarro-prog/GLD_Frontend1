@@ -34,9 +34,9 @@
                 }
               </div>
               @if (v.archivo_url) {
-                <a [href]="v.archivo_url" target="_blank" rel="noopener" class="inline-flex items-center gap-1 mt-1 text-[11px] font-semibold text-primary hover:underline">
-                  <span class="material-symbols-outlined text-sm">open_in_new</span> Abrir archivo
-                </a>
+                <button type="button" (click)="verPlano.emit(v)" class="inline-flex items-center gap-1 mt-1 text-[11px] font-semibold text-primary hover:underline cursor-pointer bg-transparent border-0 p-0">
+                  <span class="material-symbols-outlined text-sm">visibility</span> Ver plano
+                </button>
               }
             </div>
           </li>

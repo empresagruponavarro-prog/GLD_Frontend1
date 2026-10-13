@@ -1,74 +1,311 @@
-<app-modal [isOpen]="isOpen()" [title]="titulo()" maxWidth="720px" [showDefaultFooter]="false" (closed)="closed.emit()">
-  <form modal-body [formGroup]="form" (ngSubmit)="onSubmit()" id="form-plano" class="grid grid-cols-1 md:grid-cols-6 gap-3">
-    <div class="form-group md:col-span-2">
-      <label for="pla-codigo">Código *</label>
-      <input id="pla-codigo" type="text" class="form-control uppercase" formControlName="codigo_plano" placeholder="ARQ-01" />
-    </div>
-    <div class="form-group md:col-span-4">
-      <label for="pla-nombre">Nombre del plano *</label>
-      <input id="pla-nombre" type="text" class="form-control" formControlName="nombre_plano" />
-    </div>
-    <div class="form-group md:col-span-2">
-      <label for="pla-disciplina">Disciplina *</label>
-      <select id="pla-disciplina" class="form-control" formControlName="disciplina">
-        @for (d of disciplinas; track d) {
-          <option [value]="d">{{ d }}</option>
-        }
-      </select>
-    </div>
-    <div class="form-group md:col-span-2">
-      <label for="pla-version">Versión</label>
-      <input id="pla-version" type="text" class="form-control" formControlName="version"
-        [placeholder]="modo() === 'version' ? 'Auto: siguiente versión' : 'v1.0'" />
-    </div>
-    <div class="form-group md:col-span-2">
-      <label for="pla-estado">Estado de aprobación</label>
-      <select id="pla-estado" class="form-control" formControlName="estado_aprobacion">
-        @for (e of estadosAprobacion; track e) {
-          <option [value]="e">{{ e }}</option>
-        }
-      </select>
-    </div>
-    <div class="form-group md:col-span-2">
-      <label for="pla-vobo">Fecha visto bueno</label>
-      <input id="pla-vobo" type="date" class="form-control" formControlName="fecha_vobo" />
-    </div>
-    <div class="form-group md:col-span-2">
-      <label for="pla-formato">Formato / peso</label>
-      <input id="pla-formato" type="text" class="form-control" formControlName="formato_peso" placeholder="DWG + PDF (14 MB)" />
-    </div>
-    <div class="form-group md:col-span-2">
-      <label for="pla-emitido">Emitido por</label>
-      <input id="pla-emitido" type="text" class="form-control" formControlName="emitido_por" />
-    </div>
-    <div class="form-group md:col-span-6">
-      <label for="pla-url">Enlace al archivo</label>
-      <input id="pla-url" type="url" class="form-control" formControlName="archivo_url" placeholder="https://... (Drive, Dropbox, servidor)" />
-      <small class="text-[11px] text-on-surface-variant">La subida directa de archivos se habilitará en la Fase D. Por ahora puedes pegar un enlace.</small>
-    </div>
-    @if (modo() === 'version') {
-      <p class="md:col-span-6 text-[11px] text-on-surface-variant">
-        Al guardar, la versión <strong>{{ plano()?.version }}</strong> pasará al historial y la nueva quedará como vigente.
-      </p>
-    }
-    @if (formError()) {
-      <p class="md:col-span-6 badge badge-danger" role="alert">{{ formError() }}</p>
-    }
-  </form>
-
-  <div modal-footer class="modal-footer">
-    @if (modo() === 'editar') {
-      <button type="button" id="btn-plano-eliminar" class="btn btn-danger mr-auto" (click)="onDelete()" [disabled]="isSaving()">
-        <i class="fa-solid fa-trash"></i> Eliminar
+<app-modal [isOpen]="isOpen()" [showHeader]="false" [showDefaultFooter]="false" maxWidth="820px"
+  (closed)="closed.emit()">
+  <div modal-body class="p-1 sm:p-2">
+    <!-- Header customizado según diseño -->
+    <div class="flex items-start justify-between pb-3.5 border-b border-slate-100">
+      <div class="flex items-center gap-3">
+        <div
+          class="w-11 h-11 rounded-xl bg-emerald-50 text-emerald-600 border border-emerald-100 flex items-center justify-center shrink-0 shadow-xs">
+          <span class="material-symbols-outlined text-2xl">apartment</span>
+        </div>
+        <div>
+          <div class="flex items-center gap-2">
+            <h2 class="text-base font-bold text-slate-900 leading-tight">{{ titulo() }}</h2>
+            <span
+              class="px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200/60">SistemaGLD</span>
+          </div>
+          <div class="flex items-center gap-2 text-xs text-slate-500 mt-1">
+            <span class="w-2 h-2 rounded-full bg-purple-600 shrink-0 inline-block"></span>
+            <span class="font-medium text-slate-700">CC-{{ idCentroCosto() }}: {{ nombreObra() || 'Obra' }}</span>
+            <span class="text-slate-300">•</span>
+            <span>Repositorio Técnico de Planos y Versiones</span>
+          </div>
+        </div>
+      </div>
+      <button type="button"
+        class="text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg p-1.5 transition-colors cursor-pointer"
+        (click)="closed.emit()" aria-label="Cerrar modal">
+        <span class="material-symbols-outlined text-xl">close</span>
       </button>
-    }
-    <button type="button" class="btn btn-secondary" (click)="closed.emit()" [disabled]="isSaving()">Cancelar</button>
-    <button type="submit" form="form-plano" id="btn-plano-guardar" class="btn btn-primary" [disabled]="isSaving()">
-      @if (isSaving()) {
-        <i class="fa-solid fa-spinner fa-spin"></i> Guardando...
-      } @else {
-        <i class="fa-solid fa-floppy-disk"></i> {{ modo() === 'version' ? 'Emitir versión' : 'Guardar' }}
+    </div>
+
+    <!-- Formulario -->
+    <form [formGroup]="form" (ngSubmit)="onSubmit()" id="form-plano" class="space-y-4 pt-3.5">
+      <!-- Fila 1: Código + Nombre del Plano -->
+      <div class="grid grid-cols-1 md:grid-cols-12 gap-3.5">
+        <!-- Código (col-4) -->
+        <div class="md:col-span-4">
+          <div class="flex items-center justify-between mb-1.5">
+            <label for="pla-codigo" class="text-[11px] font-bold uppercase tracking-wider text-slate-700">
+              CÓDIGO <span class="text-rose-500">*</span>
+            </label>
+            <span class="text-[11px] text-slate-400">Ej: ARQ-01, ELEC-02</span>
+          </div>
+          <div
+            class="h-10 flex items-center px-3 rounded-lg border border-slate-200 bg-white focus-within:border-emerald-600 focus-within:ring-1 focus-within:ring-emerald-600 transition-all shadow-2xs">
+            <span class="text-xs font-bold text-slate-400 select-none mr-2 whitespace-nowrap">TAG:</span>
+            <input id="pla-codigo" type="text" formControlName="codigo_plano"
+              class="w-full p-0 text-xs font-bold text-slate-800 uppercase border-0 focus:ring-0 bg-transparent focus:outline-none"
+              placeholder="ARQ-01" />
+          </div>
+        </div>
+
+        <!-- Nombre del plano (col-8) -->
+        <div class="md:col-span-8">
+          <div class="flex items-center justify-between mb-1.5">
+            <label for="pla-nombre" class="text-[11px] font-bold uppercase tracking-wider text-slate-700">
+              NOMBRE DEL PLANO <span class="text-rose-500">*</span>
+            </label>
+            <span class="text-[11px] text-slate-400">Descripción técnica oficial</span>
+          </div>
+          <input id="pla-nombre" type="text" formControlName="nombre_plano"
+            class="h-10 w-full px-3 py-2 text-xs text-slate-800 rounded-lg border border-slate-200 bg-white focus:outline-none focus:border-emerald-600 focus:ring-1 focus:ring-emerald-600 shadow-2xs transition-all"
+            placeholder="Planta Arquitectónica General y Distribución Retail" />
+        </div>
+      </div>
+
+      <!-- Fila 2: Disciplina + Versión + Estado de Aprobación -->
+      <div class="grid grid-cols-1 md:grid-cols-12 gap-3.5">
+        <!-- Disciplina (col-5) -->
+        <div class="md:col-span-5">
+          <label for="pla-disciplina"
+            class="block text-[11px] font-bold uppercase tracking-wider text-slate-700 mb-1.5">
+            DISCIPLINA <span class="text-rose-500">*</span>
+          </label>
+          <select id="pla-disciplina" formControlName="disciplina"
+            class="h-10 w-full px-3 py-2 text-xs text-slate-800 rounded-lg border border-slate-200 bg-white focus:outline-none focus:border-emerald-600 focus:ring-1 focus:ring-emerald-600 shadow-2xs transition-all cursor-pointer">
+            @for (opt of disciplinasOpciones; track opt.value) {
+            <option [value]="opt.value">{{ opt.label }}</option>
+            }
+          </select>
+        </div>
+
+        <!-- Versión (col-3) -->
+        <div class="md:col-span-3">
+          <label for="pla-version" class="block text-[11px] font-bold uppercase tracking-wider text-slate-700 mb-1.5">
+            VERSIÓN <span class="text-rose-500">*</span>
+          </label>
+          <div
+            class="h-10 flex items-center justify-between px-3 rounded-lg border border-slate-200 bg-white focus-within:border-emerald-600 focus-within:ring-1 focus-within:ring-emerald-600 transition-all shadow-2xs">
+            <input id="pla-version" type="text" formControlName="version"
+              class="w-full p-0 text-xs font-semibold text-slate-800 border-0 focus:ring-0 bg-transparent focus:outline-none"
+              [placeholder]="modo() === 'version' ? 'Auto: v2.0' : 'v1.0'" />
+            <span
+              class="px-2 py-0.5 text-[10px] font-bold text-slate-500 bg-slate-50 border border-slate-200 rounded select-none shrink-0 ml-2">
+              REV
+            </span>
+          </div>
+        </div>
+
+        <!-- Estado de Aprobación (col-4) -->
+        <div class="md:col-span-4">
+          <label for="pla-estado" class="block text-[11px] font-bold uppercase tracking-wider text-slate-700 mb-1.5">
+            ESTADO DE APROBACIÓN
+          </label>
+          <select id="pla-estado" formControlName="estado_aprobacion"
+            class="h-10 w-full px-3 py-2 text-xs font-semibold text-slate-800 rounded-lg border border-slate-200 bg-white focus:outline-none focus:border-emerald-600 focus:ring-1 focus:ring-emerald-600 shadow-2xs transition-all cursor-pointer">
+            <option value="Aprobado Obra">🟢 Aprobado Obra</option>
+            <option value="En Revisión">🟡 En Revisión</option>
+            <option value="Observado">🔴 Observado</option>
+            <option value="Para Construcción">🔵 Para Construcción</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Fila 3: Fecha VoBo + Formato/Peso + Emitido por -->
+      <div class="grid grid-cols-1 md:grid-cols-12 gap-3.5">
+        <!-- Fecha Visto Bueno (col-4) -->
+        <div class="md:col-span-4">
+          <label for="pla-vobo" class="block text-[11px] font-bold uppercase tracking-wider text-slate-700 mb-1.5">
+            FECHA VISTO BUENO
+          </label>
+          <input id="pla-vobo" type="date" formControlName="fecha_vobo"
+            class="h-10 w-full px-3 py-2 text-xs text-slate-800 rounded-lg border border-slate-200 bg-white focus:outline-none focus:border-emerald-600 focus:ring-1 focus:ring-emerald-600 shadow-2xs transition-all" />
+        </div>
+
+        <!-- Formato / Peso (col-4) -->
+        <div class="md:col-span-4">
+          <div class="flex items-center justify-between mb-1.5">
+            <label for="pla-formato" class="text-[11px] font-bold uppercase tracking-wider text-slate-700">
+              FORMATO / PESO
+            </label>
+            <span class="text-[11px] font-semibold text-emerald-600">Auto-detectado</span>
+          </div>
+          <input id="pla-formato" type="text" formControlName="formato_peso"
+            class="h-10 w-full px-3 py-2 text-xs font-mono text-slate-800 rounded-lg border border-slate-200 bg-white focus:outline-none focus:border-emerald-600 focus:ring-1 focus:ring-emerald-600 shadow-2xs transition-all"
+            placeholder="DWG + PDF (14.2 MB)" />
+        </div>
+
+        <!-- Emitido por / Proyectista (col-4) -->
+        <div class="md:col-span-4">
+          <label for="pla-emitido" class="block text-[11px] font-bold uppercase tracking-wider text-slate-700 mb-1.5">
+            EMITIDO POR / PROYECTISTA
+          </label>
+          <input id="pla-emitido" type="text" formControlName="emitido_por"
+            class="h-10 w-full px-3 py-2 text-xs text-slate-800 rounded-lg border border-slate-200 bg-white focus:outline-none focus:border-emerald-600 focus:ring-1 focus:ring-emerald-600 shadow-2xs transition-all"
+            placeholder="Arq. Daniel Zapata " />
+        </div>
+      </div>
+
+      <!-- Fila 4: Archivo del plano -->
+      <div>
+        <div class="flex items-center justify-between mb-2">
+          <span class="text-xs font-bold text-slate-800">
+            Archivo del plano <span class="text-rose-500">*</span>
+          </span>
+          <div class="inline-flex p-0.5 rounded-lg bg-slate-100 border border-slate-200 text-xs">
+            <button type="button" (click)="tipoOrigen.set('local')"
+              class="px-2.5 py-1 rounded-md text-[11px] font-medium transition-all cursor-pointer"
+              [ngClass]="tipoOrigen() === 'local' ? 'bg-white text-slate-900 font-semibold shadow-xs' : 'text-slate-500 hover:text-slate-800'">
+              Archivo Local
+            </button>
+            <button type="button" (click)="tipoOrigen.set('nube')"
+              class="px-2.5 py-1 rounded-md text-[11px] font-medium transition-all cursor-pointer"
+              [ngClass]="tipoOrigen() === 'nube' ? 'bg-white text-slate-900 font-semibold shadow-xs' : 'text-slate-500 hover:text-slate-800'">
+              Enlace Nube / BIM 360
+            </button>
+          </div>
+        </div>
+
+        <!-- Contenedor con borde discontinuo / dashed -->
+        <div class="rounded-2xl border-2 border-dashed border-sky-200/90 bg-sky-50/20 p-4 transition-all">
+          <input #inputArchivo id="pla-archivo" type="file" class="hidden" [accept]="extensionesAceptadas"
+            (change)="onArchivoSeleccionado($event)" />
+
+          @if (tipoOrigen() === 'local') {
+          <!-- Subiendo archivo (barra de progreso) -->
+          @if (subiendo()) {
+          <div class="flex items-center gap-3 p-2 bg-white rounded-xl border border-slate-200 shadow-2xs">
+            <div class="w-9 h-9 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
+              <i class="fa-solid fa-spinner fa-spin"></i>
+            </div>
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center justify-between text-xs mb-1">
+                <span class="font-medium text-slate-700">Subiendo archivo...</span>
+                <span class="font-mono text-emerald-600 font-bold">{{ progreso() }}%</span>
+              </div>
+              <div class="h-2 rounded-full bg-slate-100 overflow-hidden">
+                <div class="h-full bg-emerald-500 transition-all duration-300" [style.width.%]="progreso()"></div>
+              </div>
+            </div>
+            <button type="button" class="text-slate-400 hover:text-rose-600 p-1 cursor-pointer"
+              (click)="cancelarSubida()" title="Cancelar subida">
+              <span class="material-symbols-outlined text-lg">close</span>
+            </button>
+          </div>
+          } @else {
+          <!-- Estado de archivo seleccionado o pendiente de subir -->
+          <div class="flex flex-wrap items-center justify-between gap-3">
+            <div class="flex items-center gap-3 min-w-0">
+              <button type="button" (click)="inputArchivo.click()" [disabled]="isSaving()"
+                class="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold border border-slate-200 shadow-2xs cursor-pointer transition-colors shrink-0">
+                <span class="material-symbols-outlined text-base text-slate-600">upload</span>
+                <span>Subir archivo</span>
+              </button>
+
+              @if (archivoNombre()) {
+              <div class="flex items-center gap-2.5 min-w-0">
+                <div
+                  class="w-8 h-8 rounded-lg bg-emerald-100/90 text-emerald-700 flex items-center justify-center shrink-0">
+                  <span class="material-symbols-outlined text-base font-bold">check</span>
+                </div>
+                <div class="flex flex-col min-w-0">
+                  <div class="flex items-center gap-2">
+                    <span class="text-xs font-semibold text-slate-800 truncate max-w-[340px]">{{ archivoNombre()
+                      }}</span>
+                    <span
+                      class="px-1.5 py-0.2 rounded text-[10px] font-bold bg-emerald-100 text-emerald-800">Listo</span>
+                  </div>
+                  <span class="text-[11px] text-slate-400 font-medium">
+                    {{ form.controls.formato_peso.value || 'Archivo cargado' }}
+                  </span>
+                </div>
+              </div>
+              } @else {
+              <span class="text-xs text-slate-400 font-normal"> haz clic en Subir archivo</span>
+              }
+            </div>
+
+            @if (archivoNombre()) {
+            <button type="button" (click)="quitarArchivo()" [disabled]="isSaving()"
+              class="text-xs font-medium text-rose-500 hover:text-rose-700 hover:underline cursor-pointer ml-auto">
+              Quitar
+            </button>
+            }
+          </div>
+          }
+          } @else {
+          <!-- Modo Enlace Nube / BIM 360 -->
+          <div class="flex items-center gap-2 bg-white rounded-xl border border-slate-200 p-2 shadow-2xs">
+            <span class="material-symbols-outlined text-slate-400 text-lg ml-1">cloud</span>
+            <input type="url" formControlName="archivo_url" class="w-full text-xs text-slate-800 focus:outline-none"
+              placeholder="https://... (Autodesk Construction Cloud, BIM 360, Drive, Dropbox)" />
+          </div>
+          }
+
+          <!-- Línea inferior con formatos válidos y peso máx. -->
+          <div
+            class="flex items-center justify-between text-[11px] text-slate-400 mt-3 pt-2.5 border-t border-sky-100/80">
+            <div class="flex items-center gap-1.5">
+              <span class="material-symbols-outlined text-sm text-slate-400">info</span>
+              <span>Formatos válidos: <strong class="font-normal text-slate-500">.pdf, .dwg, .dxf, .rvt, .ifc,
+                  .zip</strong></span>
+            </div>
+            <span class="font-normal text-slate-500">Máx. 50 MB</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Alerta si es nueva versión -->
+      @if (modo() === 'version') {
+      <p class="text-[11px] text-slate-600 bg-amber-50 border border-amber-200/80 rounded-lg p-2.5">
+        Al guardar, la versión <strong>{{ plano()?.version }}</strong> pasará al historial y la nueva quedará como
+        vigente.
+      </p>
       }
-    </button>
+
+      <!-- Mensaje de error si falla validación o backend -->
+      @if (formError()) {
+      <div class="text-xs text-rose-700 bg-rose-50 border border-rose-200 rounded-lg p-2.5 flex items-center gap-2">
+        <span class="material-symbols-outlined text-sm text-rose-600 shrink-0">error</span>
+        <span>{{ formError() }}</span>
+      </div>
+      }
+
+      <!-- Footer customizado alineado con el diseño -->
+      <div class="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-slate-100 mt-5">
+        <div class="flex items-center gap-1.5 text-xs text-slate-600 min-w-0">
+          <span class="material-symbols-outlined text-base text-emerald-600 shrink-0">check_circle</span>
+          <span class="text-slate-600">
+            El plano quedará archivado y disponible en la Ficha Técnica de {{ nombreObra() || ('CC-' + idCentroCosto())
+            }}.
+          </span>
+        </div>
+
+        <div class="flex items-center gap-2.5 ml-auto shrink-0">
+          @if (modo() === 'editar') {
+          <button type="button" id="btn-plano-eliminar"
+            class="px-3.5 py-2 rounded-xl border border-rose-200 text-rose-600 hover:bg-rose-50 text-xs font-semibold mr-2 transition-colors cursor-pointer"
+            (click)="onDelete()" [disabled]="isSaving()">
+            <i class="fa-solid fa-trash"></i> Eliminar
+          </button>
+          }
+          <button type="button"
+            class="px-5 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold transition-colors cursor-pointer"
+            (click)="closed.emit()" [disabled]="isSaving()">
+            Cancelar
+          </button>
+          <button type="submit" form="form-plano" id="btn-plano-guardar" [disabled]="isSaving() || subiendo()"
+            class="px-5 py-2 rounded-xl bg-[#2d7d5f] hover:bg-[#24674e] text-white text-xs font-semibold shadow-sm flex items-center gap-2 transition-all cursor-pointer disabled:opacity-50">
+            @if (isSaving()) {
+            <i class="fa-solid fa-spinner fa-spin"></i> Guardando...
+            } @else {
+            <span class="material-symbols-outlined text-sm">bookmark</span>
+            <span>{{ modo() === 'version' ? 'Emitir versión' : 'Guardar Plano' }}</span>
+            }
+          </button>
+        </div>
+      </div>
+    </form>
   </div>
 </app-modal>

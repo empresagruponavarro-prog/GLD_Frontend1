@@ -1,8 +1,9 @@
 import { Service, inject } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpEvent } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '@env';
 import {
+  ArchivoPlano,
   DeleteResult,
   DocumentoPayload,
   IncidenciaPayload,
@@ -89,6 +90,33 @@ export class ObraService {
 
   deletePlano(idCentroCosto: number, idPlano: number): Observable<DeleteResult> {
     return this.#http.delete<DeleteResult>(this.#cc(idCentroCosto, `/planos/${idPlano}`));
+  }
+
+  /** Sube el archivo del plano (multipart). Emite eventos para mostrar el progreso. */
+  subirArchivoPlano(idCentroCosto: number, archivo: File): Observable<HttpEvent<ArchivoPlano>> {
+    const body = new FormData();
+    body.append('archivo', archivo, archivo.name);
+    return this.#http.post<ArchivoPlano>(this.#cc(idCentroCosto, '/planos/archivo'), body, {
+      reportProgress: true,
+      observe: 'events',
+    });
+  }
+
+  /** URL para descargar (o ver en el navegador con inline=true) el archivo de un plano. */
+  archivoPlanoUrl(idCentroCosto: number, idPlano: number, inline = false): string {
+    return this.#cc(idCentroCosto, `/planos/${idPlano}/archivo${inline ? '?inline=1' : ''}`);
+  }
+
+  /** Descarga el archivo del plano como Blob en memoria (evita exponer la URL de la API en la barra de navegación). */
+  descargarArchivoPlanoBlob(idCentroCosto: number, idPlano: number, inline = true): Observable<Blob> {
+    return this.#http.get(this.archivoPlanoUrl(idCentroCosto, idPlano, inline), {
+      responseType: 'blob',
+    });
+  }
+
+  /** Borra un archivo subido que no se llegó a guardar en ningún plano. */
+  descartarArchivoPlano(idCentroCosto: number, clave: string): Observable<{ deleted: boolean }> {
+    return this.#http.delete<{ deleted: boolean }>(this.#cc(idCentroCosto, '/planos/archivo'), { params: { clave } });
   }
 
   // ─── Documentos / Actas ────────────────────────────────────────────────────

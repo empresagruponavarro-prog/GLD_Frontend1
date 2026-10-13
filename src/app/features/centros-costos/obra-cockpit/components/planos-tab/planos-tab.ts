@@ -15,29 +15,22 @@ export class PlanosTabComponent {
   readonly ver = output<ObraPlano>();
   readonly descargar = output<ObraPlano>();
   readonly nuevaVersion = output<ObraPlano>();
+  readonly historial = output<ObraPlano>();
+  readonly eliminar = output<ObraPlano>();
 
   protected readonly filtroQuery = signal('');
-  protected readonly filtroDisciplina = signal('');
 
   protected readonly planosFiltrados = computed(() => {
     let p = this.planos();
     const query = this.filtroQuery().toLowerCase();
-    const disciplina = this.filtroDisciplina();
 
     if (query) {
       p = p.filter((pl) => pl.codigo_plano.toLowerCase().includes(query) || pl.nombre_plano.toLowerCase().includes(query) || pl.disciplina.toLowerCase().includes(query));
-    }
-    if (disciplina && disciplina !== 'todas') {
-      p = p.filter((pl) => pl.disciplina === disciplina);
     }
     return p;
   });
 
   protected onFilterQuery(event: Event): void {
     this.filtroQuery.set((event.target as HTMLInputElement).value);
-  }
-
-  protected onFilterDisciplina(event: Event): void {
-    this.filtroDisciplina.set((event.target as HTMLSelectElement).value);
   }
 }

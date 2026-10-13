@@ -184,6 +184,17 @@ export interface PlanoPayload {
 
 export type NuevaVersionPlanoPayload = Partial<Omit<PlanoPayload, 'codigo_plano' | 'disciplina'>>;
 
+/** Respuesta de POST /planos/archivo */
+export interface ArchivoPlano {
+  archivo_url: string;
+  formato_peso: string;
+  nombre_original: string;
+  bytes: number;
+}
+
+export const PLANO_EXTENSIONES = ['.pdf', '.dwg', '.dxf', '.rvt', '.ifc', '.zip'] as const;
+export const PLANO_MAX_BYTES = 50 * 1024 * 1024;
+
 export interface DocumentoPayload {
   titulo: string;
   subtitulo?: string;

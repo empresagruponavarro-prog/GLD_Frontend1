@@ -16,7 +16,8 @@ import { IncidenciasTabComponent } from './components/incidencias-tab/incidencia
 // Dialogs
 import { SemanaDialogComponent } from './dialogs/semana-dialog/semana-dialog';
 import { ResidenteDialogComponent } from './dialogs/residente-dialog/residente-dialog';
-import { PlanoDialogComponent } from './dialogs/plano-dialog/plano-dialog';
+import { PlanoDialogComponent, ModoPlano } from './dialogs/plano-dialog/plano-dialog';
+import { PlanoVisorDialogComponent } from './dialogs/plano-visor-dialog/plano-visor-dialog';
 import { HistorialPlanosDialogComponent } from './dialogs/historial-planos-dialog/historial-planos-dialog';
 import { DocumentoDialogComponent } from './dialogs/documento-dialog/documento-dialog';
 import { IncidenciaDialogComponent } from './dialogs/incidencia-dialog/incidencia-dialog';
@@ -28,7 +29,7 @@ import { GeneralesDialogComponent } from './dialogs/generales-dialog/generales-d
   imports: [
     CommonModule, RouterLink,
     CronogramaTabComponent, DirectorioTabComponent, PlanosTabComponent, DocumentosTabComponent, IncidenciasTabComponent,
-    SemanaDialogComponent, ResidenteDialogComponent, PlanoDialogComponent, HistorialPlanosDialogComponent,
+    SemanaDialogComponent, ResidenteDialogComponent, PlanoDialogComponent, PlanoVisorDialogComponent, HistorialPlanosDialogComponent,
     DocumentoDialogComponent, IncidenciaDialogComponent, GeneralesDialogComponent
   ],
   templateUrl: './obra-cockpit.html',
@@ -49,6 +50,7 @@ export class ObraCockpitComponent implements OnInit {
   showSemanaDialog = signal(false);
   showResidenteDialog = signal(false);
   showPlanoDialog = signal(false);
+  showPlanoVisorDialog = signal(false);
   showHistorialDialog = signal(false);
   showDocumentoDialog = signal(false);
   showIncidenciaDialog = signal(false);
@@ -58,6 +60,8 @@ export class ObraCockpitComponent implements OnInit {
   selectedSemana = signal<ObraSemana | null>(null);
   selectedResidente = signal<ObraResidente | null>(null);
   selectedPlano = signal<ObraPlano | null>(null);
+  selectedPlanoParaVer = signal<ObraPlano | null>(null);
+  planoDialogModo = signal<ModoPlano>('crear');
   selectedDocumento = signal<ObraDocumento | null>(null);
   selectedIncidencia = signal<ObraIncidencia | null>(null);
 
@@ -147,17 +151,64 @@ export class ObraCockpitComponent implements OnInit {
   // --- Handlers for Planos Tab ---
   onSubirPlano(): void {
     this.selectedPlano.set(null);
+    this.planoDialogModo.set('crear');
     this.showPlanoDialog.set(true);
   }
   onVerPlano(plano: ObraPlano): void {
-    // TODO: implement CAD viewer
+    if (!plano.archivo_url) {
+      alert(`El plano ${plano.codigo_plano} no tiene archivo adjunto.`);
+      return;
+    }
+    this.selectedPlanoParaVer.set(plano);
+    this.showPlanoVisorDialog.set(true);
   }
   onDescargarPlano(plano: ObraPlano): void {
-    // TODO
+    if (!plano.archivo_url) {
+      alert(`El plano ${plano.codigo_plano} no tiene archivo adjunto.`);
+      return;
+    }
+    if (/^https?:\/\//i.test(plano.archivo_url)) {
+      window.open(plano.archivo_url, '_blank', 'noopener');
+      return;
+    }
+    // Descarga directa en memoria sin exponer la ruta del backend en la barra del navegador
+    this.obraService.descargarArchivoPlanoBlob(this.idCentroCosto(), plano.id, false).subscribe({
+      next: (blob) => {
+        const extMatch = plano.archivo_url?.match(/\.([a-z0-9]+)(?:\?|$)/i);
+        const ext = extMatch ? `.${extMatch[1].toLowerCase()}` : '.pdf';
+        const nombre = `${plano.codigo_plano}_${plano.version || 'v1'}${ext}`;
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = nombre;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      },
+      error: () => {
+        alert('No se pudo descargar el archivo.');
+      },
+    });
   }
   onNuevaVersionPlano(plano: ObraPlano): void {
     this.selectedPlano.set(plano);
+    this.planoDialogModo.set('version');
     this.showPlanoDialog.set(true);
+  }
+  onHistorialPlano(plano: ObraPlano): void {
+    this.selectedPlano.set(plano);
+    this.showHistorialDialog.set(true);
+  }
+  onEliminarPlano(plano: ObraPlano): void {
+    const msg = plano.id_plano_anterior
+      ? `¿Eliminar la versión ${plano.version} de ${plano.codigo_plano}? La versión anterior volverá a quedar vigente.`
+      : `¿Eliminar el plano ${plano.codigo_plano} (${plano.version}) y su archivo? Esta acción no se puede deshacer.`;
+    if (!confirm(msg)) return;
+    this.obraService.deletePlano(this.idCentroCosto(), plano.id).subscribe({
+      next: () => this.cargarCockpit(this.idCentroCosto()),
+      error: () => alert('No se pudo eliminar el plano.'),
+    });
   }
 
   // --- Handlers for Documentos Tab ---
