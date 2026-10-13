@@ -18,6 +18,7 @@ export class IncidenciaDialogComponent {
 
   readonly isOpen = input(false);
   readonly idCentroCosto = input.required<number>();
+  readonly nombreObra = input<string>('');
   readonly incidencia = input<ObraIncidencia | null>(null);
   /** Sugerencias para el campo responsable (residentes de la obra). */
   readonly responsables = input<readonly string[]>([]);
@@ -25,6 +26,18 @@ export class IncidenciaDialogComponent {
   readonly closed = output<void>();
   readonly saved = output<void>();
 
+  protected readonly opcionesPrioridad = [
+    { value: 'BAJA', label: 'Baja (Seguimiento Rutinario)' },
+    { value: 'MEDIA', label: 'Media (Severidad Estándar)' },
+    { value: 'ALTA', label: 'Alta (Atención Requerida)' },
+    { value: 'CRITICA', label: 'Crítica (Paraliza Frente)' },
+  ];
+  protected readonly plazosRapidos = [
+    { label: '24h (Urgente)', valor: '24 horas', urgente: true },
+    { label: '48h', valor: '48 horas', urgente: false },
+    { label: '72h', valor: '72 horas', urgente: false },
+    { label: 'Fin de Semana', valor: 'Fin de semana', urgente: false },
+  ];
   protected readonly prioridades = PRIORIDADES_INCIDENCIA;
   protected readonly estados = ESTADOS_INCIDENCIA;
   protected readonly isSaving = signal(false);
@@ -34,11 +47,15 @@ export class IncidenciaDialogComponent {
     titulo: new FormControl('', { nonNullable: true, validators: [Validators.required, Validators.maxLength(255)] }),
     descripcion: new FormControl('', { nonNullable: true, validators: [Validators.required, Validators.maxLength(1000)] }),
     prioridad: new FormControl<string>('MEDIA', { nonNullable: true }),
-    responsable: new FormControl('', { nonNullable: true, validators: [Validators.maxLength(150)] }),
+    responsable: new FormControl('', { nonNullable: true, validators: [Validators.required, Validators.maxLength(150)] }),
     accion_solicitada_o_ejecutada: new FormControl('', { nonNullable: true, validators: [Validators.maxLength(1000)] }),
-    plazo_resolucion: new FormControl('', { nonNullable: true, validators: [Validators.maxLength(100)] }),
+    plazo_resolucion: new FormControl('24 horas', { nonNullable: true, validators: [Validators.maxLength(100)] }),
     estado: new FormControl<string>('PENDIENTE', { nonNullable: true }),
   });
+
+  protected setPlazo(valor: string): void {
+    this.form.controls.plazo_resolucion.setValue(valor);
+  }
 
   constructor() {
     effect(() => {

@@ -284,7 +284,7 @@
     <app-documento-dialog [isOpen]="true" [idCentroCosto]="idCentroCosto()" [nombreObra]="cockpit()?.nombre_obra || ''" [documento]="selectedDocumento()" (closed)="showDocumentoDialog.set(false)" (saved)="onDialogSaved()"></app-documento-dialog>
   }
   @if (showIncidenciaDialog()) {
-    <app-incidencia-dialog [isOpen]="true" [idCentroCosto]="idCentroCosto()" [incidencia]="selectedIncidencia()" [responsables]="responsablesIncidencia()" (closed)="showIncidenciaDialog.set(false)" (saved)="onDialogSaved()"></app-incidencia-dialog>
+    <app-incidencia-dialog [isOpen]="true" [idCentroCosto]="idCentroCosto()" [nombreObra]="cockpit()?.nombre_obra || ''" [incidencia]="selectedIncidencia()" [responsables]="responsablesIncidencia()" (closed)="showIncidenciaDialog.set(false)" (saved)="onDialogSaved()"></app-incidencia-dialog>
   }
   @if (showHistorialDialog()) {
     <app-historial-planos-dialog [isOpen]="true" [idCentroCosto]="idCentroCosto()" [plano]="selectedPlano()" (closed)="showHistorialDialog.set(false)" (verPlano)="onVerPlano($event)" (nuevaVersion)="onNuevaVersionPlano($event)"></app-historial-planos-dialog>
