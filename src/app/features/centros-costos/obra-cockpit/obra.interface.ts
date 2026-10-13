@@ -206,6 +206,23 @@ export interface DocumentoPayload {
   archivo_url?: string;
 }
 
+/** Respuesta de POST /documentos/archivo */
+export interface ArchivoDocumento {
+  archivo_url: string;
+  nombre_original: string;
+  bytes: number;
+}
+
+export const DOCUMENTO_EXTENSIONES = ['.pdf', '.doc', '.docx', '.xls', '.xlsx', '.ppt', '.pptx', '.jpg', '.jpeg', '.png', '.zip'] as const;
+export const DOCUMENTO_MAX_BYTES = 50 * 1024 * 1024;
+
+/** Campos opcionales que el PATCH permite limpiar enviando null. */
+type CamposLimpiablesDocumento = 'subtitulo' | 'nro_registro' | 'fecha_emision' | 'vigencia_texto' | 'archivo_url';
+
+/** Payload de actualización: los opcionales aceptan null (limpiar) y undefined (no tocar). */
+export type DocumentoPatch = Partial<Omit<DocumentoPayload, CamposLimpiablesDocumento>> &
+  Partial<Record<CamposLimpiablesDocumento, string | null>>;
+
 export interface IncidenciaPayload {
   titulo: string;
   descripcion: string;

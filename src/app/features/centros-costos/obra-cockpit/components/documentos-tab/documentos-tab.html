@@ -4,11 +4,51 @@
       <h2 class="font-bold text-sm text-on-surface">Gestión Documental Contractual &amp; SST</h2>
       <p class="text-xs text-on-surface-variant">Actas, licencias municipales, pólizas CAR y certificados de homologación de materiales.</p>
     </div>
-    <button class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary text-on-primary text-xs font-semibold shadow-sm hover:opacity-95 transition-all" (click)="anexar.emit()">
+    <button type="button" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary text-on-primary text-xs font-semibold shadow-sm hover:opacity-95 transition-all" (click)="anexar.emit()">
       <span class="material-symbols-outlined text-sm">post_add</span>
       <span>+ Anexar Documento Técnico / Acta</span>
     </button>
   </div>
+
+  @if (error()) {
+    <p class="flex items-center gap-2 px-3 py-2 rounded-lg bg-error-container text-on-error-container text-xs font-medium" role="alert">
+      <span class="material-symbols-outlined text-base">error</span>
+      <span>{{ error() }}</span>
+    </p>
+  }
+
+  <div class="flex flex-wrap items-end gap-2 bg-surface-container-lowest p-3 rounded-xl shadow-sm border border-surface-container">
+    <div class="flex flex-col gap-1 grow min-w-[200px]">
+      <label for="doc-filtro-texto" class="text-[11px] font-semibold text-on-surface-variant">Buscar</label>
+      <input id="doc-filtro-texto" type="search" class="form-control" placeholder="Título, descripción o N° de registro"
+        [value]="texto()" (input)="texto.set(valorDe($event))" />
+    </div>
+    <div class="flex flex-col gap-1">
+      <label for="doc-filtro-categoria" class="text-[11px] font-semibold text-on-surface-variant">Categoría</label>
+      <select id="doc-filtro-categoria" class="form-control" [value]="categoria()" (change)="categoria.set(valorDe($event))">
+        <option value="">Todas</option>
+        @for (c of categorias; track c) {
+          <option [value]="c" [selected]="categoria() === c">{{ c }}</option>
+        }
+      </select>
+    </div>
+    <div class="flex flex-col gap-1">
+      <label for="doc-filtro-estado" class="text-[11px] font-semibold text-on-surface-variant">Estado</label>
+      <select id="doc-filtro-estado" class="form-control" [value]="estado()" (change)="estado.set(valorDe($event))">
+        <option value="">Todos</option>
+        @for (e of estados; track e) {
+          <option [value]="e" [selected]="estado() === e">{{ e }}</option>
+        }
+      </select>
+    </div>
+    <button type="button" class="inline-flex items-center gap-1 px-3 py-2 rounded-lg border border-surface-container text-xs font-semibold text-on-surface-variant hover:bg-surface-container disabled:opacity-40"
+      [disabled]="!hayFiltros()" (click)="limpiarFiltros()" title="Limpiar filtros" aria-label="Limpiar filtros">
+      <span class="material-symbols-outlined text-sm">filter_alt_off</span>
+      <span>Limpiar</span>
+    </button>
+    <span class="ml-auto text-[11px] text-on-surface-variant" id="doc-contador" aria-live="polite">{{ filtrados().length }} de {{ documentos().length }}</span>
+  </div>
+
   <div class="bg-surface-container-lowest rounded-xl shadow-sm border border-surface-container overflow-hidden">
     <div class="overflow-x-auto">
       <table class="w-full text-left border-collapse text-xs">
@@ -24,42 +64,44 @@
           </tr>
         </thead>
         <tbody class="divide-y divide-surface-container">
-          @if (documentos().length > 0) {
-            @for (doc of documentos(); track doc.id) {
-              <tr class="hover:bg-surface-container-low transition-colors">
-                <td class="py-2.5 px-3">
-                  <div class="flex items-center gap-2">
-                    <span class="material-symbols-outlined text-lg" [class.text-secondary]="doc.categoria === 'Municipal'" [class.text-primary]="doc.categoria !== 'Municipal'">
-                      {{ doc.categoria === 'SST / Seguro' ? 'shield' : doc.categoria === 'Municipal' ? 'description' : doc.categoria === 'Bitácora' ? 'menu_book' : 'verified_user' }}
-                    </span>
-                    <div>
-                      <strong class="text-on-surface block">{{ doc.titulo }}</strong>
-                      <span class="text-[10px] text-on-surface-variant">{{ doc.subtitulo ?? '—' }}</span>
-                    </div>
+          @for (doc of filtrados(); track doc.id) {
+            <tr class="hover:bg-surface-container-low transition-colors">
+              <td class="py-2.5 px-3">
+                <div class="flex items-center gap-2">
+                  <span class="material-symbols-outlined text-lg text-primary" aria-hidden="true">{{ icono(doc.categoria) }}</span>
+                  <div>
+                    <strong class="text-on-surface block">{{ doc.titulo }}</strong>
+                    <span class="text-[10px] text-on-surface-variant">{{ doc.subtitulo || '—' }}</span>
                   </div>
-                </td>
-                <td class="py-2.5 px-2"><span class="px-2 py-0.5 rounded bg-surface-container text-on-surface font-medium">{{ doc.categoria }}</span></td>
-                <td class="py-2.5 px-2 font-mono font-medium text-on-surface">{{ doc.nro_registro }}</td>
-                <td class="py-2.5 px-2 text-on-surface">{{ doc.fecha_emision | date:'dd/MM/yyyy' }}</td>
-                <td class="py-2.5 px-2 text-on-surface font-semibold" [class.text-primary]="!doc.vigencia_texto || doc.vigencia_texto === 'Permanente'">{{ doc.vigencia_texto || 'Permanente' }}</td>
-                <td class="py-2.5 px-2">
-                  <span class="px-2 py-0.5 rounded text-[11px] font-bold" [class.bg-primary-fixed]="doc.estado === 'Vigente' || doc.estado === 'Conforme' || doc.estado === 'Validado'" [class.text-on-primary-fixed-variant]="doc.estado === 'Vigente' || doc.estado === 'Conforme' || doc.estado === 'Validado'" [class.bg-secondary-fixed]="doc.estado === 'Activo Diariamente'" [class.text-on-secondary-fixed-variant]="doc.estado === 'Activo Diariamente'" [class.bg-surface-container]="doc.estado === 'Vencido'" [class.text-on-surface-variant]="doc.estado === 'Vencido'">
-                    {{ doc.estado }}
-                  </span>
-                </td>
-                <td class="py-2.5 px-3 text-right">
-                  <div class="flex items-center justify-end gap-1">
-                    <button class="p-1 rounded hover:bg-surface-container text-on-surface-variant" (click)="descargar.emit(doc)" title="Descargar PDF"><span class="material-symbols-outlined text-base">download</span></button>
-                    <button class="p-1 rounded hover:bg-surface-container text-primary" (click)="verDetalle.emit(doc)" title="Detalle"><span class="material-symbols-outlined text-base">info</span></button>
-                  </div>
-                </td>
-              </tr>
-            }
-          } @else {
+                </div>
+              </td>
+              <td class="py-2.5 px-2"><span class="px-2 py-0.5 rounded bg-surface-container text-on-surface font-medium">{{ doc.categoria }}</span></td>
+              <td class="py-2.5 px-2 font-mono font-medium text-on-surface">{{ doc.nro_registro }}</td>
+              <td class="py-2.5 px-2 text-on-surface">{{ doc.fecha_emision | date:'dd/MM/yyyy' }}</td>
+              <td class="py-2.5 px-2 text-on-surface font-semibold" [class.text-primary]="!doc.vigencia_texto || doc.vigencia_texto === 'Permanente'">{{ doc.vigencia_texto || 'Permanente' }}</td>
+              <td class="py-2.5 px-2">
+                <span class="px-2 py-0.5 rounded text-[11px] font-bold" [class]="estadoClass(doc.estado)">{{ doc.estado }}</span>
+              </td>
+              <td class="py-2.5 px-3 text-right">
+                <div class="flex items-center justify-end gap-1">
+                  @if (doc.archivo_url) {
+                    <button type="button" class="p-1 rounded hover:bg-surface-container text-on-surface-variant" (click)="ver.emit(doc)" title="Ver documento" [attr.aria-label]="'Ver ' + doc.titulo"><span class="material-symbols-outlined text-base">visibility</span></button>
+                  }
+                  <button type="button" class="p-1 rounded hover:bg-surface-container text-on-surface-variant disabled:opacity-30 disabled:cursor-not-allowed" [disabled]="!doc.archivo_url" (click)="descargar.emit(doc)" [title]="doc.archivo_url ? 'Descargar archivo' : 'Sin archivo adjunto'" [attr.aria-label]="'Descargar ' + doc.titulo"><span class="material-symbols-outlined text-base">download</span></button>
+                  <button type="button" class="p-1 rounded hover:bg-surface-container text-primary" (click)="verDetalle.emit(doc)" title="Detalle / Editar" [attr.aria-label]="'Detalle y edición de ' + doc.titulo"><span class="material-symbols-outlined text-base">info</span></button>
+                  <button type="button" class="p-1 rounded hover:bg-error-container text-error" (click)="eliminar.emit(doc)" title="Eliminar documento" [attr.aria-label]="'Eliminar ' + doc.titulo"><span class="material-symbols-outlined text-base">delete</span></button>
+                </div>
+              </td>
+            </tr>
+          } @empty {
             <tr>
               <td colspan="7" class="py-8 text-center text-xs text-on-surface-variant">
-                <span class="material-symbols-outlined text-2xl block mb-2 opacity-40">folder</span>
-                No hay documentos registrados para esta obra aún.
+                <span class="material-symbols-outlined text-2xl block mb-2 opacity-40">{{ documentos().length === 0 ? 'folder' : 'search_off' }}</span>
+                @if (documentos().length === 0) {
+                  No hay documentos registrados para esta obra aún.
+                } @else {
+                  Ningún documento coincide con los filtros aplicados.
+                }
               </td>
             </tr>
           }

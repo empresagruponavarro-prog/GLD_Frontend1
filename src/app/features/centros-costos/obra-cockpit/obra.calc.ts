@@ -1,4 +1,4 @@
-import { ObraIncidencia, ObraPlano, ObraSemana } from './obra.interface';
+import { ObraDocumento, ObraIncidencia, ObraPlano, ObraSemana } from './obra.interface';
 
 /** Hito de la Curva S mostrado bajo la barra de avance del header. */
 export interface HitoCurvaS {
@@ -151,4 +151,79 @@ export function sinVacios<T extends object>(obj: T): T {
   return Object.fromEntries(
     Object.entries(obj).filter(([, v]) => v !== '' && v !== null && v !== undefined),
   ) as T;
+}
+
+/** Minúsculas sin tildes para comparar texto de forma tolerante. */
+/** Tamaño legible de un archivo: "812 KB", "3.8 MB". Vacío si no se conoce. */
+export function formatearBytes(bytes: number | null | undefined): string {
+  if (bytes == null || !Number.isFinite(bytes) || bytes < 0) return '';
+  if (bytes < 1024 * 1024) return `${Math.max(1, Math.round(bytes / 1024))} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+/** Ícono (Material Symbols), colores de fondo/texto y extensión en mayúsculas para un nombre de archivo. */
+export function iconoArchivo(nombre: string | null | undefined): { icono: string; clase: string; extension: string } {
+  const punto = (nombre ?? '').lastIndexOf('.');
+  const ext = punto >= 0 ? (nombre ?? '').slice(punto + 1).toLowerCase() : '';
+  const extension = ext.toUpperCase();
+  switch (ext) {
+    case 'pdf':
+      return { icono: 'picture_as_pdf', clase: 'bg-red-50 text-red-600 border-red-100', extension };
+    case 'doc':
+    case 'docx':
+      return { icono: 'description', clase: 'bg-blue-50 text-blue-600 border-blue-100', extension };
+    case 'xls':
+    case 'xlsx':
+      return { icono: 'table_chart', clase: 'bg-emerald-50 text-emerald-600 border-emerald-100', extension };
+    case 'ppt':
+    case 'pptx':
+      return { icono: 'slideshow', clase: 'bg-orange-50 text-orange-600 border-orange-100', extension };
+    case 'jpg':
+    case 'jpeg':
+    case 'png':
+      return { icono: 'image', clase: 'bg-violet-50 text-violet-600 border-violet-100', extension };
+    case 'zip':
+      return { icono: 'folder_zip', clase: 'bg-amber-50 text-amber-600 border-amber-100', extension };
+    default:
+      return { icono: 'draft', clase: 'bg-slate-50 text-slate-500 border-slate-200', extension };
+  }
+}
+
+/** Fecha de hoy (YYYY-MM-DD) en la zona horaria de Lima, igual que el backend. */
+export function hoyLimaIso(ahora: Date = new Date()): string {
+  return new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Lima' }).format(ahora);
+}
+
+export function normalizarTexto(valor: string | null | undefined): string {
+  return (valor ?? '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
+}
+
+export interface FiltroDocumentos {
+  texto?: string;
+  categoria?: string;
+  estado?: string;
+}
+
+/** Filtra documentos por texto (título, subtítulo, N° registro; sin mayúsculas ni tildes), categoría y estado exactos. */
+export function filtrarDocumentos(docs: readonly ObraDocumento[], filtro: FiltroDocumentos): ObraDocumento[] {
+  const q = normalizarTexto(filtro.texto);
+  return docs.filter((d) => {
+    if (filtro.categoria && d.categoria !== filtro.categoria) return false;
+    if (filtro.estado && d.estado !== filtro.estado) return false;
+    if (!q) return true;
+    return normalizarTexto([d.titulo, d.subtitulo ?? '', d.nro_registro ?? ''].join(' ')).includes(q);
+  });
+}
+
+/** Nombre legible de un archivo guardado: quita carpeta y prefijo uuid8_; para URL http(s) devuelve el host. */
+export function nombreArchivoDocumento(archivoUrl: string | null | undefined): string {
+  if (!archivoUrl) return '';
+  if (/^https?:\/\//i.test(archivoUrl)) {
+    try {
+      return new URL(archivoUrl).host || 'Enlace externo';
+    } catch {
+      return 'Enlace externo';
+    }
+  }
+  return (archivoUrl.split('/').pop() ?? '').replace(/^[0-9a-f]{8}_/i, '');
 }

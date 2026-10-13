@@ -1,0 +1,141 @@
+<app-modal
+  [isOpen]="isOpen()"
+  maxWidth="1000px"
+  [showHeader]="false"
+  [showDefaultFooter]="false"
+  (closed)="closed.emit()"
+>
+  @let doc = documento();
+  <div modal-body class="-m-[10px]">
+    <div class="h-1 bg-primary" aria-hidden="true"></div>
+
+    <!-- CABECERA -->
+    <div class="flex items-start justify-between gap-4 px-6 pt-5 pb-4 border-b border-slate-100">
+      <div class="flex items-start gap-4 min-w-0">
+        <div class="w-12 h-12 shrink-0 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center text-primary shadow-sm" aria-hidden="true">
+          <span class="material-symbols-outlined text-2xl">{{ iconoCategoria() }}</span>
+        </div>
+        <div class="min-w-0">
+          <div class="flex flex-wrap items-center gap-2 mb-1.5">
+            <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-extrabold uppercase tracking-wide text-primary bg-primary/10 border border-primary/20">
+              <span class="material-symbols-outlined text-[13px]" aria-hidden="true">visibility</span> Vista previa
+            </span>
+            <span class="px-2 py-0.5 rounded text-[10px] font-bold" [class]="estadoClase()">{{ doc.estado }}</span>
+          </div>
+          <h2 id="doc-vista-titulo" class="text-xl font-extrabold text-on-surface leading-tight m-0 break-words">{{ doc.titulo }}</h2>
+          @if (doc.subtitulo) {
+            <p class="text-sm text-on-surface-variant mt-1 mb-0">{{ doc.subtitulo }}</p>
+          }
+        </div>
+      </div>
+      <button type="button" class="w-9 h-9 shrink-0 rounded-lg border border-slate-200 bg-white text-on-surface-variant hover:text-on-surface hover:bg-slate-50 transition-colors flex items-center justify-center cursor-pointer" (click)="closed.emit()" aria-label="Cerrar vista previa">
+        <span class="material-symbols-outlined text-[20px]">close</span>
+      </button>
+    </div>
+
+    <div class="px-6 py-5 flex flex-col gap-4">
+      <!-- DATOS DEL DOCUMENTO -->
+      <dl class="grid grid-cols-2 md:grid-cols-4 gap-x-5 gap-y-3 m-0">
+        <div>
+          <dt class="text-[10px] font-bold text-on-surface-variant uppercase tracking-wider">Categoría</dt>
+          <dd class="text-sm font-semibold text-on-surface m-0">{{ doc.categoria }}</dd>
+        </div>
+        <div>
+          <dt class="text-[10px] font-bold text-on-surface-variant uppercase tracking-wider">Folio / N° registro</dt>
+          <dd class="text-sm font-mono font-semibold text-on-surface m-0">{{ doc.nro_registro || '—' }}</dd>
+        </div>
+        <div>
+          <dt class="text-[10px] font-bold text-on-surface-variant uppercase tracking-wider">Fecha de emisión</dt>
+          <dd class="text-sm font-semibold text-on-surface m-0">{{ doc.fecha_emision ? (doc.fecha_emision | date:'dd/MM/yyyy') : '—' }}</dd>
+        </div>
+        <div>
+          <dt class="text-[10px] font-bold text-on-surface-variant uppercase tracking-wider">Vigencia</dt>
+          <dd class="text-sm font-semibold text-on-surface m-0">{{ doc.vigencia_texto || 'Permanente' }}</dd>
+        </div>
+      </dl>
+
+      <!-- VISTA PREVIA -->
+      <div class="h-[56vh] min-h-[300px] rounded-xl border border-slate-200 bg-slate-100 overflow-hidden flex items-center justify-center" aria-live="polite">
+        @switch (tipo()) {
+          @case ('cargando') {
+            <div class="flex flex-col items-center gap-2 text-on-surface-variant">
+              <span class="material-symbols-outlined text-3xl animate-spin" aria-hidden="true">progress_activity</span>
+              <span class="text-sm">Cargando vista previa…</span>
+            </div>
+          }
+          @case ('pdf') {
+            <iframe class="w-full h-full border-0 bg-white" [src]="urlPdf()" [title]="'Vista previa de ' + doc.titulo"></iframe>
+          }
+          @case ('imagen') {
+            <img class="max-w-full max-h-full object-contain" [src]="urlImagen()" [alt]="'Vista previa de ' + doc.titulo" />
+          }
+          @case ('externo') {
+            <div class="flex flex-col items-center gap-3 px-6 text-center max-w-md">
+              <div class="w-14 h-14 rounded-2xl bg-white border border-slate-200 text-primary flex items-center justify-center" aria-hidden="true">
+                <span class="material-symbols-outlined text-3xl">cloud</span>
+              </div>
+              <p class="text-sm font-semibold text-on-surface m-0">Este documento está en un enlace externo</p>
+              <p class="text-xs text-on-surface-variant m-0 break-all">{{ enlaceExterno() }}</p>
+              <p class="text-xs text-on-surface-variant m-0">Por seguridad del sitio de origen no se puede mostrar aquí. Ábrelo en una pestaña nueva.</p>
+            </div>
+          }
+          @case ('sin-vista') {
+            <div class="flex flex-col items-center gap-3 px-6 text-center max-w-md">
+              <div class="w-14 h-14 rounded-2xl border flex items-center justify-center" [class]="archivoInfo().clase" aria-hidden="true">
+                <span class="material-symbols-outlined text-3xl">{{ archivoInfo().icono }}</span>
+              </div>
+              <p class="text-sm font-semibold text-on-surface m-0 break-all">{{ nombreArchivo() }}</p>
+              <p class="text-xs text-on-surface-variant m-0">
+                Los archivos {{ archivoInfo().extension }} no se pueden previsualizar en el navegador. Descárgalo para abrirlo.
+              </p>
+            </div>
+          }
+          @case ('sin-archivo') {
+            <div class="flex flex-col items-center gap-2 px-6 text-center text-on-surface-variant">
+              <span class="material-symbols-outlined text-4xl opacity-50" aria-hidden="true">folder_off</span>
+              <p class="text-sm m-0">Este documento no tiene un archivo adjunto.</p>
+            </div>
+          }
+          @case ('error') {
+            <div class="flex flex-col items-center gap-3 px-6 text-center" role="alert">
+              <span class="material-symbols-outlined text-4xl text-error" aria-hidden="true">error</span>
+              <p class="text-sm text-on-surface m-0">No se pudo cargar la vista previa.</p>
+              <button type="button" class="inline-flex items-center gap-1.5 px-3.5 h-9 rounded-lg border border-slate-200 bg-white text-xs font-semibold text-on-surface hover:bg-slate-50 cursor-pointer" (click)="reintentar()">
+                <span class="material-symbols-outlined text-[16px]" aria-hidden="true">refresh</span> Reintentar
+              </button>
+            </div>
+          }
+        }
+      </div>
+
+      @if (aviso()) {
+        <p class="flex items-start gap-2 rounded-xl border border-rose-200 bg-rose-50 px-3.5 py-2.5 text-xs font-medium text-rose-800 m-0" role="alert">
+          <span class="material-symbols-outlined text-[18px]" aria-hidden="true">error</span> {{ aviso() }}
+        </p>
+      }
+    </div>
+    </div>
+
+    <!-- PIE -->
+    <div modal-footer class="sticky bottom-0 flex flex-wrap items-center justify-between gap-3 px-6 py-4 bg-slate-50 border-t border-slate-100">
+    <span class="inline-flex items-center gap-2 min-w-0 text-[11px] text-on-surface-variant">
+      @if (doc.archivo_url) {
+        <span class="material-symbols-outlined text-[16px] shrink-0" aria-hidden="true">attach_file</span>
+        <span class="truncate" [title]="nombreArchivo()">{{ nombreArchivo() }}</span>
+      }
+    </span>
+    <div class="flex items-center gap-2.5 ml-auto">
+      @if (tipo() === 'pdf' || tipo() === 'imagen' || tipo() === 'externo') {
+        <button type="button" class="inline-flex items-center gap-1.5 px-4 h-10 rounded-xl border border-slate-200 bg-white text-sm font-semibold text-on-surface hover:bg-slate-50 cursor-pointer" (click)="abrirEnPestana()">
+          <span class="material-symbols-outlined text-[18px]" aria-hidden="true">open_in_new</span> Abrir en pestaña nueva
+        </button>
+      }
+      @if (tieneArchivoLocal()) {
+        <button type="button" id="btn-vista-descargar" class="inline-flex items-center gap-2 px-4 h-10 rounded-xl border border-slate-200 bg-white text-sm font-semibold text-on-surface hover:bg-slate-50 disabled:opacity-60 cursor-pointer" (click)="descargar()" [disabled]="descargando()">
+          <span class="material-symbols-outlined text-[18px]" aria-hidden="true">download</span> Descargar
+        </button>
+      }
+      <button type="button" id="btn-vista-cerrar" class="inline-flex items-center gap-2 px-5 h-10 rounded-xl bg-primary text-on-primary text-sm font-semibold shadow-sm hover:opacity-95 cursor-pointer" (click)="closed.emit()">Cerrar</button>
+    </div>
+    </div>
+</app-modal>

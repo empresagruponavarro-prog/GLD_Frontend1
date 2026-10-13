@@ -3,8 +3,10 @@ import { HttpClient, HttpEvent } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '@env';
 import {
+  ArchivoDocumento,
   ArchivoPlano,
   DeleteResult,
+  DocumentoPatch,
   DocumentoPayload,
   IncidenciaPayload,
   NuevaVersionPlanoPayload,
@@ -124,12 +126,36 @@ export class ObraService {
     return this.#http.post<ObraDocumento>(this.#cc(idCentroCosto, '/documentos'), payload);
   }
 
-  updateDocumento(idCentroCosto: number, idDocumento: number, payload: Partial<DocumentoPayload>): Observable<ObraDocumento> {
+  updateDocumento(idCentroCosto: number, idDocumento: number, payload: DocumentoPatch): Observable<ObraDocumento> {
     return this.#http.patch<ObraDocumento>(this.#cc(idCentroCosto, `/documentos/${idDocumento}`), payload);
   }
 
   deleteDocumento(idCentroCosto: number, idDocumento: number): Observable<DeleteResult> {
     return this.#http.delete<DeleteResult>(this.#cc(idCentroCosto, `/documentos/${idDocumento}`));
+  }
+
+  /** Sube el archivo de un documento (multipart). Emite eventos para mostrar el progreso. */
+  subirArchivoDocumento(idCentroCosto: number, archivo: File): Observable<HttpEvent<ArchivoDocumento>> {
+    const body = new FormData();
+    body.append('archivo', archivo, archivo.name);
+    return this.#http.post<ArchivoDocumento>(this.#cc(idCentroCosto, '/documentos/archivo'), body, {
+      reportProgress: true,
+      observe: 'events',
+    });
+  }
+
+  /** Borra un archivo subido que no se llegó a guardar en ningún documento. */
+  descartarArchivoDocumento(idCentroCosto: number, clave: string): Observable<{ deleted: boolean; clave: string }> {
+    return this.#http.delete<{ deleted: boolean; clave: string }>(this.#cc(idCentroCosto, '/documentos/archivo'), {
+      params: { clave },
+    });
+  }
+
+  /** Descarga el archivo del documento como Blob (compatible con autenticación por token). */
+  descargarArchivoDocumento(idCentroCosto: number, idDocumento: number, inline = false): Observable<Blob> {
+    return this.#http.get(this.#cc(idCentroCosto, `/documentos/${idDocumento}/archivo${inline ? '?inline=1' : ''}`), {
+      responseType: 'blob',
+    });
   }
 
   // ─── Incidencias / RFI ─────────────────────────────────────────────────────

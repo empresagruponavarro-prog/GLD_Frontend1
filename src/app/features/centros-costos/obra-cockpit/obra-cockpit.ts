@@ -4,6 +4,8 @@ import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 
 // Service & Interfaces
 import { ObraService } from './obra.service';
+import { errorMessage } from '@app/features/almacen/almacen.utils';
+import { nombreArchivoDocumento } from './obra.calc';
 import { ObraCockpit, ObraSemana, ObraResidente, ObraPlano, ObraDocumento, ObraIncidencia } from './obra.interface';
 
 // Tabs
@@ -20,6 +22,8 @@ import { PlanoDialogComponent, ModoPlano } from './dialogs/plano-dialog/plano-di
 import { PlanoVisorDialogComponent } from './dialogs/plano-visor-dialog/plano-visor-dialog';
 import { HistorialPlanosDialogComponent } from './dialogs/historial-planos-dialog/historial-planos-dialog';
 import { DocumentoDialogComponent } from './dialogs/documento-dialog/documento-dialog';
+import { DocumentoVistaDialogComponent } from './dialogs/documento-vista-dialog/documento-vista-dialog';
+import { DocumentoEliminarDialogComponent } from './dialogs/documento-eliminar-dialog/documento-eliminar-dialog';
 import { IncidenciaDialogComponent } from './dialogs/incidencia-dialog/incidencia-dialog';
 import { GeneralesDialogComponent } from './dialogs/generales-dialog/generales-dialog';
 
@@ -30,7 +34,7 @@ import { GeneralesDialogComponent } from './dialogs/generales-dialog/generales-d
     CommonModule, RouterLink,
     CronogramaTabComponent, DirectorioTabComponent, PlanosTabComponent, DocumentosTabComponent, IncidenciasTabComponent,
     SemanaDialogComponent, ResidenteDialogComponent, PlanoDialogComponent, PlanoVisorDialogComponent, HistorialPlanosDialogComponent,
-    DocumentoDialogComponent, IncidenciaDialogComponent, GeneralesDialogComponent
+    DocumentoDialogComponent, DocumentoVistaDialogComponent, DocumentoEliminarDialogComponent, IncidenciaDialogComponent, GeneralesDialogComponent
   ],
   templateUrl: './obra-cockpit.html',
 })
@@ -63,6 +67,13 @@ export class ObraCockpitComponent implements OnInit {
   selectedPlanoParaVer = signal<ObraPlano | null>(null);
   planoDialogModo = signal<ModoPlano>('crear');
   selectedDocumento = signal<ObraDocumento | null>(null);
+  errorDocumento = signal<string>('');
+  /** Documento que se está previsualizando en el pop-up (null = cerrado). */
+  documentoVista = signal<ObraDocumento | null>(null);
+  /** Documento pendiente de confirmar su eliminación (null = sin confirmación abierta). */
+  documentoEliminar = signal<ObraDocumento | null>(null);
+  eliminandoDocumento = signal(false);
+  errorEliminarDocumento = signal('');
   selectedIncidencia = signal<ObraIncidencia | null>(null);
 
   // Computed data for tabs
@@ -71,6 +82,8 @@ export class ObraCockpitComponent implements OnInit {
   cabecera = computed(() => this.cockpit()?.cabecera);
   generales = computed(() => this.cockpit()?.generales);
   residentes = computed(() => this.cockpit()?.residentes || []);
+  /** Nombres de residentes: sugerencias para el responsable de una incidencia (también se puede escribir otro). */
+  responsablesIncidencia = computed(() => this.residentes().map((r) => r.nombre_completo));
   planos = computed(() => this.cockpit()?.planos || []);
   documentos = computed(() => this.cockpit()?.documentos || []);
   incidencias = computed(() => this.cockpit()?.incidencias || []);
@@ -221,7 +234,61 @@ export class ObraCockpitComponent implements OnInit {
     this.showDocumentoDialog.set(true);
   }
   onDescargarDocumento(doc: ObraDocumento): void {
-    // TODO
+    this.#descargarArchivoDocumento(doc);
+  }
+  onVerDocumento(doc: ObraDocumento): void {
+    this.errorDocumento.set('');
+    this.documentoVista.set(doc);
+  }
+
+  onEliminarDocumento(doc: ObraDocumento): void {
+    this.errorEliminarDocumento.set('');
+    this.documentoEliminar.set(doc);
+  }
+  cancelarEliminarDocumento(): void {
+    if (!this.eliminandoDocumento()) this.documentoEliminar.set(null);
+  }
+  confirmarEliminarDocumento(): void {
+    const doc = this.documentoEliminar();
+    if (!doc || this.eliminandoDocumento()) return;
+    this.eliminandoDocumento.set(true);
+    this.errorEliminarDocumento.set('');
+    this.obraService.deleteDocumento(this.idCentroCosto(), doc.id).subscribe({
+      next: () => {
+        this.eliminandoDocumento.set(false);
+        this.documentoEliminar.set(null);
+        this.cargarCockpit(this.idCentroCosto());
+      },
+      error: (err: unknown) => {
+        this.eliminandoDocumento.set(false);
+        this.errorEliminarDocumento.set(errorMessage(err));
+      },
+    });
+  }
+
+  #descargarArchivoDocumento(doc: ObraDocumento): void {
+    this.errorDocumento.set('');
+    const archivo = doc.archivo_url;
+    if (!archivo) return;
+    if (/^https?:\/\//i.test(archivo)) {
+      window.open(archivo, '_blank', 'noopener');
+      return;
+    }
+    this.obraService.descargarArchivoDocumento(this.idCentroCosto(), doc.id, false).subscribe({
+      next: (blob) => {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = nombreArchivoDocumento(archivo);
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      },
+      error: () => {
+        this.errorDocumento.set(`No se pudo descargar el archivo de "${doc.titulo}". Inténtalo nuevamente.`);
+      },
+    });
   }
 
   // --- Handlers for Incidencias Tab ---

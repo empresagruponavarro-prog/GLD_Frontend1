@@ -1,70 +1,260 @@
 <app-modal
   [isOpen]="isOpen()"
-  [title]="isEdit ? 'Editar documento / acta' : 'Anexar documento técnico / acta'"
-  maxWidth="680px"
+  maxWidth="760px"
+  [showHeader]="false"
   [showDefaultFooter]="false"
   (closed)="closed.emit()"
 >
-  <form modal-body [formGroup]="form" (ngSubmit)="onSubmit()" id="form-documento" class="grid grid-cols-1 md:grid-cols-2 gap-3">
-    <div class="form-group md:col-span-2">
-      <label for="doc-titulo">Título *</label>
-      <input id="doc-titulo" type="text" class="form-control" formControlName="titulo" placeholder="Acta de entrega de terreno" />
-    </div>
-    <div class="form-group md:col-span-2">
-      <label for="doc-subtitulo">Descripción</label>
-      <input id="doc-subtitulo" type="text" class="form-control" formControlName="subtitulo" />
-    </div>
-    <div class="form-group">
-      <label for="doc-categoria">Categoría *</label>
-      <select id="doc-categoria" class="form-control" formControlName="categoria">
-        @for (c of categorias; track c) {
-          <option [value]="c">{{ c }}</option>
-        }
-      </select>
-    </div>
-    <div class="form-group">
-      <label for="doc-registro">Folio / N° registro</label>
-      <input id="doc-registro" type="text" class="form-control" formControlName="nro_registro" />
-    </div>
-    <div class="form-group">
-      <label for="doc-fecha">Fecha de emisión</label>
-      <input id="doc-fecha" type="date" class="form-control" formControlName="fecha_emision" />
-    </div>
-    <div class="form-group">
-      <label for="doc-vigencia">Vigencia / vencimiento</label>
-      <input id="doc-vigencia" type="text" class="form-control" formControlName="vigencia_texto" placeholder="Permanente, 15/11/2026..." />
-    </div>
-    <div class="form-group">
-      <label for="doc-estado">Estado</label>
-      <select id="doc-estado" class="form-control" formControlName="estado">
-        @for (e of estados; track e) {
-          <option [value]="e">{{ e }}</option>
-        }
-      </select>
-    </div>
-    <div class="form-group">
-      <label for="doc-url">Enlace al archivo</label>
-      <input id="doc-url" type="url" class="form-control" formControlName="archivo_url" placeholder="https://..." />
-    </div>
-    <small class="md:col-span-2 text-[11px] text-on-surface-variant">La subida directa de archivos se habilitará en la Fase D.</small>
-    @if (formError()) {
-      <p class="md:col-span-2 badge badge-danger" role="alert">{{ formError() }}</p>
-    }
-  </form>
+  <div modal-body class="-m-[10px]">
+    <div class="h-1 bg-primary" aria-hidden="true"></div>
 
-  <div modal-footer class="modal-footer">
-    @if (isEdit) {
-      <button type="button" id="btn-documento-eliminar" class="btn btn-danger mr-auto" (click)="onDelete()" [disabled]="isSaving()">
-        <i class="fa-solid fa-trash"></i> Eliminar
+    <!-- CABECERA -->
+    <div class="flex items-start justify-between gap-4 px-6 pt-5 pb-5 border-b border-slate-100">
+      <div class="flex items-start gap-4 min-w-0">
+        <div class="w-12 h-12 shrink-0 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center text-primary shadow-sm" aria-hidden="true">
+          <span class="material-symbols-outlined text-2xl">edit_document</span>
+        </div>
+        <div class="min-w-0">
+          <div class="flex flex-wrap items-center gap-2 mb-1.5">
+            <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-extrabold uppercase tracking-wide text-primary bg-primary/10 border border-primary/20">
+              <span class="material-symbols-outlined text-[13px]" aria-hidden="true">account_tree</span> Repositorio legal
+            </span>
+            <span class="text-[11px] font-mono text-on-surface-variant truncate"># CC-{{ idCentroCosto() }}@if (nombreObra()) {: {{ nombreObra() }}}</span>
+          </div>
+          <h2 id="doc-titulo-dialogo" class="text-2xl font-extrabold text-on-surface leading-tight m-0">
+            {{ isEdit ? 'Editar documento técnico / acta' : 'Anexar documento técnico / acta' }}
+          </h2>
+          <p class="text-sm text-on-surface-variant mt-1 mb-0">Registro oficial de actas, resoluciones y trazabilidad bajo norma GLD.</p>
+        </div>
+      </div>
+      <button type="button" class="w-9 h-9 shrink-0 rounded-lg border border-slate-200 bg-white text-on-surface-variant hover:text-on-surface hover:bg-slate-50 transition-colors flex items-center justify-center cursor-pointer" (click)="closed.emit()" [disabled]="isSaving()" aria-label="Cerrar">
+        <span class="material-symbols-outlined text-[20px]">close</span>
       </button>
-    }
-    <button type="button" class="btn btn-secondary" (click)="closed.emit()" [disabled]="isSaving()">Cancelar</button>
-    <button type="submit" form="form-documento" id="btn-documento-guardar" class="btn btn-primary" [disabled]="isSaving()">
-      @if (isSaving()) {
-        <i class="fa-solid fa-spinner fa-spin"></i> Guardando...
-      } @else {
-        <i class="fa-solid fa-floppy-disk"></i> Guardar
+    </div>
+
+    <form [formGroup]="form" (ngSubmit)="onSubmit()" id="form-documento" class="px-6 py-5 flex flex-col gap-5" aria-labelledby="doc-titulo-dialogo">
+      <!-- Título -->
+      <div>
+        <div class="flex items-baseline justify-between gap-3 mb-1.5">
+          <label for="doc-titulo" class="text-[11px] font-bold text-on-surface-variant uppercase tracking-wider">Título / denominación oficial <span class="text-error">*</span></label>
+          <span class="text-[11px] text-on-surface-variant">Requerido para índice general</span>
+        </div>
+        <input id="doc-titulo" type="text" formControlName="titulo" maxlength="255" placeholder="Acta de entrega de terreno"
+          [attr.aria-invalid]="invalido('titulo')"
+          [class]="invalido('titulo') ? 'border-error' : 'border-slate-200'"
+          class="w-full h-11 px-3.5 rounded-xl border bg-white text-sm text-on-surface placeholder:text-slate-400 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20" />
+      </div>
+
+      <!-- Descripción -->
+      <div>
+        <label for="doc-subtitulo" class="block text-[11px] font-bold text-on-surface-variant uppercase tracking-wider mb-1.5">Descripción / alcance técnico</label>
+        <textarea id="doc-subtitulo" rows="2" formControlName="subtitulo" maxlength="1000" placeholder="Partes que suscriben, alcance y observaciones del documento…"
+          class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-white text-sm text-on-surface placeholder:text-slate-400 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 resize-y"></textarea>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-x-5 gap-y-5">
+        <!-- Categoría -->
+        <div>
+          <label for="doc-categoria" class="block text-[11px] font-bold text-on-surface-variant uppercase tracking-wider mb-1.5">Categoría <span class="text-error">*</span></label>
+          <div class="relative">
+            <select id="doc-categoria" formControlName="categoria"
+              class="w-full h-11 pl-3.5 pr-10 rounded-xl border border-slate-200 bg-white text-sm text-on-surface appearance-none cursor-pointer focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20">
+              @for (c of categorias; track c.valor) {
+                <option [value]="c.valor">{{ c.etiqueta }}</option>
+              }
+            </select>
+            <span class="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-on-surface-variant pointer-events-none text-[20px]" aria-hidden="true">expand_more</span>
+          </div>
+        </div>
+
+        <!-- Folio -->
+        <div>
+          <label for="doc-registro" class="block text-[11px] font-bold text-on-surface-variant uppercase tracking-wider mb-1.5">Folio / N° registro</label>
+          <div class="relative">
+            <span class="absolute left-3.5 top-1/2 -translate-y-1/2 text-[10px] font-mono font-bold text-slate-400 pointer-events-none" aria-hidden="true">REG:</span>
+            <input id="doc-registro" type="text" formControlName="nro_registro" maxlength="100" placeholder="ACT-VES-2026-004"
+              class="w-full h-11 pl-12 pr-3.5 rounded-xl border border-slate-200 bg-white text-sm font-mono text-on-surface placeholder:text-slate-400 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20" />
+          </div>
+        </div>
+
+        <!-- Fecha de emisión -->
+        <div>
+          <label for="doc-fecha" class="block text-[11px] font-bold text-on-surface-variant uppercase tracking-wider mb-1.5">Fecha de emisión <span class="text-error">*</span></label>
+          <input id="doc-fecha" type="date" formControlName="fecha_emision"
+            [attr.aria-invalid]="invalido('fecha_emision')"
+            [class]="invalido('fecha_emision') ? 'border-error' : 'border-slate-200'"
+            class="w-full h-11 px-3.5 rounded-xl border bg-white text-sm text-on-surface focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20" />
+        </div>
+
+        <!-- Vigencia -->
+        <div>
+          <label for="doc-vigencia" class="block text-[11px] font-bold text-on-surface-variant uppercase tracking-wider mb-1.5">Vigencia / vencimiento</label>
+          <div class="relative">
+            <input id="doc-vigencia" type="text" formControlName="vigencia_texto" maxlength="100" placeholder="Permanente, 15/11/2026…"
+              class="w-full h-11 pl-3.5 pr-10 rounded-xl border border-slate-200 bg-white text-sm font-mono text-on-surface placeholder:text-slate-400 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20" />
+            <span class="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none text-[20px]" aria-hidden="true">history</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Estado de validación -->
+      <div>
+        <label for="doc-estado" class="block text-[11px] font-bold text-on-surface-variant uppercase tracking-wider mb-1.5">Estado de validación</label>
+        <div class="relative">
+          <span class="absolute left-3.5 top-1/2 -translate-y-1/2 w-2.5 h-2.5 rounded-full pointer-events-none" [class]="puntoEstado()" aria-hidden="true"></span>
+          <select id="doc-estado" formControlName="estado"
+            class="w-full h-11 pl-9 pr-10 rounded-xl border border-slate-200 bg-white text-sm text-on-surface appearance-none cursor-pointer focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20">
+            @for (e of estados; track e.valor) {
+              <option [value]="e.valor">{{ e.etiqueta }}</option>
+            }
+          </select>
+          <span class="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-on-surface-variant pointer-events-none text-[20px]" aria-hidden="true">expand_more</span>
+        </div>
+      </div>
+
+      <!-- ARCHIVO DEL DOCUMENTO -->
+      <div role="group" aria-labelledby="doc-archivo-titulo">
+        <div class="flex flex-wrap items-center justify-between gap-3 mb-2">
+          <span id="doc-archivo-titulo" class="inline-flex items-center gap-1.5 text-[11px] font-bold text-on-surface-variant uppercase tracking-wider">
+            <span class="material-symbols-outlined text-[16px] text-primary" aria-hidden="true">attach_file</span> Archivo del documento
+          </span>
+          <div class="flex items-center gap-4 text-xs text-on-surface">
+            <label for="doc-origen-local" class="inline-flex items-center gap-1.5 cursor-pointer">
+              <input id="doc-origen-local" type="radio" name="doc-origen" value="local" class="accent-primary" [checked]="origen() === 'local'" [disabled]="isSaving()" (change)="setOrigen('local')" />
+              <span>Archivo local</span>
+            </label>
+            <label for="doc-origen-enlace" class="inline-flex items-center gap-1.5 cursor-pointer">
+              <input id="doc-origen-enlace" type="radio" name="doc-origen" value="enlace" class="accent-primary" [checked]="origen() === 'enlace'" [disabled]="isSaving()" (change)="setOrigen('enlace')" />
+              <span>Enlace en la nube (BIM / Drive)</span>
+            </label>
+          </div>
+        </div>
+
+        <input #inputArchivo id="doc-archivo" type="file" class="hidden" [accept]="extensionesAceptadas" (change)="onArchivoSeleccionado($event)" />
+
+        <div class="rounded-xl border-2 border-dashed p-4 transition-colors"
+          [class]="arrastrando() ? 'border-primary bg-primary/10' : 'border-primary/40 bg-primary/5'"
+          (dragover)="onArrastrar($event)" (dragleave)="arrastrando.set(false)" (drop)="onSoltar($event)">
+          @if (origen() === 'local') {
+            @if (subiendo()) {
+              <!-- Subiendo -->
+              <div class="flex items-center gap-3">
+                <div class="grow">
+                  <div class="flex items-center justify-between text-xs mb-1.5">
+                    <span class="font-medium text-on-surface">Subiendo archivo…</span>
+                    <span class="font-mono font-bold text-primary tabular-nums">{{ progreso() }}%</span>
+                  </div>
+                  <div class="h-2 rounded-full bg-white/80 overflow-hidden" role="progressbar" aria-label="Progreso de subida" aria-valuemin="0" aria-valuemax="100" [attr.aria-valuenow]="progreso()">
+                    <div class="h-full bg-primary transition-all duration-300" [style.width.%]="progreso()"></div>
+                  </div>
+                </div>
+                <button type="button" class="px-3 h-9 rounded-lg border border-slate-200 bg-white text-xs font-semibold text-on-surface hover:bg-slate-50 cursor-pointer" (click)="cancelarSubida()" title="Cancelar subida" aria-label="Cancelar subida">Cancelar subida</button>
+              </div>
+            } @else if (claveLocal()) {
+              <!-- Archivo adjunto -->
+              <div class="flex flex-wrap items-center gap-3">
+                <div class="w-11 h-11 shrink-0 rounded-xl border flex items-center justify-center" [class]="archivoInfo().clase" aria-hidden="true">
+                  <span class="material-symbols-outlined text-2xl">{{ archivoInfo().icono }}</span>
+                </div>
+                <div class="min-w-0 flex-1">
+                  <div class="flex items-center gap-2 min-w-0">
+                    <strong id="doc-archivo-nombre" class="text-sm text-on-surface truncate" [title]="archivoNombre()">{{ archivoNombre() }}</strong>
+                    <span class="shrink-0 px-1.5 py-0.5 rounded text-[10px] font-mono font-bold bg-emerald-100 text-emerald-800">{{ archivoPeso() || archivoInfo().extension }}</span>
+                  </div>
+                  <p class="flex items-center gap-1 text-[11px] text-on-surface-variant mt-0.5 mb-0">
+                    <span class="material-symbols-outlined text-[14px] text-primary" aria-hidden="true">check_circle</span>
+                    {{ archivoGuardadoVigente() ? 'Archivo adjunto a este documento' : 'Archivo subido: se vinculará al guardar' }}
+                  </p>
+                </div>
+                <div class="flex items-center gap-1.5 ml-auto">
+                  @if (archivoGuardadoVigente()) {
+                    <button type="button" class="w-9 h-9 rounded-lg border border-slate-200 bg-white text-on-surface-variant hover:text-primary hover:bg-slate-50 flex items-center justify-center cursor-pointer" (click)="abrirArchivoGuardado(true)" title="Ver archivo" aria-label="Ver archivo">
+                      <span class="material-symbols-outlined text-[18px]">visibility</span>
+                    </button>
+                    <button type="button" class="w-9 h-9 rounded-lg border border-slate-200 bg-white text-on-surface-variant hover:text-primary hover:bg-slate-50 flex items-center justify-center cursor-pointer" (click)="abrirArchivoGuardado(false)" title="Descargar archivo" aria-label="Descargar archivo">
+                      <span class="material-symbols-outlined text-[18px]">download</span>
+                    </button>
+                  }
+                  <button type="button" class="inline-flex items-center gap-1.5 px-3.5 h-9 rounded-lg border border-slate-200 bg-white text-xs font-semibold text-on-surface hover:bg-slate-50 cursor-pointer" (click)="inputArchivo.click()" [disabled]="isSaving()">
+                    <span class="material-symbols-outlined text-[16px]" aria-hidden="true">upload</span> Reemplazar
+                  </button>
+                  <button type="button" class="w-9 h-9 rounded-lg border border-slate-200 bg-white text-on-surface-variant hover:text-error hover:bg-rose-50 flex items-center justify-center cursor-pointer" (click)="quitarArchivo()" [disabled]="isSaving()" title="Quitar archivo" aria-label="Quitar archivo">
+                    <span class="material-symbols-outlined text-[18px]">delete</span>
+                  </button>
+                </div>
+              </div>
+            } @else {
+              <!-- Sin archivo -->
+              <div class="flex flex-col items-center gap-2 py-3 text-center">
+                <div class="w-11 h-11 rounded-full bg-white border border-primary/20 text-primary flex items-center justify-center" aria-hidden="true">
+                  <span class="material-symbols-outlined text-2xl">cloud_upload</span>
+                </div>
+                <p class="text-sm text-on-surface m-0">Arrastra un archivo aquí o</p>
+                <button type="button" class="inline-flex items-center gap-1.5 px-4 h-9 rounded-lg bg-primary text-on-primary text-xs font-semibold shadow-sm hover:opacity-95 cursor-pointer" (click)="inputArchivo.click()" [disabled]="isSaving()">
+                  <span class="material-symbols-outlined text-[16px]" aria-hidden="true">upload</span> Seleccionar archivo
+                </button>
+              </div>
+            }
+            @if (archivoError()) {
+              <p class="flex items-start gap-1.5 text-xs text-error mt-3 mb-0" role="alert">
+                <span class="material-symbols-outlined text-[16px]" aria-hidden="true">error</span> {{ archivoError() }}
+              </p>
+            }
+          } @else {
+            <!-- Enlace externo -->
+            <label for="doc-enlace" class="sr-only">Enlace al archivo</label>
+            <div class="flex items-center gap-2 bg-white rounded-xl border px-3 h-11"
+              [class]="enlaceInvalido ? 'border-error' : 'border-slate-200'">
+              <span class="material-symbols-outlined text-slate-400 text-[20px]" aria-hidden="true">cloud</span>
+              <input id="doc-enlace" type="url" formControlName="enlace" placeholder="https://… (Autodesk Construction Cloud, BIM 360, Drive, Dropbox)"
+                [attr.aria-invalid]="enlaceInvalido"
+                class="w-full text-sm text-on-surface placeholder:text-slate-400 bg-transparent focus:outline-none" />
+            </div>
+            @if (enlaceInvalido) {
+              <p class="flex items-start gap-1.5 text-xs text-error mt-2 mb-0" role="alert">
+                <span class="material-symbols-outlined text-[16px]" aria-hidden="true">error</span> {{ enlaceMensaje }}
+              </p>
+            }
+          }
+
+          <div class="flex flex-wrap items-center justify-between gap-2 mt-3 pt-2.5 border-t border-primary/15 text-[11px] text-on-surface-variant">
+            <span class="inline-flex items-center gap-1.5">
+              <span class="material-symbols-outlined text-[14px]" aria-hidden="true">info</span>
+              Formatos: {{ extensionesTexto }}
+            </span>
+            <span class="font-mono font-bold">Máx. 50 MB</span>
+          </div>
+        </div>
+      </div>
+
+      @if (formError()) {
+        <p class="flex items-start gap-2 rounded-xl border border-rose-200 bg-rose-50 px-3.5 py-2.5 text-xs font-medium text-rose-800 m-0" role="alert">
+          <span class="material-symbols-outlined text-[18px]" aria-hidden="true">error</span> {{ formError() }}
+        </p>
       }
-    </button>
+    </form>
+  </div>
+
+  <!-- PIE -->
+  <div modal-footer class="sticky bottom-0 flex flex-wrap items-center justify-between gap-3 px-6 py-4 bg-slate-50 border-t border-slate-100">
+    @if (isEdit) {
+      <button type="button" id="btn-documento-eliminar" class="inline-flex items-center gap-1.5 px-3.5 h-10 rounded-xl border border-rose-200 bg-white text-xs font-semibold text-rose-700 hover:bg-rose-50 cursor-pointer" (click)="onDelete()" [disabled]="isSaving()">
+        <span class="material-symbols-outlined text-[18px]" aria-hidden="true">delete</span> Eliminar
+      </button>
+    } @else {
+      <span class="inline-flex items-center gap-1.5 text-[11px] text-on-surface-variant">
+        <span class="material-symbols-outlined text-[16px]" aria-hidden="true">info</span> Los campos marcados con * son obligatorios
+      </span>
+    }
+    <div class="flex items-center gap-2.5 ml-auto">
+      <button type="button" class="px-5 h-10 rounded-xl border border-slate-200 bg-white text-sm font-semibold text-on-surface hover:bg-slate-50 cursor-pointer" (click)="closed.emit()" [disabled]="isSaving()">Cancelar</button>
+      <button type="submit" form="form-documento" id="btn-documento-guardar" class="inline-flex items-center gap-2 px-5 h-10 rounded-xl bg-primary text-on-primary text-sm font-semibold shadow-sm hover:opacity-95 disabled:opacity-60 cursor-pointer" [disabled]="isSaving() || subiendo()">
+        @if (isSaving()) {
+          <span class="material-symbols-outlined text-[18px] animate-spin" aria-hidden="true">progress_activity</span> Guardando…
+        } @else {
+          <span class="material-symbols-outlined text-[18px]" aria-hidden="true">save</span> Guardar documento
+        }
+      </button>
+    </div>
   </div>
 </app-modal>

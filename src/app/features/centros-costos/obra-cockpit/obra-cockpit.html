@@ -131,7 +131,7 @@
           <button type="button" (click)="setTab('tab-incidencias')" class="tab-button flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all shadow-sm cursor-pointer" [ngClass]="activeTab() === 'tab-incidencias' ? 'bg-primary text-on-primary' : 'bg-surface-container-lowest text-on-surface-variant hover:bg-surface-container hover:text-on-surface'">
             <span class="material-symbols-outlined text-sm">assignment_late</span>
             <span>Bitácora &amp; Incidencias</span>
-            <span class="px-1.5 py-0.2 rounded-full text-[10px] font-bold" [ngClass]="activeTab() === 'tab-incidencias' ? 'bg-on-primary/20 text-on-primary' : 'bg-error-container text-on-error-container'">{{ incidencias().length }} Pend</span>
+            <span class="px-1.5 py-0.2 rounded-full text-[10px] font-bold" [ngClass]="activeTab() === 'tab-incidencias' ? 'bg-on-primary/20 text-on-primary' : 'bg-error-container text-on-error-container'">{{ kpis()?.incidencias_pendientes ?? 0 }} Pend</span>
           </button>
         </div>
 
@@ -171,9 +171,12 @@
           @if (activeTab() === 'tab-documentos') {
             <app-documentos-tab
               [documentos]="documentos()"
+              [error]="errorDocumento()"
               (anexar)="onAnexarDocumento()"
               (verDetalle)="onVerDetalleDocumento($event)"
-              (descargar)="onDescargarDocumento($event)">
+              (ver)="onVerDocumento($event)"
+              (descargar)="onDescargarDocumento($event)"
+              (eliminar)="onEliminarDocumento($event)">
             </app-documentos-tab>
           }
 
@@ -271,11 +274,17 @@
   @if (showPlanoVisorDialog()) {
     <app-plano-visor-dialog [isOpen]="true" [idCentroCosto]="idCentroCosto()" [plano]="selectedPlanoParaVer()" (closed)="showPlanoVisorDialog.set(false)" (nuevaVersion)="onNuevaVersionPlano($event)"></app-plano-visor-dialog>
   }
+  @if (documentoEliminar(); as docEliminar) {
+    <app-documento-eliminar-dialog [isOpen]="true" [documento]="docEliminar" [eliminando]="eliminandoDocumento()" [error]="errorEliminarDocumento()" (cancelled)="cancelarEliminarDocumento()" (confirmed)="confirmarEliminarDocumento()"></app-documento-eliminar-dialog>
+  }
+  @if (documentoVista(); as docVista) {
+    <app-documento-vista-dialog [isOpen]="true" [idCentroCosto]="idCentroCosto()" [documento]="docVista" (closed)="documentoVista.set(null)"></app-documento-vista-dialog>
+  }
   @if (showDocumentoDialog()) {
-    <app-documento-dialog [isOpen]="true" [idCentroCosto]="idCentroCosto()" [documento]="selectedDocumento()" (closed)="showDocumentoDialog.set(false)" (saved)="onDialogSaved()"></app-documento-dialog>
+    <app-documento-dialog [isOpen]="true" [idCentroCosto]="idCentroCosto()" [nombreObra]="cockpit()?.nombre_obra || ''" [documento]="selectedDocumento()" (closed)="showDocumentoDialog.set(false)" (saved)="onDialogSaved()"></app-documento-dialog>
   }
   @if (showIncidenciaDialog()) {
-    <app-incidencia-dialog [isOpen]="true" [idCentroCosto]="idCentroCosto()" [incidencia]="selectedIncidencia()" (closed)="showIncidenciaDialog.set(false)" (saved)="onDialogSaved()"></app-incidencia-dialog>
+    <app-incidencia-dialog [isOpen]="true" [idCentroCosto]="idCentroCosto()" [incidencia]="selectedIncidencia()" [responsables]="responsablesIncidencia()" (closed)="showIncidenciaDialog.set(false)" (saved)="onDialogSaved()"></app-incidencia-dialog>
   }
   @if (showHistorialDialog()) {
     <app-historial-planos-dialog [isOpen]="true" [idCentroCosto]="idCentroCosto()" [plano]="selectedPlano()" (closed)="showHistorialDialog.set(false)" (verPlano)="onVerPlano($event)" (nuevaVersion)="onNuevaVersionPlano($event)"></app-historial-planos-dialog>
