@@ -20,7 +20,6 @@ export interface ObraResidente {
   id_anexo?: number;
   nombre_completo: string;
   rol_obra: string;
-  cip_cap?: string;
   especialidad?: string;
   telefono?: string;
   correo?: string;
