@@ -48,6 +48,10 @@ export class ObraService {
     return this.#http.post<ObraSemana>(this.#cc(idCentroCosto, '/cronograma'), payload);
   }
 
+  createLoteSemanas(idCentroCosto: number, payload: { semanas: SemanaPayload[]; reemplazar_existentes?: boolean }): Observable<ObraSemana[]> {
+    return this.#http.post<ObraSemana[]>(this.#cc(idCentroCosto, '/cronograma/lote'), payload);
+  }
+
   updateSemana(idCentroCosto: number, idSemana: number, payload: Partial<SemanaPayload>): Observable<ObraSemana> {
     return this.#http.patch<ObraSemana>(this.#cc(idCentroCosto, `/cronograma/${idSemana}`), payload);
   }

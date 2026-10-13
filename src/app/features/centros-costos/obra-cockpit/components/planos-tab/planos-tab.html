@@ -30,7 +30,7 @@
         </thead>
         <tbody class="divide-y divide-surface-container">
           @if (planosFiltrados().length > 0) {
-            @for (plano of planosFiltrados(); track plano.id) {
+            @for (plano of planosFiltrados(); track plano.id; let i = $index; let count = $count; let isLast = $last) {
               <tr class="hover:bg-surface-container-low transition-colors">
                 <td class="py-2.5 px-3 font-mono font-bold text-primary">{{ plano.codigo_plano }}</td>
                 <td class="py-2.5 px-3">
@@ -50,13 +50,19 @@
                 <td class="py-2.5 px-2 font-mono text-[11px]">{{ plano.fecha_vobo ? (plano.fecha_vobo | date:'dd/MM/yyyy') : '—' }}</td>
                 <td class="py-2.5 px-2 font-mono text-[11px]">{{ plano.formato_peso ?? '—' }}</td>
                 <td class="py-2.5 px-2 text-on-surface-variant">{{ plano.emitido_por ?? '—' }}</td>
-                <td class="py-2.5 px-3 text-right">
-                  <div class="flex items-center justify-end gap-1">
-                    <button class="p-1 rounded hover:bg-surface-container text-primary cursor-pointer" (click)="ver.emit(plano)" title="Ver Plano"><span class="material-symbols-outlined text-base">visibility</span></button>
-                    <button class="p-1 rounded hover:bg-surface-container text-on-surface-variant cursor-pointer" (click)="descargar.emit(plano)" title="Descargar"><span class="material-symbols-outlined text-base">download</span></button>
-                    <button class="p-1 rounded hover:bg-surface-container text-on-surface-variant cursor-pointer" (click)="historial.emit(plano)" title="Historial de Versiones"><span class="material-symbols-outlined text-base">history</span></button>
-                    <button class="p-1 rounded hover:bg-surface-container text-secondary cursor-pointer" (click)="nuevaVersion.emit(plano)" title="Subir Nueva Versión"><span class="material-symbols-outlined text-base">upgrade</span></button>
-                    <button class="p-1 rounded hover:bg-error-container text-error cursor-pointer" (click)="eliminar.emit(plano)" title="Eliminar"><span class="material-symbols-outlined text-base">delete</span></button>
+                <td class="py-2 px-3 text-right">
+                  <div class="relative inline-flex items-center justify-end gap-1">
+                    <button type="button" class="p-1.5 rounded-lg hover:bg-surface-container text-primary transition-colors cursor-pointer" (click)="ver.emit(plano)" title="Ver Plano en Visor">
+                      <span class="material-symbols-outlined text-base">visibility</span>
+                    </button>
+                    <button type="button" class="p-1.5 rounded-lg hover:bg-surface-container text-on-surface-variant hover:text-on-surface transition-colors cursor-pointer" (click)="descargar.emit(plano)" title="Descargar Archivo">
+                      <span class="material-symbols-outlined text-base">download</span>
+                    </button>
+
+                    <!-- Botón menú contextual (3 puntos) -->
+                    <button type="button" class="p-1.5 rounded-lg hover:bg-surface-container text-on-surface-variant hover:text-on-surface transition-colors cursor-pointer" [class.bg-surface-container]="menuPos()?.plano?.id === plano.id" (click)="toggleMenu(plano, $event)" title="Más opciones">
+                      <span class="material-symbols-outlined text-base">more_vert</span>
+                    </button>
                   </div>
                 </td>
               </tr>
@@ -73,4 +79,34 @@
       </table>
     </div>
   </div>
+
+  <!-- Menú contextual flotante (renderizado en viewport con fixed z-[9999], por encima de toda la tabla y tarjetas) -->
+  @if (menuPos(); as menu) {
+    <!-- Backdrop invisible para cerrar al hacer clic afuera -->
+    <div class="fixed inset-0 z-[9998]" (click)="cerrarMenu()"></div>
+
+    <div 
+      class="fixed z-[9999] w-52 rounded-xl bg-surface-container-lowest shadow-2xl p-1.5 border border-surface-container flex flex-col gap-0.5 text-left text-xs animate-in fade-in duration-75"
+      [style.top.px]="menu.top"
+      [style.right.px]="menu.right"
+      (click)="$event.stopPropagation()">
+      <button type="button" class="w-full flex items-center gap-2 px-2.5 py-2 rounded-lg text-on-surface hover:bg-surface-container-high transition-colors text-left font-medium cursor-pointer" (click)="editar.emit(menu.plano); cerrarMenu()">
+        <span class="material-symbols-outlined text-base text-primary">edit</span>
+        <span>Editar Datos</span>
+      </button>
+      <button type="button" class="w-full flex items-center gap-2 px-2.5 py-2 rounded-lg text-on-surface hover:bg-surface-container-high transition-colors text-left font-medium cursor-pointer" (click)="historial.emit(menu.plano); cerrarMenu()">
+        <span class="material-symbols-outlined text-base text-on-surface-variant">history</span>
+        <span>Historial de Versiones</span>
+      </button>
+      <button type="button" class="w-full flex items-center gap-2 px-2.5 py-2 rounded-lg text-on-surface hover:bg-surface-container-high transition-colors text-left font-medium cursor-pointer" (click)="nuevaVersion.emit(menu.plano); cerrarMenu()">
+        <span class="material-symbols-outlined text-base text-secondary">upgrade</span>
+        <span>Subir Nueva Versión</span>
+      </button>
+      <div class="w-full h-px bg-surface-container my-1"></div>
+      <button type="button" class="w-full flex items-center gap-2 px-2.5 py-2 rounded-lg text-error hover:bg-error-container/40 transition-colors text-left font-semibold cursor-pointer" (click)="eliminar.emit(menu.plano); cerrarMenu()">
+        <span class="material-symbols-outlined text-base text-error">delete</span>
+        <span>Eliminar Plano</span>
+      </button>
+    </div>
+  }
 </div>

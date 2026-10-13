@@ -1,15 +1,16 @@
+import { DecimalPipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, effect, inject, input, output, signal } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ModalComponent } from '@shared/components/modal/modal';
 import { errorMessage } from '@app/features/almacen/almacen.utils';
-import { sinVacios, sugerenciaNuevaSemana } from '../../obra.calc';
+import { clampPct, sinVacios, sugerenciaNuevaSemana } from '../../obra.calc';
 import { ESTADOS_SEMANA, ObraSemana, SemanaPayload } from '../../obra.interface';
 import { ObraService } from '../../obra.service';
 
 @Component({
   selector: 'app-semana-dialog',
   standalone: true,
-  imports: [ReactiveFormsModule, ModalComponent],
+  imports: [DecimalPipe, ReactiveFormsModule, ModalComponent],
   templateUrl: './semana-dialog.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -18,6 +19,8 @@ export class SemanaDialogComponent {
 
   readonly isOpen = input(false);
   readonly idCentroCosto = input.required<number>();
+  readonly nombreObra = input<string>('');
+  readonly responsables = input<readonly string[]>([]);
   /** Semana a editar; null = crear nueva. */
   readonly semana = input<ObraSemana | null>(null);
   readonly semanasExistentes = input<readonly ObraSemana[]>([]);
@@ -27,9 +30,20 @@ export class SemanaDialogComponent {
   readonly saved = output<ObraSemana>();
 
   protected readonly estados = ESTADOS_SEMANA;
+  protected readonly clampPct = clampPct;
   protected readonly isSaving = signal(false);
   protected readonly isDeleting = signal(false);
   protected readonly formError = signal('');
+
+  protected get duracionDias(): number {
+    const ini = this.form.controls.fecha_inicio.value;
+    const fin = this.form.controls.fecha_fin.value;
+    if (!ini || !fin) return 0;
+    const dIni = new Date(ini).getTime();
+    const dFin = new Date(fin).getTime();
+    if (isNaN(dIni) || isNaN(dFin) || dFin < dIni) return 0;
+    return Math.round((dFin - dIni) / (1000 * 60 * 60 * 24)) + 1;
+  }
 
   protected readonly form = new FormGroup({
     numero_semana: new FormControl<number | null>(null, { validators: [Validators.min(1)] }),

@@ -17,6 +17,8 @@ import { IncidenciasTabComponent } from './components/incidencias-tab/incidencia
 
 // Dialogs
 import { SemanaDialogComponent } from './dialogs/semana-dialog/semana-dialog';
+import { SemanaAvanceDialogComponent } from './dialogs/semana-avance-dialog/semana-avance-dialog';
+import { GeneradorSemanasDialogComponent } from './dialogs/generador-semanas-dialog/generador-semanas-dialog';
 import { ResidenteDialogComponent } from './dialogs/residente-dialog/residente-dialog';
 import { PlanoDialogComponent, ModoPlano } from './dialogs/plano-dialog/plano-dialog';
 import { PlanoVisorDialogComponent } from './dialogs/plano-visor-dialog/plano-visor-dialog';
@@ -33,7 +35,7 @@ import { GeneralesDialogComponent } from './dialogs/generales-dialog/generales-d
   imports: [
     CommonModule, RouterLink,
     CronogramaTabComponent, DirectorioTabComponent, PlanosTabComponent, DocumentosTabComponent, IncidenciasTabComponent,
-    SemanaDialogComponent, ResidenteDialogComponent, PlanoDialogComponent, PlanoVisorDialogComponent, HistorialPlanosDialogComponent,
+    SemanaDialogComponent, SemanaAvanceDialogComponent, GeneradorSemanasDialogComponent, ResidenteDialogComponent, PlanoDialogComponent, PlanoVisorDialogComponent, HistorialPlanosDialogComponent,
     DocumentoDialogComponent, DocumentoVistaDialogComponent, DocumentoEliminarDialogComponent, IncidenciaDialogComponent, GeneralesDialogComponent
   ],
   templateUrl: './obra-cockpit.html',
@@ -52,6 +54,7 @@ export class ObraCockpitComponent implements OnInit {
 
   // Dialog visibilities
   showSemanaDialog = signal(false);
+  showGeneradorSemanasDialog = signal(false);
   showResidenteDialog = signal(false);
   showPlanoDialog = signal(false);
   showPlanoVisorDialog = signal(false);
@@ -62,6 +65,7 @@ export class ObraCockpitComponent implements OnInit {
 
   // Selected items for editing
   selectedSemana = signal<ObraSemana | null>(null);
+  selectedSemanaParaAvance = signal<ObraSemana | null>(null);
   selectedResidente = signal<ObraResidente | null>(null);
   selectedPlano = signal<ObraPlano | null>(null);
   selectedPlanoParaVer = signal<ObraPlano | null>(null);
@@ -128,6 +132,8 @@ export class ObraCockpitComponent implements OnInit {
   onDialogSaved(): void {
     // Close all dialogs and refresh data
     this.showSemanaDialog.set(false);
+    this.showGeneradorSemanasDialog.set(false);
+    this.selectedSemanaParaAvance.set(null);
     this.showResidenteDialog.set(false);
     this.showPlanoDialog.set(false);
     this.showDocumentoDialog.set(false);
@@ -143,12 +149,25 @@ export class ObraCockpitComponent implements OnInit {
     this.selectedSemana.set(null);
     this.showSemanaDialog.set(true);
   }
+  onGenerarLoteSemanas(): void {
+    this.showGeneradorSemanasDialog.set(true);
+  }
   onEditarSemana(sem: ObraSemana): void {
     this.selectedSemana.set(sem);
     this.showSemanaDialog.set(true);
   }
+  onRegistrarAvanceSemana(sem: ObraSemana): void {
+    this.selectedSemanaParaAvance.set(sem);
+  }
+  onEliminarSemana(sem: ObraSemana): void {
+    if (!confirm(`¿Eliminar ${sem.etiqueta_semana} (${sem.fase_principal})? Esta acción no se puede deshacer.`)) return;
+    this.obraService.deleteSemana(this.idCentroCosto(), sem.id).subscribe({
+      next: () => this.cargarCockpit(this.idCentroCosto()),
+      error: (err: unknown) => alert(errorMessage(err)),
+    });
+  }
   onEvidenciasSemana(sem: ObraSemana): void {
-    // TODO: implement evidence viewer
+    void sem; // TODO: implement evidence viewer
   }
 
   // --- Handlers for Directorio Tab ---
@@ -161,10 +180,20 @@ export class ObraCockpitComponent implements OnInit {
     this.showResidenteDialog.set(true);
   }
 
+  // --- Handlers for Obra / Ficha Técnica ---
+  onEditarObra(): void {
+    this.showGeneralesDialog.set(true);
+  }
+
   // --- Handlers for Planos Tab ---
   onSubirPlano(): void {
     this.selectedPlano.set(null);
     this.planoDialogModo.set('crear');
+    this.showPlanoDialog.set(true);
+  }
+  onEditarPlano(plano: ObraPlano): void {
+    this.selectedPlano.set(plano);
+    this.planoDialogModo.set('editar');
     this.showPlanoDialog.set(true);
   }
   onVerPlano(plano: ObraPlano): void {

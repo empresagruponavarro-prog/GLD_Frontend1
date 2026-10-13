@@ -1,75 +1,401 @@
 <app-modal
   [isOpen]="isOpen()"
-  title="Ficha técnica de la obra"
-  maxWidth="760px"
-  [loading]="isSaving()"
-  (saved)="onSubmit()"
+  [showHeader]="false"
+  [showDefaultFooter]="false"
+  maxWidth="840px"
   (closed)="closed.emit()"
 >
-  <form modal-body [formGroup]="form" (ngSubmit)="onSubmit()" id="form-generales" class="grid grid-cols-1 md:grid-cols-6 gap-3">
-    <h4 class="modal-section-title md:col-span-6">Expediente y ubicación</h4>
-    <div class="form-group md:col-span-2">
-      <label for="gen-expediente">Código de expediente</label>
-      <input id="gen-expediente" type="text" class="form-control" formControlName="expediente_codigo" placeholder="EXP-2026-..." />
-    </div>
-    <div class="form-group md:col-span-4">
-      <label for="gen-direccion">Dirección</label>
-      <input id="gen-direccion" type="text" class="form-control" formControlName="direccion" />
-    </div>
-    <div class="form-group md:col-span-2">
-      <label for="gen-departamento">Departamento</label>
-      <input id="gen-departamento" type="text" class="form-control" formControlName="departamento" />
-    </div>
-    <div class="form-group md:col-span-2">
-      <label for="gen-provincia">Provincia</label>
-      <input id="gen-provincia" type="text" class="form-control" formControlName="provincia" />
-    </div>
-    <div class="form-group md:col-span-2">
-      <label for="gen-distrito">Distrito</label>
-      <input id="gen-distrito" type="text" class="form-control" formControlName="distrito" />
-    </div>
-    <div class="form-group md:col-span-2">
-      <label for="gen-ubigeo">Ubigeo</label>
-      <input id="gen-ubigeo" type="text" class="form-control" formControlName="ubigeo_cod" />
-    </div>
-    <div class="form-group md:col-span-2">
-      <label for="gen-lat">Latitud</label>
-      <input id="gen-lat" type="number" step="0.000001" class="form-control" formControlName="latitud" placeholder="-12.2122" />
-    </div>
-    <div class="form-group md:col-span-2">
-      <label for="gen-lng">Longitud</label>
-      <input id="gen-lng" type="number" step="0.000001" class="form-control" formControlName="longitud" placeholder="-76.9339" />
-    </div>
-
-    <h4 class="modal-section-title md:col-span-6">Operación</h4>
-    <div class="form-group md:col-span-2">
-      <label for="gen-semanas">Semanas totales</label>
-      <input id="gen-semanas" type="number" min="1" class="form-control" formControlName="semanas_totales" />
-    </div>
-    <div class="form-group md:col-span-2">
-      <label for="gen-personal">Personal activo promedio</label>
-      <input id="gen-personal" type="number" min="0" class="form-control" formControlName="personal_activo_promedio" />
-    </div>
-    <div class="form-group md:col-span-2">
-      <label for="gen-turno">Turno de trabajo</label>
-      <input id="gen-turno" type="text" class="form-control" formControlName="turno_trabajo" />
+  <div modal-body class="p-1 sm:p-2">
+    <!-- Header customizado según estándar SistemaGLD -->
+    <div class="flex items-start justify-between pb-3.5 border-b border-slate-100">
+      <div class="flex items-center gap-3">
+        <div class="w-11 h-11 rounded-xl bg-blue-50 text-blue-600 border border-blue-100 flex items-center justify-center shrink-0 shadow-2xs">
+          <span class="material-symbols-outlined text-2xl">domain</span>
+        </div>
+        <div>
+          <div class="flex items-center gap-2">
+            <span class="px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-blue-50 text-blue-700 border border-blue-200/60">
+              SISTEMA GLD2026
+            </span>
+            <span class="font-mono text-[11px] text-slate-500 font-semibold">
+              {{ form.controls.expediente_codigo.value || ('CC-#' + idCentroCosto()) }}
+            </span>
+          </div>
+          <h2 class="text-base font-bold text-slate-900 leading-tight mt-1">
+            Ficha Técnica &amp; Datos Operativos de la Obra
+          </h2>
+          <div class="flex items-center gap-2 text-xs text-slate-500 mt-0.5">
+            <span class="w-2 h-2 rounded-full bg-blue-600 shrink-0 inline-block"></span>
+            <span class="font-medium text-slate-700">CC-{{ idCentroCosto() }}: {{ nombreObra() || 'Obra' }}</span>
+            <span class="text-slate-300">•</span>
+            <span>Ubicación, Operación de Campo &amp; Supervisión</span>
+          </div>
+        </div>
+      </div>
+      <button
+        type="button"
+        class="text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg p-1.5 transition-colors cursor-pointer"
+        (click)="closed.emit()"
+        aria-label="Cerrar modal"
+      >
+        <span class="material-symbols-outlined text-xl">close</span>
+      </button>
     </div>
 
-    <h4 class="modal-section-title md:col-span-6">Contacto del cliente</h4>
-    <div class="form-group md:col-span-2">
-      <label for="gen-cli-nombre">Nombre</label>
-      <input id="gen-cli-nombre" type="text" class="form-control" formControlName="contacto_cliente_nombre" />
-    </div>
-    <div class="form-group md:col-span-2">
-      <label for="gen-cli-telefono">Teléfono</label>
-      <input id="gen-cli-telefono" type="tel" class="form-control" formControlName="contacto_cliente_telefono" />
-    </div>
-    <div class="form-group md:col-span-2">
-      <label for="gen-cli-correo">Correo</label>
-      <input id="gen-cli-correo" type="email" class="form-control" formControlName="contacto_cliente_correo" />
-    </div>
-    @if (formError()) {
-      <p class="md:col-span-6 badge badge-danger" role="alert">{{ formError() }}</p>
-    }
-  </form>
+    <!-- Formulario estructurado en tarjetas temáticas -->
+    <form [formGroup]="form" (ngSubmit)="onSubmit()" id="form-generales" class="space-y-4 pt-3.5">
+
+      <!-- TARJETA 1: Expediente, Ubicación & Georreferenciación -->
+      <div class="p-3.5 sm:p-4 rounded-xl bg-slate-50/70 border border-slate-200/80 shadow-2xs space-y-3.5">
+        <div class="flex flex-wrap items-center justify-between gap-2 pb-2 border-b border-slate-200/60">
+          <div class="flex items-center gap-2">
+            <div class="w-7 h-7 rounded-lg bg-blue-100/70 text-blue-700 flex items-center justify-center">
+              <span class="material-symbols-outlined text-base">pin_drop</span>
+            </div>
+            <div>
+              <h3 class="text-xs font-bold text-slate-900 leading-tight uppercase tracking-wider">
+                Expediente &amp; Ubicación Georreferenciada
+              </h3>
+              <p class="text-[10px] text-slate-500">Jurisdicción municipal, dirección física de la obra y coordenadas GPS.</p>
+            </div>
+          </div>
+          @if (form.controls.latitud.value || form.controls.direccion.value) {
+            <button
+              type="button"
+              class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-white border border-slate-200 text-[11px] font-semibold text-blue-700 hover:bg-blue-50 transition-colors shadow-2xs cursor-pointer"
+              (click)="abrirGoogleMaps()"
+              title="Abrir ubicación en Google Maps"
+            >
+              <span class="material-symbols-outlined text-xs">map</span>
+              <span>Ver en Maps</span>
+            </button>
+          }
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-12 gap-3">
+          <!-- Código Expediente -->
+          <div class="sm:col-span-4">
+            <label for="gen-expediente" class="block text-[11px] font-bold uppercase tracking-wider text-slate-700 mb-1">
+              Código de Expediente
+            </label>
+            <div class="relative">
+              <span class="material-symbols-outlined absolute left-3 top-2.5 text-slate-400 text-base">folder_special</span>
+              <input
+                id="gen-expediente"
+                type="text"
+                class="h-9 w-full pl-9 pr-3 rounded-lg border border-slate-200 bg-white text-xs font-mono font-semibold text-slate-800 focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600 transition-all shadow-2xs"
+                formControlName="expediente_codigo"
+                placeholder="EXP-2026-TMB-048"
+              />
+            </div>
+          </div>
+
+          <!-- Dirección Exacta -->
+          <div class="sm:col-span-8">
+            <label for="gen-direccion" class="block text-[11px] font-bold uppercase tracking-wider text-slate-700 mb-1">
+              Dirección de la Obra
+            </label>
+            <div class="relative">
+              <span class="material-symbols-outlined absolute left-3 top-2.5 text-slate-400 text-base">home_pin</span>
+              <input
+                id="gen-direccion"
+                type="text"
+                class="h-9 w-full pl-9 pr-3 rounded-lg border border-slate-200 bg-white text-xs text-slate-800 focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600 transition-all shadow-2xs"
+                formControlName="direccion"
+                placeholder="Ej. Av. Central 450, Urb. Pachacámac"
+              />
+            </div>
+          </div>
+
+          <!-- Departamento -->
+          <div class="sm:col-span-3">
+            <label for="gen-departamento" class="block text-[11px] font-bold uppercase tracking-wider text-slate-700 mb-1">
+              Departamento
+            </label>
+            <div class="relative">
+              <input
+                id="gen-departamento"
+                type="text"
+                list="deptos-list"
+                class="h-9 w-full px-3 rounded-lg border border-slate-200 bg-white text-xs text-slate-800 focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600 transition-all shadow-2xs"
+                formControlName="departamento"
+                placeholder="Lima"
+              />
+              <datalist id="deptos-list">
+                @for (d of departamentosComunes; track d) {
+                  <option [value]="d"></option>
+                }
+              </datalist>
+            </div>
+          </div>
+
+          <!-- Provincia -->
+          <div class="sm:col-span-3">
+            <label for="gen-provincia" class="block text-[11px] font-bold uppercase tracking-wider text-slate-700 mb-1">
+              Provincia
+            </label>
+            <input
+              id="gen-provincia"
+              type="text"
+              class="h-9 w-full px-3 rounded-lg border border-slate-200 bg-white text-xs text-slate-800 focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600 transition-all shadow-2xs"
+              formControlName="provincia"
+              placeholder="Lima"
+            />
+          </div>
+
+          <!-- Distrito -->
+          <div class="sm:col-span-3">
+            <label for="gen-distrito" class="block text-[11px] font-bold uppercase tracking-wider text-slate-700 mb-1">
+              Distrito
+            </label>
+            <input
+              id="gen-distrito"
+              type="text"
+              class="h-9 w-full px-3 rounded-lg border border-slate-200 bg-white text-xs text-slate-800 focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600 transition-all shadow-2xs"
+              formControlName="distrito"
+              placeholder="Villa El Salvador"
+            />
+          </div>
+
+          <!-- Ubigeo -->
+          <div class="sm:col-span-3">
+            <label for="gen-ubigeo" class="block text-[11px] font-bold uppercase tracking-wider text-slate-700 mb-1">
+              Ubigeo INEI
+            </label>
+            <input
+              id="gen-ubigeo"
+              type="text"
+              class="h-9 w-full px-3 rounded-lg border border-slate-200 bg-white text-xs font-mono text-slate-800 focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600 transition-all shadow-2xs"
+              formControlName="ubigeo_cod"
+              placeholder="150142"
+            />
+          </div>
+
+          <!-- Coordenadas GPS: Latitud & Longitud -->
+          <div class="sm:col-span-6">
+            <label for="gen-lat" class="block text-[11px] font-bold uppercase tracking-wider text-slate-700 mb-1">
+              Latitud GPS (WGS84)
+            </label>
+            <div class="relative">
+              <span class="material-symbols-outlined absolute left-3 top-2.5 text-slate-400 text-base">explore</span>
+              <input
+                id="gen-lat"
+                type="number"
+                step="0.000001"
+                class="h-9 w-full pl-9 pr-3 rounded-lg border border-slate-200 bg-white text-xs font-mono text-slate-800 focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600 transition-all shadow-2xs"
+                formControlName="latitud"
+                placeholder="-12.212200"
+              />
+            </div>
+          </div>
+
+          <div class="sm:col-span-6">
+            <label for="gen-lng" class="block text-[11px] font-bold uppercase tracking-wider text-slate-700 mb-1">
+              Longitud GPS (WGS84)
+            </label>
+            <div class="relative">
+              <span class="material-symbols-outlined absolute left-3 top-2.5 text-slate-400 text-base">explore</span>
+              <input
+                id="gen-lng"
+                type="number"
+                step="0.000001"
+                class="h-9 w-full pl-9 pr-3 rounded-lg border border-slate-200 bg-white text-xs font-mono text-slate-800 focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600 transition-all shadow-2xs"
+                formControlName="longitud"
+                placeholder="-76.933900"
+              />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- TARJETA 2: Parámetros Operativos de Obra -->
+      <div class="p-3.5 sm:p-4 rounded-xl bg-slate-50/70 border border-slate-200/80 shadow-2xs space-y-3.5">
+        <div class="flex items-center gap-2 pb-2 border-b border-slate-200/60">
+          <div class="w-7 h-7 rounded-lg bg-emerald-100/70 text-emerald-700 flex items-center justify-center">
+            <span class="material-symbols-outlined text-base">engineering</span>
+          </div>
+          <div>
+            <h3 class="text-xs font-bold text-slate-900 leading-tight uppercase tracking-wider">
+              Régimen de Operación &amp; Capacidad de Campo
+            </h3>
+            <p class="text-[10px] text-slate-500">Duración proyectada de la obra, cuadrilla activa promedio y régimen de trabajo.</p>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <!-- Semanas Totales -->
+          <div>
+            <label for="gen-semanas" class="block text-[11px] font-bold uppercase tracking-wider text-slate-700 mb-1">
+              Semanas Totales (Curva S)
+            </label>
+            <div class="relative">
+              <span class="material-symbols-outlined absolute left-3 top-2.5 text-slate-400 text-base">calendar_month</span>
+              <input
+                id="gen-semanas"
+                type="number"
+                min="1"
+                class="h-9 w-full pl-9 pr-3 rounded-lg border border-slate-200 bg-white text-xs font-mono font-bold text-slate-800 focus:outline-none focus:border-emerald-600 focus:ring-1 focus:ring-emerald-600 transition-all shadow-2xs"
+                formControlName="semanas_totales"
+                placeholder="12"
+              />
+            </div>
+            <span class="text-[10px] text-slate-400 mt-1 block">Meta horizonte de programación</span>
+          </div>
+
+          <!-- Personal Activo Promedio -->
+          <div>
+            <label for="gen-personal" class="block text-[11px] font-bold uppercase tracking-wider text-slate-700 mb-1">
+              Personal Operativo Promedio
+            </label>
+            <div class="relative">
+              <span class="material-symbols-outlined absolute left-3 top-2.5 text-slate-400 text-base">groups</span>
+              <input
+                id="gen-personal"
+                type="number"
+                min="0"
+                class="h-9 w-full pl-9 pr-12 rounded-lg border border-slate-200 bg-white text-xs font-mono font-bold text-slate-800 focus:outline-none focus:border-emerald-600 focus:ring-1 focus:ring-emerald-600 transition-all shadow-2xs"
+                formControlName="personal_activo_promedio"
+                placeholder="18"
+              />
+              <span class="absolute right-3 top-2.5 text-[10px] font-semibold text-slate-400 uppercase">Operarios</span>
+            </div>
+            <span class="text-[10px] text-slate-400 mt-1 block">Estimado en campo por jornada</span>
+          </div>
+
+          <!-- Turno de Trabajo -->
+          <div>
+            <label for="gen-turno" class="block text-[11px] font-bold uppercase tracking-wider text-slate-700 mb-1">
+              Régimen / Turno de Trabajo
+            </label>
+            <div class="relative">
+              <span class="material-symbols-outlined absolute left-3 top-2.5 text-slate-400 text-base">schedule</span>
+              <input
+                id="gen-turno"
+                type="text"
+                list="turnos-list"
+                class="h-9 w-full pl-9 pr-3 rounded-lg border border-slate-200 bg-white text-xs text-slate-800 focus:outline-none focus:border-emerald-600 focus:ring-1 focus:ring-emerald-600 transition-all shadow-2xs"
+                formControlName="turno_trabajo"
+                placeholder="Diurno"
+              />
+              <datalist id="turnos-list">
+                @for (t of turnosComunes; track t) {
+                  <option [value]="t"></option>
+                }
+              </datalist>
+            </div>
+            <span class="text-[10px] text-slate-400 mt-1 block">Horario regulado de actividades</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- TARJETA 3: Interlocutor & Supervisión del Cliente -->
+      <div class="p-3.5 sm:p-4 rounded-xl bg-slate-50/70 border border-slate-200/80 shadow-2xs space-y-3.5">
+        <div class="flex items-center gap-2 pb-2 border-b border-slate-200/60">
+          <div class="w-7 h-7 rounded-lg bg-amber-100/70 text-amber-700 flex items-center justify-center">
+            <span class="material-symbols-outlined text-base">support_agent</span>
+          </div>
+          <div>
+            <h3 class="text-xs font-bold text-slate-900 leading-tight uppercase tracking-wider">
+              Interlocutor &amp; Contacto Directo del Cliente
+            </h3>
+            <p class="text-[10px] text-slate-500">Supervisión externa o enlace técnico del cliente para validaciones de obra.</p>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <!-- Nombre Contacto -->
+          <div>
+            <label for="gen-cli-nombre" class="block text-[11px] font-bold uppercase tracking-wider text-slate-700 mb-1">
+              Nombre del Contacto
+            </label>
+            <div class="relative">
+              <span class="material-symbols-outlined absolute left-3 top-2.5 text-slate-400 text-base">person</span>
+              <input
+                id="gen-cli-nombre"
+                type="text"
+                class="h-9 w-full pl-9 pr-3 rounded-lg border border-slate-200 bg-white text-xs text-slate-800 focus:outline-none focus:border-amber-600 focus:ring-1 focus:ring-amber-600 transition-all shadow-2xs"
+                formControlName="contacto_cliente_nombre"
+                placeholder="Ej. Ing. Carlos Medina"
+              />
+            </div>
+          </div>
+
+          <!-- Teléfono -->
+          <div>
+            <label for="gen-cli-telefono" class="block text-[11px] font-bold uppercase tracking-wider text-slate-700 mb-1">
+              Teléfono / WhatsApp
+            </label>
+            <div class="relative">
+              <span class="material-symbols-outlined absolute left-3 top-2.5 text-slate-400 text-base">call</span>
+              <input
+                id="gen-cli-telefono"
+                type="tel"
+                class="h-9 w-full pl-9 pr-3 rounded-lg border border-slate-200 bg-white text-xs font-mono text-slate-800 focus:outline-none focus:border-amber-600 focus:ring-1 focus:ring-amber-600 transition-all shadow-2xs"
+                formControlName="contacto_cliente_telefono"
+                placeholder="+51 987 654 321"
+              />
+            </div>
+          </div>
+
+          <!-- Correo -->
+          <div>
+            <label for="gen-cli-correo" class="block text-[11px] font-bold uppercase tracking-wider text-slate-700 mb-1">
+              Correo Electrónico
+            </label>
+            <div class="relative">
+              <span class="material-symbols-outlined absolute left-3 top-2.5 text-slate-400 text-base">mail</span>
+              <input
+                id="gen-cli-correo"
+                type="email"
+                class="h-9 w-full pl-9 pr-3 rounded-lg border border-slate-200 bg-white text-xs text-slate-800 focus:outline-none focus:border-amber-600 focus:ring-1 focus:ring-amber-600 transition-all shadow-2xs"
+                formControlName="contacto_cliente_correo"
+                placeholder="carlos.medina@cliente.com"
+              />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Alertas de Error -->
+      @if (formError()) {
+        <div class="p-3 rounded-lg bg-rose-50 border border-rose-200 text-rose-700 text-xs flex items-center gap-2" role="alert">
+          <span class="material-symbols-outlined text-base shrink-0">error</span>
+          <span>{{ formError() }}</span>
+        </div>
+      }
+
+      <!-- Pie del Pop-up con Acciones -->
+      <div class="flex flex-wrap items-center justify-between gap-3 pt-3.5 border-t border-slate-100">
+        <div class="flex items-center gap-1.5 text-[11px] text-slate-500">
+          <span class="material-symbols-outlined text-blue-600 text-sm">verified</span>
+          <span>Ficha Técnica Oficial vinculada al Centro de Costos #{{ idCentroCosto() }}</span>
+        </div>
+
+        <div class="flex items-center gap-2">
+          <button
+            type="button"
+            class="px-4 py-2 rounded-lg border border-slate-200 text-slate-700 hover:bg-slate-100 transition-colors text-xs font-semibold cursor-pointer"
+            (click)="closed.emit()"
+            [disabled]="isSaving()"
+          >
+            Cancelar
+          </button>
+
+          <button
+            type="submit"
+            class="inline-flex items-center gap-1.5 px-5 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs transition-all shadow-sm disabled:opacity-50 cursor-pointer"
+            [disabled]="isSaving()"
+          >
+            @if (isSaving()) {
+              <span class="material-symbols-outlined text-sm animate-spin">progress_activity</span>
+              <span>Guardando...</span>
+            } @else {
+              <span class="material-symbols-outlined text-sm">save</span>
+              <span>Guardar Ficha Técnica</span>
+            }
+          </button>
+        </div>
+      </div>
+    </form>
+  </div>
 </app-modal>

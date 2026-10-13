@@ -1,0 +1,302 @@
+<div class="p-4 bg-white rounded-xl shadow-sm border border-slate-200/80 overflow-hidden">
+  <!-- Cabecera del Gráfico y Leyenda -->
+  <div class="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-slate-100">
+    <div>
+      <div class="flex items-center gap-2">
+        <span class="w-2.5 h-2.5 rounded-full bg-emerald-600 inline-block"></span>
+        <h3 class="text-xs font-bold text-slate-800 tracking-wide uppercase">
+          Curva S • Avance Físico Acumulado
+        </h3>
+        <span class="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200/60">
+          PROYECTADO VS EJECUTADO
+        </span>
+      </div>
+      <p class="text-[11px] text-slate-500 mt-0.5">
+        Comparativa de metas contractuales acumuladas frente al avance real reportado en obra
+      </p>
+    </div>
+
+    <!-- Leyenda interactiva -->
+    <div class="flex flex-wrap items-center gap-3 text-[11px] font-medium">
+      <div class="flex items-center gap-1.5 text-slate-700">
+        <span class="w-3.5 h-1.5 rounded-full bg-[#2d7d5f] inline-block shadow-xs"></span>
+        <span>Avance Real Ejecutado</span>
+      </div>
+      <div class="flex items-center gap-1.5 text-slate-500">
+        <span class="w-3.5 h-0.5 border-t-2 border-dashed border-slate-400 inline-block"></span>
+        <span>Meta Programada</span>
+      </div>
+      @if (xSemanaActiva() !== null) {
+        <div class="flex items-center gap-1.5 text-amber-700">
+          <span class="w-2 h-2 rounded-full bg-amber-500 inline-block"></span>
+          <span>Semana Actual</span>
+        </div>
+      }
+    </div>
+  </div>
+
+  @if (points().length === 0) {
+    <!-- Empty State -->
+    <div class="py-12 text-center text-xs text-slate-400">
+      <span class="material-symbols-outlined text-4xl block mb-2 opacity-40 text-slate-400">show_chart</span>
+      <p class="font-medium text-slate-600 text-sm">No hay semanas programadas para graficar</p>
+      <p class="text-[11px] text-slate-400 mt-0.5">Programa las semanas del cronograma para generar la Curva S contractual.</p>
+    </div>
+  } @else {
+    <!-- Contenedor Responsive del Gráfico SVG -->
+    <div class="relative w-full overflow-x-auto pt-2 pb-1">
+      <svg
+        [attr.viewBox]="'0 0 ' + width + ' ' + height"
+        class="w-full h-auto min-w-[620px] select-none"
+        preserveAspectRatio="xMidYMid meet"
+      >
+        <defs>
+          <!-- Gradiente vertical para el área de avance real -->
+          <linearGradient id="realGradient" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#2d7d5f" stop-opacity="0.28" />
+            <stop offset="60%" stop-color="#2d7d5f" stop-opacity="0.08" />
+            <stop offset="100%" stop-color="#2d7d5f" stop-opacity="0.00" />
+          </linearGradient>
+
+          <!-- Sombra suave para la línea de la curva -->
+          <filter id="shadowReal" x="-5%" y="-10%" width="110%" height="130%">
+            <feDropShadow dx="0" dy="2" stdDeviation="2.5" flood-color="#2d7d5f" flood-opacity="0.25" />
+          </filter>
+        </defs>
+
+        <!-- Cuadrícula horizontal (Grid Y) -->
+        @for (line of gridLinesY(); track line.level) {
+          <g class="text-slate-300">
+            <line
+              [attr.x1]="padLeft"
+              [attr.y1]="line.y"
+              [attr.x2]="width - padRight"
+              [attr.y2]="line.y"
+              stroke="#e2e8f0"
+              [attr.stroke-dasharray]="line.level === 0 || line.level === 100 ? 'none' : '3 3'"
+              stroke-width="1"
+            />
+            <text
+              [attr.x]="padLeft - 8"
+              [attr.y]="line.y + 3.5"
+              text-anchor="end"
+              class="text-[10px] fill-slate-400 font-mono font-medium"
+            >
+              {{ line.level }}%
+            </text>
+          </g>
+        }
+
+        <!-- Línea vertical indicadora de la semana activa (HOY) -->
+        @if (xSemanaActiva(); as xAct) {
+          <g>
+            <line
+              [attr.x1]="xAct"
+              [attr.y1]="padTop"
+              [attr.x2]="xAct"
+              [attr.y2]="yBase()"
+              stroke="#f59e0b"
+              stroke-dasharray="4 4"
+              stroke-width="1.5"
+              opacity="0.85"
+            />
+            <rect
+              [attr.x]="xAct - 28"
+              [attr.y]="padTop - 18"
+              width="56"
+              height="16"
+              rx="4"
+              fill="#fef3c7"
+              stroke="#fcd34d"
+              stroke-width="1"
+            />
+            <text
+              [attr.x]="xAct"
+              [attr.y]="padTop - 6.5"
+              text-anchor="middle"
+              class="text-[9px] fill-amber-800 font-bold tracking-wider"
+            >
+              ACTUAL
+            </text>
+          </g>
+        }
+
+        <!-- Área sombreada bajo la curva real -->
+        @if (pathAreaReal()) {
+          <path [attr.d]="pathAreaReal()" fill="url(#realGradient)" />
+        }
+
+        <!-- Curva Meta (Programada) -->
+        @if (pathMeta()) {
+          <path
+            [attr.d]="pathMeta()"
+            fill="none"
+            stroke="#94a3b8"
+            stroke-width="2.2"
+            stroke-dasharray="4 4"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          />
+        }
+
+        <!-- Curva Real (Ejecutada) -->
+        @if (pathReal()) {
+          <path
+            [attr.d]="pathReal()"
+            fill="none"
+            stroke="#2d7d5f"
+            stroke-width="3"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            filter="url(#shadowReal)"
+          />
+        }
+
+        <!-- Puntos y Eje X de cada semana -->
+        @for (pt of points(); track pt.semana.id) {
+          <g
+            class="cursor-pointer group"
+            (mouseenter)="onPointHover(pt)"
+            (mouseleave)="onPointLeave()"
+            (click)="onPointClick(pt)"
+          >
+            <!-- Línea vertical tenue hacia el eje X -->
+            <line
+              [attr.x1]="pt.x"
+              [attr.y1]="padTop"
+              [attr.x2]="pt.x"
+              [attr.y2]="yBase()"
+              stroke="#f1f5f9"
+              stroke-width="1"
+            />
+
+            <!-- Etiqueta de la semana en Eje X -->
+            <text
+              [attr.x]="pt.x"
+              [attr.y]="yBase() + 18"
+              text-anchor="middle"
+              class="text-[10px] font-mono font-semibold"
+              [attr.fill]="pt.semana.numero_semana === semanaActiva() ? '#0f766e' : '#64748b'"
+            >
+              {{ pt.semana.etiqueta_semana }}
+            </text>
+
+            <text
+              [attr.x]="pt.x"
+              [attr.y]="yBase() + 30"
+              text-anchor="middle"
+              class="text-[8px] fill-slate-400"
+            >
+              {{ pt.semana.fecha_fin }}
+            </text>
+
+            <!-- Punto Meta (Programado) -->
+            <circle
+              [attr.cx]="pt.x"
+              [attr.cy]="pt.yMeta"
+              r="3.5"
+              fill="#ffffff"
+              stroke="#94a3b8"
+              stroke-width="1.8"
+            />
+
+            <!-- Punto Real (Ejecutado) -->
+            @if (pt.tieneReal) {
+              <circle
+                [attr.cx]="pt.x"
+                [attr.cy]="pt.yReal"
+                [attr.r]="hoveredPoint()?.semana?.id === pt.semana.id ? 6.5 : 4.5"
+                fill="#ffffff"
+                stroke="#2d7d5f"
+                [attr.stroke-width]="hoveredPoint()?.semana?.id === pt.semana.id ? 3 : 2.2"
+                class="transition-all duration-150"
+              />
+              <circle
+                [attr.cx]="pt.x"
+                [attr.cy]="pt.yReal"
+                r="2"
+                fill="#2d7d5f"
+              />
+            }
+
+            <!-- Área de impacto invisible para facilitar el hover -->
+            <rect
+              [attr.x]="pt.x - 18"
+              [attr.y]="padTop"
+              width="36"
+              [attr.height]="chartHeight() + padBottom"
+              fill="transparent"
+            />
+          </g>
+        }
+      </svg>
+
+      <!-- Tooltip Flotante Ejecutivo al hacer hover en un punto -->
+      @if (hoveredPoint(); as hp) {
+        <div
+          class="absolute z-20 pointer-events-none bg-slate-900/95 text-white rounded-xl p-3 shadow-xl border border-slate-700/60 backdrop-blur-xs min-w-[220px] transition-all duration-150 text-xs"
+          [style.left.px]="hp.x > width - 150 ? hp.x - 220 : hp.x + 15"
+          [style.top.px]="hp.yReal > 140 ? hp.yReal - 120 : hp.yReal + 10"
+        >
+          <!-- Header del Tooltip -->
+          <div class="flex items-center justify-between pb-1.5 mb-1.5 border-b border-slate-800">
+            <span class="font-mono font-bold text-emerald-400 text-xs">
+              {{ hp.semana.etiqueta_semana }}
+            </span>
+            <span
+              class="px-2 py-0.2 rounded text-[9px] font-bold uppercase"
+              [class.bg-emerald-950]="hp.semana.estado === 'En Plazo' || hp.semana.estado === 'Completado'"
+              [class.text-emerald-300]="hp.semana.estado === 'En Plazo' || hp.semana.estado === 'Completado'"
+              [class.bg-rose-950]="hp.semana.estado === 'Retrasado'"
+              [class.text-rose-300]="hp.semana.estado === 'Retrasado'"
+              [class.bg-slate-800]="hp.semana.estado === 'Programado'"
+              [class.text-slate-300]="hp.semana.estado === 'Programado'"
+            >
+              {{ hp.semana.estado }}
+            </span>
+          </div>
+
+          <!-- Fase / Actividad -->
+          <div class="font-semibold text-slate-200 text-[11px] mb-1 leading-tight line-clamp-2">
+            {{ hp.semana.fase_principal }}
+          </div>
+          <div class="text-[10px] text-slate-400 mb-2 font-mono">
+            {{ hp.semana.fecha_inicio }} al {{ hp.semana.fecha_fin }}
+          </div>
+
+          <!-- Valores Curva S -->
+          <div class="space-y-1 pt-1.5 border-t border-slate-800 text-[11px]">
+            <div class="flex items-center justify-between">
+              <span class="text-slate-400">Meta programada:</span>
+              <span class="font-mono font-bold text-slate-200">
+                {{ hp.semana.porcentaje_meta | number: '1.2-2' }}%
+              </span>
+            </div>
+            <div class="flex items-center justify-between">
+              <span class="text-slate-400">Real ejecutado:</span>
+              <span class="font-mono font-bold text-emerald-400">
+                {{ hp.semana.porcentaje_real | number: '1.2-2' }}%
+              </span>
+            </div>
+            <div class="flex items-center justify-between pt-1 border-t border-slate-800/60">
+              <span class="text-slate-400">Desvío acumulado:</span>
+              <span
+                class="font-mono font-bold"
+                [class.text-emerald-400]="hp.desviacion >= 0"
+                [class.text-rose-400]="hp.desviacion < 0"
+              >
+                {{ hp.desviacion | number: '+1.2-2' }} pts
+              </span>
+            </div>
+          </div>
+
+          <!-- Pista de interacción -->
+          <div class="mt-2 pt-1.5 border-t border-slate-800/60 text-[9px] text-slate-400 flex items-center gap-1">
+            <span class="material-symbols-outlined text-xs text-emerald-400">touch_app</span>
+            <span>Clic para abrir opciones de la semana</span>
+          </div>
+        </div>
+      }
+    </div>
+  }
+</div>

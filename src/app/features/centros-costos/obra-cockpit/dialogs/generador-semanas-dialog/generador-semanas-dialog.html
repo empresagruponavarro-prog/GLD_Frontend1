@@ -1,0 +1,269 @@
+<app-modal
+  [isOpen]="isOpen()"
+  [showHeader]="false"
+  [showDefaultFooter]="false"
+  maxWidth="780px"
+  (closed)="closed.emit()"
+>
+  <div modal-body class="p-1 sm:p-2">
+    <!-- Header customizado según estándar SistemaGLD -->
+    <div class="flex items-start justify-between pb-3.5 border-b border-slate-100">
+      <div class="flex items-center gap-3">
+        <div class="w-11 h-11 rounded-xl bg-emerald-50 text-emerald-600 border border-emerald-100 flex items-center justify-center shrink-0 shadow-2xs">
+          <span class="material-symbols-outlined text-2xl">auto_awesome</span>
+        </div>
+        <div>
+          <div class="flex items-center gap-2">
+            <span class="px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200/60">
+              SISTEMA GLD2026
+            </span>
+            <span class="font-mono text-[11px] text-slate-500 font-semibold">
+              #GENERADOR-AUTOMÁTICO
+            </span>
+          </div>
+          <h2 class="text-base font-bold text-slate-900 leading-tight mt-1">
+            Generar cronograma semanal &amp; Curva S base
+          </h2>
+          <div class="flex items-center gap-2 text-xs text-slate-500 mt-0.5">
+            <span class="w-2 h-2 rounded-full bg-emerald-600 shrink-0 inline-block"></span>
+            <span class="font-medium text-slate-700">CC-{{ idCentroCosto() }}: {{ nombreObra() || 'Obra' }}</span>
+            <span class="text-slate-300">•</span>
+            <span>Planificación Masiva Automatizada</span>
+          </div>
+        </div>
+      </div>
+      <button
+        type="button"
+        class="text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg p-1.5 transition-colors cursor-pointer"
+        (click)="closed.emit()"
+        aria-label="Cerrar modal"
+      >
+        <span class="material-symbols-outlined text-xl">close</span>
+      </button>
+    </div>
+
+    <!-- Formulario de Configuración -->
+    <form [formGroup]="form" (ngSubmit)="onSubmit()" id="form-generador" class="space-y-4 pt-3.5">
+      <!-- Fila 1: Fecha Inicio + Cantidad de Semanas -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+        <div>
+          <label for="gen-inicio" class="block text-[11px] font-bold uppercase tracking-wider text-slate-700 mb-1.5">
+            FECHA DE INICIO DEL CRONOGRAMA <span class="text-rose-500">*</span>
+          </label>
+          <input
+            id="gen-inicio"
+            type="date"
+            class="h-10 w-full px-3.5 rounded-lg border border-slate-200 bg-white text-xs text-slate-800 focus:outline-none focus:border-emerald-600 focus:ring-1 focus:ring-emerald-600 transition-all shadow-2xs"
+            formControlName="fecha_inicio"
+          />
+        </div>
+
+        <div>
+          <div class="flex items-center justify-between mb-1.5">
+            <label for="gen-cant" class="text-[11px] font-bold uppercase tracking-wider text-slate-700">
+              SEMANAS TOTALES A GENERAR <span class="text-rose-500">*</span>
+            </label>
+            <!-- Pills rápidas -->
+            <div class="flex items-center gap-1">
+              @for (n of [8, 12, 16, 24]; track n) {
+                <button
+                  type="button"
+                  (click)="setCantidad(n)"
+                  class="px-1.5 py-0.5 rounded text-[10px] transition-colors cursor-pointer"
+                  [class.bg-emerald-100]="form.controls.cantidad_semanas.value === n"
+                  [class.text-emerald-800]="form.controls.cantidad_semanas.value === n"
+                  [class.font-bold]="form.controls.cantidad_semanas.value === n"
+                  [class.bg-slate-100]="form.controls.cantidad_semanas.value !== n"
+                  [class.text-slate-600]="form.controls.cantidad_semanas.value !== n"
+                >
+                  {{ n }}
+                </button>
+              }
+            </div>
+          </div>
+          <input
+            id="gen-cant"
+            type="number"
+            min="1"
+            max="52"
+            class="h-10 w-full px-3.5 rounded-lg border border-slate-200 bg-white text-xs font-mono font-bold text-slate-800 focus:outline-none focus:border-emerald-600 focus:ring-1 focus:ring-emerald-600 transition-all shadow-2xs"
+            formControlName="cantidad_semanas"
+          />
+        </div>
+      </div>
+
+      <!-- Fila 2: Tipo de Distribución de Metas (Curva S) -->
+      <div>
+        <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-700 mb-1.5">
+          TIPO DE DISTRIBUCIÓN DE METAS CONTRACTUALES
+        </label>
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+          <!-- Opción 1: Curva S Sigmoide -->
+          <div
+            (click)="setDistribucion('s_curve')"
+            class="p-3 rounded-xl border transition-all cursor-pointer flex flex-col justify-between"
+            [class.border-emerald-600]="form.controls.distribucion.value === 's_curve'"
+            [class.bg-emerald-50/50]="form.controls.distribucion.value === 's_curve'"
+            [class.border-slate-200]="form.controls.distribucion.value !== 's_curve'"
+            [class.hover:border-slate-300]="form.controls.distribucion.value !== 's_curve'"
+          >
+            <div class="flex items-center justify-between mb-1">
+              <span class="text-xs font-bold text-slate-800">Curva S Progresiva</span>
+              <span class="px-1.5 py-0.5 rounded text-[9px] font-bold bg-emerald-100 text-emerald-800">Estándar</span>
+            </div>
+            <p class="text-[10px] text-slate-500 leading-snug">
+              Arranque gradual, aceleración central y entrega controlada (Smoothstep cúbico al 100%).
+            </p>
+          </div>
+
+          <!-- Opción 2: Lineal -->
+          <div
+            (click)="setDistribucion('lineal')"
+            class="p-3 rounded-xl border transition-all cursor-pointer flex flex-col justify-between"
+            [class.border-emerald-600]="form.controls.distribucion.value === 'lineal'"
+            [class.bg-emerald-50/50]="form.controls.distribucion.value === 'lineal'"
+            [class.border-slate-200]="form.controls.distribucion.value !== 'lineal'"
+            [class.hover:border-slate-300]="form.controls.distribucion.value !== 'lineal'"
+          >
+            <div class="flex items-center justify-between mb-1">
+              <span class="text-xs font-bold text-slate-800">Distribución Lineal</span>
+              <span class="material-symbols-outlined text-xs text-slate-400">trending_flat</span>
+            </div>
+            <p class="text-[10px] text-slate-500 leading-snug">
+              Reparte el 100% de manera uniforme semana tras semana de principio a fin.
+            </p>
+          </div>
+
+          <!-- Opción 3: En Cero -->
+          <div
+            (click)="setDistribucion('cero')"
+            class="p-3 rounded-xl border transition-all cursor-pointer flex flex-col justify-between"
+            [class.border-emerald-600]="form.controls.distribucion.value === 'cero'"
+            [class.bg-emerald-50/50]="form.controls.distribucion.value === 'cero'"
+            [class.border-slate-200]="form.controls.distribucion.value !== 'cero'"
+            [class.hover:border-slate-300]="form.controls.distribucion.value !== 'cero'"
+          >
+            <div class="flex items-center justify-between mb-1">
+              <span class="text-xs font-bold text-slate-800">Metas en Cero (0%)</span>
+              <span class="material-symbols-outlined text-xs text-slate-400">edit_note</span>
+            </div>
+            <p class="text-[10px] text-slate-500 leading-snug">
+              Genera solo el calendario semanal y permite cargar las metas manualmente después.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Fila 3: Fase Principal y Modo de Inserción -->
+      <div class="grid grid-cols-1 sm:grid-cols-12 gap-3.5">
+        <div class="sm:col-span-7">
+          <label for="gen-fase" class="block text-[11px] font-bold uppercase tracking-wider text-slate-700 mb-1.5">
+            FASE PREDETERMINADA <span class="text-rose-500">*</span>
+          </label>
+          <input
+            id="gen-fase"
+            type="text"
+            class="h-10 w-full px-3.5 rounded-lg border border-slate-200 bg-white text-xs text-slate-800 focus:outline-none focus:border-emerald-600 focus:ring-1 focus:ring-emerald-600 transition-all shadow-2xs"
+            formControlName="fase_defecto"
+            placeholder="Ejecución de Obra"
+          />
+        </div>
+
+        @if (semanasExistentes().length > 0) {
+          <div class="sm:col-span-5">
+            <label for="gen-modo" class="block text-[11px] font-bold uppercase tracking-wider text-slate-700 mb-1.5">
+              MODO DE GENERACIÓN
+            </label>
+            <select
+              id="gen-modo"
+              class="h-10 w-full px-3.5 rounded-lg border border-slate-200 bg-white text-xs text-slate-800 focus:outline-none focus:border-emerald-600 focus:ring-1 focus:ring-emerald-600 transition-all shadow-2xs"
+              formControlName="modo"
+            >
+              <option value="continuar">Continuar desde SEM {{ semanasExistentes().length + 1 }}</option>
+              <option value="reemplazar">Reemplazar semanas existentes</option>
+            </select>
+          </div>
+        }
+      </div>
+
+      <!-- Tabla de Previsualización Reactiva -->
+      <div>
+        <div class="flex items-center justify-between mb-1.5">
+          <label class="text-[11px] font-bold uppercase tracking-wider text-slate-700">
+            PREVISUALIZACIÓN DEL CRONOGRAMA CALCULADO ({{ semanasGeneradas().length }} SEMANAS)
+          </label>
+          <span class="text-[10px] text-slate-500 font-mono">
+            Meta final: {{ semanasGeneradas().length > 0 ? (semanasGeneradas()[semanasGeneradas().length - 1].porcentaje_meta | number: '1.2-2') : 0 }}%
+          </span>
+        </div>
+
+        <div class="border border-slate-200 rounded-xl overflow-hidden max-h-48 overflow-y-auto shadow-2xs bg-white">
+          <table class="w-full text-left border-collapse text-[11px]">
+            <thead class="bg-slate-50 sticky top-0 border-b border-slate-200 text-slate-600 font-semibold uppercase text-[10px]">
+              <tr>
+                <th class="py-2 px-3">Semana</th>
+                <th class="py-2 px-2.5">Periodo (7 días)</th>
+                <th class="py-2 px-3">Fase</th>
+                <th class="py-2 px-3 text-right">% Meta Acumulada</th>
+                <th class="py-2 px-3 text-right">Incremento</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-100 font-mono">
+              @for (sem of semanasGeneradas(); track sem.numero_semana) {
+                <tr class="hover:bg-slate-50/80 transition-colors">
+                  <td class="py-1.5 px-3 font-bold text-emerald-700">{{ sem.etiqueta_semana }}</td>
+                  <td class="py-1.5 px-2.5 text-slate-600 font-sans">{{ sem.fecha_inicio }} al {{ sem.fecha_fin }}</td>
+                  <td class="py-1.5 px-3 font-sans text-slate-700 truncate max-w-[160px]">{{ sem.fase_principal }}</td>
+                  <td class="py-1.5 px-3 text-right font-bold text-slate-900">{{ sem.porcentaje_meta | number: '1.2-2' }}%</td>
+                  <td class="py-1.5 px-3 text-right text-emerald-600 font-medium">+{{ sem.incremento_semanal | number: '1.2-2' }}%</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      @if (formError()) {
+        <div class="p-3 rounded-lg bg-rose-50 border border-rose-200 text-rose-700 text-xs flex items-center gap-2" role="alert">
+          <span class="material-symbols-outlined text-base">error</span>
+          <span>{{ formError() }}</span>
+        </div>
+      }
+
+      <!-- Pie del Pop-up -->
+      <div class="flex flex-wrap items-center justify-between gap-3 pt-4 border-t border-slate-100">
+        <!-- Trazabilidad auditada -->
+        <div class="flex items-center gap-1.5 text-xs text-slate-500">
+          <span class="material-symbols-outlined text-emerald-600 text-base">verified</span>
+          <span>Generación atómica con Curva S • GLD2026</span>
+        </div>
+
+        <!-- Botones de Acción -->
+        <div class="flex items-center gap-2.5 ml-auto shrink-0">
+          <button
+            type="button"
+            class="px-5 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold transition-colors cursor-pointer"
+            (click)="closed.emit()"
+            [disabled]="isSaving()"
+          >
+            Cancelar
+          </button>
+          <button
+            type="submit"
+            form="form-generador"
+            id="btn-generar-guardar"
+            [disabled]="isSaving() || semanasGeneradas().length === 0"
+            class="px-5 py-2 rounded-xl bg-[#2d7d5f] hover:bg-[#24674e] text-white text-xs font-semibold shadow-sm flex items-center gap-2 transition-all cursor-pointer disabled:opacity-50"
+          >
+            @if (isSaving()) {
+              <i class="fa-solid fa-spinner fa-spin"></i> Generando...
+            } @else {
+              <span class="material-symbols-outlined text-sm">auto_awesome</span>
+              <span>Generar y Guardar {{ semanasGeneradas().length }} Semanas</span>
+            }
+          </button>
+        </div>
+      </div>
+    </form>
+  </div>
+</app-modal>

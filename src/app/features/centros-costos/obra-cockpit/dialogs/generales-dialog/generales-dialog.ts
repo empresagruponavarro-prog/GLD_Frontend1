@@ -18,10 +18,36 @@ export class GeneralesDialogComponent {
 
   readonly isOpen = input(false);
   readonly idCentroCosto = input.required<number>();
+  readonly nombreObra = input<string>('');
   readonly generales = input<ObraDatosGenerales | undefined>(undefined);
 
   readonly closed = output<void>();
   readonly saved = output<void>();
+
+  protected readonly departamentosComunes = [
+    'Lima', 'Callao', 'Arequipa', 'Cusco', 'La Libertad', 'Piura', 'Ica', 'Junín', 'Lambayeque', 'Ancash', 'San Martín', 'Loreto', 'Tacna', 'Puno'
+  ];
+
+  protected readonly turnosComunes = [
+    'Diurno (07:30 - 17:00)',
+    'Nocturno (22:00 - 06:00)',
+    'Mixto / Doble Turno',
+    'Continuo 24/7'
+  ];
+
+  protected abrirGoogleMaps(): void {
+    const lat = this.form.controls.latitud.value;
+    const lng = this.form.controls.longitud.value;
+    if (lat && lng) {
+      window.open(`https://www.google.com/maps/search/?api=1&query=${lat},${lng}`, '_blank', 'noopener');
+    } else {
+      const dir = this.form.controls.direccion.value;
+      const dist = this.form.controls.distrito.value;
+      if (dir) {
+        window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${dir}, ${dist}, Lima, Peru`)}`, '_blank', 'noopener');
+      }
+    }
+  }
 
   protected readonly isSaving = signal(false);
   protected readonly formError = signal('');
