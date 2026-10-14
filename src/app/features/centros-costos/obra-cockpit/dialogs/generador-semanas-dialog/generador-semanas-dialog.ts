@@ -90,7 +90,7 @@ export class GeneradorSemanasDialogComponent {
     const numBase = esReemplazar ? 0 : existentes.reduce((max, s) => Math.max(max, s.numero_semana), 0);
 
     const resultado: PreviaSemana[] = [];
-    let fechaActual = new Date(iniStr);
+    const fechaActual = new Date(iniStr);
     let metaAnterior = 0;
 
     for (let i = 1; i <= cant; i++) {
@@ -102,15 +102,14 @@ export class GeneradorSemanasDialogComponent {
       fFin.setDate(fFin.getDate() + 6); // 7 días (lunes a domingo o bloque de 7)
 
       // Cálculo de meta acumulada según el tipo de distribución
-      let meta = 0;
+      let meta: number;
       if (raw.distribucion === 'lineal') {
         meta = Number(((i / cant) * 100).toFixed(2));
       } else if (raw.distribucion === 's_curve') {
         // Smoothstep cúbico: S(t) = 3t^2 - 2t^3
         const t = i / cant;
         const sVal = 3 * Math.pow(t, 2) - 2 * Math.pow(t, 3);
-        meta = Number((sVal * 100).toFixed(2));
-        if (i === cant) meta = 100;
+        meta = i === cant ? 100 : Number((sVal * 100).toFixed(2));
       } else {
         meta = 0;
       }

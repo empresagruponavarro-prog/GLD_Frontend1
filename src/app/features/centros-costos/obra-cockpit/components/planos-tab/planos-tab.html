@@ -82,14 +82,14 @@
 
   <!-- Menú contextual flotante (renderizado en viewport con fixed z-[9999], por encima de toda la tabla y tarjetas) -->
   @if (menuPos(); as menu) {
-    <!-- Backdrop invisible para cerrar al hacer clic afuera -->
-    <div class="fixed inset-0 z-[9998]" (click)="cerrarMenu()"></div>
+    <!-- Backdrop invisible para cerrar al hacer clic afuera o con Escape -->
+    <button type="button" class="fixed inset-0 z-[9998] bg-transparent border-0 cursor-default p-0 m-0 w-full h-full" (click)="cerrarMenu()" (keydown.escape)="cerrarMenu()" aria-label="Cerrar menú"></button>
 
     <div 
       class="fixed z-[9999] w-52 rounded-xl bg-surface-container-lowest shadow-2xl p-1.5 border border-surface-container flex flex-col gap-0.5 text-left text-xs animate-in fade-in duration-75"
+      role="menu"
       [style.top.px]="menu.top"
-      [style.right.px]="menu.right"
-      (click)="$event.stopPropagation()">
+      [style.right.px]="menu.right">
       <button type="button" class="w-full flex items-center gap-2 px-2.5 py-2 rounded-lg text-on-surface hover:bg-surface-container-high transition-colors text-left font-medium cursor-pointer" (click)="editar.emit(menu.plano); cerrarMenu()">
         <span class="material-symbols-outlined text-base text-primary">edit</span>
         <span>Editar Datos</span>
