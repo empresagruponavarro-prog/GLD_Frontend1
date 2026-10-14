@@ -1,7 +1,7 @@
 import { Service, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { Usuario } from './interfaces';
+import { Usuario, UsuarioCreateDto, UsuarioUpdateDto } from './interfaces';
 import { environment } from '@env';
 
 export * from './interfaces';
@@ -15,15 +15,20 @@ export class UsuariosService {
     return this.http.get<Usuario[]>(this.apiUrl);
   }
 
-  create(data: Usuario): Observable<Usuario> {
+  /** Catálogo de roles válidos. */
+  getRoles(): Observable<string[]> {
+    return this.http.get<string[]>(`${this.apiUrl}/roles`);
+  }
+
+  create(data: UsuarioCreateDto): Observable<Usuario> {
     return this.http.post<Usuario>(this.apiUrl, data);
   }
 
-  update(id: string, data: Partial<Usuario>): Observable<Usuario> {
-    return this.http.patch<Usuario>(`${this.apiUrl}/${id}`, data);
+  update(id: string, data: UsuarioUpdateDto): Observable<Usuario> {
+    return this.http.patch<Usuario>(`${this.apiUrl}/${encodeURIComponent(id)}`, data);
   }
 
   delete(id: string): Observable<void> {
-    return this.http.delete<void>(`${this.apiUrl}/${id}`);
+    return this.http.delete<void>(`${this.apiUrl}/${encodeURIComponent(id)}`);
   }
 }

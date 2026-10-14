@@ -1,6 +1,7 @@
-import { Component } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
+import { AuthService } from '../auth/auth.service';
 
 @Component({
   selector: 'app-sidebar',
@@ -9,6 +10,9 @@ import { RouterModule } from '@angular/router';
   templateUrl: './sidebar.html'
 })
 export class SidebarComponent {
+  /** Las entradas de administración (Usuarios, Roles, Empresas) solo se muestran al rol Administrador. */
+  readonly esAdministrador = inject(AuthService).esAdministrador;
+
   isMaestrosOpen = true;
   isDocumentosOpen = true;
   isAlmacenOpen = true;

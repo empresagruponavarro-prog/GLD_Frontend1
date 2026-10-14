@@ -1,0 +1,235 @@
+<div class="content-header">
+  <div>
+    <h1 class="content-title">Administración de Roles</h1>
+    <p class="content-subtitle">Catálogo de roles que se asignan a los usuarios de GLD.</p>
+  </div>
+  <div style="display: flex; gap: 0.5rem;">
+    <button type="button" class="btn btn-secondary" (click)="loadRoles()" [disabled]="isLoading()">
+      <i class="fa-solid fa-arrows-rotate" [class.fa-spin]="isLoading()" aria-hidden="true"></i> {{ isLoading() ? 'Actualizando...' : 'Actualizar' }}
+    </button>
+    <button type="button" class="btn btn-primary" (click)="openModal()" data-testid="roles-nuevo">
+      <i class="fa-solid fa-shield-halved" aria-hidden="true"></i> + Nuevo Rol
+    </button>
+  </div>
+</div>
+
+<div class="content-body">
+  @if (pageError(); as error) {
+    <div role="alert" data-testid="roles-page-error" class="roles-alert roles-alert--error">
+      <i class="fa-solid fa-circle-exclamation" aria-hidden="true"></i>
+      <span>{{ error }}</span>
+    </div>
+  }
+  @if (aviso(); as mensaje) {
+    <div role="status" data-testid="roles-aviso" class="roles-alert roles-alert--ok">
+      <i class="fa-solid fa-circle-check" aria-hidden="true"></i>
+      <span>{{ mensaje }}</span>
+    </div>
+  }
+
+  <app-data-table
+    [columns]="columns"
+    [items]="roles()"
+    [loading]="isLoading()"
+    emptyMessage="No hay roles registrados."
+    emptyIcon="fa-solid fa-user-shield"
+    minWidth="760px"
+    [rowTemplate]="rolRow">
+  </app-data-table>
+
+  <ng-template #rolRow let-rol>
+    <tr data-testid="rol-fila">
+      <td><strong>{{ rol.nombre }}</strong></td>
+      <td>
+        @if (rol.descripcion) {
+          {{ rol.descripcion }}
+        } @else {
+          <span class="roles-muted">Sin descripción</span>
+        }
+      </td>
+      <td>
+        <span class="badge badge-progress" data-testid="rol-usuarios">
+          <i class="fa-solid fa-users" aria-hidden="true"></i> {{ usuariosTexto(rol.usuarios) }}
+        </span>
+      </td>
+      <td>
+        @if (rol.es_sistema) {
+          <span class="badge roles-badge-sistema" data-testid="rol-sistema">
+            <i class="fa-solid fa-lock" aria-hidden="true"></i> Sistema
+          </span>
+        } @else {
+          <span class="badge badge-completed">Personalizado</span>
+        }
+      </td>
+      <td>
+        <div class="roles-actions">
+          <button type="button" class="btn btn-secondary roles-action-btn" (click)="editModal(rol)"
+            title="Editar" [attr.aria-label]="'Editar rol ' + rol.nombre" data-testid="rol-editar">
+            <i class="fa-solid fa-pen-to-square" aria-hidden="true"></i>
+          </button>
+          @if (motivoNoEliminar(rol); as motivo) {
+            <!-- El title va en el envoltorio: los botones deshabilitados no muestran tooltip en todos los navegadores. -->
+            <span class="roles-disabled-wrap" [title]="motivo">
+              <button type="button" class="btn btn-danger roles-action-btn" disabled
+                [attr.aria-label]="'Eliminar rol ' + rol.nombre" [attr.aria-describedby]="'rol-motivo-' + rol.id"
+                data-testid="rol-eliminar">
+                <i class="fa-solid fa-trash" aria-hidden="true"></i>
+              </button>
+              <span class="roles-sr-only" [id]="'rol-motivo-' + rol.id">{{ motivo }}</span>
+            </span>
+          } @else {
+            <button type="button" class="btn btn-danger roles-action-btn" (click)="askDelete(rol)"
+              title="Eliminar" [attr.aria-label]="'Eliminar rol ' + rol.nombre" data-testid="rol-eliminar">
+              <i class="fa-solid fa-trash" aria-hidden="true"></i>
+            </button>
+          }
+        </div>
+      </td>
+    </tr>
+  </ng-template>
+</div>
+
+<!-- Modal crear / editar rol (misma familia visual que el de usuarios) -->
+@if (showModal()) {
+<div class="modal-overlay" tabindex="-1" (click)="onOverlayClick($event, 'form')" (keydown.escape)="closeModal()">
+  <div class="modal-content usuario-modal" role="dialog" aria-modal="true" aria-labelledby="rol-modal-title">
+
+    <div class="modal-header-custom">
+      <div class="modal-header-info">
+        <div class="modal-icon-badge">
+          <i class="fa-solid" [class.fa-shield-halved]="!editando()" [class.fa-user-shield]="editando()" aria-hidden="true"></i>
+        </div>
+        <div class="modal-header-titles">
+          <h3 id="rol-modal-title">{{ editando() ? 'Editar Rol' : 'Nuevo Rol' }}</h3>
+          <p>{{ editando() ? 'Actualiza el nombre o la descripción del rol.' : 'Define un nuevo rol para asignarlo a los usuarios.' }}</p>
+        </div>
+      </div>
+      <button type="button" class="btn-close-modal" (click)="closeModal()" [disabled]="isSaving()" aria-label="Cerrar modal" title="Cerrar">
+        <i class="fa-solid fa-xmark" aria-hidden="true"></i>
+      </button>
+    </div>
+
+    <form [formGroup]="form" (ngSubmit)="saveRol()" novalidate>
+      <div class="modal-body-custom">
+        @if (formError(); as error) {
+          <div role="alert" data-testid="rol-form-error" class="roles-alert roles-alert--error">
+            <i class="fa-solid fa-circle-exclamation" aria-hidden="true"></i>
+            <span>{{ error }}</span>
+          </div>
+        }
+
+        <div class="form-section">
+          <div class="section-label">
+            <i class="fa-solid fa-id-badge" aria-hidden="true"></i>
+            <span>Datos del Rol</span>
+          </div>
+
+          @if (editando()?.es_sistema) {
+            <div class="roles-sistema-note" data-testid="rol-sistema-aviso">
+              <i class="fa-solid fa-lock" aria-hidden="true"></i>
+              <span>Rol de sistema: el nombre no se puede cambiar; solo su descripción.</span>
+            </div>
+          }
+
+          <div class="field-item">
+            <label class="field-label" for="rol-nombre">
+              <span>Nombre del Rol <span class="required-badge">*</span></span>
+            </label>
+            <div class="input-with-icon">
+              <i class="fa-solid input-prefix-icon" [class.fa-tag]="!editando()?.es_sistema" [class.fa-lock]="editando()?.es_sistema" aria-hidden="true"></i>
+              <input #nombreInput id="rol-nombre" type="text" class="form-control-custom" formControlName="nombre"
+                placeholder="Ej. Almacenero" autocomplete="off" [attr.maxlength]="nombreMax"
+                [attr.aria-invalid]="intentoGuardar() && !!nombreError()"
+                aria-describedby="rol-nombre-ayuda">
+            </div>
+            @if (intentoGuardar() && nombreError(); as error) {
+              <span id="rol-nombre-ayuda" class="roles-field-error" data-testid="rol-nombre-error">
+                <i class="fa-solid fa-circle-exclamation" aria-hidden="true"></i> {{ error }}
+              </span>
+            } @else {
+              <span id="rol-nombre-ayuda" class="field-hint">{{ nombreMin }}-{{ nombreMax }} caracteres: letras, números, espacios, guion y punto.</span>
+            }
+          </div>
+
+          <div class="field-item">
+            <label class="field-label" for="rol-descripcion">
+              <span>Descripción <span class="roles-optional">(opcional)</span></span>
+            </label>
+            <div class="input-with-icon">
+              <i class="fa-solid fa-align-left input-prefix-icon" aria-hidden="true"></i>
+              <input #descripcionInput id="rol-descripcion" type="text" class="form-control-custom" formControlName="descripcion"
+                placeholder="Ej. Registra ingresos y salidas de almacén" autocomplete="off" [attr.maxlength]="descripcionMax"
+                [attr.aria-invalid]="intentoGuardar() && !!descripcionError()"
+                aria-describedby="rol-descripcion-ayuda">
+            </div>
+            @if (intentoGuardar() && descripcionError(); as error) {
+              <span id="rol-descripcion-ayuda" class="roles-field-error" data-testid="rol-descripcion-error">
+                <i class="fa-solid fa-circle-exclamation" aria-hidden="true"></i> {{ error }}
+              </span>
+            } @else {
+              <span id="rol-descripcion-ayuda" class="field-hint">Hasta {{ descripcionMax }} caracteres.</span>
+            }
+          </div>
+
+          @if (editando(); as rol) {
+            @if (!rol.es_sistema && rol.usuarios > 0) {
+              <span class="field-hint">
+                <i class="fa-solid fa-circle-info" aria-hidden="true"></i>
+                Si lo renombras, se actualizará en {{ usuariosTexto(rol.usuarios) }}.
+              </span>
+            }
+          }
+        </div>
+      </div>
+
+      <div class="modal-footer-custom">
+        <button type="button" class="btn-cancel-custom" (click)="closeModal()" [disabled]="isSaving()">Cancelar</button>
+        <button type="submit" class="btn-submit-custom" [disabled]="isSaving()">
+          <i class="fa-solid" [class.fa-floppy-disk]="!isSaving()" [class.fa-circle-notch]="isSaving()" [class.fa-spin]="isSaving()" aria-hidden="true"></i>
+          <span>{{ isSaving() ? 'Guardando...' : (editando() ? 'Guardar Cambios' : 'Crear Rol') }}</span>
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+}
+
+<!-- Confirmación de eliminación (dentro de la pantalla, sin confirm()) -->
+@if (porEliminar(); as rol) {
+<div class="modal-overlay" tabindex="-1" (click)="onOverlayClick($event, 'delete')" (keydown.escape)="cancelDelete()">
+  <div class="modal-content usuario-modal roles-confirm-modal" role="alertdialog" aria-modal="true"
+    aria-labelledby="rol-eliminar-title" aria-describedby="rol-eliminar-desc">
+
+    <div class="modal-header-custom">
+      <div class="modal-header-info">
+        <div class="modal-icon-badge roles-icon-danger">
+          <i class="fa-solid fa-trash" aria-hidden="true"></i>
+        </div>
+        <div class="modal-header-titles">
+          <h3 id="rol-eliminar-title">Eliminar Rol</h3>
+          <p id="rol-eliminar-desc">¿Eliminar el rol "{{ rol.nombre }}"? Esta acción no se puede deshacer.</p>
+        </div>
+      </div>
+    </div>
+
+    @if (deleteError(); as error) {
+      <div class="modal-body-custom">
+        <div role="alert" data-testid="rol-eliminar-error" class="roles-alert roles-alert--error">
+          <i class="fa-solid fa-circle-exclamation" aria-hidden="true"></i>
+          <span>{{ error }}</span>
+        </div>
+      </div>
+    }
+
+    <div class="modal-footer-custom">
+      <button #cancelarEliminarBtn type="button" class="btn-cancel-custom" (click)="cancelDelete()" [disabled]="isDeleting()"
+        data-testid="rol-eliminar-cancelar">Cancelar</button>
+      <button type="button" class="btn-submit-custom roles-btn-danger" (click)="confirmDelete()" [disabled]="isDeleting()"
+        data-testid="rol-eliminar-confirmar">
+        <i class="fa-solid" [class.fa-trash]="!isDeleting()" [class.fa-circle-notch]="isDeleting()" [class.fa-spin]="isDeleting()" aria-hidden="true"></i>
+        <span>{{ isDeleting() ? 'Eliminando...' : 'Eliminar' }}</span>
+      </button>
+    </div>
+  </div>
+</div>
+}

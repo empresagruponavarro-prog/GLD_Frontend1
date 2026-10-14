@@ -102,7 +102,7 @@ describe('DocumentoVistaDialogComponent', () => {
     expect(crear.mock.calls[0][0].type).toBe(tipo);
   });
 
-  it.each(['memoria.docx', 'metrado.xlsx', 'presentacion.pptx', 'planos.zip'])(
+  it.each(['metrado.xlsx', 'presentacion.pptx', 'planos.zip', 'antiguo.doc'])(
     '%s no se previsualiza: avisa y ofrece descargar sin pedir el archivo',
     (nombre) => {
       abrir(doc(`obras/10/documentos/1a2b3c4d_${nombre}`));
@@ -113,6 +113,29 @@ describe('DocumentoVistaDialogComponent', () => {
       expect(el().querySelector('#btn-vista-descargar')).not.toBeNull();
     },
   );
+
+  it('un Word (.docx) se pide inline y se prepara el contenedor de vista previa', () => {
+    abrir(doc('obras/10/documentos/1a2b3c4d_memoria.docx'));
+
+    const req = http.expectOne(URL_ARCHIVO());
+    expect(req.request.urlWithParams).toContain('inline=1');
+    responder(req, new Blob(['docx']));
+
+    expect(el().querySelector('#docx-preview-container')).not.toBeNull();
+    expect(crear.mock.calls[0][0].type).toBe('application/vnd.openxmlformats-officedocument.wordprocessingml.document');
+    expect(texto()).not.toContain('no se pueden previsualizar');
+  });
+
+  it('un Word dañado que no se puede renderizar muestra el error de vista previa', async () => {
+    vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    abrir(doc('obras/10/documentos/1a2b3c4d_memoria.docx'));
+    responder(http.expectOne(URL_ARCHIVO()), new Blob(['esto no es un docx']));
+
+    await new Promise((r) => setTimeout(r, 300));
+    fixture.detectChanges();
+
+    expect(texto()).toContain('No se pudo cargar la vista previa');
+  });
 
   it('un enlace externo no se pide al servidor y se abre en pestaña nueva con noopener', () => {
     const abrirVentana = vi.spyOn(window, 'open').mockReturnValue(null);
@@ -164,7 +187,7 @@ describe('DocumentoVistaDialogComponent', () => {
 
   it('Descargar un formato sin vista previa pide el archivo como adjunto', () => {
     const clic = vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => undefined);
-    abrir(doc('obras/10/documentos/1a2b3c4d_memoria.docx'));
+    abrir(doc('obras/10/documentos/1a2b3c4d_metrado.xlsx'));
 
     (el().querySelector('#btn-vista-descargar') as HTMLButtonElement).click();
 
@@ -175,7 +198,7 @@ describe('DocumentoVistaDialogComponent', () => {
   });
 
   it('un error al descargar muestra un aviso', () => {
-    abrir(doc('obras/10/documentos/1a2b3c4d_memoria.docx'));
+    abrir(doc('obras/10/documentos/1a2b3c4d_metrado.xlsx'));
 
     (el().querySelector('#btn-vista-descargar') as HTMLButtonElement).click();
     http.expectOne(URL_ARCHIVO()).flush(new Blob(['x']), { status: 500, statusText: 'Server Error' });

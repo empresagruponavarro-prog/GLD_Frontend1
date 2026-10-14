@@ -153,11 +153,13 @@
       <i class="fa-solid" [class.fa-chevron-down]="!isMaestrosOpen" [class.fa-chevron-up]="isMaestrosOpen"></i>
     </div>
     <ul class="sidebar-submenu" *ngIf="isMaestrosOpen">
+      @if (esAdministrador()) {
       <li>
         <a class="sidebar-subitem" routerLink="/admin/empresas" routerLinkActive="active">
           <i class="fa-solid fa-building"></i> Empresas
         </a>
       </li>
+      }
       <li>
         <a class="sidebar-subitem" routerLink="/anexos" routerLinkActive="active">
           <i class="fa-solid fa-paperclip"></i> Anexos
@@ -192,10 +194,17 @@
     </ul>
   </li>
 
+  @if (esAdministrador()) {
   <li class="menu-category">Administración</li>
   <li>
     <a class="sidebar-item" routerLink="/admin/usuarios" routerLinkActive="active">
-      <i class="fa-solid fa-users-gear"></i> Usuarios y Roles
+      <i class="fa-solid fa-users-gear"></i> Usuarios
     </a>
   </li>
+  <li>
+    <a class="sidebar-item" routerLink="/admin/roles" routerLinkActive="active">
+      <i class="fa-solid fa-user-shield"></i> Roles
+    </a>
+  </li>
+  }
 </ul>

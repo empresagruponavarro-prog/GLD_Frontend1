@@ -4,7 +4,7 @@
     <p class="content-subtitle">Gestión centralizada de usuarios, accesos y permisos en GLD.</p>
   </div>
   <div style="display: flex; gap: 0.5rem;">
-    <button class="btn btn-secondary" (click)="loadUsuarios()" [disabled]="loading()">
+    <button class="btn btn-secondary" (click)="actualizar()" [disabled]="loading()">
       <i class="fa-solid fa-arrows-rotate" [class.fa-spin]="loading()"></i> {{ loading() ? 'Actualizando...' : 'Actualizar' }}
     </button>
     <button class="btn btn-primary" (click)="openModal()">
@@ -14,6 +14,12 @@
 </div>
 
 <div class="content-body">
+  @if (pageError(); as error) {
+    <div role="alert" data-testid="usuarios-page-error" style="margin-bottom: 0.75rem; padding: 0.6rem 0.8rem; border-radius: 6px; background: #fef2f2; color: #991b1b; border: 1px solid #fecaca; font-size: 0.875rem;">
+      {{ error }}
+    </div>
+  }
+
   <app-data-table
     [columns]="columns"
     [items]="usuarios()"
@@ -33,60 +39,180 @@
         <span class="badge badge-progress">{{ item.Rol || 'Sin Rol' }}</span>
       </td>
       <td>
-        <button class="btn btn-secondary" style="padding: 0.25rem 0.5rem; margin-right: 0.25rem;" (click)="editModal(item)" title="Editar">
-          <i class="fa-solid fa-pen-to-square"></i>
+        <button class="btn btn-secondary" style="padding: 0.25rem 0.5rem; margin-right: 0.25rem;" (click)="editModal(item)" title="Editar" aria-label="Editar usuario">
+          <i class="fa-solid fa-pen-to-square" aria-hidden="true"></i>
         </button>
-        <button class="btn btn-danger" style="padding: 0.25rem 0.5rem;" (click)="deleteUsuario(item.IdUsuario)" title="Eliminar">
-          <i class="fa-solid fa-trash"></i>
+        <button class="btn btn-danger" style="padding: 0.25rem 0.5rem;" (click)="deleteUsuario(item.IdUsuario)" title="Eliminar" aria-label="Eliminar usuario">
+          <i class="fa-solid fa-trash" aria-hidden="true"></i>
         </button>
       </td>
     </tr>
   </ng-template>
 </div>
 
-<!-- Modal Formulario -->
-<div class="modal-overlay" *ngIf="showModal()">
-  <div class="modal-content">
-    <div class="modal-header">
-      <h3>{{ editingId() ? 'Editar Usuario' : 'Nuevo Usuario' }}</h3>
-      <button class="btn btn-secondary" style="padding: 0.25rem 0.5rem;" (click)="closeModal()">✕</button>
-    </div>
-    <div class="modal-body">
-      <div class="form-group">
-        <label>ID / Código Usuario *</label>
-        <input type="text" class="form-control" [(ngModel)]="formData.IdUsuario"
-          placeholder="Ej. USR001"
-          [disabled]="!!editingId()"
-          [style.background]="editingId() ? '#f1f5f9' : ''">
-        <small *ngIf="editingId()" style="color: var(--text-muted); font-size: 0.75rem;">El ID no se puede modificar.</small>
+<!-- Modal Formulario Rediseñado -->
+@if (showModal()) {
+<div class="modal-overlay" (click)="closeModal()">
+  <div class="modal-content usuario-modal" role="dialog" aria-modal="true" aria-labelledby="usuario-modal-title" (click)="$event.stopPropagation()">
+    
+    <!-- Encabezado con Icono Corporativo GLD -->
+    <div class="modal-header-custom">
+      <div class="modal-header-info">
+        <div class="modal-icon-badge">
+          <i class="fa-solid" [class.fa-user-plus]="!editingId()" [class.fa-user-pen]="editingId()" aria-hidden="true"></i>
+        </div>
+        <div class="modal-header-titles">
+          <h3 id="usuario-modal-title">{{ editingId() ? 'Editar Usuario' : 'Nuevo Usuario' }}</h3>
+          <p>{{ editingId() ? 'Actualiza los datos, rol o credenciales del colaborador.' : 'Configura el perfil de acceso y credenciales del colaborador.' }}</p>
+        </div>
       </div>
-      <div class="form-group">
-        <label>Nombres Completos *</label>
-        <input type="text" class="form-control" [(ngModel)]="formData.Nombres" placeholder="Ej. Carlos Mendoza">
-      </div>
-      <div class="form-group">
-        <label>Nombre de Usuario (Login) *</label>
-        <input type="text" class="form-control" [(ngModel)]="formData.Usuario" placeholder="Ej. cmendoza">
-      </div>
-      <div class="form-group">
-        <label>Rol Asignado</label>
-        <select class="form-control" [(ngModel)]="formData.Rol">
-          <option value="Administrador">Administrador</option>
-          <option value="Promotor">Promotor</option>
-          <option value="Supervisor">Supervisor</option>
-          <option value="Operador">Operador</option>
-        </select>
-      </div>
-      <div class="form-group" *ngIf="!editingId()">
-        <label>Contraseña *</label>
-        <input type="password" class="form-control" [(ngModel)]="formData.Clave" placeholder="Ingrese una contraseña">
-      </div>
-    </div>
-    <div class="modal-footer">
-      <button class="btn btn-secondary" (click)="closeModal()">Cancelar</button>
-      <button class="btn btn-primary" (click)="saveUsuario()">
-        <i class="fa-solid fa-floppy-disk"></i> {{ editingId() ? 'Guardar Cambios' : 'Crear Usuario' }}
+      <button type="button" class="btn-close-modal" (click)="closeModal()" aria-label="Cerrar modal" title="Cerrar">
+        <i class="fa-solid fa-xmark"></i>
       </button>
     </div>
+
+    <form [formGroup]="form" (ngSubmit)="saveUsuario()" novalidate>
+      <div class="modal-body-custom">
+        @if (formError(); as error) {
+          <div role="alert" data-testid="usuario-form-error" style="display: flex; align-items: center; gap: 0.6rem; padding: 0.75rem 1rem; border-radius: 8px; background: #fef2f2; color: #991b1b; border: 1px solid #fecaca; font-size: 0.85rem;">
+            <i class="fa-solid fa-circle-exclamation" style="font-size: 1rem; flex-shrink: 0;"></i>
+            <span>{{ error }}</span>
+          </div>
+        }
+
+        <!-- Sección 1: Datos del Colaborador -->
+        <div class="form-section">
+          <div class="section-label">
+            <i class="fa-solid fa-address-card"></i>
+            <span>Perfil del Colaborador</span>
+          </div>
+
+          <div class="form-grid-2">
+            <!-- Nombres Completos -->
+            <div class="field-item">
+              <label class="field-label" for="usuario-nombres">
+                <span>Nombres y Apellidos Completos <span class="required-badge">*</span></span>
+              </label>
+              <div class="input-with-icon">
+                <i class="fa-solid fa-user input-prefix-icon"></i>
+                <input id="usuario-nombres" type="text" class="form-control-custom" formControlName="Nombres" placeholder="Ej. Carlos Mendoza Salas">
+              </div>
+            </div>
+
+            <!-- Rol Asignado -->
+            <div class="field-item">
+              <label class="field-label" for="usuario-rol">
+                <span>Rol Asignado <span class="required-badge">*</span></span>
+              </label>
+              <div class="input-with-icon">
+                <i class="fa-solid fa-shield-halved input-prefix-icon"></i>
+                <select id="usuario-rol" class="form-control-custom" formControlName="Rol">
+                  <option value="" disabled>Seleccione un rol</option>
+                  @for (rol of roles(); track rol) {
+                    <option [value]="rol">{{ rol }}</option>
+                  }
+                </select>
+              </div>
+              @if (rolesError(); as aviso) {
+                <span class="field-hint" role="alert" data-testid="usuario-roles-aviso" style="color: #b45309;">
+                  <i class="fa-solid fa-triangle-exclamation" aria-hidden="true"></i> {{ aviso }}
+                </span>
+              }
+              <a class="field-hint" routerLink="/admin/roles" data-testid="usuario-admin-roles" style="align-self: flex-start; color: var(--gld-green-dark, #3b7a5e);">
+                <i class="fa-solid fa-user-shield" aria-hidden="true"></i> Administrar roles
+              </a>
+            </div>
+          </div>
+        </div>
+
+        <!-- Sección 2: Credenciales de Acceso -->
+        <div class="form-section">
+          <div class="section-label">
+            <i class="fa-solid fa-key"></i>
+            <span>Credenciales de Inicio de Sesión</span>
+          </div>
+
+          <!-- Nombre de Usuario (Login) -->
+          <div class="field-item">
+            <label class="field-label" for="usuario-login">
+              <span>Usuario de Acceso (Login) <span class="required-badge">*</span></span>
+            </label>
+            <div class="input-with-icon">
+              <i class="fa-solid fa-at input-prefix-icon"></i>
+              <input id="usuario-login" type="text" class="form-control-custom" formControlName="Usuario" placeholder="Ej. cmendoza" autocomplete="off">
+            </div>
+            <span class="field-hint">Nombre único con el que iniciará sesión en el sistema.</span>
+          </div>
+
+          <!-- Toggle para cambiar clave en edición -->
+          @if (editingId()) {
+            <label class="switch-container" for="usuario-cambiar-clave">
+              <input id="usuario-cambiar-clave" type="checkbox" class="switch-input" formControlName="cambiarClave">
+              <i class="fa-solid fa-lock-open" style="font-size: 0.85rem; color: #64748b;"></i>
+              <span>Deseo cambiar o restablecer la contraseña</span>
+            </label>
+          }
+
+          <!-- Tarjeta de Contraseña -->
+          @if (!editingId() || cambiarClave()) {
+            <div class="password-box">
+              <div class="password-box-header">
+                <span class="password-box-title">
+                  <i class="fa-solid fa-shield-cat" style="color: var(--gld-green-primary, #5a9e80);"></i>
+                  <span>{{ editingId() ? 'Nueva Contraseña' : 'Establecer Contraseña' }}</span>
+                </span>
+                <span class="password-badge">{{ claveMin }}-{{ claveMax }} caracteres</span>
+              </div>
+
+              <div class="form-grid-2">
+                <!-- Contraseña -->
+                <div class="field-item">
+                  <label class="field-label" for="usuario-clave">
+                    <span>{{ editingId() ? 'Nueva clave' : 'Contraseña' }} <span class="required-badge">*</span></span>
+                  </label>
+                  <div class="input-with-icon">
+                    <i class="fa-solid fa-lock input-prefix-icon"></i>
+                    <input id="usuario-clave" [type]="mostrarClave() ? 'text' : 'password'"
+                      class="form-control-custom" formControlName="Clave" autocomplete="new-password"
+                      [attr.minlength]="claveMin" [attr.maxlength]="claveMax"
+                      placeholder="Mínimo 8 caracteres">
+                    <button type="button" class="btn-toggle-eye" (click)="toggleMostrarClave()" [title]="mostrarClave() ? 'Ocultar' : 'Ver'">
+                      <i class="fa-solid" [class.fa-eye]="!mostrarClave()" [class.fa-eye-slash]="mostrarClave()"></i>
+                    </button>
+                  </div>
+                </div>
+
+                <!-- Confirmar Contraseña -->
+                <div class="field-item">
+                  <label class="field-label" for="usuario-clave-confirmar">
+                    <span>Confirmar clave <span class="required-badge">*</span></span>
+                  </label>
+                  <div class="input-with-icon">
+                    <i class="fa-solid fa-check-double input-prefix-icon"></i>
+                    <input id="usuario-clave-confirmar" [type]="mostrarConfirmarClave() ? 'text' : 'password'"
+                      class="form-control-custom" formControlName="ConfirmarClave" autocomplete="new-password"
+                      [attr.maxlength]="claveMax"
+                      placeholder="Repita la clave">
+                    <button type="button" class="btn-toggle-eye" (click)="toggleMostrarConfirmarClave()" [title]="mostrarConfirmarClave() ? 'Ocultar' : 'Ver'">
+                      <i class="fa-solid" [class.fa-eye]="!mostrarConfirmarClave()" [class.fa-eye-slash]="mostrarConfirmarClave()"></i>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          }
+        </div>
+      </div>
+
+      <!-- Pie del Modal -->
+      <div class="modal-footer-custom">
+        <button type="button" class="btn-cancel-custom" (click)="closeModal()">Cancelar</button>
+        <button type="submit" class="btn-submit-custom" [disabled]="saving()">
+          <i class="fa-solid" [class.fa-floppy-disk]="!saving()" [class.fa-circle-notch]="saving()" [class.fa-spin]="saving()" aria-hidden="true"></i>
+          <span>{{ editingId() ? 'Guardar Cambios' : 'Crear Usuario' }}</span>
+        </button>
+      </div>
+    </form>
   </div>
 </div>
+}

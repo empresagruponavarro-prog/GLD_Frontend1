@@ -1,0 +1,119 @@
+/* Administración de Roles - GLD. El modal reutiliza ../usuarios/usuarios.css. */
+
+.roles-alert {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  margin-bottom: 0.75rem;
+}
+
+.modal-body-custom .roles-alert {
+  margin-bottom: 0;
+}
+
+.roles-alert i {
+  font-size: 1rem;
+  flex-shrink: 0;
+}
+
+.roles-alert--error {
+  background: #fef2f2;
+  color: #991b1b;
+  border: 1px solid #fecaca;
+}
+
+.roles-alert--ok {
+  background: var(--gld-green-light, #e8f4ef);
+  color: var(--gld-green-dark, #3b7a5e);
+  border: 1px solid #c6e3d5;
+}
+
+.roles-muted {
+  color: var(--text-muted, #64748b);
+  font-style: italic;
+}
+
+.roles-badge-sistema {
+  background: #f1f5f9;
+  color: #334155;
+  border: 1px solid #cbd5e1;
+}
+
+.roles-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.roles-action-btn {
+  padding: 0.25rem 0.5rem;
+}
+
+.roles-action-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.roles-disabled-wrap {
+  display: inline-flex;
+  cursor: not-allowed;
+}
+
+.roles-sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.roles-sistema-note {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.8rem;
+  color: #475569;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+}
+
+.roles-field-error {
+  font-size: 0.75rem;
+  color: #b91c1c;
+  margin-top: 0.15rem;
+}
+
+.roles-optional {
+  font-weight: 400;
+  color: var(--text-muted, #64748b);
+}
+
+.roles-confirm-modal {
+  max-width: 460px;
+}
+
+.roles-icon-danger {
+  background: #fef2f2;
+  color: #b91c1c;
+  box-shadow: 0 2px 6px rgba(185, 28, 28, 0.15);
+}
+
+.roles-btn-danger {
+  background: #dc2626;
+  border-color: #b91c1c;
+  box-shadow: 0 2px 4px rgba(220, 38, 38, 0.25);
+}
+
+.roles-btn-danger:hover:not(:disabled) {
+  background: #b91c1c;
+  box-shadow: 0 4px 8px rgba(220, 38, 38, 0.35);
+}
