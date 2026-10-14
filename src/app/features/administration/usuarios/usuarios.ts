@@ -19,7 +19,7 @@ interface UsuarioForm {
 
 @Component({
   selector: 'app-usuarios',
-  imports: [ReactiveFormsModule, RouterLink, DataTableComponent],
+  imports: [ReactiveFormsModule, DataTableComponent],
   templateUrl: './usuarios.html',
   styleUrl: './usuarios.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
