@@ -1,6 +1,8 @@
+import { describe, it, expect } from 'vitest';
 import { Observable, Subject, defer, of, throwError } from 'rxjs';
 import {
   FaseCategoriaAGuardar,
+  FaseFallida,
   FasesCategoriasWriter,
   FilaFormFase,
   completoAFilas,
@@ -15,15 +17,17 @@ function crearApi(fallos: { fase?: string[]; categoria?: string[] } = {}) {
   const api: FasesCategoriasWriter = {
     createFaseAsignada: (data) =>
       defer(() => {
-        llamadas.push(`fase:${data.IdpptoFase}`);
-        return fallos.fase?.includes(data.IdpptoFase)
+        const idFase = data.IdpptoFase || '';
+        llamadas.push(`fase:${idFase}`);
+        return fallos.fase?.includes(idFase)
           ? throwError(() => ({ error: { message: 'HTTP 500' } }))
           : of(data);
       }),
     createCategoriaAsignada: (data) =>
       defer(() => {
-        llamadas.push(`cat:${data.IdpptoFaseCategoria}`);
-        return fallos.categoria?.includes(data.IdpptoFaseCategoria)
+        const idCat = data.IdpptoFaseCategoria || '';
+        llamadas.push(`cat:${idCat}`);
+        return fallos.categoria?.includes(idCat)
           ? throwError(() => ({ message: 'sin conexión' }))
           : of(data);
       }),
@@ -56,7 +60,7 @@ describe('crearFasesConCategorias', () => {
     const respuestas = new Subject<void>();
     const api: FasesCategoriasWriter = {
       createFaseAsignada: () => of({}),
-      createCategoriaAsignada: () => respuestas as Observable<any>,
+      createCategoriaAsignada: () => respuestas as Observable<unknown>,
     };
     const emisiones: unknown[] = [];
 
@@ -72,7 +76,7 @@ describe('crearFasesConCategorias', () => {
 
   it('genera IDs únicos dentro de la operación y envía el contexto', () => {
     // Arrange
-    const enviados: any[] = [];
+    const enviados: Record<string, unknown>[] = [];
     const api: FasesCategoriasWriter = {
       createFaseAsignada: (d) => { enviados.push(d); return of(d); },
       createCategoriaAsignada: (d) => { enviados.push(d); return of(d); },
@@ -82,7 +86,7 @@ describe('crearFasesConCategorias', () => {
     crearFasesConCategorias(api, { IdPresupuesto: 'P1' }, items, 99).subscribe();
 
     // Assert
-    const idsFase = enviados.filter((d) => !d.IdPresupuestoDetalleCategoria).map((d) => d.IdPresupuestoDetalle);
+    const idsFase = enviados.filter((d) => !d['IdPresupuestoDetalleCategoria']).map((d) => d['IdPresupuestoDetalle']);
     expect(new Set(idsFase).size).toBe(3);
     expect(enviados[0]).toMatchObject({ IdPresupuesto: 'P1', IdpptoFase: 'F1', IdPresupuestoDetalle: 'DF-99-0', CostoDirecto: 10 });
     expect(enviados[1]).toMatchObject({ IdPresupuestoDetalleCategoria: 'DFC-99-0-0', IdPresupuestoDetalle: 'DF-99-0', IdpptoFaseCategoria: 'C1' });
@@ -90,7 +94,7 @@ describe('crearFasesConCategorias', () => {
 
   it('crea una sola fase por idFase con todas sus categorías y suma el costo directo', () => {
     // Arrange
-    const enviados: any[] = [];
+    const enviados: (Record<string, unknown> & { tipo: string })[] = [];
     const api: FasesCategoriasWriter = {
       createFaseAsignada: (d) => { enviados.push({ tipo: 'fase', ...d }); return of(d); },
       createCategoriaAsignada: (d) => { enviados.push({ tipo: 'cat', ...d }); return of(d); },
@@ -106,10 +110,10 @@ describe('crearFasesConCategorias', () => {
 
     // Assert
     const fases = enviados.filter((d) => d.tipo === 'fase');
-    expect(fases.map((f) => f.IdpptoFase)).toEqual(['F1', 'F2']);
-    expect(fases[0].CostoDirecto).toBe(25);
-    const catsF1 = enviados.filter((d) => d.tipo === 'cat' && d.IdPresupuestoDetalle === 'DF-7-0');
-    expect(catsF1.map((c) => c.IdpptoFaseCategoria)).toEqual(['C1', 'C2']);
+    expect(fases.map((f) => f['IdpptoFase'])).toEqual(['F1', 'F2']);
+    expect(fases[0]['CostoDirecto']).toBe(25);
+    const catsF1 = enviados.filter((d) => d.tipo === 'cat' && d['IdPresupuestoDetalle'] === 'DF-7-0');
+    expect(catsF1.map((c) => c['IdpptoFaseCategoria'])).toEqual(['C1', 'C2']);
   });
 
   it('una fila sin categoría solo crea la fase (no crea categoría vacía)', () => {
@@ -126,7 +130,7 @@ describe('crearFasesConCategorias', () => {
   it('si falla una fase, no escribe sus categorías, continúa con las demás y nombra la fase fallida', () => {
     // Arrange
     const { api, llamadas } = crearApi({ fase: ['F2'] });
-    let resultado: any;
+    let resultado: FaseFallida[] | undefined;
 
     // Act
     crearFasesConCategorias(api, {}, items, 1).subscribe((r) => (resultado = r));
@@ -139,19 +143,19 @@ describe('crearFasesConCategorias', () => {
   it('si falla una categoría, reporta fase/categoría y no oculta el resto de fallos', () => {
     // Arrange
     const { api } = crearApi({ categoria: ['C1'], fase: ['F3'] });
-    let resultado: any;
+    let resultado: FaseFallida[] = [];
 
     // Act
     crearFasesConCategorias(api, {}, items, 1).subscribe((r) => (resultado = r));
 
     // Assert
-    expect(resultado.map((f: any) => f.nombre)).toEqual(['Fase uno / C1', 'Fase tres']);
+    expect(resultado.map((f: FaseFallida) => f.nombre)).toEqual(['Fase uno / C1', 'Fase tres']);
     expect(describirFasesFallidas(resultado)).toBe('• Fase uno / C1: sin conexión\n• Fase tres: HTTP 500');
   });
 
   it('sin fases emite una lista vacía', () => {
     const { api, llamadas } = crearApi();
-    let resultado: any;
+    let resultado: FaseFallida[] | undefined;
     crearFasesConCategorias(api, {}, [], 1).subscribe((r) => (resultado = r));
     expect(llamadas).toEqual([]);
     expect(resultado).toEqual([]);

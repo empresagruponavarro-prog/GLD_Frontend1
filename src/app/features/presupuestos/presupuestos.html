@@ -105,6 +105,9 @@
         @for (cc of ccQuery.items(); track cc.id || cc.id_centro_costo) {
           @let isSel = selectedCC() !== null && (selectedCC()?.id ?? selectedCC()?.id_centro_costo) === (cc.id ?? cc.id_centro_costo);
           <div (click)="onSelectCC(cc)"
+               (keydown.enter)="onSelectCC(cc)"
+               tabindex="0"
+               role="button"
                [class]="isSel ? 'bg-[#529b7b]/8 border-[#529b7b]/40 shadow-xs cc-card-activa' : 'bg-white hover:bg-[#f6f8f7] border-[#d1dcd7] shadow-2xs'"
                class="p-3 rounded-lg border cursor-pointer transition group">
             <div class="flex items-start justify-between gap-2">
@@ -287,8 +290,9 @@
 
 @if (showFasesModal()) {
 <!-- MODAL: FASES Y ANÁLISIS DE COSTOS APU (acordeón). z-40 para que los modales de fase/categoría/compras/plantillas (z-50+) queden encima. -->
-<div class="fixed inset-0 z-40 flex items-center justify-center p-4 sm:p-6 bg-slate-900/50 backdrop-blur-xs animate-in fade-in duration-150" data-purpose="fases-costos-modal" (click)="cerrarFasesModal()">
-  <div class="w-full max-w-6xl max-h-[92vh] bg-white rounded-lg shadow-2xl border border-[#d1dcd7] flex flex-col overflow-hidden" (click)="$event.stopPropagation()" style="font-family: 'Inter', system-ui, sans-serif;">
+<div class="fixed inset-0 z-40 flex items-center justify-center p-4 sm:p-6 animate-in fade-in duration-150" data-purpose="fases-costos-modal">
+  <button type="button" aria-label="Cerrar modal de fases y costos" class="fixed inset-0 bg-slate-900/50 backdrop-blur-xs w-full h-full border-none cursor-default" (click)="cerrarFasesModal()"></button>
+  <div class="relative z-10 w-full max-w-6xl max-h-[92vh] bg-white rounded-lg shadow-2xl border border-[#d1dcd7] flex flex-col overflow-hidden" style="font-family: 'Inter', system-ui, sans-serif;">
     <!-- HEADER -->
     <div class="px-6 py-4 bg-[#f6f8f7] border-b border-[#d1dcd7] flex flex-col gap-3 shrink-0">
       <div class="flex items-center justify-between gap-3">
@@ -371,7 +375,7 @@
         @let sobrepasada = isFaseRowSobrepasada(fase);
         <div class="rounded-lg bg-white border shadow-xs overflow-hidden transition-all duration-200" [class]="abierta ? 'border-[#529b7b]/40' : 'border-[#d1dcd7]'">
           <!-- Cabecera de fase -->
-          <div (click)="toggleFaseAcordeon(fase)" class="p-3.5 flex flex-wrap items-center justify-between gap-3 cursor-pointer select-none transition" [class]="abierta ? 'bg-[#f6f8f7] border-b border-[#d1dcd7] hover:bg-[#edf2f0]' : 'bg-[#f6f8f7]/70 hover:bg-[#edf2f0]'">
+          <div (click)="toggleFaseAcordeon(fase)" (keydown.enter)="toggleFaseAcordeon(fase)" tabindex="0" role="button" class="p-3.5 flex flex-wrap items-center justify-between gap-3 cursor-pointer select-none transition" [class]="abierta ? 'bg-[#f6f8f7] border-b border-[#d1dcd7] hover:bg-[#edf2f0]' : 'bg-[#f6f8f7]/70 hover:bg-[#edf2f0]'">
             <div class="flex items-center gap-3 min-w-0">
               <svg class="w-4 h-4 transition-transform duration-200 shrink-0" [class]="abierta ? 'rotate-90 text-[#529b7b]' : 'text-slate-400'" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"/></svg>
               <span class="w-3 h-3 rounded-full shrink-0" [class]="abierta ? 'bg-[#529b7b] ring-2 ring-[#529b7b]/20' : 'bg-slate-300'"></span>
@@ -409,11 +413,11 @@
                 <span class="font-mono font-bold text-slate-800">{{ fase.categorias?.length || 0 }}</span>
               </div>
               <span class="px-2 py-0.5 rounded text-[10px] font-bold uppercase border" [ngClass]="getEstadoFaseClass(fase)">{{ getEstadoFaseText(fase) }}</span>
-              <div class="flex items-center gap-1" (click)="$event.stopPropagation()">
-                <button (click)="abrirModalFase('edit', fase)" type="button" class="p-1 rounded text-slate-400 hover:text-slate-700 hover:bg-[#e3e9e6] transition cursor-pointer" title="Editar Fase">
+              <div class="flex items-center gap-1">
+                <button (click)="abrirModalFase('edit', fase); $event.stopPropagation()" type="button" class="p-1 rounded text-slate-400 hover:text-slate-700 hover:bg-[#e3e9e6] transition cursor-pointer" title="Editar Fase">
                   <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
                 </button>
-                <button (click)="eliminarFase(fase)" type="button" class="p-1 rounded text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition cursor-pointer" title="Eliminar Fase">
+                <button (click)="eliminarFase(fase); $event.stopPropagation()" type="button" class="p-1 rounded text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition cursor-pointer" title="Eliminar Fase">
                   <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
                 </button>
               </div>
@@ -541,13 +545,12 @@
 
 @if (showForm()) {
 <!-- BACKDROP OVERLAY FLOTANTE -->
-<div class="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-sm flex items-center justify-center p-3 sm:p-5 md:p-6"
-     (click)="closeForm()">
+<div class="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 md:p-6">
+  <button type="button" aria-label="Cerrar formulario" class="fixed inset-0 bg-slate-950/70 backdrop-blur-sm w-full h-full border-none cursor-default" (click)="closeForm()"></button>
 
   <!-- CONTENEDOR MODAL FLOTANTE -->
-  <div class="relative w-full max-w-6xl h-[90vh] max-h-[880px] flex flex-col bg-slate-100 rounded-2xl shadow-2xl overflow-hidden border border-slate-700/30 ring-1 ring-black/10"
-       style="font-family: 'Inter', system-ui, sans-serif;"
-       (click)="$event.stopPropagation()">
+  <div class="relative z-10 w-full max-w-6xl h-[90vh] max-h-[880px] flex flex-col bg-slate-100 rounded-2xl shadow-2xl overflow-hidden border border-slate-700/30 ring-1 ring-black/10"
+       style="font-family: 'Inter', system-ui, sans-serif;">
 
   <!-- CABECERA CORPORATIVA -->
   <header class="bg-[#0f1e17] text-white shrink-0 px-5 py-3 flex items-center justify-between shadow-lg">
@@ -654,13 +657,13 @@
                 <th class="py-2.5 px-3 w-28 text-center">Tipo PPTO</th>
                 <th class="py-2.5 px-3 text-right w-32">Costo Directo (S/)</th>
                 <th class="py-2.5 px-3 text-right w-32">Total (S/)</th>
-                <th class="py-2.5 px-3 text-center w-28">Acción</th>
+                <th class="py-2.5 px-3 text-center w-32">Acción</th>
               </tr>
             </thead>
             <tbody class="divide-y divide-slate-100 text-[13px]">
               @for (p of presupuestosGrilla; track p.IdPresupuesto || p.id) {
-                @let isCurrent = (editingId() === ((p.IdPresupuesto || p.id) + ''));
-                <tr class="hover:bg-slate-50 transition" [class.bg-emerald-50/50]="isCurrent">
+                @let isCurrent = (editingId() === ((p.IdPresupuesto || p.id) + '')) || (selectedPresupuestoId() === ((p.IdPresupuesto || p.id) + ''));
+                <tr class="hover:bg-slate-50 transition cursor-pointer" [class.bg-emerald-50/70]="isCurrent" (click)="seleccionarFilaPresupuesto(p)">
                   <td class="py-2.5 px-3 font-medium text-slate-800">
                     <div class="flex items-center gap-1.5">
                       <span class="font-mono font-bold text-xs text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200">
@@ -694,18 +697,21 @@
                   <td class="py-2.5 px-3 text-right font-mono font-bold text-emerald-700 tabular-nums">
                     {{ (p.Total || 0) | currency:'PEN':'S/ ' }}
                   </td>
-                  <td class="py-2.5 px-3 text-center">
+                  <td class="py-2.5 px-3 text-center" (click)="$event.stopPropagation()">
                     <div class="flex items-center justify-center gap-1">
-                      <button type="button" (click)="abrirPresupuestoEnForm(p)" title="Ver Fases y Costos"
-                              class="w-6 h-6 rounded-full flex items-center justify-center text-[#529b7b] hover:bg-[#edf2f0] hover:text-[#1e4838] transition cursor-pointer">
+                      <!-- Ver Fases y Costos (Paso 2) -->
+                      <button type="button" (click)="abrirPresupuestoEnForm(p, 2)" title="Ver Fases y Costos (Paso 2)"
+                              class="w-7 h-7 rounded-lg flex items-center justify-center text-[#529b7b] hover:bg-[#edf2f0] hover:text-[#1e4838] transition cursor-pointer">
                         <svg class="w-3.5 h-3.5 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 5h6v4H4zM14 15h6v4h-6zM7 9v4a2 2 0 002 2h5"/></svg>
                       </button>
+                      <!-- Cargar Plantilla -->
                       <button type="button" (click)="cargarPlantillaEnForm(p)" title="Cargar Plantilla (Fases y Costos)"
-                              class="w-6 h-6 rounded-full flex items-center justify-center text-[#529b7b] hover:bg-[#edf2f0] hover:text-[#1e4838] transition cursor-pointer">
+                              class="w-7 h-7 rounded-lg flex items-center justify-center text-[#529b7b] hover:bg-[#edf2f0] hover:text-[#1e4838] transition cursor-pointer">
                         <svg class="w-3.5 h-3.5 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h11M4 12h11M4 18h7m9-3v6m-3-3h6"/></svg>
                       </button>
+                      <!-- Eliminar -->
                       <button type="button" (click)="eliminarPresupuestoDeCC(p)" title="Eliminar presupuesto"
-                              class="w-6 h-6 rounded-full flex items-center justify-center text-slate-400 hover:bg-red-50 hover:text-red-500 transition cursor-pointer">
+                              class="w-7 h-7 rounded-lg flex items-center justify-center text-slate-400 hover:bg-red-50 hover:text-red-500 transition cursor-pointer">
                         <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
                       </button>
                     </div>
@@ -770,9 +776,9 @@
           <div class="grid grid-cols-1 sm:grid-cols-12 gap-3 items-end">
             <!-- 1. Centro de Costo (sm:col-span-5) -->
             <div class="sm:col-span-5">
-              <label class="block text-[11px] font-bold text-slate-500 mb-1 uppercase tracking-wider">Centro de Costo</label>
-              <select [ngModel]="selectedCC()" (ngModelChange)="onCentroCostoFormChange($event)"
-                      [compareWith]="compareCentrosCostos" [disabled]="!!editingId()"
+              <label for="ppto-centro-costo" class="block text-[11px] font-bold text-slate-500 mb-1 uppercase tracking-wider">Centro de Costo</label>
+              <select id="ppto-centro-costo" [ngModel]="selectedCC()" (ngModelChange)="onCentroCostoFormChange($event)"
+                      [compareWith]="compareCentrosCostos"
                       class="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-xs font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#529b7b]/40 focus:border-[#529b7b] shadow-2xs disabled:bg-slate-100 cursor-pointer">
                 <option [ngValue]="null">Seleccione un Centro de Costo</option>
                 @for (cc of centrosCostos(); track cc.id ?? cc.id_centro_costo) {
@@ -784,14 +790,14 @@
             <!-- 2. Descripción (sm:col-span-7) con badge 'Campo editable' -->
             <div class="sm:col-span-7">
               <div class="flex items-center justify-between mb-1">
-                <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-wider">Descripción</label>
+                <label for="ppto-descripcion" class="block text-[11px] font-bold text-slate-500 uppercase tracking-wider">Descripción</label>
                 <span class="text-[10px] text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full font-medium">Campo editable</span>
               </div>
               <div class="relative">
                 <span class="absolute inset-y-0 left-0 flex items-center pl-2.5 pointer-events-none text-slate-400">
                   <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
                 </span>
-                <input [(ngModel)]="formData.Concepto" type="text"
+                <input id="ppto-descripcion" [(ngModel)]="formData.Concepto" type="text"
                        placeholder="Ej: Remodelación Integral & Obras Civiles Contractual"
                        class="w-full bg-white border border-slate-300 rounded-lg pl-8 pr-3 py-2 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#529b7b]/40 focus:border-[#529b7b] shadow-2xs font-medium">
               </div>
@@ -802,21 +808,21 @@
           <div class="grid grid-cols-1 sm:grid-cols-12 gap-3 items-end">
             <!-- 3. Fecha Requerimiento (sm:col-span-4) -->
             <div class="sm:col-span-4">
-              <label class="block text-[11px] font-bold text-slate-500 mb-1 uppercase tracking-wider">Fecha Requerimiento</label>
-              <input [(ngModel)]="formData.FechaRequerimiento" type="date"
+              <label for="ppto-fecha-requerimiento" class="block text-[11px] font-bold text-slate-500 mb-1 uppercase tracking-wider">Fecha Requerimiento</label>
+              <input id="ppto-fecha-requerimiento" [(ngModel)]="formData.FechaRequerimiento" type="date"
                      class="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#529b7b]/40 focus:border-[#529b7b] shadow-2xs">
             </div>
 
             <!-- 4. Fecha Entrega (sm:col-span-4) -->
             <div class="sm:col-span-4">
-              <label class="block text-[11px] font-bold text-slate-500 mb-1 uppercase tracking-wider">Fecha Entrega</label>
-              <input [(ngModel)]="formData.FechaEntrega" type="date"
+              <label for="ppto-fecha-entrega" class="block text-[11px] font-bold text-slate-500 mb-1 uppercase tracking-wider">Fecha Entrega</label>
+              <input id="ppto-fecha-entrega" [(ngModel)]="formData.FechaEntrega" type="date"
                      class="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#529b7b]/40 focus:border-[#529b7b] shadow-2xs">
             </div>
 
             <!-- 5. Tipo Presupuesto (sm:col-span-4) con Segmented Control como en la imagen -->
             <div class="sm:col-span-4">
-              <label class="block text-[11px] font-bold text-slate-500 mb-1 uppercase tracking-wider">Tipo Presupuesto</label>
+              <span class="block text-[11px] font-bold text-slate-500 mb-1 uppercase tracking-wider">Tipo Presupuesto</span>
               <div class="flex gap-1 bg-slate-200/70 p-1 rounded-lg border border-slate-200">
                 @for (tipo of ['Principal', 'Adicional']; track tipo) {
                   <button type="button" (click)="cambiarTipoPpto(tipo)"
@@ -995,8 +1001,8 @@
             <!-- MODO EDICION SOLO FASE -->
             <div class="grid grid-cols-1 sm:grid-cols-12 gap-2.5 items-end">
               <div class="sm:col-span-6">
-                <label class="block text-[11px] font-bold text-slate-600 uppercase mb-1">Fase Maestra *</label>
-                <select [(ngModel)]="newFaseId" (ngModelChange)="onFaseMaestraChange()"
+                <label for="fase-maestra-edit" class="block text-[11px] font-bold text-slate-600 uppercase mb-1">Fase Maestra *</label>
+                <select id="fase-maestra-edit" [(ngModel)]="newFaseId" (ngModelChange)="onFaseMaestraChange()"
                         class="w-full border border-slate-300 rounded-lg px-3 py-2 text-[13px] focus:outline-none focus:ring-2 focus:ring-[#529b7b]/40 focus:border-[#529b7b] bg-white">
                   <option value="">{{ fasesMaestras().length ? 'Seleccione Fase *' : '-- Sin fases configuradas para esta obra --' }}</option>
                   @for (fase of fasesMaestras(); track fase.id || fase.IdpptoFase) {
@@ -1005,8 +1011,8 @@
                 </select>
               </div>
               <div class="sm:col-span-3">
-                <label class="block text-[11px] font-bold text-slate-600 uppercase mb-1">Monto S/. *</label>
-                <input [(ngModel)]="newFaseSubtotal" type="number" placeholder="0.00"
+                <label for="fase-monto-edit" class="block text-[11px] font-bold text-slate-600 uppercase mb-1">Monto S/. *</label>
+                <input id="fase-monto-edit" [(ngModel)]="newFaseSubtotal" type="number" placeholder="0.00"
                        class="w-full border border-slate-300 rounded-lg px-3 py-2 text-[13px] font-mono font-bold focus:outline-none focus:ring-2 focus:ring-[#529b7b]/40 focus:border-[#529b7b] bg-white">
               </div>
               <div class="sm:col-span-3">
@@ -1024,14 +1030,14 @@
             <!-- MODO EDICION SOLO CATEGORIA -->
             <div class="grid grid-cols-1 sm:grid-cols-12 gap-2.5 items-end">
               <div class="sm:col-span-4">
-                <label class="block text-[11px] font-bold text-slate-600 uppercase mb-1">Fase Asignada</label>
+                <span class="block text-[11px] font-bold text-slate-600 uppercase mb-1">Fase Asignada</span>
                 <div class="w-full border border-slate-200 bg-slate-100 rounded-lg px-3 py-2 text-[13px] text-slate-800 font-bold truncate">
-                  {{ selectedFase()?.NombreFase || editingCategoriaAsignada?.NombreFase || newFaseId }}
+                  {{ selectedFase()?.NombreFase || editingFaseAsignada?.NombreFase || newFaseId }}
                 </div>
               </div>
               <div class="sm:col-span-4">
-                <label class="block text-[11px] font-bold text-slate-600 uppercase mb-1">Categoría APU *</label>
-                <select [(ngModel)]="newFaseCategoriaId"
+                <label for="cat-apu-edit" class="block text-[11px] font-bold text-slate-600 uppercase mb-1">Categoría APU *</label>
+                <select id="cat-apu-edit" [(ngModel)]="newFaseCategoriaId"
                         class="w-full border border-slate-300 rounded-lg px-3 py-2 text-[13px] focus:outline-none focus:ring-2 focus:ring-[#529b7b]/40 focus:border-[#529b7b] bg-white">
                   <option value="">Seleccione Categoría *</option>
                   @for (categoria of categoriasFaseMaestra(); track categoria.id || categoria.IdpptoFaseCategoria) {
@@ -1040,8 +1046,8 @@
                 </select>
               </div>
               <div class="sm:col-span-2">
-                <label class="block text-[11px] font-bold text-slate-600 uppercase mb-1">Monto S/. *</label>
-                <input [(ngModel)]="newFaseSubtotal" type="number" placeholder="0.00"
+                <label for="cat-monto-edit" class="block text-[11px] font-bold text-slate-600 uppercase mb-1">Monto S/. *</label>
+                <input id="cat-monto-edit" [(ngModel)]="newFaseSubtotal" type="number" placeholder="0.00"
                        class="w-full border border-slate-300 rounded-lg px-3 py-2 text-[13px] font-mono font-bold focus:outline-none focus:ring-2 focus:ring-[#529b7b]/40 focus:border-[#529b7b] bg-white">
               </div>
               <div class="sm:col-span-2">
@@ -1059,8 +1065,8 @@
             <!-- MODO AGREGAR NORMAL -->
             <div class="grid grid-cols-1 sm:grid-cols-12 gap-2.5 items-end">
               <div class="sm:col-span-3">
-                <label class="block text-[11px] font-bold text-slate-600 uppercase mb-1">Fase/partida</label>
-                <select [(ngModel)]="newFaseId" (ngModelChange)="onFaseMaestraChange()"
+                <label for="fase-partida-add" class="block text-[11px] font-bold text-slate-600 uppercase mb-1">Fase/partida</label>
+                <select id="fase-partida-add" [(ngModel)]="newFaseId" (ngModelChange)="onFaseMaestraChange()"
                         class="w-full border border-slate-300 rounded-lg px-3 py-2 text-[13px] focus:outline-none focus:ring-2 focus:ring-[#529b7b]/40 focus:border-[#529b7b] bg-white">
                   <option value="">Seleccione Fase *</option>
                   @for (fase of fasesMaestras(); track fase.id || fase.IdpptoFase) {
@@ -1069,8 +1075,8 @@
                 </select>
               </div>
               <div class="sm:col-span-3">
-                <label class="block text-[11px] font-bold text-slate-600 uppercase mb-1">Sub Fase/partida</label>
-                <select [(ngModel)]="newFaseCategoriaId" [disabled]="!newFaseId"
+                <label for="subfase-partida-add" class="block text-[11px] font-bold text-slate-600 uppercase mb-1">Sub Fase/partida</label>
+                <select id="subfase-partida-add" [(ngModel)]="newFaseCategoriaId" [disabled]="!newFaseId"
                         class="w-full border border-slate-300 rounded-lg px-3 py-2 text-[13px] focus:outline-none focus:ring-2 focus:ring-[#529b7b]/40 focus:border-[#529b7b] bg-white disabled:bg-slate-100 disabled:text-slate-400">
                   <option value="">{{ newFaseId ? 'Seleccione Categoría *' : 'Seleccione primero una Fase' }}</option>
                   @for (categoria of categoriasFaseMaestra(); track categoria.id || categoria.IdpptoFaseCategoria) {
@@ -1079,15 +1085,15 @@
                 </select>
               </div>
               <div class="sm:col-span-3">
-                <label class="block text-[11px] font-bold text-slate-600 uppercase mb-1">Categoría</label>
-                <select [(ngModel)]="newFaseCategoriaRealId" [disabled]="!newFaseId" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-[13px] focus:outline-none focus:ring-2 focus:ring-[#529b7b]/40 focus:border-[#529b7b] bg-white disabled:bg-slate-100 disabled:text-slate-400">
+                <label for="cat-real-add" class="block text-[11px] font-bold text-slate-600 uppercase mb-1">Categoría</label>
+                <select id="cat-real-add" [(ngModel)]="newFaseCategoriaRealId" [disabled]="!newFaseId" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-[13px] focus:outline-none focus:ring-2 focus:ring-[#529b7b]/40 focus:border-[#529b7b] bg-white disabled:bg-slate-100 disabled:text-slate-400">
                   <option value="">{{ newFaseId ? 'Seleccione Categoría *' : 'Seleccione primero una Fase' }}</option>
                   @for (cat of categoriasReal(); track cat.id) {<option [value]="cat.id">{{ cat.nombre }}</option>}
                 </select>
               </div>
               <div class="sm:col-span-3">
-                <label class="block text-[11px] font-bold text-slate-600 uppercase mb-1">Monto S/.</label>
-                <input [(ngModel)]="newFaseSubtotal" type="number" placeholder="Monto S/."
+                <label for="monto-subtotal-add" class="block text-[11px] font-bold text-slate-600 uppercase mb-1">Monto S/.</label>
+                <input id="monto-subtotal-add" [(ngModel)]="newFaseSubtotal" type="number" placeholder="Monto S/."
                        class="w-full border border-slate-300 rounded-lg px-3 py-2 text-[13px] focus:outline-none focus:ring-2 focus:ring-[#529b7b]/40 focus:border-[#529b7b] bg-white">
               </div>
             </div>
@@ -1212,9 +1218,9 @@
 
         <!-- File Presupuesto -->
         <div class="mb-5">
-          <label class="block text-[12px] font-bold text-slate-500 mb-2 uppercase tracking-wide">
+          <p class="block text-[12px] font-bold text-slate-500 mb-2 uppercase tracking-wide">
             Archivo de Presupuesto (PDF / Excel)
-          </label>
+          </p>
           <!-- STAB-09: la carga real no existe aún en el backend; zona deshabilitada -->
           <div aria-disabled="true"
                class="border-2 border-dashed border-slate-200 rounded-xl p-5 bg-slate-100 text-center opacity-60 cursor-not-allowed">
@@ -1227,9 +1233,9 @@
 
         <!-- File OC -->
         <div class="mb-5">
-          <label class="block text-[12px] font-bold text-slate-500 mb-2 uppercase tracking-wide">
+          <p class="block text-[12px] font-bold text-slate-500 mb-2 uppercase tracking-wide">
             Orden de Compra / Correo de Aprobación (Opcional)
-          </label>
+          </p>
           <div aria-disabled="true"
                class="border-2 border-dashed border-slate-200 rounded-xl p-5 bg-slate-100 text-center opacity-60 cursor-not-allowed">
             <svg class="w-9 h-9 text-slate-300 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1267,7 +1273,7 @@
         <div class="space-y-5">
           <!-- Estado -->
           <div>
-            <label class="block text-[12px] font-bold text-slate-500 mb-2 uppercase tracking-wide">Estado de Aprobación</label>
+            <span class="block text-[12px] font-bold text-slate-500 mb-2 uppercase tracking-wide">Estado de Aprobación</span>
             <div class="flex flex-wrap gap-2">
               @for (est of ['PENDIENTE','En_Revision','Aprobado','Observado']; track est) {
                 <button (click)="formData.Estado = est"
@@ -1281,12 +1287,12 @@
 
           <!-- Especialista Responsable -->
           <div>
-            <label class="block text-[12px] font-bold text-slate-500 mb-2 uppercase tracking-wide">Especialista Responsable</label>
+            <label for="especialista-input" class="block text-[12px] font-bold text-slate-500 mb-2 uppercase tracking-wide">Especialista Responsable</label>
             <div class="flex items-center gap-3 bg-slate-50 border border-slate-200 rounded-lg px-4 py-3">
               <div class="w-8 h-8 rounded-full bg-[#1e4838] text-white flex items-center justify-center text-[12px] font-bold shrink-0">
                 {{ especialista() ? especialista().charAt(0).toUpperCase() : '-' }}
               </div>
-              <input [ngModel]="especialista()" (ngModelChange)="especialista.set($event)" type="text"
+              <input id="especialista-input" [ngModel]="especialista()" (ngModelChange)="especialista.set($event)" type="text"
                      placeholder="Nombre del especialista responsable..."
                      class="flex-1 bg-transparent text-[13px] font-semibold text-slate-700 focus:outline-none">
             </div>
@@ -1294,8 +1300,8 @@
 
           <!-- Comentarios -->
           <div>
-            <label class="block text-[12px] font-bold text-slate-500 mb-2 uppercase tracking-wide">Comentarios Técnicos &amp; Observaciones</label>
-            <textarea [ngModel]="comentarios()" (ngModelChange)="comentarios.set($event)" rows="5"
+            <label for="comentarios-input" class="block text-[12px] font-bold text-slate-500 mb-2 uppercase tracking-wide">Comentarios Técnicos &amp; Observaciones</label>
+            <textarea id="comentarios-input" [ngModel]="comentarios()" (ngModelChange)="comentarios.set($event)" rows="5"
                       placeholder="Ingrese observaciones técnicas, condiciones especiales, restricciones de alcance o cualquier nota relevante para el equipo de aprobación..."
                       class="w-full border border-slate-300 rounded-lg px-3 py-2.5 text-[13px] text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#529b7b]/40 focus:border-[#529b7b] resize-vertical"></textarea>
           </div>
@@ -1431,10 +1437,10 @@
 
     <div class="p-5 space-y-4">
       <div>
-        <label class="block text-[12px] font-bold text-slate-700 uppercase tracking-wide mb-1.5">
+        <label for="modal-fase-maestra" class="block text-[12px] font-bold text-slate-700 uppercase tracking-wide mb-1.5">
           Fase Maestra *
         </label>
-        <select [(ngModel)]="modalFaseData.IdpptoFase"
+        <select id="modal-fase-maestra" [(ngModel)]="modalFaseData.IdpptoFase"
                 class="w-full border border-slate-300 rounded-lg px-3 py-2.5 text-[13px] text-slate-800 bg-white focus:outline-none focus:ring-2 focus:ring-[#529b7b]/40 focus:border-[#529b7b]">
           <option value="">{{ fasesMaestras().length ? '-- Seleccione una Fase --' : '-- Sin fases configuradas para esta obra --' }}</option>
           @for (f of fasesMaestras(); track f.id || f.IdpptoFase) {
@@ -1502,9 +1508,9 @@
     <div class="p-5 space-y-4">
       <!-- Fase Perteneciente (solo se muestra la que se está editando) -->
       <div>
-        <label class="block text-[12px] font-bold text-slate-700 uppercase tracking-wide mb-1.5">
+        <span class="block text-[12px] font-bold text-slate-700 uppercase tracking-wide mb-1.5">
           Fase Asignada
-        </label>
+        </span>
         <div class="flex items-center gap-2 bg-slate-100 border border-slate-200 rounded-lg px-3 py-2 text-[13px] text-slate-800 font-bold">
           <span class="inline-block w-2 h-2 rounded-full bg-emerald-500"></span>
           <span class="truncate">{{ modalCategoriaData.faseNombre || selectedFase()?.NombreFase || modalCategoriaData.IdpptoFase }}</span>
@@ -1513,10 +1519,10 @@
 
       <!-- Categoría Maestra -->
       <div>
-        <label class="block text-[12px] font-bold text-slate-700 uppercase tracking-wide mb-1.5">
+        <label for="modal-categoria-apu" class="block text-[12px] font-bold text-slate-700 uppercase tracking-wide mb-1.5">
           Categoría APU *
         </label>
-        <select [(ngModel)]="modalCategoriaData.IdpptoFaseCategoria"
+        <select id="modal-categoria-apu" [(ngModel)]="modalCategoriaData.IdpptoFaseCategoria"
                 class="w-full border border-slate-300 rounded-lg px-3 py-2.5 text-[13px] text-slate-800 bg-white focus:outline-none focus:ring-2 focus:ring-[#529b7b]/40 focus:border-[#529b7b]">
           <option value="">-- Seleccione Categoría --</option>
           @for (c of categoriasDisponiblesModal(); track c.id || c.IdpptoFaseCategoria) {
@@ -1527,12 +1533,12 @@
 
       <!-- Monto Costo Directo -->
       <div>
-        <label class="block text-[12px] font-bold text-slate-700 uppercase tracking-wide mb-1.5">
+        <label for="modal-categoria-costo" class="block text-[12px] font-bold text-slate-700 uppercase tracking-wide mb-1.5">
           Monto Subtotal (S/.) *
         </label>
         <div class="relative">
           <span class="absolute left-3 top-2.5 text-slate-400 font-bold text-[13px]">S/</span>
-          <input [(ngModel)]="modalCategoriaData.CostoDirecto" type="number" step="0.01" min="0" placeholder="0.00"
+          <input id="modal-categoria-costo" [(ngModel)]="modalCategoriaData.CostoDirecto" type="number" step="0.01" min="0" placeholder="0.00"
                  class="w-full pl-9 pr-3 py-2.5 border border-slate-300 rounded-lg text-[14px] font-mono font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#529b7b]/40 focus:border-[#529b7b]">
         </div>
       </div>
@@ -1558,10 +1564,9 @@
 
 <!-- MODAL FLOTANTE: COMPRAS Y DOCUMENTOS ORIGEN POR FASE -->
 @if (modalComprasOpen()) {
-<div class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-5 animate-in fade-in duration-150"
-     (click)="cerrarModalCompras()">
-  <div class="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-5xl max-h-[85vh] flex flex-col overflow-hidden animate-in zoom-in-95 duration-150"
-       (click)="$event.stopPropagation()">
+<div class="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 animate-in fade-in duration-150">
+  <button type="button" aria-label="Cerrar modal de compras" class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs w-full h-full border-none cursor-default" (click)="cerrarModalCompras()"></button>
+  <div class="relative z-10 bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-5xl max-h-[85vh] flex flex-col overflow-hidden animate-in zoom-in-95 duration-150">
     
     <!-- CABECERA DEL MODAL -->
     <div class="bg-[#1e4838] text-white px-5 py-4 flex items-center justify-between shrink-0">
@@ -1699,13 +1704,13 @@
                     {{ item.unidad_medida || "UND" }}
                   </td>
                   <td class="py-2.5 px-3 text-right font-mono text-slate-700 tabular-nums">
-                    {{ item.cantidad != null ? (item.cantidad | number:"1.2-2") : "0.00" }}
+                    {{ item.cantidad !== null && item.cantidad !== undefined ? (item.cantidad | number:"1.2-2") : "0.00" }}
                   </td>
                   <td class="py-2.5 px-3 text-right font-mono text-slate-700 tabular-nums">
-                    {{ item.precio != null ? (item.precio | number:"1.2-2") : "0.00" }}
+                    {{ item.precio !== null && item.precio !== undefined ? (item.precio | number:"1.2-2") : "0.00" }}
                   </td>
                   <td class="py-2.5 px-3 text-right font-mono font-bold text-slate-900 tabular-nums bg-slate-50/50">
-                    {{ item.monto != null ? (item.monto | number:"1.2-2") : "0.00" }}
+                    {{ item.monto !== null && item.monto !== undefined ? (item.monto | number:"1.2-2") : "0.00" }}
                   </td>
                 </tr>
               } @empty {
@@ -1767,7 +1772,7 @@
   <!-- MODAL SELECCIONAR PLANTILLA -->
   @if (showPlantillasModal()) {
     <div class="fixed inset-0 z-[100] flex items-center justify-center p-4">
-      <div class="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" (click)="cerrarModalPlantillas()"></div>
+      <button type="button" aria-label="Cerrar modal de plantillas" class="absolute inset-0 bg-slate-900/40 backdrop-blur-sm w-full h-full border-none cursor-default" (click)="cerrarModalPlantillas()"></button>
       <div class="bg-white rounded-xl shadow-xl w-full max-w-md relative flex flex-col max-h-[90vh] overflow-hidden border border-slate-200">
         <!-- Header -->
         <div class="px-5 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50">

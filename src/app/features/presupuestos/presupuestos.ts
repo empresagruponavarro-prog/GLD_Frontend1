@@ -1,4 +1,4 @@
-﻿import { Component, computed, inject, signal, OnInit } from '@angular/core';
+import { Component, computed, inject, signal, OnInit } from '@angular/core';
 import { rxResource, toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -38,7 +38,7 @@ import {
 import { EmpresasService } from '../administration/empresas/empresas.service';
 import { Empresa } from '../administration/empresas/interfaces';
 import { PresupuestosService, Plantilla } from './presupuestos.service';
-import { PresupuestoPrincipal, PaginatedResponse, DetalleFase, PresupuestoCompleto, FaseMaestra, FaseCategoriaMaestra } from './interfaces';
+import { PresupuestoPrincipal, DetalleFase, DetalleFaseCate, PresupuestoCompleto, FaseMaestra, FaseCategoriaMaestra } from './interfaces';
 import { DocumentosOrigenService } from '../documentos/documentos-origen/documentos-origen.service';
 import { DocumentoOrigenDetalleLinea } from '../documentos/documentos-origen/interfaces/documentos-origen.interface';
 import { CentrosCostosService } from '../centros-costos/centros-costos.service'; import { CategoriasService } from '../maestros-generales/categorias/categorias.service'; import { CategoriaSelect } from '../maestros-generales/categorias/interfaces/categorias.interface';
@@ -161,12 +161,12 @@ export class PresupuestosComponent implements OnInit {
   }
 
   isBaseContractual(ppto: PresupuestoPrincipal): boolean {
-    const tipo = (ppto.TipoPpto || (ppto as any).Tipo || '').toUpperCase();
+    const tipo = (ppto.TipoPpto || '').toUpperCase();
     if (tipo.includes('ADICIONAL')) return false;
     return true;
   }
 
-  openEditPresupuesto(ppto: any) {
+  openEditPresupuesto(ppto: PresupuestoPrincipal) {
     this.abrirPresupuestoEnForm(ppto, 1);
   } // 'Todos' | 'Materiales' | 'Mano de Obra' | 'Equipos & Subc.'
   showNuevaCategoria = signal(false);
@@ -191,13 +191,13 @@ export class PresupuestosComponent implements OnInit {
     return Array.from(set);
   }
 
-  get categoriasFiltradas() {
+  get categoriasFiltradas(): DetalleFaseCate[] {
     const f = this.selectedFase();
     if (!f || !f.categorias) return [];
     const cat = this.filterCategoria;
     if (!cat || cat === 'Todos') return f.categorias;
     const lower = cat.toLowerCase();
-    return f.categorias.filter((c: any) => (c.CategoriaInsumo || '').toLowerCase().includes(lower));
+    return f.categorias.filter((c: DetalleFaseCate) => (c.CategoriaInsumo || '').toLowerCase().includes(lower));
   }
 
   getPesoFase(fase: DetalleFase): string {
@@ -212,7 +212,7 @@ export class PresupuestosComponent implements OnInit {
     return saldoSinAsignar(this.presupuestoActivo()?.fases || [], this.presupuestoActivo()?.CostoDirecto);
   }
 
-  getPesoCategoria(cat: any): string {
+  getPesoCategoria(cat: DetalleFaseCate): string {
     return pesoPorcentaje(cat.CostoDirecto ?? cat.SubTotalCategoria, this.selectedFase()?.CostoDirecto);
   }
 
@@ -242,7 +242,7 @@ export class PresupuestosComponent implements OnInit {
   newFaseSubtotal: number | null = null;
   faseFormMode: 'new-fase' | 'new-categoria' | 'edit-fase' | 'edit-categoria' = 'new-fase';
   editingFaseAsignada: DetalleFase | null = null;
-  editingCategoriaAsignada: any | null = null;
+  editingCategoriaAsignada: DetalleFaseCate | null = null;
 
   // Modales directos y rápidos para Fase y Categoría (Dashboard)
   modalFaseOpen = signal<boolean>(false);
@@ -387,7 +387,7 @@ export class PresupuestosComponent implements OnInit {
   }
 
   // Guías y títulos de pasos
-  stepTitles: { [key: number]: string } = {
+  stepTitles: Record<number, string> = {
     1: 'Etapa 1 de 5: Completando Datos Generales del Proyecto.',
     2: 'Etapa 2 de 5: Desglose de Fases y Costo Directo APU.',
     3: 'Etapa 3 de 5: Liquidación Financiera, Márgenes e Impuestos.',
@@ -410,6 +410,19 @@ export class PresupuestosComponent implements OnInit {
   }
 
   nextStep() {
+    if (this.formStep() === 1) {
+      const lista = this.presupuestosDelCC();
+      if (lista.length === 0) {
+        alert('Debe agregar al menos un presupuesto a la grilla para este Centro de Costo antes de continuar a Fases & Costos.');
+        return;
+      }
+      const selId = this.selectedPresupuestoId() || this.editingId();
+      const ppto = (selId ? lista.find(p => String(p.IdPresupuesto ?? p.id) === String(selId)) : null) || lista[0];
+      if (ppto) {
+        this.abrirPresupuestoEnForm(ppto, 2);
+        return;
+      }
+    }
     if (this.formStep() < 5) {
       this.formStep.set(this.formStep() + 1);
     }
@@ -483,17 +496,17 @@ export class PresupuestosComponent implements OnInit {
     this.abrirModalFase('edit', fase);
   }
 
-  editarCategoria(categoria: any, event: Event) {
+  editarCategoria(categoria: DetalleFaseCate, event: Event) {
     event.stopPropagation();
     this.abrirModalCategoria('edit', categoria);
   }
 
-    actualizarCategoriaReal(fase: any, event: Event) {
+  actualizarCategoriaReal(fase: FilaFormFase, event: Event) {
     const select = event.target as HTMLSelectElement;
     const realId = select.value && select.value !== 'undefined' ? Number(select.value) : undefined;
     fase.id_categoria = realId;
     if (realId) {
-      const realDesc = this.categoriasReal().find((c: any) => c.id === realId)?.nombre || '';
+      const realDesc = this.categoriasReal().find((c: CategoriaSelect) => c.id === realId)?.nombre || '';
       fase.categoriaRealDescripcion = realDesc;
     } else {
       fase.categoriaRealDescripcion = undefined;
@@ -568,7 +581,7 @@ export class PresupuestosComponent implements OnInit {
     }
   }
 
-  abrirModalCategoria(modo: 'new' | 'edit', cat?: any) {
+  abrirModalCategoria(modo: 'new' | 'edit', cat?: DetalleFaseCate) {
     const ppto = this.presupuestoActivo();
     const fase = this.selectedFase();
     if (!ppto || !fase?.IdpptoFase) {
@@ -587,12 +600,12 @@ export class PresupuestosComponent implements OnInit {
 
     this.categoriasDisponiblesModal.set([]);
     this.presupuestosService.getCategoriasDeFase(fase.IdpptoFase).subscribe({
-      next: (cats: any) => {
-        let list = Array.isArray(cats) ? cats : (cats.data || []);
+      next: (cats: FaseCategoriaMaestra[] | { data?: FaseCategoriaMaestra[] }) => {
+        let list: FaseCategoriaMaestra[] = Array.isArray(cats) ? cats : (cats.data || []);
         if (cat?.IdpptoFaseCategoria && !list.some(c => c.IdpptoFaseCategoria === cat.IdpptoFaseCategoria)) {
           list = [{
             IdpptoFaseCategoria: cat.IdpptoFaseCategoria,
-            Descripcion: cat.CategoriaInsumo || cat.Descripcion || cat.IdpptoFaseCategoria,
+            Descripcion: cat.CategoriaInsumo || cat.IdpptoFaseCategoria,
             id: cat.id,
           }, ...list];
         }
@@ -602,7 +615,7 @@ export class PresupuestosComponent implements OnInit {
         if (cat?.IdpptoFaseCategoria) {
           this.categoriasDisponiblesModal.set([{
             IdpptoFaseCategoria: cat.IdpptoFaseCategoria,
-            Descripcion: cat.CategoriaInsumo || cat.Descripcion || cat.IdpptoFaseCategoria,
+            Descripcion: cat.CategoriaInsumo || cat.IdpptoFaseCategoria,
             id: cat.id,
           }]);
         }
@@ -724,7 +737,7 @@ export class PresupuestosComponent implements OnInit {
   private openFasesForm(
     mode: 'new-fase' | 'new-categoria' | 'edit-fase' | 'edit-categoria',
     fase?: DetalleFase,
-    categoria?: any,
+    categoria?: DetalleFaseCate,
   ) {
     const presupuesto = this.presupuestoActivo();
     if (!presupuesto) {
@@ -871,7 +884,7 @@ export class PresupuestosComponent implements OnInit {
     });
   }
 
-  eliminarCategoria(categoria: any, event?: Event) {
+  eliminarCategoria(categoria: DetalleFaseCate, event?: Event) {
     event?.stopPropagation();
     if (!confirm(`¿Eliminar la categoría "${categoria.CategoriaInsumo || categoria.IdpptoFaseCategoria}"?`)) return;
     this.presupuestosService.deleteCategoriaAsignada(categoria.id).subscribe({
@@ -943,13 +956,13 @@ export class PresupuestosComponent implements OnInit {
     if (!this.newFaseId) return;
 
     this.presupuestosService.getCategoriasDeFase(this.newFaseId).subscribe({
-      next: (response: any) => {
-        let list: any[] = Array.isArray(response) ? response : (response?.data || response?.value || []);
+      next: (response: FaseCategoriaMaestra[] | { data?: FaseCategoriaMaestra[]; value?: FaseCategoriaMaestra[] }) => {
+        let list: FaseCategoriaMaestra[] = Array.isArray(response) ? response : (response?.data || response?.value || []);
         if (preserveCategoriaId && !list.some((item) => String(item.IdpptoFaseCategoria) === String(preserveCategoriaId))) {
           if (this.editingCategoriaAsignada) {
             list = [{
-              IdpptoFaseCategoria: this.editingCategoriaAsignada.IdpptoFaseCategoria,
-              Descripcion: this.editingCategoriaAsignada.CategoriaInsumo || this.editingCategoriaAsignada.Descripcion || this.editingCategoriaAsignada.IdpptoFaseCategoria,
+              IdpptoFaseCategoria: this.editingCategoriaAsignada.IdpptoFaseCategoria || '',
+              Descripcion: this.editingCategoriaAsignada.CategoriaInsumo || this.editingCategoriaAsignada.IdpptoFaseCategoria || '',
               id: this.editingCategoriaAsignada.id
             }, ...list];
           }
@@ -962,8 +975,8 @@ export class PresupuestosComponent implements OnInit {
       error: () => {
         if (preserveCategoriaId && this.editingCategoriaAsignada) {
           this.categoriasFaseMaestra.set([{
-            IdpptoFaseCategoria: this.editingCategoriaAsignada.IdpptoFaseCategoria,
-            Descripcion: this.editingCategoriaAsignada.CategoriaInsumo || this.editingCategoriaAsignada.Descripcion,
+            IdpptoFaseCategoria: this.editingCategoriaAsignada.IdpptoFaseCategoria || '',
+            Descripcion: this.editingCategoriaAsignada.CategoriaInsumo || this.editingCategoriaAsignada.IdpptoFaseCategoria || '',
             id: this.editingCategoriaAsignada.id
           }]);
           this.newFaseCategoriaId = preserveCategoriaId;
@@ -1249,7 +1262,7 @@ export class PresupuestosComponent implements OnInit {
     this.showForm.set(true);
   }
 
-  compareCentrosCostos = (c1: any, c2: any): boolean => {
+  compareCentrosCostos = (c1: CentroCosto | null | undefined, c2: CentroCosto | null | undefined): boolean => {
     if (!c1 || !c2) return c1 === c2;
     const id1 = c1.id ?? c1.id_centro_costo;
     const id2 = c2.id ?? c2.id_centro_costo;
@@ -1303,6 +1316,16 @@ export class PresupuestosComponent implements OnInit {
           if ('data' in res && Array.isArray(res.data)) pptos = res.data;
           else if (Array.isArray(res) && res.length > 0) pptos = res;
           this.presupuestosDelCC.set(pptos);
+          if (!this.editingId()) {
+            const yaTienePrincipal = pptos.some(p => (p.TipoPpto || '').toUpperCase().includes('PRINCIPAL') || !(p.TipoPpto || '').toUpperCase().includes('ADICIONAL'));
+            if (pptos.length > 0 && yaTienePrincipal) {
+              this.formData.TipoPpto = 'Adicional';
+              this.formData.Concepto = `Adicional #${pptos.length + 1}`;
+            } else {
+              this.formData.TipoPpto = 'Principal';
+              this.formData.Concepto = 'PPTO CONTRACTUAL';
+            }
+          }
         },
         error: (err) => console.error('Error al cargar presupuestos del CC:', err)
       });
@@ -1329,8 +1352,8 @@ export class PresupuestosComponent implements OnInit {
     };
   }
 
-  abrirPresupuestoEnForm(p: PresupuestoPrincipal, targetStep: number = 2) {
-    const pptoId = String(p.IdPresupuesto || (p as any).id);
+  abrirPresupuestoEnForm(p: PresupuestoPrincipal, targetStep = 2) {
+    const pptoId = String(p.IdPresupuesto || p.id || '');
     this.editingId.set(pptoId);
     this.formData = { ...p };
     if (this.formData.FechaRequerimiento && typeof this.formData.FechaRequerimiento === 'string') {
@@ -1422,13 +1445,21 @@ export class PresupuestosComponent implements OnInit {
     }
   }
 
-  /** Filas de la grilla del paso 1: al editar, solo el presupuesto en edición. */
+  /** Filas de la grilla del paso 1:
+   * - Al dar click en "Editar Presupuesto" (apartado acciones de la tabla principal): solo muestra el seleccionado.
+   * - Al dar click en "+ Nuevo Presupuesto" o "Ppto" de CC (creación): muestra todos los presupuestos para poder crear varios.
+   */
   get presupuestosGrilla(): PresupuestoPrincipal[] {
     const id = this.editingId();
     const lista = this.presupuestosDelCC();
     if (!id) return lista;
     const actual = lista.filter(p => String(p.IdPresupuesto ?? p.id ?? '') === id);
-    return actual.length ? actual : [this.formData as PresupuestoPrincipal];
+    return actual.length ? actual : (this.formData?.id_centro_costo ? [this.formData as PresupuestoPrincipal] : []);
+  }
+
+  seleccionarFilaPresupuesto(p: PresupuestoPrincipal) {
+    const pptoId = String(p.IdPresupuesto || p.id || '');
+    this.selectedPresupuestoId.set(pptoId);
   }
 
   agregarPresupuesto() {
@@ -1448,8 +1479,8 @@ export class PresupuestosComponent implements OnInit {
       id_centro_costo: Number(idCc),
       CodCentroCto: cc?.CodCentroCto || this.formData.CodCentroCto || '',
       Proyecto: cc?.CentroCosto || this.formData.Proyecto || 'Presupuesto',
-      Cliente: cc?.Cliente || cc?.CodCliente || (cc as any)?.cod_cliente || this.formData.Cliente || '',
-      CodigoAnexo: cc?.Cliente || cc?.CodCliente || (cc as any)?.cod_cliente || this.formData.Cliente || '',
+      Cliente: cc?.Cliente || cc?.CodCliente || this.formData.Cliente || '',
+      CodigoAnexo: cc?.Cliente || cc?.CodCliente || this.formData.Cliente || '',
       id_empresa: cc?.id_empresa || this.formData.id_empresa,
       CodEmpresa: cc?.CodEmpresa || cc?.Empresa || this.formData.CodEmpresa || '',
       periodo: cc?.periodo != null ? String(cc.periodo) : (this.formData.periodo || '2026'),
@@ -1473,7 +1504,7 @@ export class PresupuestosComponent implements OnInit {
     this.loading.set(true);
     let creado: PresupuestoPrincipal | null = null;
     this.presupuestosService.createPresupuesto(payload).pipe(
-      tap((c: any) => { creado = c; }),
+      tap((c: PresupuestoPrincipal) => { creado = c; }),
       // Refrescar la lista solo después de que termine la escritura
       switchMap(() => this.presupuestosService.getPresupuestos(1, 100, '', undefined, Number(idCc))),
       finalize(() => this.loading.set(false)),
@@ -1483,13 +1514,20 @@ export class PresupuestosComponent implements OnInit {
         if ('data' in res && Array.isArray(res.data)) pptos = res.data;
         else if (Array.isArray(res) && res.length > 0) pptos = res;
         this.presupuestosDelCC.set(pptos);
-        // Continuar el wizard EDITANDO el presupuesto creado: así "Guardar" al final
-        // actualiza este registro en vez de crear un segundo (el "adicional" duplicado).
+
         const c = creado as PresupuestoPrincipal | null;
-        if (c?.IdPresupuesto) {
-          const enLista = pptos.find(p => String(p.IdPresupuesto) === String(c.IdPresupuesto));
-          this.abrirPresupuestoEnForm(enLista ?? { ...payload, ...c }, 1);
+        const nuevoId = String(c?.IdPresupuesto ?? '');
+        if (nuevoId) {
+          this.selectedPresupuestoId.set(nuevoId);
         }
+
+        // Mantener la grilla visible con todos los presupuestos y preparar
+        // los campos inferiores para permitir agregar el siguiente adicional:
+        this.editingId.set(null);
+        const total = pptos.length;
+        this.formData.TipoPpto = 'Adicional';
+        this.formData.Concepto = `Adicional #${total + 1}`;
+        this.formData.FechaEntrega = '';
       },
       error: (err) => {
         console.error('Error al agregar presupuesto:', err);
@@ -1499,7 +1537,7 @@ export class PresupuestosComponent implements OnInit {
   }
 
   eliminarPresupuestoDeCC(p: PresupuestoPrincipal) {
-    const id = String(p.IdPresupuesto || (p as any).id);
+    const id = String(p.IdPresupuesto || p.id || '');
     if (confirm(`¿Eliminar el presupuesto "${id}"? Esta acción no se puede deshacer.`)) {
       this.loading.set(true);
       this.presupuestosService.deletePresupuesto(id).subscribe({
@@ -1590,9 +1628,9 @@ export class PresupuestosComponent implements OnInit {
       let creado = false;
       const fasesAGuardar = [...this.formFases()];
       this.presupuestosService.createPresupuesto(payload).pipe(
-        switchMap((created: any) => {
+        switchMap((created: PresupuestoPrincipal) => {
           creado = true;
-          pptoCode = created?.IdPresupuesto || payload.IdPresupuesto || '';
+          pptoCode = created?.IdPresupuesto ? String(created.IdPresupuesto) : (payload.IdPresupuesto ? String(payload.IdPresupuesto) : '');
           return crearFasesConCategorias(this.presupuestosService, {
             IdPresupuesto: pptoCode,
             id_empresa: created?.id_empresa ?? payload.id_empresa,
@@ -1665,8 +1703,8 @@ export class PresupuestosComponent implements OnInit {
       this.categoriasFaseMaestra.set([]);
       return;
     }
-    const ccId = cc.id ?? (cc as any).id_centro_costo;
-    const ccpId = (cc as any).id_centro_costos_principal;
+    const ccId = cc.id ?? cc.id_centro_costo;
+    const ccpId = cc.id_centro_costos_principal ?? cc.id_centro_costo_principal;
     this.presupuestosService.getFasesMaestras({
       id_centro_costo: ccId,
       id_centro_costos_principal: ccpId,
@@ -1864,7 +1902,7 @@ export class PresupuestosComponent implements OnInit {
         if (this.selectedCC()) {
           const current = this.selectedCC()!;
           const currentId = current.id ?? current.id_centro_costo;
-          const matchedIndex = list.findIndex((c: any) =>
+          const matchedIndex = list.findIndex((c: CentroCosto) =>
             (currentId != null && (c.id === currentId || c.id_centro_costo === currentId)) ||
             (current.CodCentroCto && c.CodCentroCto === current.CodCentroCto)
           );
@@ -1939,7 +1977,7 @@ export class PresupuestosComponent implements OnInit {
         const prevFase = this.selectedFase();
         if (completo.fases && completo.fases.length > 0) {
           if (prevFase) {
-            const matched = completo.fases.find((f: any) => f.id === prevFase.id || f.IdpptoFase === prevFase.IdpptoFase);
+            const matched = completo.fases.find((f: DetalleFase) => f.id === prevFase.id || f.IdpptoFase === prevFase.IdpptoFase);
             this.selectedFase.set(matched || completo.fases[0]);
           } else {
             this.selectedFase.set(completo.fases[0]);
@@ -2137,7 +2175,7 @@ export class PresupuestosComponent implements OnInit {
       this.pageSize(),
       this.search()
     ).subscribe({
-      next: (res) => {
+      next: () => {
         this.loading.set(false);
       },
       error: (err) => {

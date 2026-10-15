@@ -1,9 +1,27 @@
 import { Observable, catchError, concat, concatMap, defer, map, of, toArray } from 'rxjs';
 
+export interface FaseAsignadaPayload {
+  IdpptoFase?: string;
+  IdPresupuestoDetalle?: string;
+  CostoDirecto?: number;
+  [key: string]: unknown;
+}
+
+export interface CategoriaAsignadaPayload {
+  IdpptoFase?: string;
+  IdPresupuestoDetalle?: string;
+  IdPresupuestoDetalleCategoria?: string;
+  IdpptoFaseCategoria?: string;
+  CostoDirecto?: number;
+  id_categoria?: number;
+  SubTotalCategoria?: number;
+  [key: string]: unknown;
+}
+
 /** Subconjunto de PresupuestosService que usa la orquestación (facilita simularlo en tests). */
 export interface FasesCategoriasWriter {
-  createFaseAsignada(data: any): Observable<any>;
-  createCategoriaAsignada(data: any): Observable<any>;
+  createFaseAsignada(data: FaseAsignadaPayload): Observable<unknown>;
+  createCategoriaAsignada(data: CategoriaAsignadaPayload): Observable<unknown>;
 }
 
 export interface FaseCategoriaAGuardar {
@@ -44,8 +62,12 @@ export interface FilaFormFase {
 
 export type ModoPlantilla = 'agregar' | 'reemplazar';
 
-export function mensajeDeError(error: any): string {
-  return error?.error?.message || error?.message || 'Error desconocido';
+export function mensajeDeError(error: unknown): string {
+  if (error && typeof error === 'object') {
+    const errObj = error as { error?: { message?: string }; message?: string };
+    return errObj.error?.message || errObj.message || 'Error desconocido';
+  }
+  return String(error || 'Error desconocido');
 }
 
 /** Agrupa las filas por fase conservando el orden de aparición. */
@@ -201,15 +223,42 @@ export function fusionarFilasPlantilla(
   return { filas: resultado, agregadas, omitidas };
 }
 
+export interface CategoriaCompletoInput {
+  id?: number;
+  IdpptoFaseCategoria?: string;
+  CategoriaInsumo?: string;
+  Descripcion?: string;
+  CostoDirecto?: number | string;
+  SubTotalCategoria?: number | string;
+  id_categoria?: number | null;
+  categoriaRealDescripcion?: string;
+  categoria?: { descripcion?: string; nombre?: string } | null;
+}
+
+export interface FaseCompletoInput {
+  id?: number;
+  IdpptoFase?: string | null;
+  NombreFase?: string | null;
+  FaseProyecto?: string | null;
+  IdPresupuestoDetalle?: string;
+  CostoDirecto?: number | string;
+  categorias?: CategoriaCompletoInput[] | null;
+}
+
+export interface PresupuestoCompletoInput {
+  fases?: FaseCompletoInput[] | null;
+}
+
 /** Convierte la respuesta de `getPresupuestoCompleto` en filas del wizard. */
-export function completoAFilas(completo: { fases?: any[] } | null | undefined): FilaFormFase[] {
+export function completoAFilas(completo: PresupuestoCompletoInput | null | undefined): FilaFormFase[] {
   const filas: FilaFormFase[] = [];
   for (const f of completo?.fases ?? []) {
-    const nombre = f.NombreFase || f.FaseProyecto || f.IdpptoFase;
-    const categorias: any[] = Array.isArray(f.categorias) ? f.categorias : [];
+    const nombre = f.NombreFase || f.FaseProyecto || f.IdpptoFase || '';
+    const categorias: CategoriaCompletoInput[] = Array.isArray(f.categorias) ? f.categorias : [];
+    const idFaseStr = f.IdpptoFase || '';
     if (categorias.length === 0) {
       filas.push({
-        idFase: f.IdpptoFase,
+        idFase: idFaseStr,
         nombre,
         idCategoria: '',
         categoria: '(Sin categoría)',
@@ -221,14 +270,16 @@ export function completoAFilas(completo: { fases?: any[] } | null | undefined): 
     }
     for (const c of categorias) {
       filas.push({
-        idFase: f.IdpptoFase,
+        idFase: idFaseStr,
         nombre,
         idCategoria: c.IdpptoFaseCategoria || '',
         categoria: c.Descripcion || c.CategoriaInsumo || c.IdpptoFaseCategoria || '(Sin categoría)',
         subtotal: Number(c.CostoDirecto ?? c.SubTotalCategoria ?? 0),
         idFaseDetalle: f.id,
         codigoFaseDetalle: f.IdPresupuestoDetalle,
-        idCategoriaDetalle: c.id, id_categoria: c.id_categoria, categoriaRealDescripcion: c.categoriaRealDescripcion || (c.categoria && c.categoria.descripcion) || '',
+        idCategoriaDetalle: c.id,
+        id_categoria: c.id_categoria ?? undefined,
+        categoriaRealDescripcion: c.categoriaRealDescripcion || c.categoria?.descripcion || c.categoria?.nombre || '',
       });
     }
   }
