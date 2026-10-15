@@ -1371,7 +1371,7 @@ export class PresupuestosComponent implements OnInit {
             const yaTienePrincipal = pptos.some(p => (p.TipoPpto || '').toUpperCase().includes('PRINCIPAL') || !(p.TipoPpto || '').toUpperCase().includes('ADICIONAL'));
             if (pptos.length > 0 && yaTienePrincipal) {
               this.formData.TipoPpto = 'Adicional';
-              this.formData.Concepto = `Adicional #${pptos.length + 1}`;
+              this.formData.Concepto = `Adicional #${this.getSiguienteNumeroAdicional(pptos)}`;
             } else {
               this.formData.TipoPpto = 'Principal';
               this.formData.Concepto = 'PPTO CONTRACTUAL';
@@ -1463,7 +1463,7 @@ export class PresupuestosComponent implements OnInit {
     if (!current || current === 'PPTO CONTRACTUAL' || current.startsWith('Adicional #')) {
       this.formData.Concepto = tipo === 'Principal'
         ? 'PPTO CONTRACTUAL'
-        : `Adicional #${this.presupuestosDelCC().length + 1}`;
+        : `Adicional #${this.getSiguienteNumeroAdicional(this.presupuestosDelCC())}`;
     }
   }
 
@@ -1509,6 +1509,14 @@ export class PresupuestosComponent implements OnInit {
     return actual.length ? actual : (this.formData?.id_centro_costo ? [this.formData as PresupuestoPrincipal] : []);
   }
 
+  private getSiguienteNumeroAdicional(pptos: PresupuestoPrincipal[]): number {
+    const adicionales = pptos.filter(p =>
+      (p.TipoPpto || '').toUpperCase().includes('ADICIONAL') ||
+      (p.Concepto || '').toUpperCase().includes('ADICIONAL')
+    );
+    return adicionales.length + 1;
+  }
+
   seleccionarFilaPresupuesto(p: PresupuestoPrincipal) {
     const pptoId = String(p.IdPresupuesto || p.id || '');
     this.selectedPresupuestoId.set(pptoId);
@@ -1539,7 +1547,7 @@ export class PresupuestosComponent implements OnInit {
       TipoPpto: tipo,
       Concepto: (this.formData.Concepto && this.formData.Concepto.trim())
         ? this.formData.Concepto.trim()
-        : (tipo === 'Principal' ? 'PPTO CONTRACTUAL' : `Adicional #${this.presupuestosDelCC().length + 1}`),
+        : (tipo === 'Principal' ? 'PPTO CONTRACTUAL' : `Adicional #${this.getSiguienteNumeroAdicional(this.presupuestosDelCC())}`),
       FechaRequerimiento: reqDate,
       FechaEntrega: entregaDate,
       Estado: 'PENDIENTE',
@@ -1576,9 +1584,8 @@ export class PresupuestosComponent implements OnInit {
         // Mantener la grilla visible con todos los presupuestos y preparar
         // los campos inferiores para permitir agregar el siguiente adicional:
         this.editingId.set(null);
-        const total = pptos.length;
         this.formData.TipoPpto = 'Adicional';
-        this.formData.Concepto = `Adicional #${total + 1}`;
+        this.formData.Concepto = `Adicional #${this.getSiguienteNumeroAdicional(pptos)}`;
         this.formData.FechaEntrega = '';
       },
       error: (err) => {
@@ -1660,7 +1667,7 @@ export class PresupuestosComponent implements OnInit {
     }
 
     this.loading.set(true);
-    const id = this.editingId();
+    const id = this.editingId() || this.selectedPresupuestoId();
     if (id) {
       this.presupuestosService.updatePresupuesto(id, payload).subscribe({
         next: () => {
