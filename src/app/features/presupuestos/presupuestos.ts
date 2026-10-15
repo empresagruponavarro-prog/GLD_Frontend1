@@ -914,6 +914,7 @@ export class PresupuestosComponent implements OnInit {
         next: (completo) => {
           this.presupuestoActivo.set(completo);
           this.formFases.set(completoAFilas(completo));
+          this.sincronizarDescripcionesCategorias();
           this.recargarPresupuestosDelCCActual();
         }
       });
@@ -1021,7 +1022,7 @@ export class PresupuestosComponent implements OnInit {
     const fila = this.formFases()[index];
     if (!fila) return;
     const monto = Number(fila.subtotal) || 0;
-    const peticion = fila.idCategoriaDetalle
+    const peticion: Observable<unknown> | null = fila.idCategoriaDetalle
       ? this.presupuestosService.updateCategoriaAsignada(fila.idCategoriaDetalle, { CostoDirecto: monto })
       : fila.idFaseDetalle
         ? this.presupuestosService.updateFaseAsignada(fila.idFaseDetalle, { CostoDirecto: monto })
@@ -1030,6 +1031,56 @@ export class PresupuestosComponent implements OnInit {
       next: () => this.recargarPresupuestoActivo(),
       error: (error) => alert('Error al actualizar el monto: ' + mensajeDeError(error)),
     });
+  }
+
+  onCategoriaRealChange(index: number, valor: string) {
+    const filas = this.formFases();
+    const fila = filas[index];
+    if (!fila) return;
+
+    const texto = (valor || '').trim();
+    const match = this.categoriasReal().find(c => c.nombre.trim().toLowerCase() === texto.toLowerCase());
+
+    const realId = match ? match.id : undefined;
+    const realDesc = match ? match.nombre : (texto || undefined);
+
+    this.formFases.update(items => {
+      const copy = [...items];
+      copy[index] = {
+        ...copy[index],
+        id_categoria: realId,
+        categoriaRealDescripcion: realDesc,
+      };
+      return copy;
+    });
+
+    if (this.fasesPersistidas && fila.idCategoriaDetalle) {
+      this.presupuestosService.updateCategoriaAsignada(fila.idCategoriaDetalle, {
+        id_categoria: realId,
+      }).subscribe({
+        error: (err) => console.error('Error al actualizar categoría en backend:', err),
+      });
+    }
+  }
+
+  sincronizarDescripcionesCategorias() {
+    const cats = this.categoriasReal();
+    if (!cats.length) return;
+    const filas = this.formFases();
+    let cambiado = false;
+    const actualizadas = filas.map(f => {
+      if (!f.categoriaRealDescripcion && f.id_categoria) {
+        const m = cats.find(c => c.id === f.id_categoria);
+        if (m) {
+          cambiado = true;
+          return { ...f, categoriaRealDescripcion: m.nombre };
+        }
+      }
+      return f;
+    });
+    if (cambiado) {
+      this.formFases.set(actualizadas);
+    }
   }
 
   /** Carga la fila en el formulario inferior para cambiar su categoría o monto. */
@@ -1384,6 +1435,7 @@ export class PresupuestosComponent implements OnInit {
       next: (completo) => {
         this.presupuestoActivo.set(completo);
         this.formFases.set(completoAFilas(completo));
+        this.sincronizarDescripcionesCategorias();
         this.pctGG.set(Number(completo.GGPorcentaje ?? p.GGPorcentaje ?? 0));
         this.pctUtilidad.set(Number(completo.UtiliPorcentaje ?? p.UtiliPorcentaje ?? 0));
         this.viaticos.set(Number(completo.Viaticos ?? p.Viaticos ?? 0));
@@ -1674,7 +1726,11 @@ export class PresupuestosComponent implements OnInit {
     this.loadCatalogos();
     this.loadEmpresas();
     this.loadFasesMaestras();
-    this.loadCentrosCostos(); this.categoriasService.getSelect().subscribe(c => this.categoriasReal.set(c));
+    this.loadCentrosCostos();
+    this.categoriasService.getSelect().subscribe(c => {
+      this.categoriasReal.set(c);
+      this.sincronizarDescripcionesCategorias();
+    });
 
     const navigationState = this.router.getCurrentNavigation()?.extras.state ?? history.state;
     const fromCC = navigationState?.['fromCC'] as CentroCosto | undefined;

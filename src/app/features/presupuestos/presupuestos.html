@@ -882,8 +882,16 @@
                   <td class="py-2 px-3 font-mono text-[#2d634d] font-bold text-[12px]">{{ (i+1) < 10 ? '0'+(i+1) : (i+1) }}</td>
                   <td class="py-2 px-3 font-medium text-slate-800">{{ fase.nombre }}</td>
                   <td class="py-2 px-3">
-                    <div class="bg-slate-50 p-2 rounded border border-slate-100 text-[11px] font-semibold text-slate-700 whitespace-normal leading-snug">
-                      {{ fase.categoriaRealDescripcion || 'N/A' }}
+                    <div class="relative flex items-center group">
+                      <input type="text"
+                             list="lista-categorias-real"
+                             [ngModel]="fase.categoriaRealDescripcion || ''"
+                             (ngModelChange)="onCategoriaRealChange(i, $event)"
+                             placeholder="Escribir o seleccionar..."
+                             class="w-full bg-white hover:bg-slate-50 focus:bg-white text-[12px] font-medium text-slate-800 border border-slate-200 hover:border-slate-300 focus:border-[#529b7b] focus:ring-1 focus:ring-[#529b7b] rounded px-2.5 py-1.5 transition outline-none shadow-2xs pr-6">
+                      <svg class="w-3.5 h-3.5 text-slate-400 absolute right-2 pointer-events-none group-focus-within:text-[#529b7b]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                      </svg>
                     </div>
                   </td>
                   <td class="py-2 px-3">
@@ -947,6 +955,11 @@
               </tr>
             </tfoot>
           </table>
+          <datalist id="lista-categorias-real">
+            @for (cat of categoriasReal(); track cat.id) {
+              <option [value]="cat.nombre">{{ cat.nombre }}</option>
+            }
+          </datalist>
         </div>
 
         <!-- Inserción Rápida / Edición -->

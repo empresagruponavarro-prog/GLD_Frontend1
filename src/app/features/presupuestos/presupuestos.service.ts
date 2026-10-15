@@ -4,8 +4,12 @@ import { Observable } from 'rxjs';
 import { 
   PresupuestoPrincipal, 
   CategoriaFaseMaestra, 
+  FaseMaestra,
+  FaseCategoriaMaestra,
   FaseAsignada, 
   FasePorCentroCosto,
+  DetalleFase,
+  DetalleFaseCate,
   Historial,
   PaginatedResponse,
   PresupuestoCompleto
@@ -136,8 +140,8 @@ export class PresupuestosService {
     return this.http.delete<void>(`${this.apiUrl}/${id}`);
   }
 
-  private sanitizePresupuestoPayload(data: Partial<PresupuestoPrincipal>): any {
-    const payload: any = { ...data };
+  private sanitizePresupuestoPayload(data: Partial<PresupuestoPrincipal>): Partial<PresupuestoPrincipal> {
+    const payload: Partial<PresupuestoPrincipal> = { ...data };
     if (payload.id_empresa === undefined && payload.CodEmpresa) {
       const num = Number(payload.CodEmpresa);
       if (!isNaN(num) && num > 0) payload.id_empresa = num;
@@ -153,14 +157,13 @@ export class PresupuestosService {
   }
 
   // Fases Maestras
-  // Fases Maestras
   getFasesMaestras(params?: {
     id_centro_costo?: number;
     id_centro_costos_principal?: number;
     CodCentroCtoPrincipal?: string;
     id_empresa?: number;
     pageSize?: number;
-  }): Observable<any> {
+  }): Observable<FaseMaestra[] | { data: FaseMaestra[]; total?: number }> {
     let httpParams = new HttpParams();
     if (params) {
       if (params.id_centro_costo != null) httpParams = httpParams.set('id_centro_costo', params.id_centro_costo.toString());
@@ -172,19 +175,19 @@ export class PresupuestosService {
     if (!httpParams.has('pageSize')) {
       httpParams = httpParams.set('pageSize', '100');
     }
-    return this.http.get<any>(`${this.apiUrl}/fases-maestras`, { params: httpParams });
+    return this.http.get<FaseMaestra[] | { data: FaseMaestra[]; total?: number }>(`${this.apiUrl}/fases-maestras`, { params: httpParams });
   }
 
-    getCategoriasFasesMaestras(page: number = 1): Observable<any> {
-    return this.http.get<any>(`${this.apiUrl}/categorias-fases-maestras?page=${page}&pageSize=100`);
+  getCategoriasFasesMaestras(page = 1): Observable<FaseCategoriaMaestra[] | { data: FaseCategoriaMaestra[]; total?: number }> {
+    return this.http.get<FaseCategoriaMaestra[] | { data: FaseCategoriaMaestra[]; total?: number }>(`${this.apiUrl}/categorias-fases-maestras?page=${page}&pageSize=100`);
   }
 
-  getCategoriasDeFase(idFase: string): Observable<any> {
-    return this.http.get<any>(`${this.apiUrl}/fases-maestras/${encodeURIComponent(idFase)}/categorias`);
+  getCategoriasDeFase(idFase: string): Observable<FaseCategoriaMaestra[] | { data?: FaseCategoriaMaestra[] }> {
+    return this.http.get<FaseCategoriaMaestra[] | { data?: FaseCategoriaMaestra[] }>(`${this.apiUrl}/fases-maestras/${encodeURIComponent(idFase)}/categorias`);
   }
 
-  createCategoriaFaseMaestra(data: { IdpptoFaseCategoria: string; IdpptoFase: string; Descripcion: string }): Observable<any> {
-    return this.http.post<any>(`${this.apiUrl}/categorias-fases-maestras`, data);
+  createCategoriaFaseMaestra(data: { IdpptoFaseCategoria: string; IdpptoFase: string; Descripcion: string }): Observable<FaseCategoriaMaestra> {
+    return this.http.post<FaseCategoriaMaestra>(`${this.apiUrl}/categorias-fases-maestras`, data);
   }
 
   createFaseMaestra(data: Partial<CategoriaFaseMaestra>): Observable<CategoriaFaseMaestra> {
@@ -208,12 +211,12 @@ export class PresupuestosService {
     return this.http.get<FasePorCentroCosto[]>(`${this.apiUrl}/fases-asignadas/centro-costo/${idCentroCosto}`);
   }
 
-  createFaseAsignada(data: any): Observable<any> {
-    return this.http.post<any>(`${this.apiUrl}/fases-asignadas`, data);
+  createFaseAsignada(data: Partial<DetalleFase> | Record<string, unknown>): Observable<DetalleFase> {
+    return this.http.post<DetalleFase>(`${this.apiUrl}/fases-asignadas`, data);
   }
 
-  updateFaseAsignada(id: number | string, data: any): Observable<any> {
-    return this.http.patch<any>(`${this.apiUrl}/fases-asignadas/${id}`, data);
+  updateFaseAsignada(id: number | string, data: Partial<DetalleFase> | Record<string, unknown>): Observable<DetalleFase> {
+    return this.http.patch<DetalleFase>(`${this.apiUrl}/fases-asignadas/${id}`, data);
   }
 
   deleteFaseAsignada(id: number | string): Observable<void> {
@@ -221,16 +224,16 @@ export class PresupuestosService {
   }
 
   // Categorías Asignadas
-  getCategoriasAsignadas(): Observable<any[]> {
-    return this.http.get<any[]>(`${this.apiUrl}/categorias-asignadas`);
+  getCategoriasAsignadas(): Observable<DetalleFaseCate[]> {
+    return this.http.get<DetalleFaseCate[]>(`${this.apiUrl}/categorias-asignadas`);
   }
 
-  createCategoriaAsignada(data: any): Observable<any> {
-    return this.http.post<any>(`${this.apiUrl}/categorias-asignadas`, data);
+  createCategoriaAsignada(data: Partial<DetalleFaseCate> | Record<string, unknown>): Observable<DetalleFaseCate> {
+    return this.http.post<DetalleFaseCate>(`${this.apiUrl}/categorias-asignadas`, data);
   }
 
-  updateCategoriaAsignada(id: number | string, data: any): Observable<any> {
-    return this.http.patch<any>(`${this.apiUrl}/categorias-asignadas/${id}`, data);
+  updateCategoriaAsignada(id: number | string, data: Partial<DetalleFaseCate> | Record<string, unknown>): Observable<DetalleFaseCate> {
+    return this.http.patch<DetalleFaseCate>(`${this.apiUrl}/categorias-asignadas/${id}`, data);
   }
 
   deleteCategoriaAsignada(id: number | string): Observable<void> {

@@ -107,12 +107,12 @@ export interface CategoriaAsignada {
   CodEmpresa?: string;
   CodCentroCto?: string;
   CategoriaInsumo?: string;
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 export interface DetalleFaseCate {
   id: number;
-  categoria?: any;
+  categoria?: { id?: number; descripcion?: string; nombre?: string } | null;
   id_categoria?: number | null;
   IdPresupuestoDetalleCategoria?: string;
   IdPresupuestoDetalle?: string;
