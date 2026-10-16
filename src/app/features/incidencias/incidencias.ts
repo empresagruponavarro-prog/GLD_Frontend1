@@ -1,11 +1,15 @@
 import { Component, inject, signal, AfterViewChecked } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { permisosDePantalla } from '@app/core/auth/permisos-pantalla';
+import { mensajeError } from '@shared/utils/errores-http';
 import { IncidenciasService } from './incidencias.service';
-import { Incidencia } from './interfaces';
+import { Incidencia, IncidenciaFiltros } from './interfaces';
+import { LeafletGlobal, LeafletMap, LeafletMarker } from './leaflet.types';
 import { DataTableComponent } from '../../shared/components/data-table/data-table';
 import { DataTable } from '../../shared/interfaces';
-declare var L: any; // Leaflet global JS library
+/** Leaflet global (script de `index.html`); `undefined` si no cargó. */
+declare const L: LeafletGlobal | undefined;
 
 @Component({
   selector: 'app-incidencias',
@@ -15,6 +19,8 @@ declare var L: any; // Leaflet global JS library
 })
 export class IncidenciasComponent implements AfterViewChecked {
   private service = inject(IncidenciasService);
+  /** + Agregar y Duplicar (POST) → crear; Editar → editar; Eliminar → eliminar. */
+  protected readonly permisos = permisosDePantalla('incidencias');
 
   columns: DataTable[] = [
     { label: 'ID ⇅' },
@@ -35,8 +41,8 @@ export class IncidenciasComponent implements AfterViewChecked {
   loading = signal<boolean>(false);
 
   // Leaflet Map References
-  private leafletMap: any = null;
-  private leafletMarker: any = null;
+  private leafletMap: LeafletMap | null = null;
+  private leafletMarker: LeafletMarker | null = null;
   private mapNeedsInit = false;
 
   // Modal State
@@ -45,7 +51,7 @@ export class IncidenciasComponent implements AfterViewChecked {
   editingId = signal<number | null>(null);
   selectedItem = signal<Incidencia | null>(null);
 
-  filters = {
+  filters: IncidenciaFiltros = {
     fechaInicio: '',
     fechaFin: '',
     promotor: '',
@@ -109,11 +115,12 @@ export class IncidenciasComponent implements AfterViewChecked {
       this.leafletMap = null;
     }
 
-    this.leafletMap = L.map('leaflet-map-container').setView([lat, lng], 15);
+    const map = L.map('leaflet-map-container').setView([lat, lng], 15);
+    this.leafletMap = map;
 
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       attribution: '&copy; OpenStreetMap contributors',
-    }).addTo(this.leafletMap);
+    }).addTo(map);
 
     // Green pin marker matching screenshot
     const greenIcon = L.icon({
@@ -125,30 +132,31 @@ export class IncidenciasComponent implements AfterViewChecked {
       shadowSize: [41, 41],
     });
 
-    this.leafletMarker = L.marker([lat, lng], {
+    const marker = L.marker([lat, lng], {
       draggable: true,
       icon: greenIcon,
-    }).addTo(this.leafletMap);
+    }).addTo(map);
+    this.leafletMarker = marker;
 
-    this.leafletMarker.bindPopup('🟢 Arrastra para mover').openPopup();
+    marker.bindPopup('🟢 Arrastra para mover').openPopup();
 
     // Event when dragging green marker ends
-    this.leafletMarker.on('dragend', () => {
-      const pos = this.leafletMarker.getLatLng();
+    marker.on('dragend', () => {
+      const pos = marker.getLatLng();
       this.latitud.set(pos.lat.toFixed(8));
       this.longitud.set(pos.lng.toFixed(8));
     });
 
     // Event when clicking anywhere on map
-    this.leafletMap.on('click', (e: any) => {
+    map.on('click', (e) => {
       const { lat, lng } = e.latlng;
-      this.leafletMarker.setLatLng([lat, lng]);
+      marker.setLatLng([lat, lng]);
       this.latitud.set(lat.toFixed(8));
       this.longitud.set(lng.toFixed(8));
     });
 
     setTimeout(() => {
-      this.leafletMap.invalidateSize();
+      this.leafletMap?.invalidateSize();
     }, 200);
   }
 
@@ -196,7 +204,7 @@ export class IncidenciasComponent implements AfterViewChecked {
         this.incidencias.set(data);
         this.loading.set(false);
       },
-      error: (err) => {
+      error: (err: unknown) => {
         console.error(err);
         this.loading.set(false);
       },
@@ -217,6 +225,7 @@ export class IncidenciasComponent implements AfterViewChecked {
   }
 
   openCreateModal() {
+    if (!this.permisos.crear()) return;
     this.editingId.set(null);
     this.formData = {
       promotor: '',
@@ -250,7 +259,8 @@ export class IncidenciasComponent implements AfterViewChecked {
   }
 
   openEditModal(item: Incidencia) {
-    this.editingId.set(item.id!);
+    if (!this.permisos.editar()) return;
+    this.editingId.set(item.id ?? null);
     this.formData = { ...item };
     this.latitud.set(item.latitud ?? '');
     this.longitud.set(item.longitud ?? '');
@@ -274,32 +284,36 @@ export class IncidenciasComponent implements AfterViewChecked {
 
     const editId = this.editingId();
     if (editId) {
-      this.service.update(editId!, this.formData).subscribe({
+      this.service.update(editId, this.formData).subscribe({
         next: () => { this.closeModals(); this.loadIncidencias(); },
-        error: (err) => alert('Error al actualizar: ' + err.error?.message),
+        error: (err: unknown) => alert('Error al actualizar: ' + mensajeError(err)),
       });
     } else {
       this.service.create(this.formData).subscribe({
         next: () => { this.closeModals(); this.loadIncidencias(); },
-        error: (err) => alert('Error al crear: ' + err.error?.message),
+        error: (err: unknown) => alert('Error al crear: ' + mensajeError(err)),
       });
     }
   }
 
-  duplicateIncidencia(id: number) {
+  duplicateIncidencia(item: Incidencia) {
+    const id = item.id;
+    if (!this.permisos.crear() || id === undefined) return;
     if (confirm('¿Deseas duplicar esta ficha de caso?')) {
       this.service.duplicate(id).subscribe({
         next: () => this.loadIncidencias(),
-        error: (err) => alert('Error al duplicar: ' + err.error?.message),
+        error: (err: unknown) => alert('Error al duplicar: ' + mensajeError(err)),
       });
     }
   }
 
-  deleteIncidencia(id: number) {
+  deleteIncidencia(item: Incidencia) {
+    const id = item.id;
+    if (!this.permisos.eliminar() || id === undefined) return;
     if (confirm(`¿Eliminar la incidencia #${id}?`)) {
       this.service.delete(id).subscribe({
         next: () => this.loadIncidencias(),
-        error: (err) => alert('Error al eliminar: ' + err.error?.message),
+        error: (err: unknown) => alert('Error al eliminar: ' + mensajeError(err)),
       });
     }
   }
@@ -314,7 +328,7 @@ export class IncidenciasComponent implements AfterViewChecked {
         a.click();
         window.URL.revokeObjectURL(url);
       },
-      error: (err) => console.error('Error al exportar:', err),
+      error: (err: unknown) => console.error('Error al exportar:', err),
     });
   }
 

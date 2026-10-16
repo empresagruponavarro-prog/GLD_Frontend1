@@ -6,10 +6,14 @@
     </p>
   </div>
   <div style="display: flex; gap: 0.5rem; align-items: center">
-    <a class="btn btn-secondary" routerLink="/tesoreria/pagos"><i class="fa-solid fa-money-check-dollar"></i> Ejecutar pagos</a>
-    <button class="btn btn-primary" type="button" [disabled]="!haySeleccion()" (click)="abrirLote()">
-      <i class="fa-solid fa-calendar-check"></i> Programar seleccionados ({{ seleccion().size }})
-    </button>
+    @if (puedeVerPagos()) {
+      <a class="btn btn-secondary" routerLink="/tesoreria/pagos"><i class="fa-solid fa-money-check-dollar"></i> Ejecutar pagos</a>
+    }
+    @if (permisos.crear()) {
+      <button class="btn btn-primary" type="button" [disabled]="!haySeleccion()" (click)="abrirLote()">
+        <i class="fa-solid fa-calendar-check"></i> Programar seleccionados ({{ seleccion().size }})
+      </button>
+    }
   </div>
 </div>
 
@@ -25,15 +29,15 @@
   <section class="toolbar-shell">
     <div class="toolbar-filters-row">
       <div class="toolbar-filters-left">
-        <input type="text" class="toolbar-select" placeholder="Buscar documento o proveedor..." maxlength="100" [value]="fSearch()" (input)="onSearch($any($event.target).value)" />
-        <select class="toolbar-select" [value]="fClase()" (change)="setFilter('clase', $any($event.target).value)" aria-label="Clase">
+        <input type="text" class="toolbar-select" placeholder="Buscar documento o proveedor..." maxlength="100" [value]="fSearch()" (input)="onSearch(valorDe($event))" />
+        <select class="toolbar-select" [value]="fClase()" (change)="setFilter('clase', valorDe($event))" aria-label="Clase">
           <option value="">Todas las clases</option>
           @for (c of clases; track c) {
             <option [value]="c">{{ claseLabel[c] }}</option>
           }
         </select>
         <label class="toolbar-check">Vence hasta
-          <input type="date" class="toolbar-select" [value]="fVence()" (change)="setFilter('vence', $any($event.target).value)" />
+          <input type="date" class="toolbar-select" [value]="fVence()" (change)="setFilter('vence', valorDe($event))" />
         </label>
       </div>
       <div class="toolbar-meta"><strong>{{ total() }}</strong><span>documentos</span></div>
@@ -116,8 +120,12 @@
               <td>{{ medioLabel[p.medio_pago] }}</td>
               <td>{{ p.cuenta ?? '—' }}</td>
               <td align="center">
-                <button class="table-action-btn" type="button" title="Reprogramar" (click)="reprogramar(p)"><i class="fa-solid fa-calendar-day"></i></button>
-                <button class="table-action-btn table-action-btn--danger" type="button" title="Cancelar programación" (click)="cancelar(p)"><i class="fa-solid fa-ban"></i></button>
+                @if (permisos.editar()) {
+                  <button class="table-action-btn" type="button" title="Reprogramar" (click)="reprogramar(p)"><i class="fa-solid fa-calendar-day"></i></button>
+                }
+                @if (permisos.anular()) {
+                  <button class="table-action-btn table-action-btn--danger" type="button" title="Cancelar programación" (click)="cancelar(p)"><i class="fa-solid fa-ban"></i></button>
+                }
               </td>
             </tr>
           } @empty {

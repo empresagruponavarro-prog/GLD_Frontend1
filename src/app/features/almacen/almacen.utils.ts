@@ -9,7 +9,8 @@ export function todayISO(): string {
 /** Mensaje legible de un error HTTP del backend (maneja `message` string o lista). */
 export function errorMessage(err: unknown): string {
   if (err instanceof HttpErrorResponse) {
-    const message = err.error?.message;
+    const cuerpo: unknown = err.error;
+    const message = typeof cuerpo === 'object' && cuerpo !== null && 'message' in cuerpo ? cuerpo.message : undefined;
     if (Array.isArray(message)) return message.join('\n');
     if (typeof message === 'string') return message;
     return err.message;

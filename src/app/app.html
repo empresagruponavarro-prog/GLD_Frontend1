@@ -1,3 +1,14 @@
+@if (aviso(); as a) {
+  <div class="app-aviso" [class.app-aviso--ok]="a.tipo === 'ok'" [class.app-aviso--aviso]="a.tipo === 'aviso'"
+    role="alert" data-testid="aviso-global">
+    <i class="fa-solid" [class.fa-circle-exclamation]="a.tipo !== 'ok'" [class.fa-circle-check]="a.tipo === 'ok'" aria-hidden="true"></i>
+    <span class="app-aviso__texto">{{ a.texto }}</span>
+    <button type="button" class="app-aviso__cerrar" (click)="cerrarAviso()" aria-label="Cerrar aviso" data-testid="aviso-global-cerrar">
+      <i class="fa-solid fa-xmark" aria-hidden="true"></i>
+    </button>
+  </div>
+}
+
 @if (isBareView()) {
   <router-outlet></router-outlet>
 } @else {

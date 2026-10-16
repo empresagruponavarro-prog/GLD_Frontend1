@@ -16,13 +16,13 @@
     <tbody>
       @if (items().length > 0 && !loading()) {
         @for (item of items(); track $index) {
-          @if (rowTemplate()) {
-            <ng-container *ngTemplateOutlet="rowTemplate()!; context: { $implicit: item, index: $index }"></ng-container>
+          @if (rowTemplate(); as fila) {
+            <ng-container *ngTemplateOutlet="fila; context: { $implicit: item, index: $index }"></ng-container>
           } @else {
             <tr>
               @for (col of columns(); track col.key || $index) {
                 <td [style.text-align]="col.align || 'left'">
-                  {{ col.key ? item[col.key] : '' }}
+                  {{ col.key ? celda(item, col.key) : '' }}
                 </td>
               }
             </tr>

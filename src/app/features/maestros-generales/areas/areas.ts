@@ -2,6 +2,7 @@ import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/cor
 import { HttpClient } from '@angular/common/http';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { environment } from '@env';
+import { permisosDePantalla } from '@app/core/auth/permisos-pantalla';
 import { ModalComponent } from '../../../shared/components/modal/modal';
 import { errorMessage } from '../../almacen/almacen.utils';
 import { Area } from '../../requerimientos/requerimientos.models';
@@ -18,6 +19,8 @@ import { Area } from '../../requerimientos/requerimientos.models';
 export class AreasComponent {
   private readonly http = inject(HttpClient);
   private readonly api = `${environment.apiUrl}/maestros/area`;
+  /** Nueva → crear; Editar (PATCH) → editar. */
+  protected readonly permisos = permisosDePantalla('maestros.areas');
 
   protected readonly items = signal<Area[]>([]);
   protected readonly isLoading = signal(false);
@@ -51,6 +54,7 @@ export class AreasComponent {
   }
 
   protected nueva(): void {
+    if (!this.permisos.crear()) return;
     this.editando.set(null);
     this.modalError.set('');
     this.form.reset({ estado: true });
@@ -59,6 +63,7 @@ export class AreasComponent {
   }
 
   protected editar(a: Area): void {
+    if (!this.permisos.editar()) return;
     this.editando.set(a);
     this.modalError.set('');
     this.form.reset({ codigo: a.codigo, nombre: a.nombre, estado: a.estado });
@@ -87,7 +92,7 @@ export class AreasComponent {
         this.closeModal();
         this.load();
       },
-      error: (err) => {
+      error: (err: unknown) => {
         this.isSaving.set(false);
         this.modalError.set(errorMessage(err));
       },

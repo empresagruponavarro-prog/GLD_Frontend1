@@ -6,9 +6,11 @@
     </p>
   </div>
   <div style="display: flex; gap: 0.5rem; align-items: center">
-    <button class="btn btn-primary" type="button" (click)="openCreate()">
-      <i class="fa-solid fa-plus"></i> Nuevo préstamo
-    </button>
+    @if (permisos.crear()) {
+      <button class="btn btn-primary" type="button" (click)="openCreate()">
+        <i class="fa-solid fa-plus"></i> Nuevo préstamo
+      </button>
+    }
     <button class="btn btn-secondary" type="button" (click)="load()" [disabled]="isLoading()">
       <i class="fa-solid fa-arrows-rotate" [class.fa-spin]="isLoading()"></i>
       {{ isLoading() ? 'Cargando...' : 'Actualizar' }}
@@ -21,20 +23,20 @@
     <div class="toolbar-search-row">
       <div class="search-field">
         <span class="search-icon"><i class="fa-solid fa-magnifying-glass"></i></span>
-        <input type="text" class="form-control search-input" placeholder="Buscar por número (PRE-...)" maxlength="20" [value]="fNumero()" (input)="onSearchNumero($any($event.target).value)" />
+        <input type="text" class="form-control search-input" placeholder="Buscar por número (PRE-...)" maxlength="20" [value]="fNumero()" (input)="onSearchNumero(valorDe($event))" />
       </div>
       <div class="toolbar-meta"><span>Mostrando</span><strong>{{ total() }}</strong><span>préstamos</span></div>
     </div>
     <div class="toolbar-filters-row">
       <div class="toolbar-filters-left">
-        <select class="toolbar-select" [value]="fEstado()" (change)="setEstado($any($event.target).value)">
+        <select class="toolbar-select" [value]="fEstado()" (change)="setEstado(valorDe($event))">
           <option value="">Todos los estados</option>
           <option value="ABIERTO">Abierto</option>
           <option value="PARCIAL">Parcial</option>
           <option value="CERRADO">Cerrado</option>
           <option value="ANULADO">Anulado</option>
         </select>
-        <select class="toolbar-select" [value]="fPlazo()" (change)="setPlazo($any($event.target).value)">
+        <select class="toolbar-select" [value]="fPlazo()" (change)="setPlazo(valorDe($event))">
           <option value="">Todos los plazos</option>
           @for (p of plazos; track p) {
             <option [value]="p">{{ plazoLabel[p] }}</option>
@@ -77,12 +79,12 @@
         <button class="table-action-btn" type="button" title="Ver detalle" (click)="openDetail(item)">
           <i class="fa-solid fa-eye"></i>
         </button>
-        @if (canReturn(item)) {
+        @if (canReturn(item) && permisos.editar()) {
           <button class="table-action-btn table-action-btn--primary" type="button" title="Registrar retorno" (click)="openReturn(item)">
             <i class="fa-solid fa-rotate-left"></i>
           </button>
         }
-        @if (item.estado === 'ABIERTO') {
+        @if (item.estado === 'ABIERTO' && permisos.anular()) {
           <button class="table-action-btn table-action-btn--danger" type="button" title="Anular" (click)="anular(item)">
             <i class="fa-solid fa-ban"></i>
           </button>

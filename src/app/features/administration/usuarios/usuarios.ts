@@ -1,10 +1,37 @@
-import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  DOCUMENT,
+  ElementRef,
+  Injector,
+  afterNextRender,
+  computed,
+  inject,
+  signal,
+  viewChild,
+} from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
+import { RouterLink } from '@angular/router';
+import { AuthService } from '@app/core/auth/auth.service';
+import { permisosDePantalla } from '@app/core/auth/permisos-pantalla';
+import { mensajeError } from '@shared/utils/errores-http';
 import { UsuariosService } from './usuarios.service';
 import { Usuario, UsuarioUpdateDto } from './interfaces';
 import { CLAVE_MAX, CLAVE_MIN, validarClaveNueva } from './usuarios.validators';
 import { DataTableComponent } from '../../../shared/components/data-table/data-table';
 import { DataTable } from '../../../shared/interfaces';
+
+export type FiltroEstado = 'todos' | 'activos' | 'inactivos';
+
+/** Acción que espera confirmación dentro de la pantalla. */
+export type AccionUsuario = 'desactivar' | 'reactivar' | 'eliminar';
+
+interface ConfirmacionUsuario {
+  accion: AccionUsuario;
+  usuario: Usuario;
+}
+
+const MOTIVO_PROPIO_USUARIO = 'No puedes desactivar tu propio usuario.';
 
 interface UsuarioForm {
   IdUsuario: FormControl<string>;
@@ -18,13 +45,20 @@ interface UsuarioForm {
 
 @Component({
   selector: 'app-usuarios',
-  imports: [ReactiveFormsModule, DataTableComponent],
+  imports: [ReactiveFormsModule, RouterLink, DataTableComponent],
   templateUrl: './usuarios.html',
   styleUrl: './usuarios.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class UsuariosComponent {
   private usuariosService = inject(UsuariosService);
+  readonly #auth = inject(AuthService);
+  readonly #document = inject(DOCUMENT);
+  readonly #injector = inject(Injector);
+  /** Botones de escritura según la matriz: crear (+ Nuevo), editar (editar y activar/desactivar), eliminar. */
+  protected readonly permisos = permisosDePantalla('admin.usuarios');
+  /** Elemento enfocado antes de abrir la confirmación; recupera el foco al cerrarla. */
+  #focoPrevio: HTMLElement | null = null;
 
   readonly claveMin = CLAVE_MIN;
   readonly claveMax = CLAVE_MAX;
@@ -34,10 +68,40 @@ export class UsuariosComponent {
     { label: 'Nombres Completos' },
     { label: 'Usuario / Login' },
     { label: 'Rol Asignado' },
+    { label: 'Estado' },
     { label: 'Acciones' }
   ];
 
   usuarios = signal<Usuario[]>([]);
+  /** Filtro por estado de la tabla (Todos / Activos / Inactivos). */
+  readonly filtroEstado = new FormControl<FiltroEstado>('todos', { nonNullable: true });
+  readonly #filtro = signal<FiltroEstado>('todos');
+  readonly usuariosFiltrados = computed(() => {
+    const filtro = this.#filtro();
+    const lista = this.usuarios();
+    if (filtro === 'todos') return lista;
+    const activos = filtro === 'activos';
+    return lista.filter((u) => u.activo === activos);
+  });
+  readonly mensajeVacio = computed(() => {
+    switch (this.#filtro()) {
+      case 'activos':
+        return 'No hay usuarios activos.';
+      case 'inactivos':
+        return 'No hay usuarios inactivos.';
+      default:
+        return 'No se registraron usuarios aún.';
+    }
+  });
+
+  /** Confirmación pendiente (desactivar, reactivar o eliminar) dentro de la pantalla. */
+  readonly porConfirmar = signal<ConfirmacionUsuario | null>(null);
+  readonly confirmando = signal(false);
+  /** Error del backend (p. ej. 409) dentro de la confirmación. */
+  readonly confirmError = signal<string | null>(null);
+  /** Confirmación de la última operación correcta. */
+  readonly aviso = signal<string | null>(null);
+  private readonly cancelarConfirmBtn = viewChild<ElementRef<HTMLButtonElement>>('cancelarConfirmBtn');
   /** Roles del backend (`GET /administration/usuarios/roles`); sin lista de respaldo inventada. */
   roles = signal<string[]>([]);
   /** Aviso si el catálogo de roles no se pudo cargar o está vacío. */
@@ -78,6 +142,7 @@ export class UsuariosComponent {
   }
 
   constructor() {
+    this.filtroEstado.valueChanges.subscribe((v) => this.#filtro.set(v));
     this.form.controls.cambiarClave.valueChanges.subscribe((v) => {
       this.cambiarClave.set(v);
       if (!v) this.form.patchValue({ Clave: '', ConfirmarClave: '' });
@@ -93,9 +158,9 @@ export class UsuariosComponent {
         this.roles.set(lista);
         this.rolesError.set(lista.length > 0 ? null : 'No hay roles registrados. Créelos en Administración de Roles.');
       },
-      error: (err) => {
+      error: (err: unknown) => {
         // Sin catálogo de respaldo: se avisa en el formulario en lugar de inventar la lista.
-        this.rolesError.set('No se pudieron cargar los roles: ' + this.mensajeError(err));
+        this.rolesError.set('No se pudieron cargar los roles: ' + mensajeError(err));
       },
     });
   }
@@ -114,14 +179,15 @@ export class UsuariosComponent {
         this.usuarios.set(data);
         this.loading.set(false);
       },
-      error: (err) => {
-        this.pageError.set('No se pudieron cargar los usuarios: ' + this.mensajeError(err));
+      error: (err: unknown) => {
+        this.pageError.set('No se pudieron cargar los usuarios: ' + mensajeError(err));
         this.loading.set(false);
       },
     });
   }
 
   openModal() {
+    if (!this.permisos.crear()) return;
     this.editingId.set(null);
     this.formError.set(null);
     this.mostrarClave.set(false);
@@ -134,6 +200,7 @@ export class UsuariosComponent {
   }
 
   editModal(item: Usuario) {
+    if (!this.permisos.editar()) return;
     this.editingId.set(item.IdUsuario);
     this.formError.set(null);
     this.mostrarClave.set(false);
@@ -145,6 +212,11 @@ export class UsuariosComponent {
       cambiarClave: false, Clave: '', ConfirmarClave: '',
     });
     this.showModal.set(true);
+  }
+
+  /** Escape cierra el formulario, salvo mientras se guarda (igual que en "Roles y permisos"). */
+  protected cerrarConEscape(): void {
+    if (!this.saving()) this.closeModal();
   }
 
   closeModal() {
@@ -190,32 +262,103 @@ export class UsuariosComponent {
         this.closeModal();
         this.loadUsuarios();
       },
-      error: (err) => {
+      error: (err: unknown) => {
         this.saving.set(false);
-        this.formError.set((editId ? 'Error al actualizar: ' : 'Error al crear: ') + this.mensajeError(err));
+        this.formError.set((editId ? 'Error al actualizar: ' : 'Error al crear: ') + mensajeError(err));
       },
     });
   }
 
-  deleteUsuario(id: string) {
-    if (confirm(`¿Eliminar el usuario "${id}"? Esta acción no se puede deshacer.`)) {
-      this.usuariosService.delete(id).subscribe({
-        next: () => this.loadUsuarios(),
-        error: (err) => this.pageError.set('Error al eliminar: ' + this.mensajeError(err)),
+  /** Pide confirmación dentro de la pantalla (sin `confirm()`) antes de eliminar. */
+  deleteUsuario(item: Usuario) {
+    if (!this.permisos.eliminar()) return;
+    this.pedirConfirmacion('eliminar', item);
+  }
+
+  // ---- Activar / desactivar ----
+
+  /** `true` si la fila es el usuario de la sesión. */
+  esUsuarioActual(item: Usuario): boolean {
+    return this.#auth.usuario()?.id === item.IdUsuario;
+  }
+
+  /** Motivo por el que no se puede desactivar el usuario, o `null` si se puede. */
+  motivoNoDesactivar(item: Usuario): string | null {
+    return item.activo && this.esUsuarioActual(item) ? MOTIVO_PROPIO_USUARIO : null;
+  }
+
+  cambiarEstado(item: Usuario) {
+    if (!this.permisos.editar() || this.motivoNoDesactivar(item)) return;
+    this.pedirConfirmacion(item.activo ? 'desactivar' : 'reactivar', item);
+  }
+
+  cancelarConfirmacion() {
+    if (this.confirmando()) return;
+    this.porConfirmar.set(null);
+    this.confirmError.set(null);
+    const previo = this.#focoPrevio;
+    this.#focoPrevio = null;
+    if (previo?.isConnected) previo.focus();
+  }
+
+  confirmar() {
+    const pendiente = this.porConfirmar();
+    if (!pendiente || this.confirmando()) return;
+    const { accion, usuario } = pendiente;
+    this.confirmando.set(true);
+    this.confirmError.set(null);
+
+    if (accion === 'eliminar') {
+      this.usuariosService.delete(usuario.IdUsuario).subscribe({
+        next: () => this.terminarConfirmacion(`Usuario "${usuario.Usuario}" eliminado.`, true),
+        error: (err: unknown) => this.fallarConfirmacion('Error al eliminar: ', err),
       });
+      return;
     }
+
+    this.usuariosService.cambiarEstado(usuario.IdUsuario, accion === 'reactivar').subscribe({
+      next: (actualizado) => {
+        this.usuarios.update((lista) =>
+          lista.map((u) => (u.IdUsuario === actualizado.IdUsuario ? actualizado : u)),
+        );
+        this.terminarConfirmacion(
+          `Usuario "${usuario.Usuario}" ${accion === 'reactivar' ? 'reactivado' : 'desactivado'}.`,
+          false,
+        );
+      },
+      error: (err: unknown) =>
+        this.fallarConfirmacion(accion === 'reactivar' ? 'Error al reactivar: ' : 'Error al desactivar: ', err),
+    });
+  }
+
+  /** Clic en el fondo de la confirmación (no en su contenido). */
+  onConfirmOverlayClick(event: MouseEvent) {
+    if (event.target === event.currentTarget) this.cancelarConfirmacion();
+  }
+
+  private pedirConfirmacion(accion: AccionUsuario, usuario: Usuario) {
+    const activo = this.#document.activeElement;
+    this.#focoPrevio = activo instanceof HTMLElement ? activo : null;
+    this.aviso.set(null);
+    this.confirmError.set(null);
+    this.porConfirmar.set({ accion, usuario });
+    afterNextRender(() => this.cancelarConfirmBtn()?.nativeElement.focus(), { injector: this.#injector });
+  }
+
+  private terminarConfirmacion(mensaje: string, recargar: boolean) {
+    this.confirmando.set(false);
+    this.aviso.set(mensaje);
+    this.cancelarConfirmacion();
+    if (recargar) this.loadUsuarios();
+  }
+
+  private fallarConfirmacion(prefijo: string, err: unknown) {
+    this.confirmando.set(false);
+    this.confirmError.set(prefijo + mensajeError(err));
   }
 
   private rolPorDefecto(): string {
     const roles = this.roles();
     return roles.includes('Usuario') ? 'Usuario' : (roles[0] ?? '');
-  }
-
-  /** Mensaje legible: el del backend (string o lista de validaciones), el del error HTTP o un texto genérico. */
-  private mensajeError(err: unknown): string {
-    const e = err as { error?: { message?: unknown }; message?: unknown } | null;
-    const msg = e?.error?.message ?? e?.message;
-    if (Array.isArray(msg)) return msg.join(', ');
-    return typeof msg === 'string' && msg ? msg : 'Error desconocido';
   }
 }

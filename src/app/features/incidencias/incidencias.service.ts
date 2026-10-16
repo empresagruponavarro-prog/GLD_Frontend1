@@ -1,24 +1,27 @@
 import { Service, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { Incidencia } from './interfaces';
+import { Incidencia, IncidenciaFiltros } from './interfaces';
 import { environment } from '@env';
+
+/** Parámetros de consulta con los filtros que tienen valor. */
+function filtrosAParams(filters?: Partial<IncidenciaFiltros>): HttpParams {
+  let params = new HttpParams();
+  if (filters) {
+    for (const [key, value] of Object.entries(filters)) {
+      if (value !== null && value !== undefined && value !== '') params = params.set(key, value);
+    }
+  }
+  return params;
+}
 
 @Service()
 export class IncidenciasService {
   private http = inject(HttpClient);
   private apiUrl = `${environment.apiUrl}/incidencias`;
 
-  getAll(filters?: any): Observable<Incidencia[]> {
-    let params = new HttpParams();
-    if (filters) {
-      Object.keys(filters).forEach((key) => {
-        if (filters[key] !== null && filters[key] !== undefined && filters[key] !== '') {
-          params = params.set(key, filters[key]);
-        }
-      });
-    }
-    return this.http.get<Incidencia[]>(this.apiUrl, { params });
+  getAll(filters?: Partial<IncidenciaFiltros>): Observable<Incidencia[]> {
+    return this.http.get<Incidencia[]>(this.apiUrl, { params: filtrosAParams(filters) });
   }
 
   create(incidencia: Incidencia): Observable<Incidencia> {
@@ -37,17 +40,9 @@ export class IncidenciasService {
     return this.http.delete<void>(`${this.apiUrl}/${id}`);
   }
 
-  exportExcel(filters?: any): Observable<Blob> {
-    let params = new HttpParams();
-    if (filters) {
-      Object.keys(filters).forEach((key) => {
-        if (filters[key] !== null && filters[key] !== undefined && filters[key] !== '') {
-          params = params.set(key, filters[key]);
-        }
-      });
-    }
+  exportExcel(filters?: Partial<IncidenciaFiltros>): Observable<Blob> {
     return this.http.get(`${this.apiUrl}/export`, {
-      params,
+      params: filtrosAParams(filters),
       responseType: 'blob',
     });
   }

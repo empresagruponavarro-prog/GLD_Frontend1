@@ -1,13 +1,18 @@
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { FormArray, FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { permisosDePantalla } from '@app/core/auth/permisos-pantalla';
+import { opcionValida, valorDeEvento } from '@shared/utils/eventos';
 import { DataTableComponent } from '../../../shared/components/data-table/data-table';
 import { ModalComponent } from '../../../shared/components/modal/modal';
 import { SearchSelectComponent } from '../../../shared/components/search-select/search-select';
 import { DataTable } from '../../../shared/interfaces';
 import { AlmacenService } from '../almacen.service';
 import {
+  CONDICIONES,
   CONDICION_LABEL,
   Condicion,
+  ESTADOS_PLAZO,
+  ESTADOS_PRESTAMO,
   ESTADO_PLAZO_LABEL,
   EstadoPlazo,
   EstadoPrestamo,
@@ -55,13 +60,16 @@ type RetornoGroup = ReturnType<typeof retornoGroup>;
 })
 export class PrestamosComponent {
   private readonly service = inject(AlmacenService);
+  /** Nuevo → crear; Registrar retorno (`POST /:id/retornos`) → editar; Anular → anular. */
+  protected readonly permisos = permisosDePantalla('almacen.prestamos');
+  protected readonly valorDe = valorDeEvento;
 
   protected readonly plazoLabel = ESTADO_PLAZO_LABEL;
   protected readonly condicionLabel = CONDICION_LABEL;
   protected readonly plazoBadge = plazoBadge;
   protected readonly fmtNum = fmtNum;
-  protected readonly plazos = Object.keys(ESTADO_PLAZO_LABEL) as EstadoPlazo[];
-  protected readonly condiciones = Object.keys(CONDICION_LABEL) as Condicion[];
+  protected readonly plazos = ESTADOS_PLAZO;
+  protected readonly condiciones = CONDICIONES;
 
   protected readonly columns: DataTable[] = [
     { label: 'Número', width: '110px' },
@@ -161,12 +169,12 @@ export class PrestamosComponent {
   }
 
   protected setEstado(value: string): void {
-    this.fEstado.set(value as EstadoPrestamo | '');
+    this.fEstado.set(opcionValida(ESTADOS_PRESTAMO, value) ?? '');
     this.applyFilters();
   }
 
   protected setPlazo(value: string): void {
-    this.fPlazo.set(value as EstadoPlazo | '');
+    this.fPlazo.set(opcionValida(ESTADOS_PLAZO, value) ?? '');
     this.applyFilters();
   }
 
@@ -201,6 +209,7 @@ export class PrestamosComponent {
 
   // ------------------------------------------------------------ préstamo
   protected openCreate(): void {
+    if (!this.permisos.crear()) return;
     this.form.reset({
       fecha_prestamo: todayISO(),
       id_almacen: null,
@@ -235,8 +244,10 @@ export class PrestamosComponent {
   protected save(): void {
     const v = this.form.getRawValue();
     const error = this.validate(v);
-    if (error) {
-      this.formError.set(error);
+    const idAlmacen = v.id_almacen;
+    const idResponsable = v.id_responsable;
+    if (error || idAlmacen === null || idResponsable === null) {
+      this.formError.set(error ?? 'Complete el almacén y el responsable.');
       return;
     }
     this.isSaving.set(true);
@@ -244,13 +255,14 @@ export class PrestamosComponent {
     this.service
       .createPrestamo({
         fecha_prestamo: v.fecha_prestamo,
-        id_almacen: v.id_almacen as number,
-        id_responsable: v.id_responsable as number,
+        id_almacen: idAlmacen,
+        id_responsable: idResponsable,
         id_centro_costo: v.id_centro_costo ?? undefined,
         documento_referencia: v.documento_referencia.trim() || undefined,
         dias_autorizados: Number(v.dias_autorizados),
         observaciones: v.observaciones.trim() || undefined,
-        lineas: v.lineas.map((l) => ({ id_producto: l.id_producto as number, cantidad: l.cantidad.trim() })),
+        // `validate` ya exige un equipo en cada línea.
+        lineas: v.lineas.flatMap((l) => (l.id_producto === null ? [] : [{ id_producto: l.id_producto, cantidad: l.cantidad.trim() }])),
       })
       .subscribe({
         next: () => {
@@ -258,7 +270,7 @@ export class PrestamosComponent {
           this.closeForm();
           this.load();
         },
-        error: (err) => {
+        error: (err: unknown) => {
           this.isSaving.set(false);
           this.formError.set(errorMessage(err));
         },
@@ -281,15 +293,17 @@ export class PrestamosComponent {
   }
 
   protected anular(item: Prestamo): void {
+    if (!this.permisos.anular()) return;
     if (!confirm(`¿Anular el préstamo ${item.numero}? Los equipos volverán a estar disponibles.`)) return;
     this.service.anularPrestamo(item.id).subscribe({
       next: () => this.load(),
-      error: (err) => alert(errorMessage(err)),
+      error: (err: unknown) => alert(errorMessage(err)),
     });
   }
 
   // -------------------------------------------------------------- retorno
   protected openReturn(item: Prestamo): void {
+    if (!this.permisos.editar()) return;
     this.returnError.set('');
     this.service.getPrestamo(item.id).subscribe({
       next: (full) => {
@@ -303,7 +317,7 @@ export class PrestamosComponent {
         }
         this.isReturnOpen.set(true);
       },
-      error: (err) => alert(errorMessage(err)),
+      error: (err: unknown) => alert(errorMessage(err)),
     });
   }
 
@@ -355,7 +369,7 @@ export class PrestamosComponent {
         this.closeReturn();
         this.load();
       },
-      error: (err) => {
+      error: (err: unknown) => {
         this.isSaving.set(false);
         this.returnError.set(errorMessage(err));
       },
@@ -368,7 +382,7 @@ export class PrestamosComponent {
     this.isDetailOpen.set(true);
     this.service.getPrestamo(item.id).subscribe({
       next: (full) => this.detail.set(full),
-      error: (err) => alert(errorMessage(err)),
+      error: (err: unknown) => alert(errorMessage(err)),
     });
   }
 

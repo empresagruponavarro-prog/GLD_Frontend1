@@ -12,9 +12,11 @@
     <button class="btn btn-secondary" (click)="loadIncidencias()" [disabled]="loading()">
       <i class="fa-solid fa-arrows-rotate" [class.fa-spin]="loading()"></i> {{ loading() ? 'Actualizando...' : 'Actualizar' }}
     </button>
-    <button class="btn btn-primary" style="background: #059669; border-color: #059669;" (click)="openCreateModal()">
-      <i class="fa-solid fa-plus"></i> + Agregar Caso
-    </button>
+    @if (permisos.crear()) {
+      <button class="btn btn-primary" style="background: #059669; border-color: #059669;" (click)="openCreateModal()">
+        <i class="fa-solid fa-plus"></i> + Agregar Caso
+      </button>
+    }
   </div>
 </div>
 
@@ -119,15 +121,22 @@
         <button class="btn-icon-action" (click)="openDetailModal(item)" title="Ver Detalles de la Ficha">
           <i class="fa-solid fa-eye"></i>
         </button>
-        <button class="btn-icon-action" style="margin-left: 0.2rem;" (click)="openEditModal(item)" title="Editar Ficha">
-          <i class="fa-solid fa-pen-to-square"></i>
-        </button>
-        <button class="btn-icon-action primary" style="margin-left: 0.2rem;" (click)="duplicateIncidencia(item.id!)" title="Duplicar Ficha">
-          <i class="fa-solid fa-copy"></i>
-        </button>
-        <button class="btn-icon-action danger" style="margin-left: 0.2rem;" (click)="deleteIncidencia(item.id!)" title="Eliminar Caso">
-          <i class="fa-solid fa-trash"></i>
-        </button>
+        @if (permisos.editar()) {
+          <button class="btn-icon-action" style="margin-left: 0.2rem;" (click)="openEditModal(item)" title="Editar Ficha">
+            <i class="fa-solid fa-pen-to-square"></i>
+          </button>
+        }
+        <!-- Duplicar es POST /incidencias/:id/duplicate: exige crear. -->
+        @if (permisos.crear()) {
+          <button class="btn-icon-action primary" style="margin-left: 0.2rem;" (click)="duplicateIncidencia(item)" title="Duplicar Ficha">
+            <i class="fa-solid fa-copy"></i>
+          </button>
+        }
+        @if (permisos.eliminar()) {
+          <button class="btn-icon-action danger" style="margin-left: 0.2rem;" (click)="deleteIncidencia(item)" title="Eliminar Caso">
+            <i class="fa-solid fa-trash"></i>
+          </button>
+        }
       </td>
     </tr>
   </ng-template>

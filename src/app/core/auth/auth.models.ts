@@ -22,14 +22,22 @@ export interface Sesion {
 
 export type LoginResponse = Sesion;
 
-export type MotivoLogout = 'expirada' | 'manual';
+export type MotivoLogout = 'expirada' | 'inactivo' | 'manual';
 
 export interface LogoutOptions {
   /** Navega a `/login` (por defecto `true`). */
   redirigir?: boolean;
-  /** `expirada` añade el aviso en la pantalla de login y conserva la ruta actual en `returnUrl`. */
+  /**
+   * `expirada` añade el aviso en la pantalla de login y conserva la ruta actual en `returnUrl`;
+   * `inactivo` muestra el aviso de usuario desactivado (sin `returnUrl`).
+   */
   motivo?: MotivoLogout;
 }
+
+/** `codigo` del 403 que devuelve el backend cuando el usuario de la sesión (o del login) está desactivado. */
+export const CODIGO_USUARIO_INACTIVO = 'USUARIO_INACTIVO';
+
+export const MSG_USUARIO_INACTIVO = 'Tu usuario está desactivado. Contacta al administrador';
 
 export const SESION_STORAGE_KEY = 'gld.sesion';
 

@@ -1,7 +1,20 @@
 import { Service, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable, map } from 'rxjs';
-import { CentroCosto, CatalogosFiltros, CentroCostoPrincipal, CentroCostoSelect, CreateCentroCostoDto, UpdateCentroCostoDto, PaginatedCentrosCostos, FiltrosCentrosCostos, MetricasPresupuestosCC } from './interfaces';
+import {
+  CentroCosto,
+  CatalogosFiltros,
+  CentroCostoPrincipal,
+  CentroCostoSelect,
+  CreateCentroCostoDto,
+  UpdateCentroCostoDto,
+  PaginatedCentrosCostos,
+  FiltrosCentrosCostos,
+  MetricasPresupuestosCC,
+  PresupuestoDeCentroCosto,
+  RespuestaCentrosCostos,
+  ResumenFinanciero,
+} from './interfaces';
 import { environment } from '@env';
 
 @Service()
@@ -25,8 +38,8 @@ export class CentrosCostosService {
       if (filtros.pptoEstadoGrupo) params = params.set('pptoEstadoGrupo', filtros.pptoEstadoGrupo);
     }
 
-    return this.http.get<any>(this.apiUrl, { params }).pipe(
-      map((res: any): PaginatedCentrosCostos => {
+    return this.http.get<RespuestaCentrosCostos>(this.apiUrl, { params }).pipe(
+      map((res): PaginatedCentrosCostos => {
         if (Array.isArray(res)) {
           const total = res.length;
           const start = (page - 1) * pageSize;
@@ -91,11 +104,11 @@ export class CentrosCostosService {
     return this.http.delete<void>(`${this.apiUrl}/${id}`);
   }
 
-  getResumenFinanciero(id: number | string): Observable<any> {
-    return this.http.get<any>(`${this.apiUrl}/${id}/resumen-financiero`);
+  getResumenFinanciero(id: number | string): Observable<ResumenFinanciero> {
+    return this.http.get<ResumenFinanciero>(`${this.apiUrl}/${id}/resumen-financiero`);
   }
 
-  getPresupuestosByCentroCosto(id: number | string): Observable<any> {
-    return this.http.get<any>(`${this.apiUrl}/${id}/presupuestos`);
+  getPresupuestosByCentroCosto(id: number | string): Observable<PresupuestoDeCentroCosto[]> {
+    return this.http.get<PresupuestoDeCentroCosto[]>(`${this.apiUrl}/${id}/presupuestos`);
   }
 }

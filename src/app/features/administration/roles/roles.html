@@ -1,14 +1,20 @@
 <div class="content-header">
   <div>
-    <h1 class="content-title">Administración de Roles</h1>
-    <p class="content-subtitle">Catálogo de roles que se asignan a los usuarios de GLD.</p>
+    <h1 class="content-title">Roles y permisos</h1>
+    <p class="content-subtitle">Define qué puede hacer cada rol en cada módulo de GLD.</p>
   </div>
-  <div style="display: flex; gap: 0.5rem;">
-    <button type="button" class="btn btn-secondary" (click)="loadRoles()" [disabled]="isLoading()">
+  <div class="roles-header-actions">
+    <button type="button" class="btn btn-secondary" (click)="actualizar()" [disabled]="isLoading() || isSaving()"
+      data-testid="roles-actualizar">
       <i class="fa-solid fa-arrows-rotate" [class.fa-spin]="isLoading()" aria-hidden="true"></i> {{ isLoading() ? 'Actualizando...' : 'Actualizar' }}
     </button>
-    <button type="button" class="btn btn-primary" (click)="openModal()" data-testid="roles-nuevo">
-      <i class="fa-solid fa-shield-halved" aria-hidden="true"></i> + Nuevo Rol
+    <button type="button" class="btn btn-secondary" (click)="openModal()" data-testid="roles-nuevo">
+      <i class="fa-solid fa-shield-halved" aria-hidden="true"></i> + Nuevo rol
+    </button>
+    <button type="button" class="btn btn-primary" (click)="guardarPermisos()" [disabled]="!puedeGuardar()"
+      [attr.aria-busy]="isSaving()" data-testid="permisos-guardar">
+      <i class="fa-solid" [class.fa-floppy-disk]="!isSaving()" [class.fa-circle-notch]="isSaving()" [class.fa-spin]="isSaving()" aria-hidden="true"></i>
+      {{ isSaving() ? 'Guardando...' : 'Guardar permisos' }}
     </button>
   </div>
 </div>
@@ -20,6 +26,12 @@
       <span>{{ error }}</span>
     </div>
   }
+  @if (guardarError(); as error) {
+    <div role="alert" data-testid="permisos-error" class="roles-alert roles-alert--error">
+      <i class="fa-solid fa-circle-exclamation" aria-hidden="true"></i>
+      <span>{{ error }}</span>
+    </div>
+  }
   @if (aviso(); as mensaje) {
     <div role="status" data-testid="roles-aviso" class="roles-alert roles-alert--ok">
       <i class="fa-solid fa-circle-check" aria-hidden="true"></i>
@@ -27,66 +39,155 @@
     </div>
   }
 
-  <app-data-table
-    [columns]="columns"
-    [items]="roles()"
-    [loading]="isLoading()"
-    emptyMessage="No hay roles registrados."
-    emptyIcon="fa-solid fa-user-shield"
-    minWidth="760px"
-    [rowTemplate]="rolRow">
-  </app-data-table>
+  <!-- Barra: selector de rol y acciones del rol seleccionado -->
+  <div class="permisos-barra">
+    <div class="permisos-barra__rol">
+      <label class="permisos-barra__label" for="permisos-rol">Rol</label>
+      <div class="input-with-icon permisos-barra__select">
+        <i class="fa-solid fa-user-shield input-prefix-icon" aria-hidden="true"></i>
+        <select id="permisos-rol" class="form-control-custom" [formControl]="rolControl" data-testid="permisos-rol">
+          @if (roles().length === 0) {
+            <option [ngValue]="null" disabled>Sin roles</option>
+          }
+          @for (rol of roles(); track rol.id) {
+            <option [ngValue]="rol.id">{{ rol.nombre }} ({{ usuariosTexto(rol.usuarios) }})</option>
+          }
+        </select>
+      </div>
+    </div>
 
-  <ng-template #rolRow let-rol>
-    <tr data-testid="rol-fila">
-      <td><strong>{{ rol.nombre }}</strong></td>
-      <td>
-        @if (rol.descripcion) {
-          {{ rol.descripcion }}
-        } @else {
-          <span class="roles-muted">Sin descripción</span>
-        }
-      </td>
-      <td>
-        <span class="badge badge-progress" data-testid="rol-usuarios">
-          <i class="fa-solid fa-users" aria-hidden="true"></i> {{ usuariosTexto(rol.usuarios) }}
-        </span>
-      </td>
-      <td>
+    @if (rolSeleccionado(); as rol) {
+      <div class="permisos-barra__acciones">
         @if (rol.es_sistema) {
           <span class="badge roles-badge-sistema" data-testid="rol-sistema">
             <i class="fa-solid fa-lock" aria-hidden="true"></i> Sistema
           </span>
-        } @else {
-          <span class="badge badge-completed">Personalizado</span>
         }
-      </td>
-      <td>
-        <div class="roles-actions">
-          <button type="button" class="btn btn-secondary roles-action-btn" (click)="editModal(rol)"
-            title="Editar" [attr.aria-label]="'Editar rol ' + rol.nombre" data-testid="rol-editar">
-            <i class="fa-solid fa-pen-to-square" aria-hidden="true"></i>
-          </button>
-          @if (motivoNoEliminar(rol); as motivo) {
-            <!-- El title va en el envoltorio: los botones deshabilitados no muestran tooltip en todos los navegadores. -->
-            <span class="roles-disabled-wrap" [title]="motivo">
-              <button type="button" class="btn btn-danger roles-action-btn" disabled
-                [attr.aria-label]="'Eliminar rol ' + rol.nombre" [attr.aria-describedby]="'rol-motivo-' + rol.id"
-                data-testid="rol-eliminar">
-                <i class="fa-solid fa-trash" aria-hidden="true"></i>
-              </button>
-              <span class="roles-sr-only" [id]="'rol-motivo-' + rol.id">{{ motivo }}</span>
-            </span>
-          } @else {
-            <button type="button" class="btn btn-danger roles-action-btn" (click)="askDelete(rol)"
-              title="Eliminar" [attr.aria-label]="'Eliminar rol ' + rol.nombre" data-testid="rol-eliminar">
-              <i class="fa-solid fa-trash" aria-hidden="true"></i>
+        <button type="button" class="btn btn-secondary roles-action-btn" (click)="editarSeleccionado()"
+          title="Editar" [attr.aria-label]="'Editar rol ' + rol.nombre" data-testid="rol-editar">
+          <i class="fa-solid fa-pen-to-square" aria-hidden="true"></i> Editar
+        </button>
+        @if (motivoNoEliminar(rol); as motivo) {
+          <!-- El title va en el envoltorio: los botones deshabilitados no muestran tooltip en todos los navegadores. -->
+          <span class="roles-disabled-wrap" [title]="motivo">
+            <button type="button" class="btn btn-danger roles-action-btn" disabled
+              [attr.aria-label]="'Eliminar rol ' + rol.nombre" [attr.aria-describedby]="'rol-motivo-' + rol.id"
+              data-testid="rol-eliminar">
+              <i class="fa-solid fa-trash" aria-hidden="true"></i> Eliminar
             </button>
+            <span class="roles-sr-only" [id]="'rol-motivo-' + rol.id">{{ motivo }}</span>
+          </span>
+        } @else {
+          <button type="button" class="btn btn-danger roles-action-btn" (click)="askDelete(rol)"
+            title="Eliminar" [attr.aria-label]="'Eliminar rol ' + rol.nombre" data-testid="rol-eliminar">
+            <i class="fa-solid fa-trash" aria-hidden="true"></i> Eliminar
+          </button>
+        }
+      </div>
+      @if (rol.descripcion) {
+        <p class="permisos-barra__descripcion" data-testid="rol-descripcion">{{ rol.descripcion }}</p>
+      }
+    }
+
+    <div class="permisos-barra__estado" aria-live="polite">
+      @if (cambios() > 0) {
+        <span class="permisos-pendientes" data-testid="permisos-contador">
+          <i class="fa-solid fa-pen" aria-hidden="true"></i> {{ cambiosTexto(cambios()) }}
+        </span>
+        <button type="button" class="btn btn-secondary roles-action-btn" (click)="descartarCambios()" [disabled]="isSaving()"
+          data-testid="permisos-descartar">
+          <i class="fa-solid fa-rotate-left" aria-hidden="true"></i> Descartar cambios
+        </button>
+      }
+    </div>
+  </div>
+
+  @if (bloqueado()) {
+    <div role="note" class="roles-sistema-note permisos-bloqueado" data-testid="permisos-bloqueado">
+      <i class="fa-solid fa-lock" aria-hidden="true"></i>
+      <span>El Administrador tiene todos los permisos. Su matriz no se puede modificar.</span>
+    </div>
+  }
+
+  <!-- Matriz de permisos -->
+  <div class="permisos-tabla-wrap">
+    <table class="permisos-tabla" data-testid="permisos-matriz" [attr.aria-busy]="isLoading()">
+      <caption class="roles-sr-only">
+        Permisos por módulo{{ rolSeleccionado() ? ' del rol ' + rolSeleccionado()?.nombre : '' }}{{ bloqueado() ? ' (solo lectura)' : '' }}
+      </caption>
+      <thead>
+        <tr>
+          <th scope="col" class="permisos-tabla__modulo">Módulo</th>
+          @for (accion of acciones; track accion) {
+            <th scope="col" class="permisos-tabla__accion">{{ etiquetas[accion] }}</th>
           }
-        </div>
-      </td>
-    </tr>
-  </ng-template>
+        </tr>
+      </thead>
+      @if (isLoadingMatriz() || (isLoadingListas() && vista().length === 0)) {
+        <tbody>
+          <tr>
+            <td [attr.colspan]="acciones.length + 1" class="permisos-tabla__vacio" data-testid="permisos-cargando">
+              <i class="fa-solid fa-circle-notch fa-spin" aria-hidden="true"></i> Cargando permisos...
+            </td>
+          </tr>
+        </tbody>
+      } @else if (!matriz()) {
+        <tbody>
+          <tr>
+            <td [attr.colspan]="acciones.length + 1" class="permisos-tabla__vacio">
+              Seleccione un rol para ver sus permisos.
+            </td>
+          </tr>
+        </tbody>
+      } @else {
+        @for (g of vista(); track g.grupo.grupo) {
+          <tbody>
+            <tr class="permisos-grupo" data-testid="permisos-grupo" [attr.data-grupo]="g.grupo.grupo">
+              <th scope="rowgroup" class="permisos-tabla__modulo">{{ g.grupo.grupo }}</th>
+              @for (col of g.columnas; track col.accion) {
+                <td class="permisos-tabla__accion">
+                  @if (col.estado === 'no-aplica') {
+                    <span class="permisos-na" aria-hidden="true">—</span>
+                  } @else {
+                    <input type="checkbox" class="permisos-casilla"
+                      [checked]="col.estado === 'todos'" [indeterminate]="col.estado === 'mixto'"
+                      [disabled]="casillasDeshabilitadas()"
+                      [attr.aria-label]="col.ariaLabel" [attr.data-accion]="col.accion"
+                      data-testid="permisos-grupo-casilla"
+                      (change)="alternarGrupo(g.grupo, col.accion, marcado($event))">
+                  }
+                </td>
+              }
+            </tr>
+            @for (fila of g.filas; track fila.modulo.clave) {
+              <tr class="permisos-modulo" [class.permisos-modulo--cambiada]="fila.cambiada"
+                data-testid="permisos-fila" [attr.data-clave]="fila.modulo.clave">
+                <th scope="row" class="permisos-tabla__modulo permisos-modulo__nombre">
+                  <span>{{ fila.modulo.nombre }}</span>
+                  @if (fila.modulo.ruta) {
+                    <span class="permisos-modulo__ruta">{{ fila.modulo.ruta }}</span>
+                  }
+                </th>
+                @for (celda of fila.celdas; track celda.accion) {
+                  <td class="permisos-tabla__accion">
+                    @if (celda.admite) {
+                      <input type="checkbox" class="permisos-casilla"
+                        [checked]="celda.valor" [disabled]="casillasDeshabilitadas()"
+                        [attr.aria-label]="celda.ariaLabel" [attr.data-accion]="celda.accion"
+                        (change)="alternar(fila.modulo, celda.accion, marcado($event))">
+                    } @else {
+                      <span class="permisos-na" [attr.data-accion]="celda.accion" aria-hidden="true">—</span>
+                      <span class="roles-sr-only">{{ etiquetas[celda.accion] }} no aplica en {{ fila.modulo.nombre }}</span>
+                    }
+                  </td>
+                }
+              </tr>
+            }
+          </tbody>
+        }
+      }
+    </table>
+  </div>
 </div>
 
 <!-- Modal crear / editar rol (misma familia visual que el de usuarios) -->
@@ -104,7 +205,7 @@
           <p>{{ editando() ? 'Actualiza el nombre o la descripción del rol.' : 'Define un nuevo rol para asignarlo a los usuarios.' }}</p>
         </div>
       </div>
-      <button type="button" class="btn-close-modal" (click)="closeModal()" [disabled]="isSaving()" aria-label="Cerrar modal" title="Cerrar">
+      <button type="button" class="btn-close-modal" (click)="closeModal()" [disabled]="isSavingRol()" aria-label="Cerrar modal" title="Cerrar">
         <i class="fa-solid fa-xmark" aria-hidden="true"></i>
       </button>
     </div>
@@ -183,10 +284,10 @@
       </div>
 
       <div class="modal-footer-custom">
-        <button type="button" class="btn-cancel-custom" (click)="closeModal()" [disabled]="isSaving()">Cancelar</button>
-        <button type="submit" class="btn-submit-custom" [disabled]="isSaving()">
-          <i class="fa-solid" [class.fa-floppy-disk]="!isSaving()" [class.fa-circle-notch]="isSaving()" [class.fa-spin]="isSaving()" aria-hidden="true"></i>
-          <span>{{ isSaving() ? 'Guardando...' : (editando() ? 'Guardar Cambios' : 'Crear Rol') }}</span>
+        <button type="button" class="btn-cancel-custom" (click)="closeModal()" [disabled]="isSavingRol()">Cancelar</button>
+        <button type="submit" class="btn-submit-custom" [disabled]="isSavingRol()">
+          <i class="fa-solid" [class.fa-floppy-disk]="!isSavingRol()" [class.fa-circle-notch]="isSavingRol()" [class.fa-spin]="isSavingRol()" aria-hidden="true"></i>
+          <span>{{ isSavingRol() ? 'Guardando...' : (editando() ? 'Guardar Cambios' : 'Crear Rol') }}</span>
         </button>
       </div>
     </form>
@@ -228,6 +329,41 @@
         data-testid="rol-eliminar-confirmar">
         <i class="fa-solid" [class.fa-trash]="!isDeleting()" [class.fa-circle-notch]="isDeleting()" [class.fa-spin]="isDeleting()" aria-hidden="true"></i>
         <span>{{ isDeleting() ? 'Eliminando...' : 'Eliminar' }}</span>
+      </button>
+    </div>
+  </div>
+</div>
+}
+
+<!-- Cambios sin guardar al cambiar de rol o actualizar (dentro de la pantalla, sin confirm()) -->
+@if (pendiente()) {
+<div class="modal-overlay" tabindex="-1" (click)="onOverlayClick($event, 'pendiente')" (keydown.escape)="cancelarPendiente()">
+  <div class="modal-content usuario-modal roles-confirm-modal" role="alertdialog" aria-modal="true"
+    aria-labelledby="permisos-pendientes-title" aria-describedby="permisos-pendientes-desc" data-testid="permisos-pendientes">
+
+    <div class="modal-header-custom">
+      <div class="modal-header-info">
+        <div class="modal-icon-badge permisos-icon-aviso">
+          <i class="fa-solid fa-triangle-exclamation" aria-hidden="true"></i>
+        </div>
+        <div class="modal-header-titles">
+          <h3 id="permisos-pendientes-title">Cambios sin guardar</h3>
+          <p id="permisos-pendientes-desc">
+            Tienes {{ cambiosTexto(cambios()) }} en el rol "{{ rolSeleccionado()?.nombre }}". ¿Qué deseas hacer con ellos?
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal-footer-custom">
+      <button #cancelarPendienteBtn type="button" class="btn-cancel-custom" (click)="cancelarPendiente()"
+        data-testid="permisos-pendientes-cancelar">Cancelar</button>
+      <button type="button" class="btn-cancel-custom" (click)="descartarYContinuar()"
+        data-testid="permisos-pendientes-descartar">Descartar</button>
+      <button type="button" class="btn-submit-custom" (click)="guardarYContinuar()"
+        data-testid="permisos-pendientes-guardar">
+        <i class="fa-solid fa-floppy-disk" aria-hidden="true"></i>
+        <span>Guardar</span>
       </button>
     </div>
   </div>

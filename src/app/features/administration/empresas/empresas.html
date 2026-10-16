@@ -7,9 +7,11 @@
     <button class="btn btn-secondary" (click)="loadEmpresas()" [disabled]="loading()">
       <i class="fa-solid fa-arrows-rotate" [class.fa-spin]="loading()"></i> {{ loading() ? 'Actualizando...' : 'Actualizar' }}
     </button>
-    <button class="btn btn-primary" (click)="openModal()">
-      <i class="fa-solid fa-building-circle-check"></i> + Nueva Empresa
-    </button>
+    @if (permisos.crear()) {
+      <button class="btn btn-primary" (click)="openModal()">
+        <i class="fa-solid fa-building-circle-check"></i> + Nueva Empresa
+      </button>
+    }
   </div>
 </div>
 
@@ -33,12 +35,16 @@
       <td>{{ item.DireccionEntrega || item.direccion_entrega || '—' }}</td>
       <td>{{ item.CorreoCompras || item.correo_compras || '—' }}</td>
       <td>
-        <button class="btn btn-secondary" style="padding: 0.25rem 0.5rem; margin-right: 0.25rem;" (click)="editModal(item)" title="Editar">
-          <i class="fa-solid fa-pen-to-square"></i>
-        </button>
-        <button class="btn btn-danger" style="padding: 0.25rem 0.5rem;" (click)="deleteEmpresa(item)" title="Eliminar">
-          <i class="fa-solid fa-trash"></i>
-        </button>
+        @if (permisos.editar()) {
+          <button class="btn btn-secondary" style="padding: 0.25rem 0.5rem; margin-right: 0.25rem;" (click)="editModal(item)" title="Editar">
+            <i class="fa-solid fa-pen-to-square"></i>
+          </button>
+        }
+        @if (permisos.eliminar()) {
+          <button class="btn btn-danger" style="padding: 0.25rem 0.5rem;" (click)="deleteEmpresa(item)" title="Eliminar">
+            <i class="fa-solid fa-trash"></i>
+          </button>
+        }
       </td>
     </tr>
   </ng-template>

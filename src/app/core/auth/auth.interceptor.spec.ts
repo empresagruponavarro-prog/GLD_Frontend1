@@ -4,9 +4,11 @@ import { HttpTestingController, provideHttpClientTesting } from '@angular/common
 import { Router, provideRouter } from '@angular/router';
 import { environment } from '@env';
 import { SESION_STORAGE_KEY, Sesion } from './auth.models';
-import { authInterceptor, esUrlDelApi } from './auth.interceptor';
+import { AvisosService } from '../avisos/avisos.service';
+import { MSG_SIN_PERMISO, authInterceptor, esUrlDelApi } from './auth.interceptor';
 import { AuthService } from './auth.service';
-import { MemoryStorage, provideSesionStorage } from './auth.testing';
+import { MIS_PERMISOS_URL, MemoryStorage, misPermisos, provideSesionStorage } from './auth.testing';
+import { PermisosService } from './permisos.service';
 
 const storage = new MemoryStorage();
 
@@ -36,6 +38,8 @@ function setup(conSesion = true) {
     http: TestBed.inject(HttpClient),
     ctrl: TestBed.inject(HttpTestingController),
     auth: TestBed.inject(AuthService),
+    avisos: TestBed.inject(AvisosService),
+    permisos: TestBed.inject(PermisosService),
     navigate,
   };
 }
@@ -44,6 +48,7 @@ describe('authInterceptor', () => {
   beforeEach(() => storage.clear());
   afterEach(() => {
     TestBed.inject(HttpTestingController).verify();
+    TestBed.inject(AvisosService).cerrar();
     storage.clear();
   });
 
@@ -103,6 +108,66 @@ describe('authInterceptor', () => {
     ctrl.expectOne(`${API}/a`).flush({}, { status: 403, statusText: 'Forbidden' });
     ctrl.expectOne(`${API}/b`).flush({}, { status: 500, statusText: 'Error' });
     expect(auth.autenticado()).toBe(true);
+    // El 403 recarga los permisos.
+    ctrl.expectOne(MIS_PERMISOS_URL).flush(misPermisos('Administrador', {}, true));
+  });
+
+  it('un 403 USUARIO_INACTIVO cierra la sesión y lleva a /login?motivo=inactivo', () => {
+    const { http, ctrl, auth, navigate } = setup();
+    let status = 0;
+    http.get(`${API}/centros-costos`).subscribe({ error: (e) => (status = e.status) });
+    ctrl
+      .expectOne(`${API}/centros-costos`)
+      .flush(
+        { message: 'Tu usuario está desactivado. Contacta al administrador', codigo: 'USUARIO_INACTIVO' },
+        { status: 403, statusText: 'Forbidden' },
+      );
+
+    expect(status).toBe(403);
+    expect(auth.autenticado()).toBe(false);
+    expect(storage.getItem(SESION_STORAGE_KEY)).toBeNull();
+    expect(navigate).toHaveBeenCalledWith(['/login'], { queryParams: { motivo: 'inactivo' } });
+    // Sigue igual: no muestra el aviso de permiso ni recarga permisos.
+    expect(TestBed.inject(AvisosService).aviso()).toBeNull();
+    ctrl.expectNone(MIS_PERMISOS_URL);
+  });
+
+  it('un 403 de permisos (sin codigo USUARIO_INACTIVO) no cierra la sesión: avisa, recarga permisos y propaga el error', async () => {
+    const { http, ctrl, auth, avisos, permisos, navigate } = setup();
+    let status = 0;
+    http.get(`${API}/a`).subscribe({ error: (e) => (status = e.status) });
+    ctrl
+      .expectOne(`${API}/a`)
+      .flush({ message: 'No tienes permiso', codigo: 'SIN_PERMISO' }, { status: 403, statusText: 'Forbidden' });
+    expect(status).toBe(403);
+    expect(auth.autenticado()).toBe(true);
+    expect(navigate).not.toHaveBeenCalled();
+    expect(avisos.aviso()).toEqual({ texto: MSG_SIN_PERMISO, tipo: 'error' });
+    expect(permisos.cargando()).toBe(true);
+
+    const recarga = ctrl.expectOne(MIS_PERMISOS_URL);
+    expect(recarga.request.headers.get('Authorization')).toBe('Bearer tok-abc');
+    recarga.flush(misPermisos('Administrador', {}, true));
+    await permisos.listo();
+    expect(permisos.cargado()).toBe(true);
+  });
+
+  it('un 403 de /auth/mis-permisos no vuelve a recargar (sin bucle)', async () => {
+    const { ctrl, avisos, permisos } = setup();
+    const carga = permisos.recargar();
+    ctrl.expectOne(MIS_PERMISOS_URL).flush({ message: 'Forbidden' }, { status: 403, statusText: 'Forbidden' });
+    expect(await carga).toBeNull();
+    ctrl.expectNone(MIS_PERMISOS_URL);
+    expect(avisos.aviso()).toBeNull();
+  });
+
+  it('un 403 inactivo del propio /auth/login no navega (lo muestra la pantalla de login)', () => {
+    const { http, ctrl, navigate } = setup(false);
+    http.post(`${API}/auth/login`, { usuario: 'x', clave: 'y' }).subscribe({ error: () => undefined });
+    ctrl
+      .expectOne(`${API}/auth/login`)
+      .flush({ message: 'desactivado', codigo: 'USUARIO_INACTIVO' }, { status: 403, statusText: 'Forbidden' });
+    expect(navigate).not.toHaveBeenCalled();
   });
 
   it('un 401 de otro dominio no cierra la sesión', () => {

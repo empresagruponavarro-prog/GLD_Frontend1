@@ -1,24 +1,36 @@
+import { Component } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
-import { ActivatedRoute, Router, convertToParamMap, provideRouter } from '@angular/router';
+import { ActivatedRoute, Router, Routes, convertToParamMap, provideRouter } from '@angular/router';
 import { environment } from '@env';
 import { SESION_STORAGE_KEY } from '@app/core/auth/auth.models';
 import { AuthService } from '@app/core/auth/auth.service';
-import { MemoryStorage, provideSesionStorage } from '@app/core/auth/auth.testing';
+import { MIS_PERMISOS_URL, MemoryStorage, misPermisos, provideSesionStorage } from '@app/core/auth/auth.testing';
+import { MisPermisos } from '@app/core/auth/permisos.models';
+import { PermisosService } from '@app/core/auth/permisos.service';
+import { rutaModulo } from '@app/core/auth/permiso.guard';
 
 const storage = new MemoryStorage();
 import { LoginComponent } from './login';
 
 const LOGIN = `${environment.apiUrl}/auth/login`;
 
-async function setup(queryParams: Record<string, string> = {}) {
+@Component({ template: '' })
+class PantallaVacia {}
+
+/** Rutas mínimas para que el login sepa qué módulo exige cada destino. */
+const RUTAS: Routes = [
+  { path: '', children: [rutaModulo('presupuestos', PantallaVacia, 'presupuestos'), rutaModulo('tesoreria/pagos', PantallaVacia, 'tesoreria.pagos')] },
+];
+
+async function setup(queryParams: Record<string, string> = {}, rutas: Routes = []) {
   TestBed.configureTestingModule({
     imports: [LoginComponent],
     providers: [
       provideHttpClient(),
       provideHttpClientTesting(),
-      provideRouter([]),
+      provideRouter(rutas),
       provideSesionStorage(storage),
       { provide: ActivatedRoute, useValue: { snapshot: { queryParamMap: convertToParamMap(queryParams) } } },
     ],
@@ -41,7 +53,14 @@ async function setup(queryParams: Record<string, string> = {}) {
     await fixture.whenStable();
   };
   const render = () => fixture.whenStable();
-  return { fixture, http, navigateByUrl, q, escribir, enviar, render };
+  /** Responde a `GET /auth/mis-permisos` (lo pide el login antes de navegar) y espera la navegación. */
+  const permisos = async (respuesta: MisPermisos = misPermisos('Administrador', {}, true)) => {
+    http.expectOne(MIS_PERMISOS_URL).flush(respuesta);
+    await TestBed.inject(PermisosService).listo();
+    await new Promise((r) => setTimeout(r)); // la navegación se encadena tras la carga
+    await render();
+  };
+  return { fixture, http, navigateByUrl, q, escribir, enviar, render, permisos };
 }
 
 function respuestaOk() {
@@ -106,8 +125,8 @@ describe('LoginComponent', () => {
     expect(q<HTMLInputElement>('#login-clave')!.type).toBe('password');
   });
 
-  it('envía credenciales, guarda la sesión y navega a /', async () => {
-    const { http, q, escribir, enviar, navigateByUrl, render } = await setup();
+  it('envía credenciales, guarda la sesión, carga los permisos y navega a /', async () => {
+    const { http, q, escribir, enviar, navigateByUrl, permisos } = await setup();
     escribir('#login-usuario', ' admin ');
     escribir('#login-clave', 'secreta123');
     await enviar();
@@ -119,7 +138,8 @@ describe('LoginComponent', () => {
     const req = http.expectOne(LOGIN);
     expect(req.request.body).toEqual({ usuario: 'admin', clave: 'secreta123' });
     req.flush(respuestaOk());
-    await render();
+    expect(navigateByUrl).not.toHaveBeenCalled(); // espera los permisos
+    await permisos();
 
     expect(TestBed.inject(AuthService).autenticado()).toBe(true);
     expect(storage.getItem(SESION_STORAGE_KEY)).not.toBeNull();
@@ -127,20 +147,42 @@ describe('LoginComponent', () => {
   });
 
   it('tras el login navega al returnUrl interno', async () => {
-    const { http, escribir, enviar, navigateByUrl } = await setup({ returnUrl: '/presupuestos?id=4' });
+    const { http, escribir, enviar, navigateByUrl, permisos } = await setup({ returnUrl: '/presupuestos?id=4' }, RUTAS);
     escribir('#login-usuario', 'admin');
     escribir('#login-clave', 'secreta123');
     await enviar();
     http.expectOne(LOGIN).flush(respuestaOk());
+    await permisos();
     expect(navigateByUrl).toHaveBeenCalledWith('/presupuestos?id=4', { replaceUrl: true });
   });
 
+  it('si el returnUrl es de un módulo sin "ver", navega al inicio', async () => {
+    const { http, escribir, enviar, navigateByUrl, permisos } = await setup({ returnUrl: '/tesoreria/pagos' }, RUTAS);
+    escribir('#login-usuario', 'ana');
+    escribir('#login-clave', 'secreta123');
+    await enviar();
+    http.expectOne(LOGIN).flush({ ...respuestaOk(), usuario: { id: 'USR002', usuario: 'ana', nombres: null, rol: 'Usuario' } });
+    await permisos(misPermisos('Usuario', { presupuestos: {} }));
+    expect(navigateByUrl).toHaveBeenCalledWith('/', { replaceUrl: true });
+  });
+
+  it('con "ver" del módulo del returnUrl navega a él', async () => {
+    const { http, escribir, enviar, navigateByUrl, permisos } = await setup({ returnUrl: '/tesoreria/pagos' }, RUTAS);
+    escribir('#login-usuario', 'ana');
+    escribir('#login-clave', 'secreta123');
+    await enviar();
+    http.expectOne(LOGIN).flush({ ...respuestaOk(), usuario: { id: 'USR002', usuario: 'ana', nombres: null, rol: 'Usuario' } });
+    await permisos(misPermisos('Usuario', { 'tesoreria.pagos': {} }));
+    expect(navigateByUrl).toHaveBeenCalledWith('/tesoreria/pagos', { replaceUrl: true });
+  });
+
   it('ignora un returnUrl externo', async () => {
-    const { http, escribir, enviar, navigateByUrl } = await setup({ returnUrl: '//evil.com/robar' });
+    const { http, escribir, enviar, navigateByUrl, permisos } = await setup({ returnUrl: '//evil.com/robar' });
     escribir('#login-usuario', 'admin');
     escribir('#login-clave', 'secreta123');
     await enviar();
     http.expectOne(LOGIN).flush(respuestaOk());
+    await permisos();
     expect(navigateByUrl).toHaveBeenCalledWith('/', { replaceUrl: true });
   });
 
@@ -172,6 +214,31 @@ describe('LoginComponent', () => {
     http.expectOne(LOGIN).error(new ProgressEvent('error'), { status: 0, statusText: 'Unknown Error' });
     await render();
     expect(q('[role="alert"]')?.textContent?.trim()).toBe('No se pudo conectar con el servidor');
+  });
+
+  it('muestra el aviso de usuario desactivado al llegar con ?motivo=inactivo', async () => {
+    const { q } = await setup({ motivo: 'inactivo' });
+    const aviso = q('[data-testid="aviso-inactivo"]');
+    expect(aviso?.getAttribute('role')).toBe('alert');
+    expect(aviso?.textContent?.trim()).toBe('Tu usuario está desactivado. Contacta al administrador');
+    expect(q('[data-testid="aviso-expirada"]')).toBeNull();
+  });
+
+  it('muestra el aviso de usuario desactivado cuando el login responde 403 USUARIO_INACTIVO', async () => {
+    const { http, q, escribir, enviar, navigateByUrl, render } = await setup();
+    escribir('#login-usuario', 'ldiaz');
+    escribir('#login-clave', 'secreta123');
+    await enviar();
+    http
+      .expectOne(LOGIN)
+      .flush(
+        { message: 'Tu usuario está desactivado. Contacta al administrador', codigo: 'USUARIO_INACTIVO' },
+        { status: 403, statusText: 'Forbidden' },
+      );
+    await render();
+    expect(q('[role="alert"]')?.textContent?.trim()).toBe('Tu usuario está desactivado. Contacta al administrador');
+    expect(TestBed.inject(AuthService).autenticado()).toBe(false);
+    expect(navigateByUrl).not.toHaveBeenCalled();
   });
 
   it('muestra el aviso de sesión expirada', async () => {

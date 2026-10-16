@@ -135,7 +135,8 @@ export interface DocumentoQuery {
 }
 
 // ------------------------------------------------------------------ Préstamos
-export type Condicion = 'OPERATIVO' | 'NO_OPERATIVO' | 'CON_FALTANTES' | 'DANADO';
+export const CONDICIONES = ['OPERATIVO', 'NO_OPERATIVO', 'CON_FALTANTES', 'DANADO'] as const;
+export type Condicion = (typeof CONDICIONES)[number];
 export const CONDICION_LABEL: Record<Condicion, string> = {
   OPERATIVO: 'Operativo',
   NO_OPERATIVO: 'No operativo',
@@ -143,14 +144,17 @@ export const CONDICION_LABEL: Record<Condicion, string> = {
   DANADO: 'Dañado',
 };
 
-export type EstadoPrestamo = 'ABIERTO' | 'PARCIAL' | 'CERRADO' | 'ANULADO';
-export type EstadoPlazo =
-  | 'EN_PLAZO'
-  | 'VENCE_HOY'
-  | 'VENCIDO'
-  | 'RETORNADO_A_TIEMPO'
-  | 'RETORNADO_CON_RETRASO'
-  | 'ANULADO';
+export const ESTADOS_PRESTAMO = ['ABIERTO', 'PARCIAL', 'CERRADO', 'ANULADO'] as const;
+export type EstadoPrestamo = (typeof ESTADOS_PRESTAMO)[number];
+export const ESTADOS_PLAZO = [
+  'EN_PLAZO',
+  'VENCE_HOY',
+  'VENCIDO',
+  'RETORNADO_A_TIEMPO',
+  'RETORNADO_CON_RETRASO',
+  'ANULADO',
+] as const;
+export type EstadoPlazo = (typeof ESTADOS_PLAZO)[number];
 
 export const ESTADO_PLAZO_LABEL: Record<EstadoPlazo, string> = {
   EN_PLAZO: 'En plazo',

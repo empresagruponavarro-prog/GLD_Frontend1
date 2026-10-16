@@ -1,10 +1,12 @@
 import { Routes } from '@angular/router';
-import { authGuard, invitadoGuard, rolGuard } from './core/auth/auth.guards';
+import { authGuard, invitadoGuard } from './core/auth/auth.guards';
+import { permisoGuard, rutaModulo, rutaSesion } from './core/auth/permiso.guard';
 import { LoginComponent } from './features/auth/login/login';
 import { ModulesDashboardComponent } from './features/modules-dashboard/modules-dashboard';
 import { IncidenciasComponent } from './features/incidencias/incidencias';
 import { UsuariosComponent } from './features/administration/usuarios/usuarios';
 import { RolesComponent } from './features/administration/roles/roles';
+import { rolesPendientesGuard } from './features/administration/roles/roles.guard';
 import { EmpresasComponent } from './features/administration/empresas/empresas';
 import { MaestrosGeneralesComponent } from './features/maestros-generales/maestros-generales';
 import { AnexosComponent } from './features/maestros-generales/anexos/anexos';
@@ -39,57 +41,65 @@ import { RequerimientosListaComponent } from './features/requerimientos/requerim
 
 import { MantenimientoPlantillasComponent } from './features/presupuestos/mantenimiento-plantillas/mantenimiento-plantillas';
 
+/**
+ * Cada pantalla declara su módulo (`data.modulo`, plan 05 §5) y `permisoGuard` exige el permiso
+ * `ver` de ese módulo. No llevan módulo (solo exigen sesión): el inicio (`/`, menú de módulos), las
+ * impresiones (`imprimir/*`), el login y el 404.
+ */
 export const routes: Routes = [
   { path: 'login', component: LoginComponent, canActivate: [invitadoGuard] },
-  // Todas las pantallas (incluidas las de /imprimir) requieren sesión.
+  // Todas las pantallas requieren sesión; las que declaran módulo, además el `ver` de ese módulo.
   {
     path: '',
-    canActivateChild: [authGuard],
+    canActivateChild: [authGuard, permisoGuard],
     children: [
-      { path: 'presupuestos/plantillas', component: MantenimientoPlantillasComponent },
-      { path: '', component: CentrosCostosDashboardComponent },
-      { path: 'dashboard-situacional', component: CentrosCostosDashboardComponent },
-      { path: 'centros-costos', component: CentrosCostosComponent },
-      { path: 'centros-costos/:id/datos', component: ObraCockpitComponent },
-      { path: 'modulos', component: ModulesDashboardComponent },
-      { path: 'incidencias', component: IncidenciasComponent },
-      { path: 'maestros-generales', component: MaestrosGeneralesComponent },
-      { path: 'admin/usuarios', component: UsuariosComponent, canActivate: [rolGuard('Administrador')] },
-      { path: 'admin/roles', component: RolesComponent, canActivate: [rolGuard('Administrador')] },
-      { path: 'admin/empresas', component: EmpresasComponent, canActivate: [rolGuard('Administrador')] },
-      { path: 'anexos', component: AnexosComponent },
-      { path: 'productos', component: ProductosComponent },
-      { path: 'maestros-generales/especialidades', component: EspecialidadesComponent },
-      { path: 'maestros-generales/tipo-doc-identidad', component: TipoDocIdentidadComponent },
-      { path: 'presupuestos', component: PresupuestosComponent },
-      { path: 'documentos/origen', component: DocumentosOrigenComponent },
-      { path: 'documentos/administracion', component: DocumentosAdministracionComponent },
-      { path: 'maestros-generales/areas', component: AreasComponent },
-      { path: 'tesoreria/cuentas', component: CuentasComponent },
-      { path: 'tesoreria/tipo-cambio', component: TipoCambioComponent },
-      { path: 'tesoreria/programacion', component: ProgramacionComponent },
-      { path: 'tesoreria/pagos', component: PagosComponent },
-      { path: 'tesoreria/consulta', component: ConsultaTesoreriaComponent },
-      // Formatos para imprimir o guardar como PDF (sin menú lateral)
-      { path: 'imprimir/fur/:id', component: ImprimirComponent, data: { tipo: 'fur' } },
-      { path: 'imprimir/cuadro-comparativo/:id', component: ImprimirComponent, data: { tipo: 'cuadro-comparativo' } },
-      { path: 'imprimir/documento-origen/:id', component: ImprimirComponent, data: { tipo: 'documento-origen' } },
-      { path: 'imprimir/comprobante-pago/:id', component: ImprimirComponent, data: { tipo: 'comprobante-pago' } },
-      { path: 'imprimir/expediente/:id', component: ImprimirComponent, data: { tipo: 'expediente' } },
-      { path: 'requerimientos', component: RequerimientosListaComponent },
-      { path: 'requerimientos/aprobacion', component: BandejaAprobacionComponent },
-      { path: 'requerimientos/nuevo', component: RequerimientoFormComponent },
-      { path: 'requerimientos/:id', component: RequerimientoFormComponent },
-      { path: 'almacen/consulta', component: ConsultaAlmacenComponent },
-      { path: 'almacen/stock', component: StockActualComponent },
-      { path: 'almacen/inventario-inicial', component: DocumentosAlmacenComponent, data: { tipo: 'inventario-inicial' } },
-      { path: 'almacen/ingresos', component: DocumentosAlmacenComponent, data: { tipo: 'ingresos' } },
-      { path: 'almacen/recepciones', component: RecepcionesComponent },
-      { path: 'almacen/salidas', component: DocumentosAlmacenComponent, data: { tipo: 'salidas' } },
-      { path: 'almacen/transferencias', component: DocumentosAlmacenComponent, data: { tipo: 'transferencias' } },
-      { path: 'almacen/prestamos', component: PrestamosComponent },
-      { path: 'almacen/kardex', component: KardexComponent },
-      { path: 'almacen/almacenes', component: AlmacenesComponent },
+      rutaModulo('presupuestos/plantillas', MantenimientoPlantillasComponent, 'presupuestos.plantillas'),
+      // Inicio: menú de módulos principal, sin módulo (es el destino al denegar el acceso a una pantalla).
+      rutaSesion('', ModulesDashboardComponent),
+      rutaModulo('dashboard-situacional', CentrosCostosDashboardComponent, 'dashboard'),
+      rutaModulo('centros-costos', CentrosCostosComponent, 'centros-costos'),
+      rutaModulo('centros-costos/:id/datos', ObraCockpitComponent, 'obra'),
+      rutaModulo('modulos', ModulesDashboardComponent, 'modulos'),
+      rutaModulo('incidencias', IncidenciasComponent, 'incidencias'),
+      rutaModulo('maestros-generales', MaestrosGeneralesComponent, 'maestros.generales'),
+      // Administración: como el resto, la decide la matriz (la API la aplica siempre en estricto).
+      rutaModulo('admin/usuarios', UsuariosComponent, 'admin.usuarios'),
+      { ...rutaModulo('admin/roles', RolesComponent, 'admin.roles'), canDeactivate: [rolesPendientesGuard] },
+      rutaModulo('admin/empresas', EmpresasComponent, 'admin.empresas'),
+      rutaModulo('anexos', AnexosComponent, 'maestros.anexos'),
+      rutaModulo('productos', ProductosComponent, 'maestros.productos'),
+      rutaModulo('maestros-generales/especialidades', EspecialidadesComponent, 'maestros.generales'),
+      rutaModulo('maestros-generales/tipo-doc-identidad', TipoDocIdentidadComponent, 'maestros.generales'),
+      rutaModulo('presupuestos', PresupuestosComponent, 'presupuestos'),
+      rutaModulo('documentos/origen', DocumentosOrigenComponent, 'documentos.origen'),
+      rutaModulo('documentos/administracion', DocumentosAdministracionComponent, 'documentos.administracion'),
+      rutaModulo('maestros-generales/areas', AreasComponent, 'maestros.areas'),
+      rutaModulo('tesoreria/cuentas', CuentasComponent, 'tesoreria.cuentas'),
+      rutaModulo('tesoreria/tipo-cambio', TipoCambioComponent, 'tesoreria.tipo-cambio'),
+      rutaModulo('tesoreria/programacion', ProgramacionComponent, 'tesoreria.programacion'),
+      rutaModulo('tesoreria/pagos', PagosComponent, 'tesoreria.pagos'),
+      rutaModulo('tesoreria/consulta', ConsultaTesoreriaComponent, 'tesoreria.consulta'),
+      // Formatos para imprimir o guardar como PDF (sin menú lateral): por ahora solo exigen sesión
+      // (la API marca sus lecturas como compartidas).
+      rutaSesion('imprimir/fur/:id', ImprimirComponent, { tipo: 'fur' }),
+      rutaSesion('imprimir/cuadro-comparativo/:id', ImprimirComponent, { tipo: 'cuadro-comparativo' }),
+      rutaSesion('imprimir/documento-origen/:id', ImprimirComponent, { tipo: 'documento-origen' }),
+      rutaSesion('imprimir/comprobante-pago/:id', ImprimirComponent, { tipo: 'comprobante-pago' }),
+      rutaSesion('imprimir/expediente/:id', ImprimirComponent, { tipo: 'expediente' }),
+      rutaModulo('requerimientos', RequerimientosListaComponent, 'requerimientos'),
+      rutaModulo('requerimientos/aprobacion', BandejaAprobacionComponent, 'requerimientos.aprobacion'),
+      rutaModulo('requerimientos/nuevo', RequerimientoFormComponent, 'requerimientos'),
+      rutaModulo('requerimientos/:id', RequerimientoFormComponent, 'requerimientos'),
+      rutaModulo('almacen/consulta', ConsultaAlmacenComponent, 'almacen.consulta'),
+      rutaModulo('almacen/stock', StockActualComponent, 'almacen.stock'),
+      rutaModulo('almacen/inventario-inicial', DocumentosAlmacenComponent, 'almacen.inventario-inicial', { tipo: 'inventario-inicial' }),
+      rutaModulo('almacen/ingresos', DocumentosAlmacenComponent, 'almacen.ingresos', { tipo: 'ingresos' }),
+      rutaModulo('almacen/recepciones', RecepcionesComponent, 'almacen.recepciones'),
+      rutaModulo('almacen/salidas', DocumentosAlmacenComponent, 'almacen.salidas', { tipo: 'salidas' }),
+      rutaModulo('almacen/transferencias', DocumentosAlmacenComponent, 'almacen.transferencias', { tipo: 'transferencias' }),
+      rutaModulo('almacen/prestamos', PrestamosComponent, 'almacen.prestamos'),
+      rutaModulo('almacen/kardex', KardexComponent, 'almacen.kardex'),
+      rutaModulo('almacen/almacenes', AlmacenesComponent, 'almacen.almacenes'),
     ],
   },
   { path: '**', redirectTo: '' }

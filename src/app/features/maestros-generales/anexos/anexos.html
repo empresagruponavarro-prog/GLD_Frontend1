@@ -6,9 +6,11 @@
     </p>
   </div>
   <div style="display: flex; gap: 0.5rem; align-items: center">
-    <button class="btn btn-primary" type="button" (click)="openCreate()">
-      <i class="fa-solid fa-plus"></i> Nuevo Anexo
-    </button>
+    @if (permisos.crear()) {
+      <button class="btn btn-primary" type="button" (click)="openCreate()">
+        <i class="fa-solid fa-plus"></i> Nuevo Anexo
+      </button>
+    }
     <button
       class="btn btn-secondary"
       type="button"
@@ -119,22 +121,26 @@
         >
           <i class="fa-solid fa-eye"></i>
         </button>
-        <button
-          class="table-action-btn table-action-btn--primary"
-          type="button"
-          (click)="openEdit(item)"
-          title="Editar"
-        >
-          <i class="fa-solid fa-pen-to-square"></i>
-        </button>
-        <button
-          class="table-action-btn table-action-btn--danger"
-          type="button"
-          (click)="deleteAnexo(item)"
-          title="Eliminar"
-        >
-          <i class="fa-solid fa-trash"></i>
-        </button>
+        @if (permisos.editar()) {
+          <button
+            class="table-action-btn table-action-btn--primary"
+            type="button"
+            (click)="openEdit(item)"
+            title="Editar"
+          >
+            <i class="fa-solid fa-pen-to-square"></i>
+          </button>
+        }
+        @if (permisos.eliminar()) {
+          <button
+            class="table-action-btn table-action-btn--danger"
+            type="button"
+            (click)="deleteAnexo(item)"
+            title="Eliminar"
+          >
+            <i class="fa-solid fa-trash"></i>
+          </button>
+        }
       </td>
     </tr>
   </ng-template>

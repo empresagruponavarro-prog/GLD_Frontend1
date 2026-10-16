@@ -4,6 +4,7 @@ import { DragDropModule, CdkDragDrop, moveItemInArray } from '@angular/cdk/drag-
 import { FormsModule } from '@angular/forms';
 import { Observable, of, switchMap, map } from 'rxjs';
 import { CategoriasService } from '../../maestros-generales/categorias/categorias.service';
+import { CategoriaSelect } from '../../maestros-generales/categorias/interfaces/categorias.interface';
 import { PresupuestosService, Plantilla, PlantillaCompleta, PlantillaFaseDto, PlantillaCategoriaDto, FaseMaestra, FaseCategoriaMaestra } from '../presupuestos.service';
 
 @Component({
@@ -54,8 +55,8 @@ export class MantenimientoPlantillasComponent implements OnInit {
 
   showFaseModal = signal(false);
   showCategoriaModal = signal(false);
-  categoriasDisponiblesModal = signal<any[]>([]);
-  categoriasReal = signal<any[]>([]);
+  categoriasDisponiblesModal = signal<FaseCategoriaMaestra[]>([]);
+  categoriasReal = signal<CategoriaSelect[]>([]);
   selectedCategoriaReal = signal<number | string>('');
   modalCategoriaModo = signal<'new' | 'edit'>('new');
   modalCategoriaData = { id: 0, idx: -1 };
@@ -73,12 +74,12 @@ export class MantenimientoPlantillasComponent implements OnInit {
   loadPlantillas() {
     this.service.getPlantillasTodas().subscribe({
       next: (res) => this.plantillas.set(res),
-      error: (err) => alert('Error cargando plantillas')
+      error: () => alert('Error cargando plantillas')
     });
   }
 
   loadCatalogos() {
-    this.categoriasService.getSelect().subscribe((c: any) => this.categoriasReal.set(c));
+    this.categoriasService.getSelect().subscribe((c: CategoriaSelect[]) => this.categoriasReal.set(c));
     this.service.getFasesMaestras().subscribe(res => {
       const raw = res as FaseMaestra[] | { data: FaseMaestra[] };
       const f: FaseMaestra[] = Array.isArray(raw) ? raw : (raw as { data: FaseMaestra[] }).data ?? [];
@@ -94,7 +95,7 @@ export class MantenimientoPlantillasComponent implements OnInit {
   selectPlantilla(p: Plantilla) {
     this.service.getPlantillaCompleta(p.IdPlantilla).subscribe({
       next: (res) => this.selectedPlantilla.set(res),
-      error: (err) => alert('Error cargando detalle de plantilla')
+      error: () => alert('Error cargando detalle de plantilla')
     });
   }
 
@@ -150,16 +151,24 @@ export class MantenimientoPlantillasComponent implements OnInit {
         if (f.origen !== 'copiar' || !f.IdPlantillaOrigen) return of(creada);
         return this.service.getPlantillaCompleta(f.IdPlantillaOrigen).pipe(
           switchMap(origen => {
-            const fases = (origen.fases || []).map((fa, i) => ({
+            const fases: PlantillaFaseDto[] = (origen.fases || []).map((fa, i) => ({
+              id: 0,
+              IdPlantillaFase: fa.IdPlantillaFase || '',
               IdpptoFase: fa.IdpptoFase,
+              NombreFase: fa.NombreFase,
               Orden: i,
               categorias: (fa.categorias || []).map(c => ({
+                id: 0,
+                IdPlantillaFase: c.IdPlantillaFase || '',
                 IdpptoFaseCategoria: c.IdpptoFaseCategoria,
+                NombreCategoria: c.NombreCategoria,
                 CostoReferencial: Number(c.CostoReferencial) || 0,
+                id_categoria: c.id_categoria,
+                categoria: c.categoria,
               })),
             }));
             if (!fases.length) return of(creada);
-            return this.service.updatePlantillaFases(creada.IdPlantilla, fases as any).pipe(map(() => creada));
+            return this.service.updatePlantillaFases(creada.IdPlantilla, fases).pipe(map(() => creada));
           }),
         );
       }),
@@ -186,20 +195,26 @@ export class MantenimientoPlantillasComponent implements OnInit {
     if (!p) return;
 
     // Limpiar el payload para enviar solo lo que el DTO del backend permite (UpsertPlantillaFaseDto)
-    const payloadFases = p.fases.map((f: any) => ({
-      IdPlantillaFase: f.IdPlantillaFase ? f.IdPlantillaFase : undefined,
+    const payloadFases: PlantillaFaseDto[] = p.fases.map((f: PlantillaFaseDto) => ({
+      id: f.id,
+      IdPlantillaFase: f.IdPlantillaFase || '',
       IdpptoFase: f.IdpptoFase,
+      NombreFase: f.NombreFase,
       Orden: f.Orden,
-      categorias: (f.categorias || []).map((c: any) => ({
-        IdPlantillaFase: c.IdPlantillaFase ? c.IdPlantillaFase : undefined,
+      categorias: (f.categorias || []).map((c: PlantillaCategoriaDto) => ({
+        id: c.id,
+        IdPlantillaFase: c.IdPlantillaFase || '',
         IdpptoFaseCategoria: c.IdpptoFaseCategoria,
-        CostoReferencial: Number(c.CostoReferencial) || 0
+        NombreCategoria: c.NombreCategoria,
+        CostoReferencial: Number(c.CostoReferencial) || 0,
+        id_categoria: c.id_categoria,
+        categoria: c.categoria,
       }))
     }));
 
     this.service.updatePlantilla(p.IdPlantilla, { Nombre: p.Nombre, Descripcion: p.Descripcion, Activo: p.Activo }).subscribe({
       next: () => {
-        this.service.updatePlantillaFases(p.IdPlantilla, payloadFases as any).subscribe({
+        this.service.updatePlantillaFases(p.IdPlantilla, payloadFases).subscribe({
           next: () => {
             alert('Cambios guardados correctamente');
             this.loadPlantillas();
@@ -225,7 +240,7 @@ export class MantenimientoPlantillasComponent implements OnInit {
 
     p.fases = [...p.fases, {
       id: 0,
-      IdPlantillaFase: undefined as any,
+      IdPlantillaFase: '',
       IdpptoFase: idFase,
       NombreFase: faseName,
       Orden: p.fases.length,
@@ -239,14 +254,14 @@ export class MantenimientoPlantillasComponent implements OnInit {
     this.showFaseModal.set(false);
   }
 
-    abrirModalCategoria(modo: 'new' | 'edit', fase: PlantillaFaseDto, cat?: any) {
+  abrirModalCategoria(modo: 'new' | 'edit', fase: PlantillaFaseDto, cat?: PlantillaCategoriaDto) {
     this.targetFaseForCat.set(fase);
     this.modalCategoriaModo.set(modo);
     
     if (modo === 'edit' && cat) {
       this.selectedCategoriaMaestra.set(cat.IdpptoFaseCategoria || '');
       this.selectedCategoriaReal.set(cat.id_categoria || '');
-      const idx = fase.categorias.findIndex((c: any) => c === cat);
+      const idx = fase.categorias.findIndex((c: PlantillaCategoriaDto) => c === cat);
       this.modalCategoriaData = { id: cat.id, idx };
     } else {
       this.selectedCategoriaMaestra.set('');
@@ -256,9 +271,9 @@ export class MantenimientoPlantillasComponent implements OnInit {
 
     this.categoriasDisponiblesModal.set([]);
     this.service.getCategoriasDeFase(fase.IdpptoFase).subscribe({
-      next: (res: any) => {
-        const list = Array.isArray(res) ? res : (res.data || []);
-        this.categoriasDisponiblesModal.set(list.filter((c: any) => c.IdpptoFase === fase.IdpptoFase));
+      next: (res: FaseCategoriaMaestra[] | { data?: FaseCategoriaMaestra[] }) => {
+        const list: FaseCategoriaMaestra[] = Array.isArray(res) ? res : (res.data || []);
+        this.categoriasDisponiblesModal.set(list.filter((c: FaseCategoriaMaestra) => c.IdpptoFase === fase.IdpptoFase));
       },
       error: () => this.categoriasDisponiblesModal.set([])
     });
@@ -274,9 +289,9 @@ export class MantenimientoPlantillasComponent implements OnInit {
     const idCat = this.selectedCategoriaMaestra();
     if (!fase || !idCat) return;
 
-    const catName = this.categoriasDisponiblesModal().find((c: any) => c.IdpptoFaseCategoria === idCat)?.Descripcion || 'Cat Desconocida';
+    const catName = this.categoriasDisponiblesModal().find((c: FaseCategoriaMaestra) => c.IdpptoFaseCategoria === idCat)?.Descripcion || 'Cat Desconocida';
     const realId = this.selectedCategoriaReal() ? Number(this.selectedCategoriaReal()) : undefined;
-    const realDesc = this.categoriasReal().find((c: any) => c.id === realId)?.nombre || '';
+    const realDesc = this.categoriasReal().find((c: CategoriaSelect) => c.id === realId)?.nombre || '';
     
     if (this.modalCategoriaModo() === 'edit' && this.modalCategoriaData.idx >= 0) {
       fase.categorias[this.modalCategoriaData.idx].IdpptoFaseCategoria = idCat;
@@ -286,7 +301,7 @@ export class MantenimientoPlantillasComponent implements OnInit {
     } else {
       fase.categorias.push({
         id: 0,
-        IdPlantillaFase: fase.IdPlantillaFase ? fase.IdPlantillaFase : undefined as any,
+        IdPlantillaFase: fase.IdPlantillaFase ? fase.IdPlantillaFase : '',
         IdpptoFaseCategoria: idCat,
         NombreCategoria: catName,
         CostoReferencial: 0,
@@ -304,12 +319,12 @@ export class MantenimientoPlantillasComponent implements OnInit {
     this.targetFaseForCat.set(null);
   }
 
-    actualizarCategoriaReal(cat: any, event: Event) {
+  actualizarCategoriaReal(cat: PlantillaCategoriaDto, event: Event) {
     const select = event.target as HTMLSelectElement;
     const realId = select.value && select.value !== 'undefined' ? Number(select.value) : undefined;
     cat.id_categoria = realId;
     if (realId) {
-      const realDesc = this.categoriasReal().find((c: any) => c.id === realId)?.nombre || '';
+      const realDesc = this.categoriasReal().find((c: CategoriaSelect) => c.id === realId)?.nombre || '';
       cat.categoria = { id: realId, descripcion: realDesc };
     } else {
       cat.categoria = undefined;

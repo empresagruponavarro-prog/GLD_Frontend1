@@ -81,7 +81,7 @@
                 <td align="right">{{ fmtNum(s.no_operativo) }}</td>
                 <td align="right"><strong>{{ fmtNum(s.disponible) }}</strong></td>
                 <td align="center">
-                  @if (s.no_operativo !== '0') {
+                  @if (s.no_operativo !== '0' && puedeMarcarOperativo()) {
                     <button class="btn btn-secondary" type="button" (click)="marcarOperativo(s)">Marcar operativo</button>
                   }
                 </td>

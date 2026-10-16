@@ -4,7 +4,9 @@
     <p class="content-subtitle">Cajas, bancos y billeteras desde las que se paga. Registre aquí cada cuenta antes de programar pagos.</p>
   </div>
   <div style="display: flex; gap: 0.5rem; align-items: center">
-    <button class="btn btn-primary" type="button" (click)="nueva()"><i class="fa-solid fa-plus"></i> Nueva cuenta</button>
+    @if (permisos.crear()) {
+      <button class="btn btn-primary" type="button" (click)="nueva()"><i class="fa-solid fa-plus"></i> Nueva cuenta</button>
+    }
   </div>
 </div>
 
@@ -38,10 +40,12 @@
             <td>{{ c.moneda_id }}</td>
             <td align="center"><span class="badge" [class.badge-completed]="c.estado" [class.badge-danger]="!c.estado">{{ c.estado ? 'Activa' : 'Inactiva' }}</span></td>
             <td align="center">
-              <button class="table-action-btn" type="button" title="Editar" (click)="editar(c)"><i class="fa-solid fa-pen-to-square"></i></button>
-              <button class="table-action-btn" type="button" [title]="c.estado ? 'Desactivar' : 'Activar'" (click)="alternarEstado(c)">
-                <i class="fa-solid" [class.fa-toggle-on]="c.estado" [class.fa-toggle-off]="!c.estado"></i>
-              </button>
+              @if (permisos.editar()) {
+                <button class="table-action-btn" type="button" title="Editar" (click)="editar(c)"><i class="fa-solid fa-pen-to-square"></i></button>
+                <button class="table-action-btn" type="button" [title]="c.estado ? 'Desactivar' : 'Activar'" (click)="alternarEstado(c)">
+                  <i class="fa-solid" [class.fa-toggle-on]="c.estado" [class.fa-toggle-off]="!c.estado"></i>
+                </button>
+              }
             </td>
           </tr>
         } @empty {

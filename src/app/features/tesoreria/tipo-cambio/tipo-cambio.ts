@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { permisosDePantalla } from '@app/core/auth/permisos-pantalla';
 import { errorMessage, todayISO } from '../../almacen/almacen.utils';
 import { TipoCambio } from '../tesoreria.models';
 import { TesoreriaService } from '../tesoreria.service';
@@ -17,6 +18,8 @@ const DECIMAL = /^\d{1,3}(\.\d{1,4})?$/;
 })
 export class TipoCambioComponent {
   private readonly service = inject(TesoreriaService);
+  /** Guardar y Corregir hacen `POST /tesoreria/tipo-cambio`: exigen crear (sin él se oculta el formulario). */
+  protected readonly permisos = permisosDePantalla('tesoreria.tipo-cambio');
 
   protected readonly hoy = todayISO();
   protected readonly items = signal<TipoCambio[]>([]);
@@ -53,10 +56,12 @@ export class TipoCambioComponent {
   }
 
   protected editar(t: TipoCambio): void {
+    if (!this.permisos.crear()) return;
     this.form.reset({ fecha: t.fecha, moneda_id: t.moneda_id, compra: t.compra, venta: t.venta });
   }
 
   protected guardar(): void {
+    if (!this.permisos.crear()) return;
     this.error.set('');
     this.message.set('');
     if (this.form.invalid) {
@@ -73,7 +78,7 @@ export class TipoCambioComponent {
         this.form.patchValue({ compra: '', venta: '' });
         this.load();
       },
-      error: (err) => {
+      error: (err: unknown) => {
         this.isSaving.set(false);
         this.error.set(errorMessage(err));
       },

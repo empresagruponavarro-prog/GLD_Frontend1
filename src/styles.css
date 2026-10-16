@@ -1489,3 +1489,64 @@ app-sidebar, .app-sidebar {
   overflow-y: auto;
   min-height: 0;
 }
+
+/* Aviso global (AvisosService): acceso denegado, falta de permiso. Fijo arriba a la derecha, bajo la cabecera. */
+.app-aviso {
+  position: fixed;
+  top: 68px;
+  right: 1rem;
+  z-index: 1100;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  max-width: min(420px, calc(100vw - 2rem));
+  padding: 0.75rem 0.75rem 0.75rem 1rem;
+  font-size: 0.875rem;
+  color: #991b1b;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-left: 4px solid var(--danger-color);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-lg);
+}
+
+.app-aviso--aviso {
+  color: var(--gld-olive-dark);
+  background: var(--gld-olive-light);
+  border-color: var(--gld-olive-primary);
+  border-left-color: var(--warning-color);
+}
+
+.app-aviso--ok {
+  color: var(--gld-green-dark);
+  background: var(--gld-green-light);
+  border-color: #c6e3d5;
+  border-left-color: var(--success-color);
+}
+
+.app-aviso__texto {
+  flex: 1;
+}
+
+.app-aviso__cerrar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  color: inherit;
+  background: transparent;
+  border: none;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+}
+
+.app-aviso__cerrar:hover {
+  background: rgba(0, 0, 0, 0.06);
+}
+
+.app-aviso__cerrar:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 1px;
+}

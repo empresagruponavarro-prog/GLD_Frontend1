@@ -65,6 +65,10 @@
 
         @for (p of filteredPlantillas(); track p.IdPlantilla) {
           <div (click)="selectPlantilla(p)" 
+               (keydown.enter)="selectPlantilla(p)"
+               (keydown.space)="selectPlantilla(p); $event.preventDefault()"
+               tabindex="0"
+               role="button"
                class="group relative p-3.5 rounded-xl border bg-white hover:border-slate-300 hover:bg-slate-50/80 shadow-2xs cursor-pointer transition-all duration-150"
                [ngClass]="{'border-emerald-500 bg-emerald-50/70 shadow-md hover:bg-emerald-50/70': selectedPlantilla()?.IdPlantilla === p.IdPlantilla, 'border-slate-200/80': selectedPlantilla()?.IdPlantilla !== p.IdPlantilla}">
             
@@ -255,7 +259,7 @@
                               <option [ngValue]="undefined">-- Seleccione Categoría --</option>
                               <option [ngValue]="null">-- Seleccione Categoría --</option>
                               @for (cr of categoriasReal(); track cr.id) {
-                                <option [ngValue]="cr.id">{{ cr.nombre || cr.descripcion }}</option>
+                                <option [ngValue]="cr.id">{{ cr.nombre }}</option>
                               }
                             </select>
                           </div>
@@ -346,8 +350,9 @@
 
   <!-- POP-UP NUEVA PLANTILLA -->
   @if (showNuevaPlantillaModal()) {
-    <div class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs animate-in fade-in duration-150" (click)="cerrarNuevaPlantilla()">
-      <form class="w-full max-w-lg bg-white rounded-lg shadow-2xl border border-[#d1dcd7] flex flex-col overflow-hidden" (click)="$event.stopPropagation()" (ngSubmit)="confirmarNuevaPlantilla()" autocomplete="off">
+    <div class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs animate-in fade-in duration-150" role="dialog" aria-modal="true">
+      <div class="fixed inset-0" (click)="cerrarNuevaPlantilla()" (keydown.escape)="cerrarNuevaPlantilla()" tabindex="0" role="button" aria-label="Cerrar modal"></div>
+      <form class="relative w-full max-w-lg bg-white rounded-lg shadow-2xl border border-[#d1dcd7] flex flex-col overflow-hidden z-10" (ngSubmit)="confirmarNuevaPlantilla()" autocomplete="off">
         <!-- Header -->
         <div class="px-6 py-4 bg-[#f6f8f7] border-b border-[#d1dcd7] flex items-center justify-between gap-3">
           <div class="flex items-center gap-3">

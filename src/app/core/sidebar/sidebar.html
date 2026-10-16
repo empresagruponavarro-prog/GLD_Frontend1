@@ -1,210 +1,42 @@
-<div class="sidebar-header" routerLink="/dashboard-situacional" style="cursor: pointer; display: flex; align-items: center; gap: 0.65rem;">
+<div class="sidebar-header" routerLink="/" style="cursor: pointer; display: flex; align-items: center; gap: 0.65rem;">
   <img src="assets/logo.png" alt="Logo GLD" style="height: 26px; width: 26px; object-fit: contain; border-radius: 4px; background-color: #ffffff; padding: 2px;">
   <span style="letter-spacing: 0.05em; font-weight: 700;">GLD Arquitectura</span>
 </div>
 
+<!-- Menú filtrado por permisos (ver sidebar.menu.ts): sin "ver" no aparece el enlace; un grupo vacío se oculta. -->
 <ul class="sidebar-menu">
-  <li class="menu-category">Navegación</li>
-  <li>
-    <a class="sidebar-item" routerLink="/dashboard-situacional" routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}">
-      <i class="fa-solid fa-chart-line"></i> Dashboard Situacional
-    </a>
-  </li>
-  <li>
-    <a class="sidebar-item" routerLink="/modulos" routerLinkActive="active">
-      <i class="fa-solid fa-table-cells-large"></i> Módulos Principal
-    </a>
-  </li>
-
-  <li class="menu-category">Operaciones</li>
-  <li>
-    <a class="sidebar-item" routerLink="/incidencias" routerLinkActive="active">
-      <i class="fa-solid fa-clipboard-list"></i> Registro de Incidencias
-    </a>
-  </li>
-  <li>
-    <div class="sidebar-item has-sub" (click)="toggleDocumentos()">
-      <span><i class="fa-solid fa-folder-open"></i> Documentos</span>
-      <i class="fa-solid" [class.fa-chevron-down]="!isDocumentosOpen" [class.fa-chevron-up]="isDocumentosOpen"></i>
-    </div>
-    <ul class="sidebar-submenu" *ngIf="isDocumentosOpen">
-      <li>
-        <a class="sidebar-subitem" routerLink="/documentos/administracion" routerLinkActive="active">
-          <i class="fa-solid fa-file-invoice-dollar"></i> Compromisos de pago
-        </a>
-      </li>
-      <li>
-        <a class="sidebar-subitem" routerLink="/documentos/origen" routerLinkActive="active">
-          <i class="fa-solid fa-file-lines"></i> Órdenes de compra
-        </a>
-      </li>
-      <li>
-        <a class="sidebar-subitem" routerLink="/requerimientos" routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}">
-          <i class="fa-solid fa-file-circle-plus"></i> Requerimientos (FUR)
-        </a>
-      </li>
-      <li>
-        <a class="sidebar-subitem" routerLink="/requerimientos/aprobacion" routerLinkActive="active">
-          <i class="fa-solid fa-clipboard-check"></i> Aprobaciones
-        </a>
-      </li>
-    </ul>
-  </li>
-
-
-
-  <li>
-    <div class="sidebar-item has-sub" (click)="toggleTesoreria()">
-      <span><i class="fa-solid fa-sack-dollar"></i> Tesorería</span>
-      <i class="fa-solid" [class.fa-chevron-down]="!isTesoreriaOpen" [class.fa-chevron-up]="isTesoreriaOpen"></i>
-    </div>
-    <ul class="sidebar-submenu" *ngIf="isTesoreriaOpen">
-      <li>
-        <a class="sidebar-subitem" routerLink="/tesoreria/consulta" routerLinkActive="active">
-          <i class="fa-solid fa-chart-column"></i> Consulta y tablero
-        </a>
-      </li>
-      <li>
-        <a class="sidebar-subitem" routerLink="/tesoreria/programacion" routerLinkActive="active">
-          <i class="fa-solid fa-calendar-check"></i> Programación de pagos
-        </a>
-      </li>
-      <li>
-        <a class="sidebar-subitem" routerLink="/tesoreria/pagos" routerLinkActive="active">
-          <i class="fa-solid fa-money-check-dollar"></i> Ejecución de pagos
-        </a>
-      </li>
-      <li>
-        <a class="sidebar-subitem" routerLink="/tesoreria/cuentas" routerLinkActive="active">
-          <i class="fa-solid fa-building-columns"></i> Cuentas de pago
-        </a>
-      </li>
-      <li>
-        <a class="sidebar-subitem" routerLink="/tesoreria/tipo-cambio" routerLinkActive="active">
-          <i class="fa-solid fa-dollar-sign"></i> Tipo de cambio
-        </a>
-      </li>
-    </ul>
-  </li>
-
-  <li>
-    <div class="sidebar-item has-sub" (click)="toggleAlmacen()">
-      <span><i class="fa-solid fa-warehouse"></i> Control de Almacén</span>
-      <i class="fa-solid" [class.fa-chevron-down]="!isAlmacenOpen" [class.fa-chevron-up]="isAlmacenOpen"></i>
-    </div>
-    <ul class="sidebar-submenu" *ngIf="isAlmacenOpen">
-      <li>
-        <a class="sidebar-subitem" routerLink="/almacen/consulta" routerLinkActive="active">
-          <i class="fa-solid fa-magnifying-glass"></i> Consulta
-        </a>
-      </li>
-      <li>
-        <a class="sidebar-subitem" routerLink="/almacen/stock" routerLinkActive="active">
-          <i class="fa-solid fa-boxes-stacked"></i> Stock actual
-        </a>
-      </li>
-      <li>
-        <a class="sidebar-subitem" routerLink="/almacen/recepciones" routerLinkActive="active">
-          <i class="fa-solid fa-truck-ramp-box"></i> Recepción de compras
-        </a>
-      </li>
-      <li>
-        <a class="sidebar-subitem" routerLink="/almacen/ingresos" routerLinkActive="active">
-          <i class="fa-solid fa-arrow-right-to-bracket"></i> Entradas
-        </a>
-      </li>
-      <li>
-        <a class="sidebar-subitem" routerLink="/almacen/salidas" routerLinkActive="active">
-          <i class="fa-solid fa-arrow-right-from-bracket"></i> Salidas
-        </a>
-      </li>
-      <li>
-        <a class="sidebar-subitem" routerLink="/almacen/transferencias" routerLinkActive="active">
-          <i class="fa-solid fa-right-left"></i> Transferencias
-        </a>
-      </li>
-      <li>
-        <a class="sidebar-subitem" routerLink="/almacen/prestamos" routerLinkActive="active">
-          <i class="fa-solid fa-screwdriver-wrench"></i> Préstamos de equipos
-        </a>
-      </li>
-      <li>
-        <a class="sidebar-subitem" routerLink="/almacen/kardex" routerLinkActive="active">
-          <i class="fa-solid fa-list-ol"></i> Kardex
-        </a>
-      </li>
-      <li>
-        <a class="sidebar-subitem" routerLink="/almacen/inventario-inicial" routerLinkActive="active">
-          <i class="fa-solid fa-clipboard-check"></i> Inventario inicial
-        </a>
-      </li>
-      <li>
-        <a class="sidebar-subitem" routerLink="/almacen/almacenes" routerLinkActive="active">
-          <i class="fa-solid fa-warehouse"></i> Almacenes
-        </a>
-      </li>
-    </ul>
-  </li>
-
-  <li class="menu-category">Módulos del Sistema</li>
-  <li>
-    <div class="sidebar-item has-sub" (click)="toggleMaestros()">
-      <span><i class="fa-solid fa-gears"></i> Maestros Generales</span>
-      <i class="fa-solid" [class.fa-chevron-down]="!isMaestrosOpen" [class.fa-chevron-up]="isMaestrosOpen"></i>
-    </div>
-    <ul class="sidebar-submenu" *ngIf="isMaestrosOpen">
-      @if (esAdministrador()) {
-      <li>
-        <a class="sidebar-subitem" routerLink="/admin/empresas" routerLinkActive="active">
-          <i class="fa-solid fa-building"></i> Empresas
-        </a>
-      </li>
+  @for (seccion of secciones(); track seccion.categoria) {
+    <li class="menu-category">{{ seccion.categoria }}</li>
+    @for (entrada of seccion.entradas; track $index) {
+      @if (entrada.tipo === 'enlace') {
+        <li>
+          <a class="sidebar-item" [routerLink]="entrada.enlace.ruta" routerLinkActive="active"
+            [routerLinkActiveOptions]="{ exact: entrada.enlace.exacto ?? false }">
+            <i [class]="entrada.enlace.icono"></i> {{ entrada.enlace.etiqueta }}
+          </a>
+        </li>
+      } @else {
+        <li>
+          <div class="sidebar-item has-sub" role="button" tabindex="0" [attr.aria-expanded]="abierto(entrada.submenu.id)"
+            (click)="alternar(entrada.submenu.id)" (keydown.enter)="alternar(entrada.submenu.id)"
+            (keydown.space)="$event.preventDefault(); alternar(entrada.submenu.id)">
+            <span><i [class]="entrada.submenu.icono"></i> {{ entrada.submenu.etiqueta }}</span>
+            <i class="fa-solid" [class.fa-chevron-down]="!abierto(entrada.submenu.id)" [class.fa-chevron-up]="abierto(entrada.submenu.id)"></i>
+          </div>
+          @if (abierto(entrada.submenu.id)) {
+            <ul class="sidebar-submenu">
+              @for (e of entrada.submenu.enlaces; track e.ruta) {
+                <li>
+                  <a class="sidebar-subitem" [routerLink]="e.ruta" routerLinkActive="active"
+                    [routerLinkActiveOptions]="{ exact: e.exacto ?? false }">
+                    <i [class]="e.icono"></i> {{ e.etiqueta }}
+                  </a>
+                </li>
+              }
+            </ul>
+          }
+        </li>
       }
-      <li>
-        <a class="sidebar-subitem" routerLink="/anexos" routerLinkActive="active">
-          <i class="fa-solid fa-paperclip"></i> Anexos
-        </a>
-      </li>
-      <li>
-        <a class="sidebar-subitem" routerLink="/productos" routerLinkActive="active">
-          <i class="fa-solid fa-box"></i> Productos
-        </a>
-      </li>
-      <li>
-        <a class="sidebar-subitem" routerLink="/maestros-generales/areas" routerLinkActive="active">
-          <i class="fa-solid fa-sitemap"></i> Áreas
-        </a>
-      </li>
-      <li>
-        <a class="sidebar-subitem" routerLink="/centros-costos" routerLinkActive="active">
-          <i class="fa-solid fa-building-flag"></i> Centros de Costos
-        </a>
-      </li>
-      <li>
-        <a class="sidebar-subitem" routerLink="/presupuestos" routerLinkActive="active">
-          <i class="fa-solid fa-file-invoice-dollar"></i> Presupuestos
-        </a>
-      </li>
-      <li>
-        <a class="sidebar-subitem" routerLink="/presupuestos/plantillas" routerLinkActive="active">
-          <i class="fa-solid fa-copy"></i> Plantillas
-        </a>
-      </li>
-
-    </ul>
-  </li>
-
-  @if (esAdministrador()) {
-  <li class="menu-category">Administración</li>
-  <li>
-    <a class="sidebar-item" routerLink="/admin/usuarios" routerLinkActive="active">
-      <i class="fa-solid fa-users-gear"></i> Usuarios
-    </a>
-  </li>
-  <li>
-    <a class="sidebar-item" routerLink="/admin/roles" routerLinkActive="active">
-      <i class="fa-solid fa-user-shield"></i> Roles
-    </a>
-  </li>
+    }
   }
 </ul>

@@ -4,9 +4,11 @@
     <p class="content-subtitle">Ubicaciones donde se lleva el stock (Almacén General, Tambo, Aruma...).</p>
   </div>
   <div style="display: flex; gap: 0.5rem; align-items: center">
-    <button class="btn btn-primary" type="button" (click)="openCreate()">
-      <i class="fa-solid fa-plus"></i> Nuevo almacén
-    </button>
+    @if (permisos.crear()) {
+      <button class="btn btn-primary" type="button" (click)="openCreate()">
+        <i class="fa-solid fa-plus"></i> Nuevo almacén
+      </button>
+    }
     <button class="btn btn-secondary" type="button" (click)="load()" [disabled]="isLoading()">
       <i class="fa-solid fa-arrows-rotate" [class.fa-spin]="isLoading()"></i>
       {{ isLoading() ? 'Cargando...' : 'Actualizar' }}
@@ -42,10 +44,13 @@
         </span>
       </td>
       <td align="center">
-        <button class="table-action-btn table-action-btn--primary" type="button" title="Editar" (click)="openEdit(item)">
-          <i class="fa-solid fa-pen-to-square"></i>
-        </button>
-        @if (item.estado) {
+        @if (permisos.editar()) {
+          <button class="table-action-btn table-action-btn--primary" type="button" title="Editar" (click)="openEdit(item)">
+            <i class="fa-solid fa-pen-to-square"></i>
+          </button>
+        }
+        <!-- Desactivar es DELETE en la API: exige eliminar. -->
+        @if (item.estado && permisos.eliminar()) {
           <button class="table-action-btn table-action-btn--danger" type="button" title="Desactivar" (click)="deactivate(item)">
             <i class="fa-solid fa-trash"></i>
           </button>

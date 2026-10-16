@@ -9,10 +9,12 @@
       <i class="fa-solid fa-arrows-rotate" [class.fa-spin]="loading()"></i>
       {{ loading() ? 'Cargando...' : 'Actualizar' }}
     </button>
-    <button class="btn btn-primary" (click)="openModal()">
-      <i class="fa-solid fa-plus"></i>
-      Nuevo Centro
-    </button>
+    @if (permisos.crear()) {
+      <button class="btn btn-primary" (click)="openModal()">
+        <i class="fa-solid fa-plus"></i>
+        Nuevo Centro
+      </button>
+    }
   </div>
 </div>
 
@@ -136,37 +138,47 @@
       </td>
       <td>
         <div class="table-actions">
-          <button
-            class="table-action-btn table-action-btn--primary"
-            (click)="goToPresupuestos(item)"
-            title="Ir a Presupuestos"
-          >
-            <i class="fa-solid fa-file-invoice-dollar"></i>
-            <span>Ppto</span>
-          </button>
-          <button
-            class="table-action-btn"
-            style="font-weight: 700; gap: 0.45rem; padding-inline: 0.7rem; font-size: 0.72rem; color: #1e293b; background: #f8fafc; border-color: #cbd5e1;"
-            (click)="onVerDatos(item)"
-            title="Datos"
-          >
-            <i class="fa-solid fa-database"></i>
-            <span>Datos</span>
-          </button>
-          <button
-            class="table-action-btn"
-            (click)="editModal(item)"
-            title="Editar"
-          >
-            <i class="fa-solid fa-pen"></i>
-          </button>
-          <button
-            class="table-action-btn table-action-btn--danger"
-            (click)="delete(item)"
-            title="Eliminar"
-          >
-            <i class="fa-solid fa-trash"></i>
-          </button>
+          <!-- "Ppto" abre un alta en Presupuestos: exige crear en presupuestos. -->
+          @if (puedeCrearPresupuesto()) {
+            <button
+              class="table-action-btn table-action-btn--primary"
+              (click)="goToPresupuestos(item)"
+              title="Ir a Presupuestos"
+            >
+              <i class="fa-solid fa-file-invoice-dollar"></i>
+              <span>Ppto</span>
+            </button>
+          }
+          <!-- "Datos" lleva a la obra: exige acceso (ver) a obra. -->
+          @if (puedeVerObra()) {
+            <button
+              class="table-action-btn"
+              style="font-weight: 700; gap: 0.45rem; padding-inline: 0.7rem; font-size: 0.72rem; color: #1e293b; background: #f8fafc; border-color: #cbd5e1;"
+              (click)="onVerDatos(item)"
+              title="Datos"
+            >
+              <i class="fa-solid fa-database"></i>
+              <span>Datos</span>
+            </button>
+          }
+          @if (permisos.editar()) {
+            <button
+              class="table-action-btn"
+              (click)="editModal(item)"
+              title="Editar"
+            >
+              <i class="fa-solid fa-pen"></i>
+            </button>
+          }
+          @if (permisos.eliminar()) {
+            <button
+              class="table-action-btn table-action-btn--danger"
+              (click)="delete(item)"
+              title="Eliminar"
+            >
+              <i class="fa-solid fa-trash"></i>
+            </button>
+          }
         </div>
       </td>
     </tr>
@@ -196,7 +208,9 @@
           </div>
         </div>
         <div class="cc-form-head-actions">
-          <button class="cc-action-btn" type="button" (click)="duplicar()">Duplicar</button>
+          @if (permisos.crear()) {
+            <button class="cc-action-btn" type="button" (click)="duplicar()">Duplicar</button>
+          }
           <button class="cc-action-btn" type="button" (click)="descartar()">Cancelar</button>
           <button class="cc-save-btn" type="button" (click)="guardar()">
             <lucide-icon [img]="Check" size="11"></lucide-icon>

@@ -1,15 +1,17 @@
 <div class="content-header">
   <div>
-    <h1 class="content-title">Administración de Usuarios y Roles</h1>
+    <h1 class="content-title">Administración de Usuarios</h1>
     <p class="content-subtitle">Gestión centralizada de usuarios, accesos y permisos en GLD.</p>
   </div>
   <div style="display: flex; gap: 0.5rem;">
     <button class="btn btn-secondary" (click)="actualizar()" [disabled]="loading()">
       <i class="fa-solid fa-arrows-rotate" [class.fa-spin]="loading()"></i> {{ loading() ? 'Actualizando...' : 'Actualizar' }}
     </button>
-    <button class="btn btn-primary" (click)="openModal()">
-      <i class="fa-solid fa-user-plus"></i> + Nuevo Usuario
-    </button>
+    @if (permisos.crear()) {
+      <button class="btn btn-primary" (click)="openModal()">
+        <i class="fa-solid fa-user-plus"></i> + Nuevo Usuario
+      </button>
+    }
   </div>
 </div>
 
@@ -19,12 +21,30 @@
       {{ error }}
     </div>
   }
+  @if (aviso(); as mensaje) {
+    <div role="status" data-testid="usuarios-aviso" class="usuarios-alert usuarios-alert--ok">
+      <i class="fa-solid fa-circle-check" aria-hidden="true"></i>
+      <span>{{ mensaje }}</span>
+    </div>
+  }
+
+  <div class="usuarios-toolbar">
+    <label class="usuarios-toolbar__label" for="usuarios-filtro-estado">
+      <i class="fa-solid fa-filter" aria-hidden="true"></i> Estado
+    </label>
+    <select id="usuarios-filtro-estado" class="form-control-custom usuarios-toolbar__select" [formControl]="filtroEstado"
+      data-testid="usuarios-filtro-estado">
+      <option value="todos">Todos</option>
+      <option value="activos">Activos</option>
+      <option value="inactivos">Inactivos</option>
+    </select>
+  </div>
 
   <app-data-table
     [columns]="columns"
-    [items]="usuarios()"
+    [items]="usuariosFiltrados()"
     [loading]="loading()"
-    emptyMessage="No se registraron usuarios aún."
+    [emptyMessage]="mensajeVacio()"
     emptyIcon="fa-solid fa-users-slash"
     minWidth="800px"
     [rowTemplate]="usuarioRow">
@@ -39,12 +59,47 @@
         <span class="badge badge-progress">{{ item.Rol || 'Sin Rol' }}</span>
       </td>
       <td>
-        <button class="btn btn-secondary" style="padding: 0.25rem 0.5rem; margin-right: 0.25rem;" (click)="editModal(item)" title="Editar" aria-label="Editar usuario">
-          <i class="fa-solid fa-pen-to-square" aria-hidden="true"></i>
-        </button>
-        <button class="btn btn-danger" style="padding: 0.25rem 0.5rem;" (click)="deleteUsuario(item.IdUsuario)" title="Eliminar" aria-label="Eliminar usuario">
-          <i class="fa-solid fa-trash" aria-hidden="true"></i>
-        </button>
+        @if (item.activo) {
+          <span class="badge badge-completed" data-testid="usuario-estado">
+            <i class="fa-solid fa-circle-check" aria-hidden="true"></i> Activo
+          </span>
+        } @else {
+          <span class="badge badge-danger" data-testid="usuario-estado">
+            <i class="fa-solid fa-user-slash" aria-hidden="true"></i> Inactivo
+          </span>
+        }
+      </td>
+      <td>
+        <div class="usuarios-actions">
+          @if (permisos.editar()) {
+          <button class="btn btn-secondary" style="padding: 0.25rem 0.5rem;" (click)="editModal(item)" title="Editar" aria-label="Editar usuario">
+            <i class="fa-solid fa-pen-to-square" aria-hidden="true"></i>
+          </button>
+          @if (motivoNoDesactivar(item); as motivo) {
+            <!-- El title va en el envoltorio: los botones deshabilitados no muestran tooltip en todos los navegadores. -->
+            <span class="usuarios-disabled-wrap" [title]="motivo">
+              <button type="button" class="btn btn-secondary" style="padding: 0.25rem 0.5rem;" disabled
+                [attr.aria-label]="'Desactivar usuario ' + item.Usuario" [attr.aria-describedby]="'usuario-motivo-' + item.IdUsuario"
+                data-testid="usuario-estado-btn">
+                <i class="fa-solid fa-user-slash" aria-hidden="true"></i>
+              </button>
+              <span class="usuarios-sr-only" [id]="'usuario-motivo-' + item.IdUsuario">{{ motivo }}</span>
+            </span>
+          } @else {
+            <button type="button" class="btn btn-secondary" style="padding: 0.25rem 0.5rem;" (click)="cambiarEstado(item)"
+              [title]="item.activo ? 'Desactivar' : 'Reactivar'"
+              [attr.aria-label]="(item.activo ? 'Desactivar usuario ' : 'Reactivar usuario ') + item.Usuario"
+              data-testid="usuario-estado-btn">
+              <i class="fa-solid" [class.fa-user-slash]="item.activo" [class.fa-user-check]="!item.activo" aria-hidden="true"></i>
+            </button>
+          }
+          }
+          @if (permisos.eliminar()) {
+          <button class="btn btn-danger" style="padding: 0.25rem 0.5rem;" (click)="deleteUsuario(item)" title="Eliminar" aria-label="Eliminar usuario">
+            <i class="fa-solid fa-trash" aria-hidden="true"></i>
+          </button>
+          }
+        </div>
       </td>
     </tr>
   </ng-template>
@@ -52,7 +107,7 @@
 
 <!-- Modal Formulario Rediseñado -->
 @if (showModal()) {
-<div class="modal-overlay" (click)="closeModal()">
+<div class="modal-overlay" tabindex="-1" (click)="closeModal()" (keydown.escape)="cerrarConEscape()">
   <div class="modal-content usuario-modal" role="dialog" aria-modal="true" aria-labelledby="usuario-modal-title" (click)="$event.stopPropagation()">
     
     <!-- Encabezado con Icono Corporativo GLD -->
@@ -213,6 +268,68 @@
         </button>
       </div>
     </form>
+  </div>
+</div>
+}
+
+<!-- Confirmación de desactivar / reactivar / eliminar (dentro de la pantalla, sin confirm()) -->
+@if (porConfirmar(); as pendiente) {
+<div class="modal-overlay" tabindex="-1" (click)="onConfirmOverlayClick($event)" (keydown.escape)="cancelarConfirmacion()">
+  <div class="modal-content usuario-modal usuarios-confirm-modal" role="alertdialog" aria-modal="true"
+    aria-labelledby="usuario-confirm-title" aria-describedby="usuario-confirm-desc" data-testid="usuario-confirm">
+
+    <div class="modal-header-custom">
+      <div class="modal-header-info">
+        <div class="modal-icon-badge" [class.usuarios-icon-danger]="pendiente.accion !== 'reactivar'">
+          <i class="fa-solid" [class.fa-user-slash]="pendiente.accion === 'desactivar'"
+            [class.fa-user-check]="pendiente.accion === 'reactivar'" [class.fa-trash]="pendiente.accion === 'eliminar'"
+            aria-hidden="true"></i>
+        </div>
+        <div class="modal-header-titles">
+          @switch (pendiente.accion) {
+            @case ('desactivar') {
+              <h3 id="usuario-confirm-title">Desactivar usuario</h3>
+              <p id="usuario-confirm-desc">¿Desactivar a "{{ pendiente.usuario.Usuario }}"? No podrá iniciar sesión y su sesión abierta se cerrará. Podrás reactivarlo después.</p>
+            }
+            @case ('reactivar') {
+              <h3 id="usuario-confirm-title">Reactivar usuario</h3>
+              <p id="usuario-confirm-desc">¿Reactivar a "{{ pendiente.usuario.Usuario }}"? Podrá volver a iniciar sesión.</p>
+            }
+            @case ('eliminar') {
+              <h3 id="usuario-confirm-title">Eliminar usuario</h3>
+              <p id="usuario-confirm-desc">¿Eliminar el usuario "{{ pendiente.usuario.Usuario }}"? Esta acción no se puede deshacer.</p>
+            }
+          }
+        </div>
+      </div>
+    </div>
+
+    @if (confirmError(); as error) {
+      <div class="modal-body-custom">
+        <div role="alert" data-testid="usuario-confirm-error" class="usuarios-alert usuarios-alert--error">
+          <i class="fa-solid fa-circle-exclamation" aria-hidden="true"></i>
+          <span>{{ error }}</span>
+        </div>
+      </div>
+    }
+
+    <div class="modal-footer-custom">
+      <button #cancelarConfirmBtn type="button" class="btn-cancel-custom" (click)="cancelarConfirmacion()" [disabled]="confirmando()"
+        data-testid="usuario-confirm-cancelar">Cancelar</button>
+      <button type="button" class="btn-submit-custom" [class.usuarios-btn-danger]="pendiente.accion !== 'reactivar'"
+        (click)="confirmar()" [disabled]="confirmando()" data-testid="usuario-confirm-aceptar">
+        @if (confirmando()) {
+          <i class="fa-solid fa-circle-notch fa-spin" aria-hidden="true"></i>
+          <span>Procesando...</span>
+        } @else {
+          @switch (pendiente.accion) {
+            @case ('desactivar') { <i class="fa-solid fa-user-slash" aria-hidden="true"></i><span>Desactivar</span> }
+            @case ('reactivar') { <i class="fa-solid fa-user-check" aria-hidden="true"></i><span>Reactivar</span> }
+            @case ('eliminar') { <i class="fa-solid fa-trash" aria-hidden="true"></i><span>Eliminar</span> }
+          }
+        }
+      </button>
+    </div>
   </div>
 </div>
 }

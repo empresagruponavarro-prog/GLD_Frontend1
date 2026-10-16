@@ -4,7 +4,9 @@
     <p class="content-subtitle">Costos y Presupuesto, Oficina Técnica, Procura, Comercialización, Posventa, Almacén, Sistemas… Se usan al pedir y al pagar.</p>
   </div>
   <div style="display: flex; gap: 0.5rem; align-items: center">
-    <button class="btn btn-primary" type="button" (click)="nueva()"><i class="fa-solid fa-plus"></i> Nueva área</button>
+    @if (permisos.crear()) {
+      <button class="btn btn-primary" type="button" (click)="nueva()"><i class="fa-solid fa-plus"></i> Nueva área</button>
+    }
   </div>
 </div>
 
@@ -18,7 +20,11 @@
             <td><strong>{{ a.codigo }}</strong></td>
             <td>{{ a.nombre }}</td>
             <td align="center"><span class="badge" [class.badge-completed]="a.estado" [class.badge-danger]="!a.estado">{{ a.estado ? 'Activa' : 'Inactiva' }}</span></td>
-            <td align="center"><button class="table-action-btn" type="button" title="Editar" (click)="editar(a)"><i class="fa-solid fa-pen-to-square"></i></button></td>
+            <td align="center">
+              @if (permisos.editar()) {
+                <button class="table-action-btn" type="button" title="Editar" (click)="editar(a)"><i class="fa-solid fa-pen-to-square"></i></button>
+              }
+            </td>
           </tr>
         } @empty {
           <tr><td colspan="4" align="center">{{ isLoading() ? 'Cargando...' : 'No hay áreas registradas.' }}</td></tr>

@@ -4,7 +4,9 @@
     <p class="content-subtitle">Ejecute lo programado: se emite el comprobante de pago (CP-) y queda registrado en el expediente.</p>
   </div>
   <div style="display: flex; gap: 0.5rem; align-items: center">
-    <a class="btn btn-secondary" routerLink="/tesoreria/programacion"><i class="fa-solid fa-calendar-check"></i> Programación</a>
+    @if (puedeVerProgramacion()) {
+      <a class="btn btn-secondary" routerLink="/tesoreria/programacion"><i class="fa-solid fa-calendar-check"></i> Programación</a>
+    }
   </div>
 </div>
 
@@ -18,8 +20,8 @@
 
   <h3 style="margin: 0 0 0.5rem; font-size: 0.95rem">Pagos programados por ejecutar</h3>
   <div class="toolbar-filters-left" style="margin-bottom: 0.5rem">
-    <label class="toolbar-check">Desde <input type="date" class="toolbar-select" [value]="desde()" (change)="setRango('desde', $any($event.target).value)" /></label>
-    <label class="toolbar-check">Hasta <input type="date" class="toolbar-select" [value]="hasta()" (change)="setRango('hasta', $any($event.target).value)" /></label>
+    <label class="toolbar-check">Desde <input type="date" class="toolbar-select" [value]="desde()" (change)="setRango('desde', valorDe($event))" /></label>
+    <label class="toolbar-check">Hasta <input type="date" class="toolbar-select" [value]="hasta()" (change)="setRango('hasta', valorDe($event))" /></label>
   </div>
   <div class="table-card">
     <table class="table">
@@ -79,7 +81,7 @@
       <td align="center"><span class="badge" [class.badge-completed]="item.estado === 'REGISTRADO'" [class.badge-danger]="item.estado === 'ANULADO'">{{ item.estado === 'REGISTRADO' ? 'Pagado' : 'Anulado' }}</span></td>
       <td align="center">
         <a class="table-action-btn" [routerLink]="['/imprimir/comprobante-pago', item.id]" target="_blank" title="Imprimir comprobante"><i class="fa-solid fa-print"></i></a>
-        @if (item.estado === 'REGISTRADO') {
+        @if (item.estado === 'REGISTRADO' && permisos.anular()) {
           <button class="table-action-btn table-action-btn--danger" type="button" title="Anular pago" (click)="anular(item)"><i class="fa-solid fa-ban"></i></button>
         }
       </td>

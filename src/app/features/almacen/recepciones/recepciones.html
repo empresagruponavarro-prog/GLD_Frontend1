@@ -25,7 +25,7 @@
           placeholder="Buscar por número o ID de la OC..."
           maxlength="100"
           [value]="search()"
-          (input)="onSearch($any($event.target).value)"
+          (input)="onSearch(valorDe($event))"
         />
       </div>
       <div class="toolbar-meta"><span>Pendientes</span><strong>{{ items().length }}</strong><span>órdenes</span></div>
@@ -56,7 +56,9 @@
       <td align="right">{{ item.total === null ? '—' : (item.moneda_simbolo ?? '') + ' ' + fmtMoney(item.total) }}</td>
       <td align="center">{{ item.lineas_pendientes }}</td>
       <td align="center">
-        <button class="btn btn-primary" type="button" (click)="recibir(item)"><i class="fa-solid fa-truck-ramp-box"></i> Recibir</button>
+        @if (permisos.crear()) {
+          <button class="btn btn-primary" type="button" (click)="recibir(item)"><i class="fa-solid fa-truck-ramp-box"></i> Recibir</button>
+        }
       </td>
     </tr>
   </ng-template>

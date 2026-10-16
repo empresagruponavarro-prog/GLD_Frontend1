@@ -117,3 +117,189 @@
   background: #b91c1c;
   box-shadow: 0 4px 8px rgba(220, 38, 38, 0.35);
 }
+
+/* ---- Roles y permisos: barra y matriz ---- */
+.roles-header-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.permisos-barra {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem 1rem;
+  padding: 0.85rem 1rem;
+  margin-bottom: 0.75rem;
+  background: var(--card-bg, #ffffff);
+  border: 1px solid var(--border-color, #e2e8f0);
+  border-radius: var(--radius-md, 10px);
+}
+
+.permisos-barra__rol {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.permisos-barra__label {
+  font-size: 0.825rem;
+  font-weight: 600;
+  color: #334155;
+}
+
+.permisos-barra__select {
+  min-width: 260px;
+}
+
+.permisos-barra__acciones {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.permisos-barra__descripcion {
+  flex-basis: 100%;
+  margin: 0;
+  font-size: 0.8rem;
+  color: var(--text-muted, #64748b);
+}
+
+.permisos-barra__estado {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-left: auto;
+}
+
+.permisos-pendientes {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.2rem 0.6rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #92400e;
+  background: #fef3c7;
+  border: 1px solid #fde68a;
+  border-radius: 999px;
+}
+
+.permisos-bloqueado {
+  margin-bottom: 0.75rem;
+}
+
+.permisos-tabla-wrap {
+  /* Contiene los .roles-sr-only (absolute) de la tabla; sin esto se posicionan respecto al documento y alargan el scroll de la ventana. */
+  position: relative;
+  overflow-x: auto;
+  background: var(--card-bg, #ffffff);
+  border: 1px solid var(--border-color, #e2e8f0);
+  border-radius: var(--radius-md, 10px);
+}
+
+.permisos-tabla {
+  width: 100%;
+  min-width: 760px;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+}
+
+.permisos-tabla th,
+.permisos-tabla td {
+  padding: 0.45rem 0.75rem;
+  border-bottom: 1px solid var(--border-color, #e2e8f0);
+}
+
+.permisos-tabla thead th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: #f8fafc;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #475569;
+}
+
+.permisos-tabla__modulo {
+  text-align: left;
+}
+
+.permisos-tabla__accion {
+  width: 88px;
+  text-align: center;
+}
+
+.permisos-tabla__vacio {
+  padding: 1.5rem;
+  text-align: center;
+  color: var(--text-muted, #64748b);
+}
+
+.permisos-grupo th,
+.permisos-grupo td {
+  background: var(--gld-green-light, #e8f4ef);
+  font-weight: 700;
+  color: var(--gld-green-dark, #3b7a5e);
+}
+
+.permisos-modulo__nombre {
+  padding-left: 2rem !important;
+  font-weight: 500;
+  color: var(--text-main, #1f2321);
+}
+
+.permisos-modulo__nombre > span:first-child {
+  display: block;
+}
+
+.permisos-modulo__ruta {
+  display: block;
+  font-size: 0.72rem;
+  font-weight: 400;
+  color: var(--text-muted, #64748b);
+}
+
+.permisos-modulo:hover th,
+.permisos-modulo:hover td {
+  background: #f8fafc;
+}
+
+.permisos-modulo--cambiada th {
+  box-shadow: inset 3px 0 0 #f59e0b;
+}
+
+.permisos-casilla {
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+  accent-color: var(--gld-green-primary, #5a9e80);
+}
+
+.permisos-casilla:disabled {
+  cursor: not-allowed;
+}
+
+.permisos-casilla:focus-visible,
+.permisos-barra button:focus-visible,
+.roles-header-actions button:focus-visible {
+  outline: 2px solid var(--gld-green-dark, #3b7a5e);
+  outline-offset: 2px;
+}
+
+.permisos-na {
+  color: #94a3b8;
+}
+
+.permisos-icon-aviso {
+  background: #fef3c7;
+  color: #92400e;
+  box-shadow: 0 2px 6px rgba(146, 64, 14, 0.15);
+}
+
+.roles-confirm-modal .modal-footer-custom {
+  flex-wrap: wrap;
+}

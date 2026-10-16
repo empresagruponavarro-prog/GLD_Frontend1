@@ -2,12 +2,15 @@ import { Component, inject, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
+import { permisosDePantalla } from '@app/core/auth/permisos-pantalla';
+import { PermisosService } from '@app/core/auth/permisos.service';
+import { mensajeError } from '@shared/utils/errores-http';
 import { LucideAngularModule, ArrowLeft, Copy, Check, Lock, Calendar, CloudUpload, FileText, CircleCheck, Contact, Clock } from 'lucide-angular';
 
 import { DataTableComponent } from '../../shared/components/data-table/data-table';
 import { ModalComponent } from '../../shared/components/modal/modal';
 import { DataTable } from '../../shared/interfaces';
-import { CentroCosto, CreateCentroCostoDto, CatalogosFiltros, FiltrosCentrosCostos } from './interfaces';
+import { CentroCosto, CreateCentroCostoDto, CatalogosFiltros, FiltrosCentrosCostos, ResumenFinanciero } from './interfaces';
 import { CentrosCostosService } from './centros-costos.service';
 import { EmpresasService } from '../administration/empresas/empresas.service';
 import { AnexosService } from '../maestros-generales/anexos/anexos.service';
@@ -34,6 +37,13 @@ export class CentrosCostosComponent {
   readonly Clock = Clock;
 
   private readonly router = inject(Router);
+  readonly #permisos = inject(PermisosService);
+  /** Nuevo y Duplicar → crear; Editar → editar; Eliminar → eliminar. */
+  protected readonly permisos = permisosDePantalla('centros-costos');
+  /** "Ppto" abre un alta en Presupuestos. */
+  protected readonly puedeCrearPresupuesto = computed(() => this.#permisos.puede('presupuestos', 'crear'));
+  /** "Datos" abre la ficha de la obra. */
+  protected readonly puedeVerObra = computed(() => this.#permisos.puedeVer('obra'));
 
   columns: DataTable[] = [
     { label: 'ID', width: '75px', align: 'center' },
@@ -59,7 +69,7 @@ export class CentrosCostosComponent {
   empresas = signal<Empresa[]>([]);
 
   // Resumen financiero (solo en edición)
-  resumen = signal<any>(null);
+  resumen = signal<ResumenFinanciero | null>(null);
   resumenLoading = signal<boolean>(false);
 
   empresaFilter = signal<string>('');
@@ -107,21 +117,21 @@ export class CentrosCostosComponent {
 
   totalPages = computed(() => Math.max(1, Math.ceil(this.totalRecords() / this.pageSize())));
 
-  private searchDebounceTimer: any;
+  private searchDebounceTimer: ReturnType<typeof setTimeout> | undefined;
 
   constructor() {
     this.load();
     this.centrosCostosService.getCatalogosFiltros().subscribe({
       next: (data) => this.catalogos.set(data || { empresas: [], clientes: [], periodos: [], estados: [], pptoEstados: [] }),
-      error: (err) => console.warn('Error al cargar catálogos:', err)
+      error: (err: unknown) => console.warn('Error al cargar catálogos:', err)
     });
     this.empresasService.getAll().subscribe({
       next: (data) => this.empresas.set(data || []),
-      error: (err) => console.warn('Error al cargar empresas:', err)
+      error: (err: unknown) => console.warn('Error al cargar empresas:', err)
     });
     this.anexosService.getSelect('Cliente').subscribe({
       next: (res) => this.clientes.set(res || []),
-      error: (err) => console.warn('Error al cargar clientes:', err)
+      error: (err: unknown) => console.warn('Error al cargar clientes:', err)
     });
   }
 
@@ -169,7 +179,7 @@ export class CentrosCostosComponent {
         this.currentPage.set(res.page);
         this.loading.set(false);
       },
-      error: (err) => { console.error(err); this.loading.set(false); }
+      error: (err: unknown) => { console.error(err); this.loading.set(false); }
     });
   }
 
@@ -220,12 +230,14 @@ export class CentrosCostosComponent {
   }
 
   openModal() {
+    if (!this.permisos.crear()) return;
     this.editingId.set(null);
     this.formData = this.emptyForm();
     this.showModal.set(true);
   }
 
   editModal(item: CentroCosto) {
+    if (!this.permisos.editar()) return;
     const id = item.id ?? item.id_centro_costo ?? item.CodCentroCto;
     if (id === undefined) return;
     this.editingId.set(id);
@@ -256,8 +268,8 @@ export class CentrosCostosComponent {
       periodo: Number(d.periodo),
       id_empresa: d.id_empresa ? Number(d.id_empresa) : undefined,
       id_anexo: d.id_anexo ? Number(d.id_anexo) : undefined,
-      // @ts-expect-error TODO(strict): CodCliente puede ser undefined; hoy lo valida el backend
-      CodCliente: d.CodCliente,
+      // Sin cliente el backend responde 400 (CodCliente es obligatorio), igual que antes.
+      CodCliente: d.CodCliente ?? '',
       CentroCosto: d.CentroCosto,
       FechaIncio: d.FechaIncio ?? '',
       Estado: d.Estado,
@@ -291,12 +303,12 @@ export class CentrosCostosComponent {
     if (id !== null) {
       this.centrosCostosService.update(id, payload).subscribe({
         next: () => { this.closeModal(); this.load(); },
-        error: (err) => alert('Error al actualizar: ' + (err.error?.message || err.message))
+        error: (err: unknown) => alert('Error al actualizar: ' + mensajeError(err))
       });
     } else {
       this.centrosCostosService.create(payload).subscribe({
         next: () => { this.closeModal(); this.load(); },
-        error: (err) => alert('Error al crear: ' + (err.error?.message || err.message))
+        error: (err: unknown) => alert('Error al crear: ' + mensajeError(err))
       });
     }
   }
@@ -306,6 +318,7 @@ export class CentrosCostosComponent {
   }
 
   duplicar() {
+    if (!this.permisos.crear()) return;
     if (!this.formData.CentroCosto) {
       return;
     }
@@ -342,6 +355,7 @@ export class CentrosCostosComponent {
   }
 
   delete(item: CentroCosto) {
+    if (!this.permisos.eliminar()) return;
     const nombre = item.CentroCosto || item.CodCentroCto;
     const targetId = item.id ?? item.id_centro_costo ?? item.CodCentroCto;
     if (targetId === undefined) return;
@@ -349,18 +363,20 @@ export class CentrosCostosComponent {
     if (confirm(`¿Eliminar el Centro de Costo "${nombre}"? Esta acción no se puede deshacer.`)) {
       this.centrosCostosService.delete(targetId).subscribe({
         next: () => this.load(),
-        error: (err) => alert('Error al eliminar: ' + (err.error?.message || err.message))
+        error: (err: unknown) => alert('Error al eliminar: ' + mensajeError(err))
       });
     }
   }
 
   goToPresupuestos(item: CentroCosto) {
+    if (!this.puedeCrearPresupuesto()) return;
     this.router.navigate(['/presupuestos'], {
       state: { fromCC: item }
     }); 
   }
 
   onVerDatos(item: CentroCosto) {
+    if (!this.puedeVerObra()) return;
     this.router.navigate(['/centros-costos', item.id, 'datos']);
   }
 }

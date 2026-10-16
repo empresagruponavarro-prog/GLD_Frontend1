@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { permisosDePantalla } from '@app/core/auth/permisos-pantalla';
 import { DataTableComponent } from '../../../shared/components/data-table/data-table';
 import { ModalComponent } from '../../../shared/components/modal/modal';
 import { DataTable } from '../../../shared/interfaces';
@@ -19,6 +20,8 @@ import { Empresa } from '../../administration/empresas/interfaces';
 export class AlmacenesComponent {
   private readonly service = inject(AlmacenService);
   private readonly empresasService = inject(EmpresasService);
+  /** Botones de escritura según la matriz: crear, editar y desactivar (DELETE → eliminar). */
+  protected readonly permisos = permisosDePantalla('almacen.almacenes');
 
   protected readonly columns: DataTable[] = [
     { label: 'ID', width: '60px' },
@@ -86,6 +89,7 @@ export class AlmacenesComponent {
   }
 
   protected openCreate(): void {
+    if (!this.permisos.crear()) return;
     this.editingId.set(null);
     this.form.reset({ codigo: '', nombre: '', estado: true, id_empresa: null });
     this.formError.set('');
@@ -93,6 +97,7 @@ export class AlmacenesComponent {
   }
 
   protected openEdit(item: Almacen): void {
+    if (!this.permisos.editar()) return;
     this.editingId.set(item.id);
     this.form.reset({ codigo: item.codigo, nombre: item.nombre, estado: item.estado, id_empresa: item.id_empresa });
     this.formError.set('');
@@ -120,7 +125,7 @@ export class AlmacenesComponent {
         this.closeModal();
         this.load();
       },
-      error: (err) => {
+      error: (err: unknown) => {
         this.isSaving.set(false);
         this.formError.set(errorMessage(err));
       },
@@ -128,10 +133,11 @@ export class AlmacenesComponent {
   }
 
   protected deactivate(item: Almacen): void {
+    if (!this.permisos.eliminar()) return;
     if (!confirm(`¿Desactivar el almacén "${item.nombre}"? No debe tener stock.`)) return;
     this.service.deleteAlmacen(item.id).subscribe({
       next: () => this.load(),
-      error: (err) => alert(errorMessage(err)),
+      error: (err: unknown) => alert(errorMessage(err)),
     });
   }
 }

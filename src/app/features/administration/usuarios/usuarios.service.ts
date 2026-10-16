@@ -1,7 +1,7 @@
 import { Service, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { Usuario, UsuarioCreateDto, UsuarioUpdateDto } from './interfaces';
+import { Usuario, UsuarioCreateDto, UsuarioEstadoDto, UsuarioUpdateDto } from './interfaces';
 import { environment } from '@env';
 
 export * from './interfaces';
@@ -26,6 +26,12 @@ export class UsuariosService {
 
   update(id: string, data: UsuarioUpdateDto): Observable<Usuario> {
     return this.http.patch<Usuario>(`${this.apiUrl}/${encodeURIComponent(id)}`, data);
+  }
+
+  /** Desactiva o reactiva el usuario. 409 si es uno mismo o si dejaría el sistema sin Administradores activos. */
+  cambiarEstado(id: string, activo: boolean): Observable<Usuario> {
+    const body: UsuarioEstadoDto = { activo };
+    return this.http.patch<Usuario>(`${this.apiUrl}/${encodeURIComponent(id)}/estado`, body);
   }
 
   delete(id: string): Observable<void> {

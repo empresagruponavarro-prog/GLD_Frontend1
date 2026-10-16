@@ -11,7 +11,11 @@ import {
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { AuthService } from '@app/core/auth/auth.service';
-import { returnUrlSeguro } from '@app/core/auth/auth.models';
+import { MSG_USUARIO_INACTIVO, returnUrlSeguro } from '@app/core/auth/auth.models';
+import { esUsuarioInactivo } from '@app/core/auth/auth.interceptor';
+import { moduloDeUrl } from '@app/core/auth/permiso.guard';
+import { PermisosService } from '@app/core/auth/permisos.service';
+import { mensajeDelBackend } from '@shared/utils/errores-http';
 
 const MSG_CREDENCIALES = 'Usuario o contraseña incorrectos';
 const MSG_DEMASIADOS = 'Demasiados intentos. Espera un minuto e inténtalo de nuevo.';
@@ -26,7 +30,8 @@ interface LoginForm {
 /** Mensaje para el usuario según la respuesta del backend a `POST /auth/login`. */
 export function mensajeErrorLogin(error: unknown): string {
   if (!(error instanceof HttpErrorResponse)) return MSG_GENERICO;
-  const delBackend = typeof error.error?.message === 'string' ? (error.error.message as string) : null;
+  if (esUsuarioInactivo(error)) return MSG_USUARIO_INACTIVO;
+  const delBackend = mensajeDelBackend(error);
   switch (error.status) {
     case 0:
       return MSG_RED;
@@ -49,6 +54,7 @@ export class LoginComponent {
   readonly #auth = inject(AuthService);
   readonly #router = inject(Router);
   readonly #route = inject(ActivatedRoute);
+  readonly #permisos = inject(PermisosService);
 
   protected readonly anio = new Date().getFullYear();
 
@@ -63,12 +69,29 @@ export class LoginComponent {
   protected readonly errorMessage = signal<string | null>(null);
   protected readonly isSesionExpirada =
     this.#route.snapshot.queryParamMap.get('motivo') === 'expirada';
+  /** El interceptor cerró la sesión porque el usuario fue desactivado (`?motivo=inactivo`). */
+  protected readonly isUsuarioInactivo =
+    this.#route.snapshot.queryParamMap.get('motivo') === 'inactivo';
+  protected readonly mensajeInactivo = MSG_USUARIO_INACTIVO;
 
   private readonly usuarioInput = viewChild.required<ElementRef<HTMLInputElement>>('usuarioInput');
   private readonly claveInput = viewChild.required<ElementRef<HTMLInputElement>>('claveInput');
 
   constructor() {
     afterNextRender(() => this.usuarioInput().nativeElement.focus());
+  }
+
+  /**
+   * Tras el login espera los permisos y va al `returnUrl` validado; si esa pantalla exige un
+   * módulo que el usuario no puede ver, va al inicio (sin pasar por la redirección del guard).
+   */
+  async #irAlDestino(): Promise<void> {
+    let destino = returnUrlSeguro(this.#route.snapshot.queryParamMap.get('returnUrl'));
+    await this.#permisos.listo();
+    this.isLoading.set(false);
+    const modulo = moduloDeUrl(this.#router.config, destino);
+    if (modulo && !this.#permisos.puedeVer(modulo)) destino = '/';
+    void this.#router.navigateByUrl(destino, { replaceUrl: true });
   }
 
   protected toggleClave(): void {
@@ -96,9 +119,7 @@ export class LoginComponent {
     this.isLoading.set(true);
     this.#auth.login(usuario, this.form.controls.clave.value).subscribe({
       next: () => {
-        this.isLoading.set(false);
-        const destino = returnUrlSeguro(this.#route.snapshot.queryParamMap.get('returnUrl'));
-        void this.#router.navigateByUrl(destino, { replaceUrl: true });
+        void this.#irAlDestino();
       },
       error: (error: unknown) => {
         this.isLoading.set(false);

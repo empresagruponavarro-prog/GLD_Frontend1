@@ -1,5 +1,7 @@
-import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
+import { PermisosService } from '@app/core/auth/permisos.service';
+import { valorDeEvento } from '@shared/utils/eventos';
 import { AlmacenService } from '../almacen.service';
 import { CLASE_LABEL, Consulta, StockAlmacen } from '../almacen.models';
 import { errorMessage, fmtMoney, fmtNum } from '../almacen.utils';
@@ -14,6 +16,15 @@ import { errorMessage, fmtMoney, fmtNum } from '../almacen.utils';
 })
 export class ConsultaAlmacenComponent {
   private readonly service = inject(AlmacenService);
+  readonly #permisos = inject(PermisosService);
+
+  /**
+   * "Marcar operativo" llama a `PATCH /almacen/stock/:idProducto/:idAlmacen/operativo` (módulo
+   * `almacen.stock`, también admitido desde `almacen.consulta`): exige editar en cualquiera de los dos.
+   */
+  protected readonly puedeMarcarOperativo = computed(
+    () => this.#permisos.puede('almacen.consulta', 'editar') || this.#permisos.puede('almacen.stock', 'editar'),
+  );
 
   protected readonly claseLabel = CLASE_LABEL;
   protected readonly fmtNum = fmtNum;
@@ -26,7 +37,7 @@ export class ConsultaAlmacenComponent {
   protected readonly notice = signal('');
 
   protected onInput(event: Event): void {
-    this.term.set((event.target as HTMLInputElement).value);
+    this.term.set(valorDeEvento(event));
   }
 
   protected search(): void {
@@ -40,7 +51,7 @@ export class ConsultaAlmacenComponent {
         this.result.set(res);
         this.isLoading.set(false);
       },
-      error: (err) => {
+      error: (err: unknown) => {
         this.result.set(null);
         this.errorText.set(errorMessage(err));
         this.isLoading.set(false);
@@ -54,6 +65,7 @@ export class ConsultaAlmacenComponent {
   }
 
   protected marcarOperativo(row: StockAlmacen): void {
+    if (!this.puedeMarcarOperativo()) return;
     const ficha = this.result()?.producto;
     if (!ficha) return;
     const cantidad = prompt(`¿Cuántas unidades vuelven a operativo? (máx. ${row.no_operativo})`, row.no_operativo);
@@ -63,7 +75,7 @@ export class ConsultaAlmacenComponent {
         this.notice.set('Unidades marcadas como operativas.');
         this.search();
       },
-      error: (err) => alert(errorMessage(err)),
+      error: (err: unknown) => alert(errorMessage(err)),
     });
   }
 }

@@ -1,15 +1,17 @@
 import { Component, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { permisosDePantalla } from '@app/core/auth/permisos-pantalla';
+import { mensajeError } from '@shared/utils/errores-http';
 import { DataTableComponent } from '../../../shared/components/data-table/data-table';
 import { ModalComponent } from '../../../shared/components/modal/modal';
 import { DataTable } from '../../../shared/interfaces';
 import {
   Alternativa,
+  CLASES_INVENTARIO,
   CLASE_INVENTARIO_LABEL,
-  ClaseInventario,
+  ESTADOS_OPERATIVOS,
   ESTADO_OPERATIVO_LABEL,
-  EstadoOperativo,
   FamiliaOption,
   Producto,
   ProductoQuery,
@@ -28,12 +30,14 @@ import { ProductosService } from './productos.service';
 })
 export class ProductosComponent {
   private readonly service = inject(ProductosService);
+  /** Nuevo → crear; Editar → editar; Desactivar (DELETE) → eliminar. */
+  protected readonly permisos = permisosDePantalla('maestros.productos');
 
   readonly tiposProducto: TipoProducto[] = ['PRODUCTO', 'SERVICIO'];
   readonly claseLabel = CLASE_INVENTARIO_LABEL;
   readonly estadoOperativoLabel = ESTADO_OPERATIVO_LABEL;
-  readonly clases = Object.keys(CLASE_INVENTARIO_LABEL) as ClaseInventario[];
-  readonly estadosOperativos = Object.keys(ESTADO_OPERATIVO_LABEL) as EstadoOperativo[];
+  readonly clases = CLASES_INVENTARIO;
+  readonly estadosOperativos = ESTADOS_OPERATIVOS;
   readonly prioridades = [1, 2, 3] as const;
 
   columns: DataTable[] = [
@@ -101,7 +105,7 @@ export class ProductosComponent {
         this.currentPage.set(res.page ?? 1);
         this.loading.set(false);
       },
-      error: (err) => {
+      error: (err: unknown) => {
         console.error('Error al cargar productos:', err);
         this.productos.set([]);
         this.totalRecords.set(0);
@@ -169,6 +173,7 @@ export class ProductosComponent {
   }
 
   openCreate() {
+    if (!this.permisos.crear()) return;
     this.editingId.set(null);
     this.formData = this.emptyForm();
     this.alternativas.set([null, null, null]);
@@ -177,6 +182,7 @@ export class ProductosComponent {
   }
 
   openEdit(item: Producto) {
+    if (!this.permisos.editar()) return;
     this.editingId.set(item.id);
     this.formData = { ...this.emptyForm(), ...item };
     this.saving.set(false);
@@ -311,29 +317,30 @@ export class ProductosComponent {
         }
         this.service.replaceAlternativas(productoId, pares).subscribe({
           next: () => this.finishSave(),
-          error: (err) => {
+          error: (err: unknown) => {
             this.finishSave();
-            alert('El producto se guardó, pero no las alternativas: ' + (err.error?.message || err.message));
+            alert('El producto se guardó, pero no las alternativas: ' + mensajeError(err));
           },
         });
       },
-      error: (err) => {
+      error: (err: unknown) => {
         console.error('Error al guardar producto:', err);
         this.saving.set(false);
         alert(
           (id !== null ? 'Error al actualizar: ' : 'Error al crear: ') +
-            (err.error?.message || err.message),
+            mensajeError(err),
         );
       },
     });
   }
 
   deleteProducto(item: Producto) {
+    if (!this.permisos.eliminar()) return;
     const label = item.descripcion || item.codigo || `ID ${item.id}`;
     if (!confirm(`¿Desactivar el producto "${label}"? El registro quedará inactivo.`)) return;
     this.service.delete(item.id).subscribe({
       next: () => this.load(),
-      error: (err) => alert('Error al desactivar: ' + (err.error?.message || err.message)),
+      error: (err: unknown) => alert('Error al desactivar: ' + mensajeError(err)),
     });
   }
 

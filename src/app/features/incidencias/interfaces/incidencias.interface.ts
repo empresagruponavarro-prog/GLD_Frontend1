@@ -1,3 +1,14 @@
+/** Filtros del listado y de la exportación (`GET /incidencias`, `GET /incidencias/export`). */
+export interface IncidenciaFiltros {
+  fechaInicio: string;
+  fechaFin: string;
+  promotor: string;
+  estado: string;
+  solicitante: string;
+  incidencia: string;
+  representante: string;
+}
+
 export interface Incidencia {
   id?: number;
   promotor?: string;

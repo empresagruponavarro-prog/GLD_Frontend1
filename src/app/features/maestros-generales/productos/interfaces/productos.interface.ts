@@ -1,6 +1,8 @@
 export type TipoProducto = 'PRODUCTO' | 'SERVICIO';
-export type ClaseInventario = 'CONSUMIBLE' | 'EQUIPO_RETORNABLE' | 'MERCADERIA_CLIENTE';
-export type EstadoOperativo = 'NORMAL' | 'NO_OPERATIVO' | 'DESCONTINUADO';
+export const CLASES_INVENTARIO = ['CONSUMIBLE', 'EQUIPO_RETORNABLE', 'MERCADERIA_CLIENTE'] as const;
+export type ClaseInventario = (typeof CLASES_INVENTARIO)[number];
+export const ESTADOS_OPERATIVOS = ['NORMAL', 'NO_OPERATIVO', 'DESCONTINUADO'] as const;
+export type EstadoOperativo = (typeof ESTADOS_OPERATIVOS)[number];
 
 export const CLASE_INVENTARIO_LABEL: Record<ClaseInventario, string> = {
   CONSUMIBLE: 'Consumible',

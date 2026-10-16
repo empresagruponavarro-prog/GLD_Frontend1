@@ -7,6 +7,7 @@ import { Observable, map } from 'rxjs';
 import {
   LoginResponse,
   LogoutOptions,
+  MotivoLogout,
   SESION_STORAGE_KEY,
   Sesion,
   UsuarioSesion,
@@ -147,13 +148,15 @@ export class AuthService {
     this.#temporizador = null;
   }
 
-  #irALogin(motivo: 'expirada' | 'manual'): void {
+  #irALogin(motivo: MotivoLogout): void {
     const actual = this.#router.url;
     if (actual.startsWith('/login')) return;
     const queryParams: Record<string, string> = {};
     if (motivo === 'expirada') {
       queryParams['motivo'] = 'expirada';
       if (actual && actual !== '/') queryParams['returnUrl'] = actual;
+    } else if (motivo === 'inactivo') {
+      queryParams['motivo'] = 'inactivo';
     }
     void this.#router.navigate(['/login'], { queryParams });
   }

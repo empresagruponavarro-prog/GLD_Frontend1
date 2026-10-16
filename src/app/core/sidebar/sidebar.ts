@@ -1,36 +1,37 @@
-import { Component, inject } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { RouterModule } from '@angular/router';
-import { AuthService } from '../auth/auth.service';
+import { PermisosService } from '../auth/permisos.service';
+import { EnlaceMenu, IdSubmenu, MENU_LATERAL, SeccionMenu, filtrarMenu } from './sidebar.menu';
 
 @Component({
   selector: 'app-sidebar',
-  standalone: true,
-  imports: [CommonModule, RouterModule],
-  templateUrl: './sidebar.html'
+  imports: [RouterModule],
+  templateUrl: './sidebar.html',
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class SidebarComponent {
-  /** Las entradas de administración (Usuarios, Roles, Empresas) solo se muestran al rol Administrador. */
-  readonly esAdministrador = inject(AuthService).esAdministrador;
+  readonly #permisos = inject(PermisosService);
 
-  isMaestrosOpen = true;
-  isDocumentosOpen = true;
-  isAlmacenOpen = true;
-  isTesoreriaOpen = true;
+  /**
+   * Menú visible: cada enlace exige el permiso `ver` de su módulo (el Administrador ve todo);
+   * los submenús y secciones sin enlaces visibles se ocultan.
+   */
+  protected readonly secciones = computed<SeccionMenu[]>(() =>
+    filtrarMenu(MENU_LATERAL, (e: EnlaceMenu) => this.#permisos.puedeVer(e.modulo)),
+  );
 
-  toggleMaestros() {
-    this.isMaestrosOpen = !this.isMaestrosOpen;
+  readonly #abiertos = signal<Readonly<Record<IdSubmenu, boolean>>>({
+    documentos: true,
+    tesoreria: true,
+    almacen: true,
+    maestros: true,
+  });
+
+  protected abierto(id: IdSubmenu): boolean {
+    return this.#abiertos()[id];
   }
 
-  toggleAlmacen() {
-    this.isAlmacenOpen = !this.isAlmacenOpen;
-  }
-
-  toggleTesoreria() {
-    this.isTesoreriaOpen = !this.isTesoreriaOpen;
-  }
-
-  toggleDocumentos() {
-    this.isDocumentosOpen = !this.isDocumentosOpen;
+  protected alternar(id: IdSubmenu): void {
+    this.#abiertos.update((a) => ({ ...a, [id]: !a[id] }));
   }
 }

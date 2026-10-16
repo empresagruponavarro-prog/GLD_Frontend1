@@ -1,6 +1,8 @@
 import { Component, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { permisosDePantalla } from '@app/core/auth/permisos-pantalla';
+import { mensajeError } from '@shared/utils/errores-http';
 import { EmpresasService } from './empresas.service';
 import { Empresa } from './interfaces';
 import { DataTableComponent } from '../../../shared/components/data-table/data-table';
@@ -14,6 +16,8 @@ import { DataTable } from '../../../shared/interfaces';
 })
 export class EmpresasComponent {
   private empresasService = inject(EmpresasService);
+  /** Botones de escritura según la matriz (admin.empresas). */
+  protected readonly permisos = permisosDePantalla('admin.empresas');
 
   columns: DataTable[] = [
     { label: 'Código' },
@@ -54,7 +58,7 @@ export class EmpresasComponent {
         this.empresas.set(data);
         this.loading.set(false);
       },
-      error: (err) => {
+      error: (err: unknown) => {
         console.error('Error al cargar empresas:', err);
         this.loading.set(false);
       },
@@ -62,12 +66,14 @@ export class EmpresasComponent {
   }
 
   openModal() {
+    if (!this.permisos.crear()) return;
     this.editingId.set(null);
     this.formData = this.emptyForm();
     this.showModal.set(true);
   }
 
   editModal(item: Empresa) {
+    if (!this.permisos.editar()) return;
     const id = item.id ?? item.id_empresa ?? item.CodEmpresa;
     this.editingId.set(id ?? null);
     this.formData = {
@@ -98,24 +104,25 @@ export class EmpresasComponent {
     if (id !== null) {
       this.empresasService.update(id, this.formData).subscribe({
         next: () => { this.closeModal(); this.loadEmpresas(); },
-        error: (err) => alert('Error al actualizar: ' + (err.error?.message || err.message)),
+        error: (err: unknown) => alert('Error al actualizar: ' + mensajeError(err)),
       });
     } else {
       this.empresasService.create(this.formData).subscribe({
         next: () => { this.closeModal(); this.loadEmpresas(); },
-        error: (err) => alert('Error al crear: ' + (err.error?.message || err.message)),
+        error: (err: unknown) => alert('Error al crear: ' + mensajeError(err)),
       });
     }
   }
 
   deleteEmpresa(item: Empresa) {
+    if (!this.permisos.eliminar()) return;
     const targetId = item.id ?? item.id_empresa;
     if (!targetId) return;
     const label = item.RazonSocial || item.razon_social || item.CodEmpresa || `ID ${targetId}`;
     if (confirm(`¿Eliminar la empresa "${label}"? Esta acción no se puede deshacer.`)) {
       this.empresasService.delete(targetId).subscribe({
         next: () => this.loadEmpresas(),
-        error: (err) => alert('Error al eliminar: ' + (err.error?.message || err.message)),
+        error: (err: unknown) => alert('Error al eliminar: ' + mensajeError(err)),
       });
     }
   }

@@ -51,6 +51,12 @@ export interface CreateCentroCostoDto {
 
 export type UpdateCentroCostoDto = Partial<CreateCentroCostoDto>;
 
+/**
+ * Respuesta cruda de `GET /centros-costos`: hoy paginada; se admite también la lista sin paginar
+ * (versiones anteriores de la API). La normaliza `CentrosCostosService.getAll`.
+ */
+export type RespuestaCentrosCostos = CentroCostoItem[] | Partial<PaginatedCentrosCostos> | null;
+
 export interface PaginatedCentrosCostos {
   data: CentroCostoItem[];
   total: number;
@@ -96,8 +102,9 @@ export interface MetricasPresupuestosCC {
   totalPortafolio: number;
 }
 
+/** `GET /centros-costos/:id/resumen-financiero` (`CentroCostoResumenResponseDto`). */
 export interface ResumenFinanciero {
-  codCentroCto: string;
+  id: number;
   presupuestoBase: number;
   presupuestoComercial: number;
   gastosAcumulados: number;
@@ -107,6 +114,27 @@ export interface ResumenFinanciero {
   gastosFacturas?: number;
   gastosCajaChica?: number;
   pagosPlanillas?: number;
+}
+
+/** Valor `Decimal` de Prisma tal como llega en el JSON. */
+export type DecimalApi = string | number | null;
+
+/** Presupuesto asignado a un centro de costos (`GET /centros-costos/:id/presupuestos`, filas de `ppto_Principal`). */
+export interface PresupuestoDeCentroCosto {
+  id: number;
+  IdPresupuesto: string | null;
+  id_empresa: number | null;
+  periodo: number | null;
+  Version: string | null;
+  TipoPpto: string | null;
+  Proyecto: string | null;
+  CodCentroCto: string | null;
+  id_centro_costo: number | null;
+  CostoDirecto: DecimalApi;
+  GastosGenerales: DecimalApi;
+  Viaticos: DecimalApi;
+  Total: DecimalApi;
+  Estado: string | null;
 }
 
 export interface CentroCostoSelect {

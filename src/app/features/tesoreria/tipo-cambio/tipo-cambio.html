@@ -15,6 +15,8 @@
     </p>
   }
 
+  <!-- Guardar y Corregir hacen POST /tesoreria/tipo-cambio: exigen crear. -->
+  @if (permisos.crear()) {
   <form [formGroup]="form" (ngSubmit)="guardar()" class="tc-form" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 0.25rem 1rem; align-items: end; margin-bottom: 1rem">
     <div class="form-group"><label for="tc-fecha">Fecha</label><input id="tc-fecha" type="date" class="form-control" formControlName="fecha" /></div>
     <div class="form-group"><label for="tc-moneda">Moneda</label><input id="tc-moneda" class="form-control" formControlName="moneda_id" maxlength="10" /></div>
@@ -22,6 +24,7 @@
     <div class="form-group"><label for="tc-venta">Venta</label><input id="tc-venta" class="form-control" inputmode="decimal" formControlName="venta" placeholder="3.7800" /></div>
     <div class="form-group"><button class="btn btn-primary" type="submit" [disabled]="isSaving()"><i class="fa-solid fa-floppy-disk"></i> {{ isSaving() ? 'Guardando...' : 'Guardar' }}</button></div>
   </form>
+  }
   @if (error()) {
     <p class="badge badge-danger" role="alert">{{ error() }}</p>
   }
@@ -41,7 +44,11 @@
             <td>{{ t.moneda_id }}</td>
             <td align="right">{{ t.compra }}</td>
             <td align="right">{{ t.venta }}</td>
-            <td align="center"><button class="table-action-btn" type="button" title="Corregir" (click)="editar(t)"><i class="fa-solid fa-pen-to-square"></i></button></td>
+            <td align="center">
+              @if (permisos.crear()) {
+                <button class="table-action-btn" type="button" title="Corregir" (click)="editar(t)"><i class="fa-solid fa-pen-to-square"></i></button>
+              }
+            </td>
           </tr>
         } @empty {
           <tr><td colspan="5" align="center">{{ isLoading() ? 'Cargando...' : 'Aún no hay tipos de cambio registrados.' }}</td></tr>

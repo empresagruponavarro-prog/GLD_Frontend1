@@ -1,5 +1,7 @@
 import { ChangeDetectionStrategy, Component, DestroyRef, inject, signal } from '@angular/core';
 import { FormArray, FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { permisosDePantalla } from '@app/core/auth/permisos-pantalla';
+import { valorDeEvento } from '@shared/utils/eventos';
 import { DataTableComponent } from '../../../shared/components/data-table/data-table';
 import { ModalComponent } from '../../../shared/components/modal/modal';
 import { SearchSelectComponent } from '../../../shared/components/search-select/search-select';
@@ -31,6 +33,9 @@ type LineaGroup = ReturnType<typeof lineaGroup>;
 export class RecepcionesComponent {
   private readonly service = inject(AlmacenService);
   private readonly destroyRef = inject(DestroyRef);
+  /** "Recibir" registra la recepción (`POST /almacen/recepciones`): exige crear. */
+  protected readonly permisos = permisosDePantalla('almacen.recepciones');
+  protected readonly valorDe = valorDeEvento;
 
   protected readonly fmtNum = fmtNum;
   protected readonly fmtMoney = fmtMoney;
@@ -100,6 +105,7 @@ export class RecepcionesComponent {
   }
 
   protected recibir(item: RecepcionPendiente): void {
+    if (!this.permisos.crear()) return;
     this.formError.set('');
     this.oc.set(null);
     this.isModalOpen.set(true);
@@ -110,7 +116,7 @@ export class RecepcionesComponent {
         this.lineas.clear();
         for (const l of oc.lineas) this.lineas.push(lineaGroup(l.id_detalle, l.saldo));
       },
-      error: (err) => this.formError.set(errorMessage(err)),
+      error: (err: unknown) => this.formError.set(errorMessage(err)),
     });
   }
 
@@ -123,15 +129,16 @@ export class RecepcionesComponent {
     const oc = this.oc();
     if (!oc) return;
     const error = this.validate(oc);
-    if (error) {
-      this.formError.set(error);
+    const v = this.form.getRawValue();
+    const idAlmacen = v.id_almacen;
+    if (error || idAlmacen === null) {
+      this.formError.set(error ?? 'Seleccione el almacén que recibe.');
       return;
     }
-    const v = this.form.getRawValue();
     const text = (s: string) => s.trim() || undefined;
     const payload: RecepcionPayload = {
       id_orden_compra: oc.id,
-      id_almacen: v.id_almacen as number,
+      id_almacen: idAlmacen,
       fecha: v.fecha,
       id_recibido_por: v.id_recibido_por ?? undefined,
       tipo_cambio: oc.es_soles ? undefined : text(v.tipo_cambio),
@@ -149,7 +156,7 @@ export class RecepcionesComponent {
         this.message.set(`Recepción registrada: ${doc.numero} (${oc.numero_oc ?? oc.id_oc ?? 'OC ' + oc.id}).`);
         this.load();
       },
-      error: (err) => {
+      error: (err: unknown) => {
         this.isSaving.set(false);
         this.formError.set(errorMessage(err));
       },

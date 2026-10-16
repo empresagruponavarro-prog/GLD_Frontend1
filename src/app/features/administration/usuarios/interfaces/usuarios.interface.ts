@@ -4,6 +4,13 @@ export interface Usuario {
   Nombres: string;
   Usuario: string;
   Rol?: string;
+  /** `false` = desactivado: no puede iniciar sesión y su sesión abierta se corta en la siguiente petición. */
+  activo: boolean;
+}
+
+/** `PATCH /administration/usuarios/:id/estado`. */
+export interface UsuarioEstadoDto {
+  activo: boolean;
 }
 
 /** `POST /administration/usuarios`: la clave (8-128) y el rol del catálogo son obligatorios; el `IdUsuario` lo asigna el backend. */

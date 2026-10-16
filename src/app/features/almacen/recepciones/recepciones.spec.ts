@@ -2,6 +2,10 @@ import { TestBed } from '@angular/core/testing';
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { environment } from '@env';
+import { MemoryStorage, cargarPermisos, guardarSesion, misPermisos, provideSesionStorage } from '@app/core/auth/auth.testing';
+import { Permisos } from '@app/core/auth/permisos.models';
+import { botonesVisibles, montarPantalla } from '@app/core/auth/pantalla.testing';
+import { RecepcionPendiente } from '../almacen.models';
 import { RecepcionesComponent } from './recepciones';
 
 /** Superficie protegida del componente que ejercita la prueba. */
@@ -37,10 +41,13 @@ const oc = (esSoles: boolean) => ({
   no_recibibles: [{ id_detalle: 102, descripcion: 'Flete', motivo: 'Servicio: no ingresa a almacén' }],
 });
 
-function setup(esSoles = true) {
-  TestBed.configureTestingModule({ providers: [provideHttpClient(), provideHttpClientTesting()] });
+async function setup(esSoles = true) {
+  const storage = new MemoryStorage();
+  guardarSesion(storage, 'Almacenero');
+  TestBed.configureTestingModule({ providers: [provideHttpClient(), provideHttpClientTesting(), provideSesionStorage(storage)] });
   const http = TestBed.inject(HttpTestingController);
   const fixture = TestBed.createComponent(RecepcionesComponent);
+  await cargarPermisos(misPermisos('Almacenero', { 'almacen.recepciones': { crear: true } }));
   // Catálogos y listado inicial.
   http.match((r) => r.url.endsWith('/select')).forEach((r) => r.flush([]));
   http.expectOne((r) => r.url === `${api}/recepciones/pendientes`).flush([]);
@@ -53,28 +60,28 @@ function setup(esSoles = true) {
 describe('RecepcionesComponent', () => {
   afterEach(() => TestBed.inject(HttpTestingController).verify());
 
-  it('precarga la cantidad a recibir con el saldo de cada línea', () => {
-    const { cmp } = setup();
+  it('precarga la cantidad a recibir con el saldo de cada línea', async () => {
+    const { cmp } = await setup();
     expect(cmp.form.controls.lineas.at(0).getRawValue().cantidad).toBe('6');
     expect(cmp.form.controls.lineas.at(1).getRawValue().cantidad).toBe('5');
   });
 
-  it('exige el almacén que recibe', () => {
-    const { cmp } = setup();
+  it('exige el almacén que recibe', async () => {
+    const { cmp } = await setup();
     cmp.save();
     expect(cmp.formError()).toBe('Seleccione el almacén que recibe.');
   });
 
-  it('no permite recibir más que el saldo', () => {
-    const { cmp } = setup();
+  it('no permite recibir más que el saldo', async () => {
+    const { cmp } = await setup();
     cmp.form.patchValue({ id_almacen: 1 });
     cmp.form.controls.lineas.at(0).patchValue({ cantidad: '7' });
     cmp.save();
     expect(cmp.formError()).toContain('no puede recibir más del saldo (6)');
   });
 
-  it('exige recibir al menos un producto', () => {
-    const { cmp } = setup();
+  it('exige recibir al menos un producto', async () => {
+    const { cmp } = await setup();
     cmp.form.patchValue({ id_almacen: 1 });
     cmp.form.controls.lineas.at(0).patchValue({ cantidad: '0' });
     cmp.form.controls.lineas.at(1).patchValue({ cantidad: '' });
@@ -82,15 +89,15 @@ describe('RecepcionesComponent', () => {
     expect(cmp.formError()).toBe('Indique la cantidad recibida de al menos un producto.');
   });
 
-  it('una OC en dólares exige tipo de cambio', () => {
-    const { cmp } = setup(false);
+  it('una OC en dólares exige tipo de cambio', async () => {
+    const { cmp } = await setup(false);
     cmp.form.patchValue({ id_almacen: 1 });
     cmp.save();
     expect(cmp.formError()).toBe('La OC no está en soles: indique un tipo de cambio mayor a 0.');
   });
 
-  it('envía solo las líneas con cantidad y el tipo de cambio cuando corresponde', () => {
-    const { http, cmp } = setup(false);
+  it('envía solo las líneas con cantidad y el tipo de cambio cuando corresponde', async () => {
+    const { http, cmp } = await setup(false);
     cmp.form.patchValue({ id_almacen: 1, fecha: '2026-10-11', tipo_cambio: ' 3.75 ', id_recibido_por: 8 });
     cmp.form.controls.lineas.at(1).patchValue({ cantidad: '0' });
     cmp.save();
@@ -110,11 +117,52 @@ describe('RecepcionesComponent', () => {
     http.expectOne((r) => r.url === `${api}/recepciones/pendientes`).flush([]);
   });
 
-  it('muestra el error del servidor si la recepción falla', () => {
-    const { http, cmp } = setup();
+  it('muestra el error del servidor si la recepción falla', async () => {
+    const { http, cmp } = await setup();
     cmp.form.patchValue({ id_almacen: 1 });
     cmp.save();
     http.expectOne(`${api}/recepciones`).flush({ message: 'supera el saldo por recibir' }, { status: 400, statusText: 'Bad Request' });
     expect(cmp.formError()).toBe('supera el saldo por recibir');
+  });
+});
+
+describe('RecepcionesComponent: Recibir según permisos (almacen.recepciones)', () => {
+  afterEach(() => TestBed.inject(HttpTestingController).verify());
+
+  const PENDIENTE: RecepcionPendiente = {
+    id: 12,
+    id_oc: 'OC-12',
+    numero_oc: '0012-2026',
+    fecha_emision: null,
+    proveedor: 'ACME',
+    id_centro_costo: null,
+    centro_costo: null,
+    numero_requerimiento: null,
+    moneda_simbolo: 'S/',
+    total: '300',
+    lineas_pendientes: 2,
+  };
+
+  async function montar(acciones: Partial<Permisos>) {
+    const p = await montarPantalla(
+      RecepcionesComponent,
+      misPermisos('Almacenero', { 'almacen.recepciones': acciones }),
+      (req) => (req.url.endsWith('/recepciones/pendientes') ? [PENDIENTE] : []),
+    );
+    expect(p.el.textContent).toContain('ACME');
+    return p;
+  }
+
+  it('con solo ver no aparece Recibir y recibir() no abre el modal', async () => {
+    const { el, cmp, http } = await montar({});
+    expect(botonesVisibles(el, { recibir: 'Recibir' })).toEqual({ recibir: false });
+    const internos: Internals = cmp as unknown as Internals;
+    internos.recibir({ id: 12 });
+    http.expectNone(`${api}/recepciones/orden-compra/12`);
+  });
+
+  it('con crear aparece Recibir', async () => {
+    const { el } = await montar({ crear: true });
+    expect(botonesVisibles(el, { recibir: 'Recibir' })).toEqual({ recibir: true });
   });
 });

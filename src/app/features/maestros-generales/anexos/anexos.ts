@@ -1,6 +1,8 @@
 import { Component, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { permisosDePantalla } from '@app/core/auth/permisos-pantalla';
+import { mensajeError } from '@shared/utils/errores-http';
 import { DataTableComponent } from '../../../shared/components/data-table/data-table';
 import { ModalComponent } from '../../../shared/components/modal/modal';
 import { DataTable } from '../../../shared/interfaces';
@@ -16,6 +18,8 @@ import { AnexosService } from './anexos.service';
 })
 export class AnexosComponent {
   private readonly service = inject(AnexosService);
+  /** Botones de escritura según la matriz (maestros.anexos). */
+  protected readonly permisos = permisosDePantalla('maestros.anexos');
 
   readonly tiposAnexo: TipoAnexo[] = ['Proveedor', 'Cliente', 'Trabajador'];
 
@@ -78,7 +82,7 @@ export class AnexosComponent {
         this.currentPage.set(res.page ?? 1);
         this.loading.set(false);
       },
-      error: (err) => {
+      error: (err: unknown) => {
         console.error('Error al cargar anexos:', err);
         this.anexos.set([]);
         this.totalRecords.set(0);
@@ -131,6 +135,7 @@ export class AnexosComponent {
   }
 
   openCreate() {
+    if (!this.permisos.crear()) return;
     this.editingId.set(null);
     this.formData = this.emptyForm();
     this.saving.set(false);
@@ -139,6 +144,7 @@ export class AnexosComponent {
   }
 
   openEdit(item: Anexo) {
+    if (!this.permisos.editar()) return;
     this.editingId.set(item.id);
     this.formData = { ...this.emptyForm(), ...item };
     this.saving.set(false);
@@ -201,23 +207,24 @@ export class AnexosComponent {
         this.closeModal();
         this.load();
       },
-      error: (err) => {
+      error: (err: unknown) => {
         console.error('Error al guardar anexo:', err);
         this.saving.set(false);
         alert(
           (id !== null ? 'Error al actualizar: ' : 'Error al crear: ') +
-            (err.error?.message || err.message),
+            mensajeError(err),
         );
       },
     });
   }
 
   deleteAnexo(item: Anexo) {
+    if (!this.permisos.eliminar()) return;
     const label = item.Anexo || item.NombreComercial || `ID ${item.id}`;
     if (!confirm(`¿Eliminar el anexo "${label}"? Esta acción no se puede deshacer.`)) return;
     this.service.delete(item.id).subscribe({
       next: () => this.load(),
-      error: (err) => alert('Error al eliminar: ' + (err.error?.message || err.message)),
+      error: (err: unknown) => alert('Error al eliminar: ' + mensajeError(err)),
     });
   }
 

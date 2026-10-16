@@ -34,6 +34,23 @@ describe('CentrosCostosService', () => {
     req.flush({ data: [], page: 3, pageSize: 50, total: 0, totalPages: 0 });
   });
 
+  it('normaliza la respuesta paginada y la lista sin paginar', () => {
+    let paginada: unknown;
+    service.getAll(1, 20).subscribe((r) => (paginada = r));
+    http.expectOne((r) => r.url === api).flush({ data: [{ id: 1, CentroCosto: 'Obra A' }], total: 41, page: 2 });
+    expect(paginada).toEqual({ data: [{ id: 1, CentroCosto: 'Obra A' }], total: 41, page: 2, pageSize: 20, totalPages: 3 });
+
+    let lista: unknown;
+    service.getAll(2, 1).subscribe((r) => (lista = r));
+    http.expectOne((r) => r.url === api).flush([{ CentroCosto: 'A' }, { CentroCosto: 'B' }, { CentroCosto: 'C' }]);
+    expect(lista).toEqual({ data: [{ CentroCosto: 'B' }], total: 3, page: 2, pageSize: 1, totalPages: 3 });
+
+    let vacia: unknown;
+    service.getAll(1, 20).subscribe((r) => (vacia = r));
+    http.expectOne((r) => r.url === api).flush(null);
+    expect(vacia).toEqual({ data: [], total: 0, page: 1, pageSize: 20, totalPages: 1 });
+  });
+
   it('pide las métricas de presupuestos de todos los centros de costos', () => {
     let resultado: unknown;
     service.getMetricasPresupuestos().subscribe((r) => (resultado = r));

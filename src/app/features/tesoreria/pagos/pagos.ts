@@ -1,6 +1,9 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { RouterLink } from '@angular/router';
+import { permisosDePantalla } from '@app/core/auth/permisos-pantalla';
+import { PermisosService } from '@app/core/auth/permisos.service';
+import { valorDeEvento } from '@shared/utils/eventos';
 import { DataTableComponent } from '../../../shared/components/data-table/data-table';
 import { ModalComponent } from '../../../shared/components/modal/modal';
 import { DataTable } from '../../../shared/interfaces';
@@ -34,6 +37,15 @@ const DECIMAL = /^\d{1,12}(\.\d{1,4})?$/;
 export class PagosComponent {
   private readonly service = inject(TesoreriaService);
   private readonly requerimientos = inject(RequerimientosService);
+  readonly #permisos = inject(PermisosService);
+  /**
+   * Ejecutar / Registrar pago (`POST /tesoreria/pagos`) exige solo `ver` (acceso a la pantalla), así que
+   * siempre se muestra; Anular pago → anular.
+   */
+  protected readonly permisos = permisosDePantalla('tesoreria.pagos');
+  /** El enlace "Programación" lleva a otra pantalla: solo si se tiene acceso a ella. */
+  protected readonly puedeVerProgramacion = computed(() => this.#permisos.puedeVer('tesoreria.programacion'));
+  protected readonly valorDe = valorDeEvento;
 
   protected readonly fmtMoney = fmtMoney;
   protected readonly medios = MEDIOS_PAGO;
@@ -210,7 +222,7 @@ export class PagosComponent {
           this.loadProgramados();
           this.load();
         },
-        error: (err) => {
+        error: (err: unknown) => {
           this.isSaving.set(false);
           this.modalError.set(errorMessage(err));
         },
@@ -218,6 +230,7 @@ export class PagosComponent {
   }
 
   protected anular(p: Pago): void {
+    if (!this.permisos.anular()) return;
     const motivo = prompt(`¿Anular el pago ${p.numero}? El saldo se libera y la programación vuelve a pendiente.\nMotivo:`);
     if (motivo === null) return;
     this.service.anularPago(p.id, motivo.trim() || undefined).subscribe({
@@ -227,7 +240,7 @@ export class PagosComponent {
         this.loadProgramados();
         this.load();
       },
-      error: (err) => this.error.set(errorMessage(err)),
+      error: (err: unknown) => this.error.set(errorMessage(err)),
     });
   }
 }

@@ -1,6 +1,9 @@
 import { ChangeDetectionStrategy, Component, DestroyRef, computed, inject, signal } from '@angular/core';
 import { FormArray, FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
+import { permisosDePantalla } from '@app/core/auth/permisos-pantalla';
+import { PermisosService } from '@app/core/auth/permisos.service';
+import { valorDeEvento } from '@shared/utils/eventos';
 import { DataTableComponent } from '../../../shared/components/data-table/data-table';
 import { ModalComponent } from '../../../shared/components/modal/modal';
 import { DataTable } from '../../../shared/interfaces';
@@ -48,6 +51,12 @@ export class ProgramacionComponent {
   private readonly service = inject(TesoreriaService);
   private readonly requerimientos = inject(RequerimientosService);
   private readonly destroyRef = inject(DestroyRef);
+  readonly #permisos = inject(PermisosService);
+  /** Programar pagos → crear; Reprogramar (PATCH) → editar; Cancelar programación → anular. */
+  protected readonly permisos = permisosDePantalla('tesoreria.programacion');
+  /** El enlace "Ejecutar pagos" lleva a otra pantalla: solo si se tiene acceso a ella. */
+  protected readonly puedeVerPagos = computed(() => this.#permisos.puedeVer('tesoreria.pagos'));
+  protected readonly valorDe = valorDeEvento;
 
   protected readonly fmtMoney = fmtMoney;
   protected readonly programable = programable;
@@ -187,6 +196,7 @@ export class ProgramacionComponent {
 
   // ----------------------------------------------------------------- programar
   protected abrirLote(): void {
+    if (!this.permisos.crear()) return;
     this.modalError.set('');
     const elegidos = this.pendientes().filter((d) => this.seleccion().has(d.id));
     this.items.clear();
@@ -206,6 +216,7 @@ export class ProgramacionComponent {
   }
 
   protected programar(): void {
+    if (!this.permisos.crear()) return;
     const v = this.lote.getRawValue();
     if (!v.fecha) return this.modalError.set('Elija la fecha de pago.');
     if (!esViernes(v.fecha) && !v.urgente) return this.modalError.set('Los pagos se programan los viernes. Elija un viernes o marque el pago como urgente.');
@@ -239,7 +250,7 @@ export class ProgramacionComponent {
         this.load();
         this.loadAgenda();
       },
-      error: (err) => {
+      error: (err: unknown) => {
         this.isSaving.set(false);
         this.modalError.set(errorMessage(err));
       },
@@ -248,6 +259,7 @@ export class ProgramacionComponent {
 
   // -------------------------------------------------------------------- agenda
   protected cancelar(p: Programacion): void {
+    if (!this.permisos.anular()) return;
     if (!confirm(`¿Cancelar el pago programado de ${p.proveedor ?? 'este documento'} por ${fmtMoney(p.monto)}?`)) return;
     this.service.cancelarProgramacion(p.id).subscribe({
       next: () => {
@@ -255,11 +267,12 @@ export class ProgramacionComponent {
         this.load();
         this.loadAgenda();
       },
-      error: (err) => this.error.set(errorMessage(err)),
+      error: (err: unknown) => this.error.set(errorMessage(err)),
     });
   }
 
   protected reprogramar(p: Programacion): void {
+    if (!this.permisos.editar()) return;
     const fecha = prompt('Nueva fecha de pago (AAAA-MM-DD, viernes):', p.fecha_programada);
     if (fecha === null || fecha === p.fecha_programada) return;
     this.service.reprogramar(p.id, { fecha_programada: fecha.trim() }).subscribe({
@@ -267,7 +280,7 @@ export class ProgramacionComponent {
         this.message.set('Pago reprogramado.');
         this.loadAgenda();
       },
-      error: (err) => this.error.set(errorMessage(err)),
+      error: (err: unknown) => this.error.set(errorMessage(err)),
     });
   }
 }

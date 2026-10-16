@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { permisosDePantalla } from '@app/core/auth/permisos-pantalla';
 import { ModalComponent } from '../../../shared/components/modal/modal';
 import { errorMessage } from '../../almacen/almacen.utils';
 import { Cuenta, CuentaPayload, TIPOS_CUENTA, TipoCuenta } from '../tesoreria.models';
@@ -16,6 +17,8 @@ import { TesoreriaService } from '../tesoreria.service';
 })
 export class CuentasComponent {
   private readonly service = inject(TesoreriaService);
+  /** Nueva → crear; Editar y Activar/Desactivar (PATCH) → editar. */
+  protected readonly permisos = permisosDePantalla('tesoreria.cuentas');
 
   protected readonly tipos = TIPOS_CUENTA;
   protected readonly items = signal<Cuenta[]>([]);
@@ -56,6 +59,7 @@ export class CuentasComponent {
   }
 
   protected nueva(): void {
+    if (!this.permisos.crear()) return;
     this.editando.set(null);
     this.modalError.set('');
     this.form.reset({ tipo: 'BANCO', moneda_id: 'PEN', estado: true });
@@ -66,6 +70,7 @@ export class CuentasComponent {
   }
 
   protected editar(c: Cuenta): void {
+    if (!this.permisos.editar()) return;
     this.editando.set(c);
     this.modalError.set('');
     this.form.reset({
@@ -115,7 +120,7 @@ export class CuentasComponent {
         this.message.set(actual ? 'Cuenta actualizada.' : 'Cuenta creada.');
         this.load();
       },
-      error: (err) => {
+      error: (err: unknown) => {
         this.isSaving.set(false);
         this.modalError.set(errorMessage(err));
       },
@@ -123,9 +128,10 @@ export class CuentasComponent {
   }
 
   protected alternarEstado(c: Cuenta): void {
+    if (!this.permisos.editar()) return;
     this.service.updateCuenta(c.id, { nombre: c.nombre, estado: !c.estado }).subscribe({
       next: () => this.load(),
-      error: (err) => alert(errorMessage(err)),
+      error: (err: unknown) => alert(errorMessage(err)),
     });
   }
 }
