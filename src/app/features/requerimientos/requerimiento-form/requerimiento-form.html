@@ -33,6 +33,12 @@
         <span><strong>Observado{{ obs.anexo ? ' por ' + obs.anexo : '' }}:</strong> {{ obs.comentario }}</span>
       </p>
     }
+    @if (altaSinPermiso()) {
+      <p class="req-form__observacion" role="status" data-testid="req-sin-permiso-crear">
+        <i class="fa-solid fa-triangle-exclamation"></i>
+        <span>No tiene permiso para crear requerimientos: el formulario es solo de consulta.</span>
+      </p>
+    }
 
     @if (soloLectura()) {
       <!-- Lectura -->
@@ -173,7 +179,7 @@
           @for (linea of lineas.controls; track linea; let i = $index) {
             <div class="req-lines__row" [formGroupName]="i">
               <div>
-                <app-catalogo-picker [label]="linea.controls.etiqueta.value" (picked)="onItemPicked(linea, $event)" />
+                <app-catalogo-picker [label]="linea.controls.etiqueta.value" [disabled]="!puedeGuardar()" (picked)="onItemPicked(linea, $event)" />
                 @if (linea.controls.tipo.value) {
                   <small class="req-lines__hint">{{ linea.controls.tipo.value === 'PRODUCTO' ? 'Producto: ingresará a almacén' : 'Servicio: no ingresa a almacén' }}</small>
                 }
@@ -184,28 +190,36 @@
               @if (!esCompra()) {
                 <app-search-select [options]="beneficiarios()" placeholder="Igual al beneficiario general" formControlName="id_beneficiario" />
               }
-              <button class="table-action-btn table-action-btn--danger" type="button" title="Quitar línea" (click)="removeLinea(i)" [disabled]="lineas.length === 1">
-                <i class="fa-solid fa-trash"></i>
-              </button>
+              @if (puedeGuardar()) {
+                <button class="table-action-btn table-action-btn--danger" type="button" title="Quitar línea" (click)="removeLinea(i)" [disabled]="lineas.length === 1">
+                  <i class="fa-solid fa-trash"></i>
+                </button>
+              } @else {
+                <span></span>
+              }
             </div>
           }
-          <button class="btn btn-secondary req-lines__add" type="button" (click)="addLinea()">
-            <i class="fa-solid fa-plus"></i> Agregar ítem
-          </button>
+          @if (puedeGuardar()) {
+            <button class="btn btn-secondary req-lines__add" type="button" (click)="addLinea()">
+              <i class="fa-solid fa-plus"></i> Agregar ítem
+            </button>
+          }
         </div>
 
         @if (formError()) {
           <p class="badge badge-danger req-form__error" role="alert">{{ formError() }}</p>
         }
 
-        <div class="req-form__actions">
-          <button class="btn btn-secondary" type="submit" [disabled]="isSaving()">
-            <i class="fa-solid fa-floppy-disk"></i> {{ isSaving() ? 'Guardando...' : 'Guardar borrador' }}
-          </button>
-          <button class="btn btn-primary" type="button" [disabled]="isSaving()" (click)="save(true)">
-            <i class="fa-solid fa-paper-plane"></i> Guardar y enviar a aprobación
-          </button>
-        </div>
+        @if (puedeGuardar()) {
+          <div class="req-form__actions">
+            <button class="btn btn-secondary" type="submit" [disabled]="isSaving()">
+              <i class="fa-solid fa-floppy-disk"></i> {{ isSaving() ? 'Guardando...' : 'Guardar borrador' }}
+            </button>
+            <button class="btn btn-primary" type="button" [disabled]="isSaving()" (click)="save(true)">
+              <i class="fa-solid fa-paper-plane"></i> Guardar y enviar a aprobación
+            </button>
+          </div>
+        }
       </form>
     }
 

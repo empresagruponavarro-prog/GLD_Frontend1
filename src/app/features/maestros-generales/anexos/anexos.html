@@ -6,6 +6,7 @@
     </p>
   </div>
   <div style="display: flex; gap: 0.5rem; align-items: center">
+    <app-exportar-botones [obtener]="exportarAnexos" [cargando]="loading()" />
     @if (permisos.crear()) {
       <button class="btn btn-primary" type="button" (click)="openCreate()">
         <i class="fa-solid fa-plus"></i> Nuevo Anexo

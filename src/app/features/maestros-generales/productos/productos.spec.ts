@@ -36,7 +36,7 @@ function responder(req: HttpRequest<unknown>) {
   return [];
 }
 
-const BOTONES = { nuevo: 'Nuevo Producto', editar: 'Editar', desactivar: 'Desactivar', detalle: 'Ver detalle' };
+const BOTONES = { nuevo: 'Nuevo Bien o Servicio', editar: 'Editar', desactivar: 'Desactivar', detalle: 'Ver detalle' };
 
 async function montar(acciones: Partial<Permisos>) {
   const p = await montarPantalla(ProductosComponent, misPermisos('Logística', { 'maestros.productos': acciones }), responder);

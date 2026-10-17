@@ -70,10 +70,12 @@
           <span>Vista operativa</span>
         </button>
       </div>
-      <button (click)="openNewPresupuestoForm(selectedCC() || undefined)" type="button" class="bg-[#0e9f6e] hover:bg-[#057a55] text-white px-2.5 py-1 rounded text-xs font-semibold flex items-center space-x-1 shadow-2xs transition cursor-pointer">
-        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
-        <span>Presupuesto</span>
-      </button>
+      @if (permisos.crear()) {
+        <button (click)="openNewPresupuestoForm(selectedCC() || undefined)" type="button" class="bg-[#0e9f6e] hover:bg-[#057a55] text-white px-2.5 py-1 rounded text-xs font-semibold flex items-center space-x-1 shadow-2xs transition cursor-pointer">
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+          <span>Presupuesto</span>
+        </button>
+      }
     </div>
   </section>
   <!-- END: GlobalFilterToolbar -->
@@ -158,10 +160,13 @@
           <span class="px-2 py-0.5 rounded text-[10px] font-mono uppercase bg-[#edf2f0] text-slate-700 font-bold border border-[#d1dcd7] shrink-0">OBRA</span>
         </div>
         <div class="flex items-center gap-2.5 shrink-0">
-          <button id="btn-nuevo-presupuesto" (click)="openNewPresupuestoForm(selectedCC() || undefined)" type="button" class="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-[#529b7b] hover:bg-[#3d7e63] text-white font-semibold text-xs shadow-xs transition cursor-pointer">
-            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
-            <span>Nuevo Presupuesto</span>
-          </button>
+          <app-exportar-botones [datos]="datosExportacion()" />
+          @if (permisos.crear()) {
+            <button id="btn-nuevo-presupuesto" (click)="openNewPresupuestoForm(selectedCC() || undefined)" type="button" class="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-[#529b7b] hover:bg-[#3d7e63] text-white font-semibold text-xs shadow-xs transition cursor-pointer">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+              <span>Nuevo Presupuesto</span>
+            </button>
+          }
         </div>
       </div>
 
@@ -220,20 +225,23 @@
                       <span [class]="estadoPptoClass(ppto.Estado)" class="px-2.5 py-0.5 rounded text-[10px] font-bold uppercase border">{{ ppto.Estado || 'PENDIENTE' }}</span>
                     </td>
                     <td class="py-3.5 px-4" (click)="$event.stopPropagation()">
-                      <!-- TODO(strict): $any() en delete(): IdPresupuesto e id son opcionales; un guard cambiaría el comportamiento -->
                       <div class="flex items-center justify-center gap-2">
                         <button (click)="abrirFasesModal(ppto)" type="button" class="p-1.5 rounded-md text-[#529b7b] hover:text-[#2d634d] hover:bg-[#edf2f0] border border-transparent hover:border-[#d1dcd7] transition cursor-pointer" title="Ver Fases y Categorías">
                           <svg class="w-4 h-4 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 5h6v4H4zM14 15h6v4h-6zM7 9v4a2 2 0 002 2h5"/></svg>
                         </button>
-                        <button (click)="cargarPlantillaEnPpto(ppto)" type="button" class="p-1.5 rounded-md text-[#529b7b] hover:text-[#2d634d] hover:bg-[#edf2f0] border border-transparent hover:border-[#d1dcd7] transition cursor-pointer" title="Cargar Plantilla (Fases y Costos)">
-                          <svg class="w-4 h-4 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h11M4 12h11M4 18h7m9-3v6m-3-3h6"/></svg>
-                        </button>
-                        <button (click)="openEditPresupuesto(ppto)" type="button" class="p-1.5 rounded-md text-slate-400 hover:text-slate-700 hover:bg-[#edf2f0] border border-transparent hover:border-[#d1dcd7] transition cursor-pointer" title="Editar Presupuesto">
-                          <svg class="w-4 h-4 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
-                        </button>
-                        <button (click)="delete($any(ppto.IdPresupuesto || ppto.id))" type="button" class="p-1.5 rounded-md text-slate-400 hover:text-rose-600 hover:bg-rose-50 border border-transparent hover:border-rose-200 transition cursor-pointer" title="Eliminar Presupuesto">
-                          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
-                        </button>
+                        @if (permisos.editar()) {
+                          <button (click)="cargarPlantillaEnPpto(ppto)" type="button" class="p-1.5 rounded-md text-[#529b7b] hover:text-[#2d634d] hover:bg-[#edf2f0] border border-transparent hover:border-[#d1dcd7] transition cursor-pointer" title="Cargar Plantilla (Fases y Costos)">
+                            <svg class="w-4 h-4 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h11M4 12h11M4 18h7m9-3v6m-3-3h6"/></svg>
+                          </button>
+                          <button (click)="openEditPresupuesto(ppto)" type="button" class="p-1.5 rounded-md text-slate-400 hover:text-slate-700 hover:bg-[#edf2f0] border border-transparent hover:border-[#d1dcd7] transition cursor-pointer" title="Editar Presupuesto">
+                            <svg class="w-4 h-4 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
+                          </button>
+                        }
+                        @if (permisos.eliminar()) {
+                          <button (click)="delete(ppto.IdPresupuesto || ppto.id)" type="button" class="p-1.5 rounded-md text-slate-400 hover:text-rose-600 hover:bg-rose-50 border border-transparent hover:border-rose-200 transition cursor-pointer" title="Eliminar Presupuesto">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                          </button>
+                        }
                       </div>
                     </td>
                   </tr>
@@ -318,14 +326,18 @@
           </div>
         </div>
         <div class="flex items-center gap-2 shrink-0">
-          <button id="fm-aplicar-plantilla" (click)="abrirModalPlantillas()" type="button" title="Cargar fases y categorías desde una plantilla" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white hover:bg-[#f6f8f7] hover:border-[#529b7b] text-slate-700 text-xs font-semibold border border-[#d1dcd7] shadow-2xs transition cursor-pointer">
-            <svg class="w-3.5 h-3.5 text-[#529b7b]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h11M4 12h11M4 18h7m9-3v6m-3-3h6"/></svg>
-            <span>Aplicar Plantilla</span>
-          </button>
-          <button id="fm-nueva-fase" (click)="abrirNuevaFase()" type="button" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#529b7b] hover:bg-[#3d7e63] text-white text-xs font-semibold shadow-xs transition cursor-pointer">
-            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
-            <span>Nueva Fase</span>
-          </button>
+          @if (permisos.editar()) {
+            <button id="fm-aplicar-plantilla" (click)="abrirModalPlantillas()" type="button" title="Cargar fases y categorías desde una plantilla" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white hover:bg-[#f6f8f7] hover:border-[#529b7b] text-slate-700 text-xs font-semibold border border-[#d1dcd7] shadow-2xs transition cursor-pointer">
+              <svg class="w-3.5 h-3.5 text-[#529b7b]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h11M4 12h11M4 18h7m9-3v6m-3-3h6"/></svg>
+              <span>Aplicar Plantilla</span>
+            </button>
+          }
+          @if (permisos.crear()) {
+            <button id="fm-nueva-fase" (click)="abrirNuevaFase()" type="button" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#529b7b] hover:bg-[#3d7e63] text-white text-xs font-semibold shadow-xs transition cursor-pointer">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+              <span>Nueva Fase</span>
+            </button>
+          }
           <button id="fm-cerrar-x" (click)="cerrarFasesModal()" type="button" title="Cerrar" class="w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-slate-800 hover:bg-[#e3e9e6] transition cursor-pointer ml-1">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
           </button>
@@ -414,12 +426,16 @@
               </div>
               <span class="px-2 py-0.5 rounded text-[10px] font-bold uppercase border" [ngClass]="getEstadoFaseClass(fase)">{{ getEstadoFaseText(fase) }}</span>
               <div class="flex items-center gap-1">
-                <button (click)="abrirModalFase('edit', fase); $event.stopPropagation()" type="button" class="p-1 rounded text-slate-400 hover:text-slate-700 hover:bg-[#e3e9e6] transition cursor-pointer" title="Editar Fase">
-                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
-                </button>
-                <button (click)="eliminarFase(fase); $event.stopPropagation()" type="button" class="p-1 rounded text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition cursor-pointer" title="Eliminar Fase">
-                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
-                </button>
+                @if (permisos.editar()) {
+                  <button (click)="abrirModalFase('edit', fase); $event.stopPropagation()" type="button" class="p-1 rounded text-slate-400 hover:text-slate-700 hover:bg-[#e3e9e6] transition cursor-pointer" title="Editar Fase">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
+                  </button>
+                }
+                @if (permisos.eliminar()) {
+                  <button (click)="eliminarFase(fase); $event.stopPropagation()" type="button" class="p-1 rounded text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition cursor-pointer" title="Eliminar Fase">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                  </button>
+                }
               </div>
             </div>
           </div>
@@ -442,10 +458,12 @@
                         }
                       </select>
                     }
-                    <button (click)="nuevaCategoriaEnFase(fase, $event)" type="button" class="inline-flex items-center gap-1 px-2.5 py-1 rounded bg-white hover:bg-[#edf2f0] text-[#2d634d] font-bold text-[11px] border border-[#d1dcd7] hover:border-[#529b7b] shadow-2xs transition cursor-pointer">
-                      <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"/></svg>
-                      <span>Nueva Categoría</span>
-                    </button>
+                    @if (permisos.crear()) {
+                      <button (click)="nuevaCategoriaEnFase(fase, $event)" type="button" class="inline-flex items-center gap-1 px-2.5 py-1 rounded bg-white hover:bg-[#edf2f0] text-[#2d634d] font-bold text-[11px] border border-[#d1dcd7] hover:border-[#529b7b] shadow-2xs transition cursor-pointer">
+                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"/></svg>
+                        <span>Nueva Categoría</span>
+                      </button>
+                    }
                   </div>
                 </div>
                 <div class="overflow-x-auto rounded border border-[#d1dcd7] bg-white">
@@ -486,12 +504,16 @@
                           </td>
                           <td class="py-2.5 px-3 text-center">
                             <div class="flex items-center justify-center gap-1.5">
-                              <button (click)="abrirModalCategoria('edit', cat)" type="button" class="p-1 rounded text-slate-400 hover:text-slate-700 hover:bg-[#edf2f0] cursor-pointer" title="Editar Partida">
-                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
-                              </button>
-                              <button (click)="eliminarCategoria(cat)" type="button" class="p-1 rounded text-slate-400 hover:text-rose-600 hover:bg-rose-50 cursor-pointer" title="Eliminar Partida">
-                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
-                              </button>
+                              @if (permisos.editar()) {
+                                <button (click)="abrirModalCategoria('edit', cat)" type="button" class="p-1 rounded text-slate-400 hover:text-slate-700 hover:bg-[#edf2f0] cursor-pointer" title="Editar Partida">
+                                  <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
+                                </button>
+                              }
+                              @if (permisos.eliminar()) {
+                                <button (click)="eliminarCategoria(cat)" type="button" class="p-1 rounded text-slate-400 hover:text-rose-600 hover:bg-rose-50 cursor-pointer" title="Eliminar Partida">
+                                  <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                                </button>
+                              }
                             </div>
                           </td>
                         </tr>
@@ -530,9 +552,11 @@
         </span>
       </div>
       <div class="flex items-center gap-2.5">
-        <button id="fm-editar-ppto" (click)="cerrarFasesModal(); pptoSeleccionado && openEditPresupuesto(pptoSeleccionado)" [disabled]="!pptoSeleccionado" type="button" class="px-4 py-2 rounded-lg bg-white hover:bg-[#edf2f0] text-slate-700 font-semibold text-xs border border-[#d1dcd7] hover:border-[#529b7b] transition cursor-pointer disabled:opacity-50">
-          Editar Presupuesto
-        </button>
+        @if (permisos.editar()) {
+          <button id="fm-editar-ppto" (click)="cerrarFasesModal(); pptoSeleccionado && openEditPresupuesto(pptoSeleccionado)" [disabled]="!pptoSeleccionado" type="button" class="px-4 py-2 rounded-lg bg-white hover:bg-[#edf2f0] text-slate-700 font-semibold text-xs border border-[#d1dcd7] hover:border-[#529b7b] transition cursor-pointer disabled:opacity-50">
+            Editar Presupuesto
+          </button>
+        }
         <button id="fm-cerrar" (click)="cerrarFasesModal()" type="button" class="px-4 py-2 rounded-lg bg-[#529b7b] hover:bg-[#3d7e63] text-white font-semibold text-xs shadow-xs transition cursor-pointer">
           Cerrar
         </button>
@@ -705,15 +729,19 @@
                         <svg class="w-3.5 h-3.5 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 5h6v4H4zM14 15h6v4h-6zM7 9v4a2 2 0 002 2h5"/></svg>
                       </button>
                       <!-- Cargar Plantilla -->
-                      <button type="button" (click)="cargarPlantillaEnForm(p)" title="Cargar Plantilla (Fases y Costos)"
-                              class="w-7 h-7 rounded-lg flex items-center justify-center text-[#529b7b] hover:bg-[#edf2f0] hover:text-[#1e4838] transition cursor-pointer">
-                        <svg class="w-3.5 h-3.5 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h11M4 12h11M4 18h7m9-3v6m-3-3h6"/></svg>
-                      </button>
+                      @if (permisos.editar()) {
+                        <button type="button" (click)="cargarPlantillaEnForm(p)" title="Cargar Plantilla (Fases y Costos)"
+                                class="w-7 h-7 rounded-lg flex items-center justify-center text-[#529b7b] hover:bg-[#edf2f0] hover:text-[#1e4838] transition cursor-pointer">
+                          <svg class="w-3.5 h-3.5 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h11M4 12h11M4 18h7m9-3v6m-3-3h6"/></svg>
+                        </button>
+                      }
                       <!-- Eliminar -->
-                      <button type="button" (click)="eliminarPresupuestoDeCC(p)" title="Eliminar presupuesto"
-                              class="w-7 h-7 rounded-lg flex items-center justify-center text-slate-400 hover:bg-red-50 hover:text-red-500 transition cursor-pointer">
-                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
-                      </button>
+                      @if (permisos.eliminar()) {
+                        <button type="button" (click)="eliminarPresupuestoDeCC(p)" title="Eliminar presupuesto"
+                                class="w-7 h-7 rounded-lg flex items-center justify-center text-slate-400 hover:bg-red-50 hover:text-red-500 transition cursor-pointer">
+                          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                        </button>
+                      }
                     </div>
                   </td>
                 </tr>
@@ -749,12 +777,15 @@
         </div>
 
         <!-- ABAJO DE LA GRILLA: BARRA DE ENTRADA CON BOTÓN AGREGAR ARRIBA A LA DERECHA -->
+        <!-- Solo lectura sin permiso: editar (presupuesto guardado) o crear (alta). -->
+        <fieldset class="min-w-0" [disabled]="soloLectura()">
         <div class="bg-slate-50 border border-slate-200 rounded-xl p-4 space-y-3.5">
           <div class="flex items-center justify-between">
             <span class="text-xs font-bold uppercase tracking-wide text-slate-700 flex items-center gap-1.5">
               <svg class="w-4 h-4 text-[#529b7b]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/></svg>
               {{ editingId() ? 'Modificar Presupuesto Seleccionado' : 'Agregar Presupuesto a la Grilla' }}
             </span>
+            @if (!soloLectura()) {
             <button type="button" (click)="guardarOActualizarPresupuesto()" [disabled]="loading()"
                     class="bg-[#1e4838] hover:bg-[#2d634d] disabled:opacity-50 text-white py-1.5 px-4 rounded-lg text-xs font-bold shadow-2xs transition flex items-center gap-1.5 cursor-pointer">
               @if (loading()) {
@@ -770,6 +801,7 @@
                 <span>Agregar</span>
               }
             </button>
+            }
           </div>
 
           <!-- FILA 1: Centro de Costo (sm:col-span-5) y Descripción (sm:col-span-7) -->
@@ -837,6 +869,7 @@
             </div>
           </div>
         </div>
+        </fieldset>
 
       </div>
       }
@@ -851,10 +884,12 @@
           </div>
           
             <div class="ml-auto flex items-center gap-2">
-              <button type="button" (click)="abrirModalPlantillas()" class="bg-[#1e4838] hover:bg-[#2d634d] text-white px-3 py-1.5 rounded-full text-[12px] font-medium flex items-center gap-1.5 transition shadow-sm cursor-pointer border border-[#1e4838]">
-                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2"></path></svg>
-                Usar Plantilla
-              </button>
+              @if (puedeUsarPlantilla) {
+                <button type="button" (click)="abrirModalPlantillas()" class="bg-[#1e4838] hover:bg-[#2d634d] text-white px-3 py-1.5 rounded-full text-[12px] font-medium flex items-center gap-1.5 transition shadow-sm cursor-pointer border border-[#1e4838]">
+                  <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2"></path></svg>
+                  Usar Plantilla
+                </button>
+              }
               <span class="bg-[#529b7b]/10 text-[#1e4838] border border-[#529b7b]/30 px-3 py-1.5 rounded-full text-[12px] font-bold">
                 {{ formFases().length }} items
               </span>
@@ -862,7 +897,8 @@
 
         </div>
 
-        <!-- Tabla de Fases -->
+        <!-- Tabla de Fases (los inputs en línea guardan al momento: deshabilitados en solo lectura) -->
+        <fieldset class="min-w-0" [disabled]="soloLectura()">
         <div class="rounded-lg border border-slate-200 overflow-hidden mb-5">
           <table class="w-full text-left border-collapse">
             <thead class="bg-slate-50 text-slate-500 text-[11px] uppercase font-semibold border-b border-slate-200">
@@ -916,18 +952,22 @@
                   </td>
                   <td class="py-2 px-3 text-center">
                     <div class="flex items-center justify-center gap-1">
+                    @if (!soloLectura()) {
                     <button type="button" (click)="editarFilaFormFase(i)" title="Editar categoría / monto"
                             class="w-6 h-6 rounded-full flex items-center justify-center text-slate-400 hover:bg-emerald-50 hover:text-emerald-700 transition cursor-pointer">
                       <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path d="M15.232 5.232l3.536 3.536M4 20h4l10.5-10.5a2.5 2.5 0 00-3.536-3.536L4 16.5V20z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"/>
                       </svg>
                     </button>
+                    }
+                    @if (puedeQuitarFila(fase)) {
                     <button type="button" (click)="removeFormFase(i)" title="Eliminar fila"
                             class="w-6 h-6 rounded-full flex items-center justify-center text-slate-400 hover:bg-red-50 hover:text-red-500 transition cursor-pointer">
                       <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path d="M6 18L18 6M6 6l12 12" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"/>
                       </svg>
                     </button>
+                    }
                     </div>
                   </td>
                 </tr>
@@ -961,8 +1001,10 @@
             }
           </datalist>
         </div>
+        </fieldset>
 
-        <!-- Inserción Rápida / Edición -->
+        <!-- Inserción Rápida / Edición (oculta sin permiso: ver puedeGuardarFormularioFila) -->
+        @if (puedeGuardarFormularioFila) {
         <div class="bg-slate-50 rounded-lg border border-slate-200 p-4 transition-all"
              [class.border-emerald-500]="faseFormMode === 'edit-fase' || faseFormMode === 'edit-categoria'"
              [class.bg-emerald-50/30]="faseFormMode === 'edit-fase' || faseFormMode === 'edit-categoria'">
@@ -1112,6 +1154,7 @@
             </div>
           }
         </div>
+        }
       </div>
       }
 
@@ -1132,7 +1175,8 @@
           <span class="font-mono font-extrabold text-[#1e4838] text-[18px]">{{ formCostoDirecto | currency:'PEN':'S/ ' }}</span>
         </div>
 
-        <!-- Ajustes -->
+        <!-- Ajustes (se guardan con "Guardar presupuesto": solo lectura sin permiso) -->
+        <fieldset class="min-w-0" [disabled]="!puedeGuardarPresupuesto()">
         <div class="space-y-3 mb-5">
           <!-- GG -->
           <div class="flex items-center justify-between border border-slate-200 rounded-lg px-4 py-3 bg-white">
@@ -1198,6 +1242,7 @@
             </div>
           </div>
         </div>
+        </fieldset>
 
         <!-- Desglose Final -->
         <div class="border-t-2 border-slate-200 pt-4 space-y-2">
@@ -1283,6 +1328,8 @@
           </div>
         </div>
 
+        <!-- Estado, especialista y comentarios se guardan con "Guardar presupuesto" (editar; "Aprobado" no exige aprobar) -->
+        <fieldset class="min-w-0" [disabled]="!puedeGuardarPresupuesto()">
         <div class="space-y-5">
           <!-- Estado -->
           <div>
@@ -1319,6 +1366,7 @@
                       class="w-full border border-slate-300 rounded-lg px-3 py-2.5 text-[13px] text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#529b7b]/40 focus:border-[#529b7b] resize-vertical"></textarea>
           </div>
         </div>
+        </fieldset>
       </div>
       }
 
@@ -1402,6 +1450,7 @@
           </svg>
         </button>
       }
+      @if (puedeGuardarPresupuesto()) {
       <button (click)="savePresupuestoCompleto()" [disabled]="loading()"
               class="flex items-center gap-2 bg-[#529b7b] hover:bg-[#2d634d] disabled:opacity-60 text-white px-5 py-2 rounded-lg text-[13px] font-bold transition-colors shadow-sm">
         @if (loading()) {
@@ -1416,6 +1465,7 @@
           GUARDAR PRESUPUESTO
         }
       </button>
+      }
     </div>
   </footer>
 
@@ -1482,6 +1532,7 @@
               class="px-3.5 py-2 text-[13px] font-semibold text-slate-600 hover:text-slate-800 hover:bg-slate-200/60 rounded-lg transition cursor-pointer">
         Cancelar
       </button>
+      @if (modalFaseModo() === 'edit' ? permisos.editar() : permisos.crear()) {
       <button (click)="guardarModalFase()" type="button"
               class="bg-[#1e4838] hover:bg-[#2d634d] text-white font-black text-[13px] px-4 py-2 rounded-lg transition shadow-sm flex items-center gap-1.5 tracking-wide cursor-pointer">
         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1489,6 +1540,7 @@
         </svg>
         <span class="font-black">{{ modalFaseModo() === 'edit' ? '+ Guardar cambios' : '+ Agregar Fase' }}</span>
       </button>
+      }
     </div>
   </div>
 </div>
@@ -1562,6 +1614,7 @@
               class="px-3.5 py-2 text-[13px] font-semibold text-slate-600 hover:text-slate-800 hover:bg-slate-200/60 rounded-lg transition cursor-pointer">
         Cancelar
       </button>
+      @if (modalCategoriaModo() === 'edit' ? permisos.editar() : permisos.crear()) {
       <button (click)="guardarModalCategoria()" type="button"
               class="bg-[#1e4838] hover:bg-[#2d634d] text-white font-black text-[13px] px-4 py-2 rounded-lg transition shadow-sm flex items-center gap-1.5 tracking-wide cursor-pointer">
         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1569,6 +1622,7 @@
         </svg>
         <span class="font-black">{{ modalCategoriaModo() === 'edit' ? '+ Guardar cambios' : '+ Agregar Categoría' }}</span>
       </button>
+      }
     </div>
   </div>
 </div>
@@ -1859,6 +1913,7 @@
           <button (click)="cerrarModalPlantillas()" class="px-4 py-2 text-sm font-medium text-slate-600 hover:text-slate-800 bg-white border border-slate-300 rounded-lg shadow-xs hover:bg-slate-50 cursor-pointer transition">
             Cancelar
           </button>
+          @if (puedeUsarPlantilla) {
           <button (click)="aplicarPlantillaSeleccionada()" [disabled]="!selectedPlantilla() || loading()"
                   class="px-4 py-2 text-sm font-bold text-white rounded-lg shadow-sm transition flex items-center gap-2"
                   [ngClass]="selectedPlantilla() ? 'bg-emerald-600 hover:bg-emerald-700 cursor-pointer' : 'bg-emerald-400 opacity-70 cursor-not-allowed'">
@@ -1872,6 +1927,7 @@
               Aplicar Plantilla
             }
           </button>
+          }
         </div>
       </div>
     </div>

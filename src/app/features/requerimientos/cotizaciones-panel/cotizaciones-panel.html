@@ -5,7 +5,7 @@
       <a class="btn btn-secondary" [routerLink]="['/imprimir/cuadro-comparativo', requerimiento().id]" target="_blank">
         <i class="fa-solid fa-print"></i> Cuadro comparativo
       </a>
-      @if (puedeCotizar()) {
+      @if (puedeRegistrar()) {
         <button class="btn btn-secondary" type="button" (click)="nueva()"><i class="fa-solid fa-plus"></i> Registrar cotización</button>
       }
       @if (puedeCerrar()) {
@@ -81,8 +81,10 @@
               <td>{{ c.plazo_entrega_dias === null ? '—' : c.plazo_entrega_dias === 0 ? 'Inmediata' : c.plazo_entrega_dias + ' días' }}</td>
               <td>{{ c.validez_dias === null ? '—' : c.validez_dias + ' días' }}</td>
               <td align="center">
-                @if (puedeCotizar()) {
+                @if (puedeEditar()) {
                   <button class="table-action-btn" type="button" title="Editar" (click)="editar(c)"><i class="fa-solid fa-pen-to-square"></i></button>
+                }
+                @if (puedeEliminar()) {
                   <button class="table-action-btn table-action-btn--danger" type="button" title="Eliminar" (click)="eliminar(c)">
                     <i class="fa-solid fa-trash"></i>
                   </button>
@@ -98,7 +100,7 @@
 
 <app-modal
   [isOpen]="isModalOpen()"
-  [title]="editando() ? 'Editar cotización ' + editando()!.numero : 'Registrar cotización'"
+  [title]="tituloModal()"
   maxWidth="1100px"
   [showDefaultFooter]="false"
   (closed)="closeModal()"

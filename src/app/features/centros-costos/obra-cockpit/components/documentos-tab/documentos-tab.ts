@@ -2,6 +2,8 @@ import { ChangeDetectionStrategy, Component, computed, input, output, signal } f
 import { DatePipe } from '@angular/common';
 import { estadoDocumentoClass, filtrarDocumentos, iconoCategoriaDocumento } from '../../obra.calc';
 import { CATEGORIAS_DOCUMENTO, ESTADOS_DOCUMENTO, ObraDocumento } from '../../obra.interface';
+import { valorDeEvento } from '@shared/utils/eventos';
+import { PermisosObra, SIN_PERMISOS_OBRA } from '../../obra-permisos';
 
 @Component({
   selector: 'app-documentos-tab',
@@ -14,6 +16,8 @@ export class DocumentosTabComponent {
   readonly documentos = input<readonly ObraDocumento[]>([]);
   /** Mensaje de error (p. ej. falla al descargar un archivo). Vacío = sin aviso. */
   readonly error = input<string>('');
+  /** Permisos del módulo `obra`; sin ellos la pestaña queda en solo lectura. */
+  readonly permisos = input<PermisosObra>(SIN_PERMISOS_OBRA);
 
   readonly anexar = output<void>();
   readonly verDetalle = output<ObraDocumento>();
@@ -46,7 +50,5 @@ export class DocumentosTabComponent {
     this.estado.set('');
   }
 
-  protected valorDe(event: Event): string {
-    return (event.target as HTMLInputElement | HTMLSelectElement).value;
-  }
+  protected readonly valorDe = valorDeEvento;
 }

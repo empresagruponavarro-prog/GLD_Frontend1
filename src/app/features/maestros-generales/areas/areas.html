@@ -4,6 +4,7 @@
     <p class="content-subtitle">Costos y Presupuesto, Oficina Técnica, Procura, Comercialización, Posventa, Almacén, Sistemas… Se usan al pedir y al pagar.</p>
   </div>
   <div style="display: flex; gap: 0.5rem; align-items: center">
+    <app-exportar-botones [datos]="datosExportacion()" [cargando]="isLoading()" />
     @if (permisos.crear()) {
       <button class="btn btn-primary" type="button" (click)="nueva()"><i class="fa-solid fa-plus"></i> Nueva área</button>
     }

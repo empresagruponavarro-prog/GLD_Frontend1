@@ -28,6 +28,10 @@ export const CLASE_LABEL: Record<ClaseDocumento, string> = {
 /** Clases que se registran directamente (sin líneas ni cotizaciones). */
 export const CLASES_DIRECTAS: readonly ClaseDocumento[] = CLASES_DOCUMENTO.filter((c) => c !== 'ORDEN_COMPRA' && c !== 'ORDEN_SERVICIO');
 
+/** Estado del documento de origen (vigente o anulado). */
+export const ESTADOS_DOCUMENTO = ['REGISTRADO', 'ANULADO'] as const;
+export type EstadoDocumento = (typeof ESTADOS_DOCUMENTO)[number];
+
 export type EstadoPago = 'SIN_PROGRAMAR' | 'PROGRAMADO' | 'PARCIAL' | 'PAGADO' | 'ANULADO';
 
 export const ESTADOS_PAGO: readonly EstadoPago[] = ['SIN_PROGRAMAR', 'PROGRAMADO', 'PARCIAL', 'PAGADO', 'ANULADO'];

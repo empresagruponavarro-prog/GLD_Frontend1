@@ -113,7 +113,7 @@ export class PlanoVisorDialogComponent implements OnDestroy {
         this.blobData.set(blob);
         this.isLoading.set(false);
       },
-      error: (err: unknown) => {
+      error: () => {
         this.isLoading.set(false);
         this.error.set('No se pudo cargar el archivo del plano en memoria.');
       },
@@ -165,15 +165,18 @@ export class PlanoVisorDialogComponent implements OnDestroy {
     const url = this.rawBlobUrl();
     if (url) {
       window.open(url, '_blank', 'noopener');
-    } else if (this.esEnlaceExterno() && this.plano()?.archivo_url) {
-      window.open(this.plano()!.archivo_url, '_blank', 'noopener');
+      return;
+    }
+    const enlace = this.plano()?.archivo_url;
+    if (this.esEnlaceExterno() && enlace) {
+      window.open(enlace, '_blank', 'noopener');
     }
   }
 
   /** Envía el plano PDF a la cola de impresión del navegador */
   protected imprimir(): void {
-    const iframe = document.getElementById('visor-pdf-iframe') as HTMLIFrameElement | null;
-    if (iframe?.contentWindow) {
+    const iframe = document.getElementById('visor-pdf-iframe');
+    if (iframe instanceof HTMLIFrameElement && iframe.contentWindow) {
       try {
         iframe.contentWindow.focus();
         iframe.contentWindow.print();

@@ -1,11 +1,12 @@
 import { DecimalPipe } from '@angular/common';
-import { ChangeDetectionStrategy, Component, effect, inject, input, output, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, effect, inject, input, output, signal } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ModalComponent } from '@shared/components/modal/modal';
 import { errorMessage } from '@app/features/almacen/almacen.utils';
 import { clampPct, sinVacios, sugerenciaNuevaSemana } from '../../obra.calc';
 import { ESTADOS_SEMANA, ObraSemana, SemanaPayload } from '../../obra.interface';
 import { ObraService } from '../../obra.service';
+import { PermisosObra, SIN_PERMISOS_OBRA, puedeGuardarObra } from '../../obra-permisos';
 
 @Component({
   selector: 'app-semana-dialog',
@@ -25,6 +26,8 @@ export class SemanaDialogComponent {
   readonly semana = input<ObraSemana | null>(null);
   readonly semanasExistentes = input<readonly ObraSemana[]>([]);
   readonly fechaInicioObra = input<string | undefined>(undefined);
+  /** Permisos de `obra`: guardar exige `crear` (alta) o `editar` (edición); Eliminar, `eliminar`. */
+  readonly permisos = input<PermisosObra>(SIN_PERMISOS_OBRA);
 
   readonly closed = output<void>();
   readonly saved = output<ObraSemana>();
@@ -34,6 +37,10 @@ export class SemanaDialogComponent {
   protected readonly isSaving = signal(false);
   protected readonly isDeleting = signal(false);
   protected readonly formError = signal('');
+  protected readonly puedeGuardar = computed(() => puedeGuardarObra(this.permisos(), this.semana() !== null));
+  /** Sin permiso de guardar, el formulario se muestra en solo lectura. */
+  protected readonly soloLectura = computed(() => !this.puedeGuardar());
+  protected readonly puedeEliminar = computed(() => this.semana() !== null && this.permisos().eliminar);
 
   protected get duracionDias(): number {
     const ini = this.form.controls.fecha_inicio.value;
@@ -62,6 +69,7 @@ export class SemanaDialogComponent {
     effect(() => {
       if (!this.isOpen()) return;
       this.formError.set('');
+      this.form.enable({ emitEvent: false });
       const s = this.semana();
       if (s) {
         this.form.reset({
@@ -93,6 +101,7 @@ export class SemanaDialogComponent {
         });
         this.form.controls.numero_semana.enable();
       }
+      if (this.soloLectura()) this.form.disable({ emitEvent: false });
     });
   }
 
@@ -101,6 +110,7 @@ export class SemanaDialogComponent {
   }
 
   protected onSubmit(): void {
+    if (!this.puedeGuardar()) return;
     this.form.markAllAsTouched();
     const v = this.form.getRawValue();
     if (this.form.invalid) {
@@ -145,7 +155,7 @@ export class SemanaDialogComponent {
 
   protected onDelete(): void {
     const s = this.semana();
-    if (!s || !confirm(`¿Eliminar ${s.etiqueta_semana}? Esta acción no se puede deshacer.`)) return;
+    if (!s || !this.puedeEliminar() || !confirm(`¿Eliminar ${s.etiqueta_semana}? Esta acción no se puede deshacer.`)) return;
     this.isDeleting.set(true);
     this.#service.deleteSemana(this.idCentroCosto(), s.id).subscribe({
       next: () => {

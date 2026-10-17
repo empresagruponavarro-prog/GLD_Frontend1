@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, effect, inject, input, output, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, effect, inject, input, output, signal } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ModalComponent } from '@shared/components/modal/modal';
 import { errorMessage } from '@app/features/almacen/almacen.utils';
@@ -7,6 +7,7 @@ import { ESTADOS_PLANTA, ObraResidente, ResidentePayload } from '../../obra.inte
 import { AnexosService } from '@app/features/maestros-generales/anexos/anexos.service';
 import { AnexoSelect, SelectOption } from '@app/features/maestros-generales/anexos/interfaces/anexos.interface';
 import { ObraService } from '../../obra.service';
+import { PermisosObra, SIN_PERMISOS_OBRA, puedeGuardarObra } from '../../obra-permisos';
 
 @Component({
   selector: 'app-residente-dialog',
@@ -22,6 +23,8 @@ export class ResidenteDialogComponent {
   readonly isOpen = input(false);
   readonly idCentroCosto = input.required<number>();
   readonly residente = input<ObraResidente | null>(null);
+  /** Permisos de `obra`: guardar exige `crear` (alta) o `editar` (ficha); Desasignar, `eliminar`. */
+  readonly permisos = input<PermisosObra>(SIN_PERMISOS_OBRA);
 
   readonly closed = output<void>();
   readonly saved = output<void>();
@@ -31,6 +34,10 @@ export class ResidenteDialogComponent {
   protected readonly especialidades = signal<SelectOption[]>([]);
   protected readonly isSaving = signal(false);
   protected readonly formError = signal('');
+  protected readonly puedeGuardar = computed(() => puedeGuardarObra(this.permisos(), this.residente() !== null));
+  /** Sin permiso de guardar, el formulario se muestra en solo lectura. */
+  protected readonly soloLectura = computed(() => !this.puedeGuardar());
+  protected readonly puedeEliminar = computed(() => this.residente() !== null && this.permisos().eliminar);
 
   protected readonly form = new FormGroup({
     id_anexo: new FormControl<number | null>(null),
@@ -78,6 +85,8 @@ export class ResidenteDialogComponent {
         estado_planta: r?.estado_planta ?? 'En Planta',
         orden: r?.orden ?? null,
       });
+      if (this.soloLectura()) this.form.disable({ emitEvent: false });
+      else this.form.enable({ emitEvent: false });
     });
   }
 
@@ -86,6 +95,7 @@ export class ResidenteDialogComponent {
   }
 
   protected onSubmit(): void {
+    if (!this.puedeGuardar()) return;
     this.form.markAllAsTouched();
     if (this.form.invalid) {
       this.formError.set('Completa nombre y rol; verifica el formato del correo y teléfono.');
@@ -123,7 +133,7 @@ export class ResidenteDialogComponent {
 
   protected onDelete(): void {
     const r = this.residente();
-    if (!r || !confirm(`¿Desasignar a ${r.nombre_completo} de la obra?`)) return;
+    if (!r || !this.puedeEliminar() || !confirm(`¿Desasignar a ${r.nombre_completo} de la obra?`)) return;
     this.isSaving.set(true);
     this.#service.deleteResidente(this.idCentroCosto(), r.id).subscribe({
       next: () => {

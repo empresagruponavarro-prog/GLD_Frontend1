@@ -6,17 +6,41 @@ import { Observable, of, switchMap, map } from 'rxjs';
 import { CategoriasService } from '../../maestros-generales/categorias/categorias.service';
 import { CategoriaSelect } from '../../maestros-generales/categorias/interfaces/categorias.interface';
 import { PresupuestosService, Plantilla, PlantillaCompleta, PlantillaFaseDto, PlantillaCategoriaDto, FaseMaestra, FaseCategoriaMaestra } from '../presupuestos.service';
+import { permisosDePantalla } from '@app/core/auth/permisos-pantalla';
+import { valorDeEvento } from '@shared/utils/eventos';
+import { ExportarBotonesComponent } from '../../../shared/components/exportar-botones/exportar-botones';
+import type { DatosExportacion } from '../../../shared/utils/exportar';
+
+/** Formulario del pop-up "Nueva plantilla". */
+interface NuevaPlantillaForm {
+  Nombre: string;
+  Descripcion: string;
+  Activo: boolean;
+  origen: 'vacia' | 'copiar';
+  IdPlantillaOrigen: string;
+}
 
 @Component({
   selector: 'app-mantenimiento-plantillas',
   standalone: true,
-  imports: [CommonModule, FormsModule, DragDropModule],
+  imports: [CommonModule, FormsModule, DragDropModule, ExportarBotonesComponent],
   templateUrl: './mantenimiento-plantillas.html'
 })
 export class MantenimientoPlantillasComponent implements OnInit {
   private service = inject(PresupuestosService);
   private categoriasService = inject(CategoriasService);
   private injector = inject(Injector);
+
+  /**
+   * Permisos del módulo `presupuestos.plantillas` (plan 05, etapa D3; anexo §7.3):
+   * "Nueva plantilla" (POST) → crear; el editor en línea (PUT `/plantillas/:id` y `/:id/fases`) → editar.
+   * Nota: copiar de otra plantilla o crearla inactiva hace además un PUT (editar); sin `editar`
+   * esas opciones del alta quedan deshabilitadas para no dejar la plantilla a medio crear.
+   */
+  protected readonly permisos = permisosDePantalla('presupuestos.plantillas');
+
+  /** Editor en solo lectura (sin `editar`): campos deshabilitados, sin guardar/agregar/quitar ni arrastrar. */
+  readonly soloLectura = computed(() => !this.permisos.editar());
 
   plantillas = signal<Plantilla[]>([]);
   selectedPlantilla = signal<PlantillaCompleta | null>(null);
@@ -45,6 +69,21 @@ export class MantenimientoPlantillasComponent implements OnInit {
       return matchesText && matchesStatus;
     });
   });
+
+  /** Plantillas que cumplen búsqueda y estado activos, listas para exportar. */
+  readonly datosExportacion = computed<DatosExportacion>(() => ({
+    nombre: 'Plantillas',
+    columnas: ['Código', 'Nombre', 'Descripción', 'Estado', 'Fases', 'Categorías', 'Fecha Creación'],
+    filas: this.filteredPlantillas().map((p) => [
+      p.IdPlantilla,
+      p.Nombre,
+      p.Descripcion,
+      p.Activo ? 'Activa' : 'Inactiva',
+      p.totalFases,
+      p.totalCategorias,
+      p.FechaCreacion,
+    ]),
+  }));
 
   resetFilters() {
     this.searchQuery.set('');
@@ -81,13 +120,11 @@ export class MantenimientoPlantillasComponent implements OnInit {
   loadCatalogos() {
     this.categoriasService.getSelect().subscribe((c: CategoriaSelect[]) => this.categoriasReal.set(c));
     this.service.getFasesMaestras().subscribe(res => {
-      const raw = res as FaseMaestra[] | { data: FaseMaestra[] };
-      const f: FaseMaestra[] = Array.isArray(raw) ? raw : (raw as { data: FaseMaestra[] }).data ?? [];
+      const f: FaseMaestra[] = Array.isArray(res) ? res : res.data ?? [];
       this.fasesMaestras.set(f);
     });
     this.service.getCategoriasFasesMaestras().subscribe(res => {
-      const raw = res as FaseCategoriaMaestra[] | { data: FaseCategoriaMaestra[] };
-      const c: FaseCategoriaMaestra[] = Array.isArray(raw) ? raw : (raw as { data: FaseCategoriaMaestra[] }).data ?? [];
+      const c: FaseCategoriaMaestra[] = Array.isArray(res) ? res : res.data ?? [];
       this.categoriasMaestras.set(c);
     });
   }
@@ -104,17 +141,18 @@ export class MantenimientoPlantillasComponent implements OnInit {
   // ==========================================
   showNuevaPlantillaModal = signal(false);
   creandoPlantilla = signal(false);
-  nuevaForm = {
+  nuevaForm: NuevaPlantillaForm = {
     Nombre: '',
     Descripcion: '',
     Activo: true,
-    origen: 'vacia' as 'vacia' | 'copiar',
+    origen: 'vacia',
     IdPlantillaOrigen: '',
   };
   nuevaError = signal('');
   private nuevaNombreInput = viewChild<ElementRef<HTMLInputElement>>('nuevaNombreInput');
 
   nuevaPlantilla() {
+    if (!this.permisos.crear()) return;
     this.nuevaForm = { Nombre: '', Descripcion: '', Activo: true, origen: 'vacia', IdPlantillaOrigen: '' };
     this.nuevaError.set('');
     this.showNuevaPlantillaModal.set(true);
@@ -140,7 +178,7 @@ export class MantenimientoPlantillasComponent implements OnInit {
   }
 
   confirmarNuevaPlantilla() {
-    if (!this.puedeCrearPlantilla) return;
+    if (!this.puedeCrearPlantilla || !this.permisos.crear()) return;
     const f = this.nuevaForm;
     this.creandoPlantilla.set(true);
     this.nuevaError.set('');
@@ -191,6 +229,7 @@ export class MantenimientoPlantillasComponent implements OnInit {
   }
 
   guardarCambios() {
+    if (this.soloLectura()) return;
     const p = this.selectedPlantilla();
     if (!p) return;
 
@@ -227,11 +266,13 @@ export class MantenimientoPlantillasComponent implements OnInit {
   }
 
   addFase() {
+    if (this.soloLectura()) return;
     this.selectedFaseMaestra.set('');
     this.showFaseModal.set(true);
   }
 
   confirmAddFase() {
+    if (this.soloLectura()) return;
     const p = this.selectedPlantilla();
     const idFase = this.selectedFaseMaestra();
     if (!p || !idFase) return;
@@ -255,6 +296,7 @@ export class MantenimientoPlantillasComponent implements OnInit {
   }
 
   abrirModalCategoria(modo: 'new' | 'edit', fase: PlantillaFaseDto, cat?: PlantillaCategoriaDto) {
+    if (this.soloLectura()) return;
     this.targetFaseForCat.set(fase);
     this.modalCategoriaModo.set(modo);
     
@@ -285,6 +327,7 @@ export class MantenimientoPlantillasComponent implements OnInit {
   }
 
   confirmAddCategoria() {
+    if (this.soloLectura()) return;
     const fase = this.targetFaseForCat();
     const idCat = this.selectedCategoriaMaestra();
     if (!fase || !idCat) return;
@@ -320,8 +363,9 @@ export class MantenimientoPlantillasComponent implements OnInit {
   }
 
   actualizarCategoriaReal(cat: PlantillaCategoriaDto, event: Event) {
-    const select = event.target as HTMLSelectElement;
-    const realId = select.value && select.value !== 'undefined' ? Number(select.value) : undefined;
+    if (this.soloLectura()) return;
+    const valor = valorDeEvento(event);
+    const realId = valor && valor !== 'undefined' ? Number(valor) : undefined;
     cat.id_categoria = realId;
     if (realId) {
       const realDesc = this.categoriasReal().find((c: CategoriaSelect) => c.id === realId)?.nombre || '';
@@ -333,6 +377,7 @@ export class MantenimientoPlantillasComponent implements OnInit {
   }
 
   removeFase(fase: PlantillaFaseDto) {
+    if (this.soloLectura()) return;
     const p = this.selectedPlantilla();
     if (!p) return;
     p.fases = p.fases.filter(f => f !== fase);
@@ -349,6 +394,7 @@ export class MantenimientoPlantillasComponent implements OnInit {
 
   
   dropFase(event: CdkDragDrop<PlantillaFaseDto[]>) {
+    if (this.soloLectura()) return;
     const p = this.selectedPlantilla();
     if (p && p.fases) {
       moveItemInArray(p.fases, event.previousIndex, event.currentIndex);
@@ -359,6 +405,7 @@ export class MantenimientoPlantillasComponent implements OnInit {
   }
 
   dropCategoria(fase: PlantillaFaseDto, event: CdkDragDrop<PlantillaCategoriaDto[]>) {
+    if (this.soloLectura()) return;
     if (fase && fase.categorias) {
       moveItemInArray(fase.categorias, event.previousIndex, event.currentIndex);
       this.selectedPlantilla.set(JSON.parse(JSON.stringify(this.selectedPlantilla())));
@@ -366,6 +413,7 @@ export class MantenimientoPlantillasComponent implements OnInit {
   }
 
   removeCategoria(fase: PlantillaFaseDto, cat: PlantillaCategoriaDto) {
+    if (this.soloLectura()) return;
     fase.categorias = fase.categorias.filter(c => c !== cat);
     this.selectedPlantilla.set(JSON.parse(JSON.stringify(this.selectedPlantilla())));
   }

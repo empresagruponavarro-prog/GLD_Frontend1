@@ -67,6 +67,7 @@
             <button
               type="button"
               (click)="setMeta()"
+              [disabled]="soloLectura()"
               class="px-2 py-0.5 rounded text-[10px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100 transition-colors cursor-pointer"
               title="Copiar meta exacta"
             >
@@ -75,6 +76,7 @@
             <button
               type="button"
               (click)="setCien()"
+              [disabled]="soloLectura()"
               class="px-2 py-0.5 rounded text-[10px] font-semibold bg-slate-100 text-slate-700 border border-slate-200 hover:bg-slate-200 transition-colors cursor-pointer"
               title="Completar 100%"
             >
@@ -127,7 +129,7 @@
             <strong class="text-slate-900 font-mono">{{ form.controls.porcentaje_real.value | number: '1.2-2' }}%</strong>
           </span>
           <span class="text-[10px] font-mono font-semibold" [class]="form.controls.porcentaje_real.value < semana().porcentaje_meta ? 'text-rose-600' : 'text-emerald-700'">
-            Desvío: {{ (form.controls.porcentaje_real.value - semana().porcentaje_meta) | number: '+1.2-2' }} pts
+            Desvío: {{ form.controls.porcentaje_real.value - semana().porcentaje_meta > 0 ? '+' : '' }}{{ (form.controls.porcentaje_real.value - semana().porcentaje_meta) | number: '1.2-2' }} pts
           </span>
         </div>
         <div class="relative w-full bg-slate-200 h-2.5 rounded-full overflow-hidden">
@@ -168,20 +170,22 @@
           >
             Cancelar
           </button>
-          <button
-            type="submit"
-            form="form-avance"
-            id="btn-guardar-avance"
-            [disabled]="isSaving()"
-            class="px-4 py-2 rounded-xl bg-[#2d7d5f] hover:bg-[#24674e] text-white text-xs font-semibold shadow-sm flex items-center gap-1.5 transition-all cursor-pointer disabled:opacity-50"
-          >
-            @if (isSaving()) {
-              <i class="fa-solid fa-spinner fa-spin"></i> Guardando...
-            } @else {
-              <span class="material-symbols-outlined text-sm">check_circle</span>
-              <span>Guardar Avance</span>
-            }
-          </button>
+          @if (puedeGuardar()) {
+            <button
+              type="submit"
+              form="form-avance"
+              id="btn-guardar-avance"
+              [disabled]="isSaving()"
+              class="px-4 py-2 rounded-xl bg-[#2d7d5f] hover:bg-[#24674e] text-white text-xs font-semibold shadow-sm flex items-center gap-1.5 transition-all cursor-pointer disabled:opacity-50"
+            >
+              @if (isSaving()) {
+                <i class="fa-solid fa-spinner fa-spin"></i> Guardando...
+              } @else {
+                <span class="material-symbols-outlined text-sm">check_circle</span>
+                <span>Guardar Avance</span>
+              }
+            </button>
+          }
         </div>
       </div>
     </form>

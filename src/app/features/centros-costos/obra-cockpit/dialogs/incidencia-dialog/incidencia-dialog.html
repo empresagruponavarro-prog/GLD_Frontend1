@@ -119,6 +119,7 @@
               <button
                 type="button"
                 (click)="setPlazo(p.valor)"
+                [disabled]="soloLectura()"
                 class="px-2 py-0.5 rounded text-[10px] transition-colors cursor-pointer"
                 [class.bg-emerald-50]="p.urgente"
                 [class.text-emerald-700]="p.urgente"
@@ -221,7 +222,7 @@
 
         <!-- Botones de Acción -->
         <div class="flex items-center gap-2.5 ml-auto shrink-0">
-          @if (isEdit) {
+          @if (puedeEliminar()) {
             <button
               type="button"
               id="btn-incidencia-eliminar"
@@ -240,20 +241,22 @@
           >
             Cancelar
           </button>
-          <button
-            type="submit"
-            form="form-incidencia"
-            id="btn-incidencia-guardar"
-            [disabled]="isSaving()"
-            class="px-5 py-2 rounded-xl bg-[#2d7d5f] hover:bg-[#24674e] text-white text-xs font-semibold shadow-sm flex items-center gap-2 transition-all cursor-pointer disabled:opacity-50"
-          >
-            @if (isSaving()) {
-              <i class="fa-solid fa-spinner fa-spin"></i> Guardando...
-            } @else {
-              <span class="material-symbols-outlined text-sm">send</span>
-              <span>{{ isEdit ? 'Guardar Cambios' : 'Reportar Incidencia / Emitir RFI' }}</span>
-            }
-          </button>
+          @if (puedeGuardar()) {
+            <button
+              type="submit"
+              form="form-incidencia"
+              id="btn-incidencia-guardar"
+              [disabled]="isSaving()"
+              class="px-5 py-2 rounded-xl bg-[#2d7d5f] hover:bg-[#24674e] text-white text-xs font-semibold shadow-sm flex items-center gap-2 transition-all cursor-pointer disabled:opacity-50"
+            >
+              @if (isSaving()) {
+                <i class="fa-solid fa-spinner fa-spin"></i> Guardando...
+              } @else {
+                <span class="material-symbols-outlined text-sm">send</span>
+                <span>{{ isEdit ? 'Guardar Cambios' : 'Reportar Incidencia / Emitir RFI' }}</span>
+              }
+            </button>
+          }
         </div>
       </div>
     </form>

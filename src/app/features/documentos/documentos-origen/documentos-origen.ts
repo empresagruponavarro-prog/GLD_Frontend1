@@ -1,5 +1,10 @@
 import { Component, inject, signal, computed } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
+import { MSG_SIN_PERMISO } from '@app/core/auth/auth.interceptor';
+import { permisosDePantalla } from '@app/core/auth/permisos-pantalla';
+import { PermisosService } from '@app/core/auth/permisos.service';
+import { AvisosService } from '@app/core/avisos/avisos.service';
+import { opcionValida } from '@shared/utils/eventos';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { DataTableComponent } from '../../../shared/components/data-table/data-table';
@@ -38,7 +43,14 @@ export class DocumentosOrigenComponent {
   private readonly productosService = inject(ProductosService);
   private readonly presupuestosService = inject(PresupuestosService);
   private readonly requerimientosService = inject(RequerimientosService);
+  private readonly avisos = inject(AvisosService);
+  private readonly permisosSesion = inject(PermisosService);
   private readonly requerimientoInicial = inject(ActivatedRoute).snapshot.queryParamMap.get('requerimiento');
+  /**
+   * Nuevo documento, Desde requerimiento y "Usar" un FUR → crear; Editar (PATCH) → editar;
+   * Eliminar → eliminar. La anulación de una OC va por Compromisos de pago (documentos.administracion).
+   */
+  protected readonly permisos = permisosDePantalla('documentos.origen');
 
   readonly estadoRecepcionLabel: Record<EstadoRecepcion, string> = {
     PENDIENTE: 'Pendiente',
@@ -47,7 +59,7 @@ export class DocumentosOrigenComponent {
     SIN_BIENES: 'Solo servicios',
   };
 
-  readonly tiposOc = ['PRODUCTO', 'SERVICIO'];
+  readonly tiposOc: readonly TipoProducto[] = ['PRODUCTO', 'SERVICIO'];
   readonly formasPago = [
     'Contado',
     'Credito 45 dias',
@@ -118,7 +130,7 @@ export class DocumentosOrigenComponent {
   idCentroCostoFilter = signal<number | null>(null);
   idCategoriaFilter = signal<number | null>(null);
   idAnexoFilter = signal<number | null>(null);
-  idDetalleFaseFilter = signal<number | null>(null);
+  idFaseFilter = signal<number | null>(null);
 
   totalPages = computed(() => Math.max(1, Math.ceil(this.totalRecords() / this.pageSize())));
 
@@ -130,15 +142,30 @@ export class DocumentosOrigenComponent {
       this.idCentroCostoFilter(),
       this.idCategoriaFilter(),
       this.idAnexoFilter(),
-      this.idDetalleFaseFilter()
+      this.idFaseFilter()
     ].filter((value) => value !== undefined && value !== null && value !== '').length;
   });
 
-  private searchDebounceTimer: any;
+  private searchDebounceTimer: ReturnType<typeof setTimeout> | undefined;
 
   constructor() {
     this.load();
-    if (this.requerimientoInicial) this.usarRequerimiento(Number(this.requerimientoInicial));
+    const idInicial = Number(this.requerimientoInicial);
+    // Se espera a que los permisos estén cargados (el guard ya lo hace al navegar; esto cubre la recarga).
+    if (this.requerimientoInicial) void this.permisosSesion.listo().then(() => this.abrirRequerimientoInicial(idInicial));
+  }
+
+  /**
+   * `?requerimiento=` (botón "Generar OC" de la lista de requerimientos) abre el alta precargada,
+   * solo con permiso de crear. Sin él no se abre y se muestra el aviso global "No tienes permiso…"
+   * (el usuario llegó por un enlace explícito y debe saber por qué no se abrió el formulario).
+   */
+  private abrirRequerimientoInicial(id: number): void {
+    if (!this.permisos.crear()) {
+      this.avisos.mostrar(MSG_SIN_PERMISO);
+      return;
+    }
+    this.usarRequerimiento(id);
   }
 
   buildFiltros(): DocumentoOrigenQuery {
@@ -150,7 +177,7 @@ export class DocumentosOrigenComponent {
       id_centro_costo: this.idCentroCostoFilter() ?? undefined,
       id_categoria: this.idCategoriaFilter() ?? undefined,
       id_anexo: this.idAnexoFilter() ?? undefined,
-      id_detalle_fase_categoria: this.idDetalleFaseFilter() ?? undefined,
+      id_fase: this.idFaseFilter() ?? undefined,
     };
   }
 
@@ -167,7 +194,7 @@ export class DocumentosOrigenComponent {
         this.currentPage.set(res.page);
         this.loading.set(false);
       },
-      error: (err) => {
+      error: (err: unknown) => {
         console.error(err);
         this.items.set([]);
         this.totalRecords.set(0);
@@ -211,7 +238,7 @@ export class DocumentosOrigenComponent {
     this.idCentroCostoFilter.set(null);
     this.idCategoriaFilter.set(null);
     this.idAnexoFilter.set(null);
-    this.idDetalleFaseFilter.set(null);
+    this.idFaseFilter.set(null);
     this.currentPage.set(1);
     this.load();
   }
@@ -231,6 +258,7 @@ export class DocumentosOrigenComponent {
   }
 
   openModal() {
+    if (!this.permisos.crear()) return;
     this.editingId.set(null);
     this.furActual.set(null);
     this.recepcionBloqueada.set(false);
@@ -244,6 +272,7 @@ export class DocumentosOrigenComponent {
   }
 
   openEdit(item: DocumentoOrigen) {
+    if (!this.permisos.editar()) return;
     this.editingId.set(item.id);
     this.furActual.set(null);
     this.recepcionBloqueada.set(false);
@@ -290,12 +319,12 @@ export class DocumentosOrigenComponent {
           this.limitarPorSaldo(doc.id_requerimiento);
         }
 
-        this.loadProductos(this.formData.tipo_oc as TipoProducto);
+        this.loadProductos(this.formData.tipo_oc);
         if (this.formData.id_centro_costo) {
           this.loadFases(this.formData.id_centro_costo, this.formData.id_fase);
         }
       },
-      error: (err) => {
+      error: (err: unknown) => {
         console.error(err);
         alert('No se pudo cargar el documento origen.');
         this.closeModal();
@@ -312,8 +341,8 @@ export class DocumentosOrigenComponent {
     this.fases.set([]);
     if (!idCentroCosto) return;
     this.presupuestosService.getFasesPorCentroCosto(idCentroCosto).subscribe({
-      next: (res: any) => {
-        this.fases.set(Array.isArray(res) ? res : (res?.data || []));
+      next: (res) => {
+        this.fases.set(res);
         if (selectedId) this.formData.id_fase = selectedId;
       },
       error: () => this.fases.set([]),
@@ -328,7 +357,7 @@ export class DocumentosOrigenComponent {
 
   onTipoOcChange(tipoOc: string) {
     this.detalles.update((list) => list.map((d) => ({ ...d, id_producto: 0 })));
-    this.loadProductos(tipoOc as TipoProducto);
+    this.loadProductos(tipoOc);
   }
 
   addDetalle() {
@@ -343,7 +372,7 @@ export class DocumentosOrigenComponent {
     this.detalles.set([...this.detalles()]);
   }
 
-  updateDetalle(index: number, field: 'id_producto' | 'cantidad' | 'precio', value: any) {
+  updateDetalle(index: number, field: 'id_producto' | 'cantidad' | 'precio', value: number) {
     const list = this.detalles();
     if (list[index]) {
       list[index][field] = value;
@@ -357,6 +386,8 @@ export class DocumentosOrigenComponent {
   }
 
   save() {
+    // Alta → crear; cambios de un documento existente → editar.
+    if (!(this.editingId() === null ? this.permisos.crear() : this.permisos.editar())) return;
     this.saving.set(true);
 
     // monto y total los calcula el servidor a partir de los detalles.
@@ -393,7 +424,7 @@ export class DocumentosOrigenComponent {
         this.closeModal();
         this.load();
       },
-      error: (err) => {
+      error: (err: unknown) => {
         console.error(err);
         this.saving.set(false);
         alert(errorMessage(err));
@@ -405,6 +436,7 @@ export class DocumentosOrigenComponent {
 
   /** Abre el selector con los requerimientos aprobados que aún tienen cantidad por ordenar. */
   openFurPicker() {
+    if (!this.permisos.crear()) return;
     this.showFurModal.set(true);
     this.furLoading.set(true);
     this.requerimientosService.getPendientesOc().subscribe({
@@ -412,7 +444,7 @@ export class DocumentosOrigenComponent {
         this.furPendientes.set(rows);
         this.furLoading.set(false);
       },
-      error: (err) => {
+      error: (err: unknown) => {
         this.furPendientes.set([]);
         this.furLoading.set(false);
         alert(errorMessage(err));
@@ -426,6 +458,7 @@ export class DocumentosOrigenComponent {
 
   /** Precarga el formulario con las líneas del FUR que todavía tienen saldo por ordenar. */
   usarRequerimiento(id: number) {
+    if (!this.permisos.crear()) return;
     this.showFurModal.set(false);
     this.requerimientosService.getById(id).subscribe({
       next: (fur) => {
@@ -465,7 +498,7 @@ export class DocumentosOrigenComponent {
         this.loadCatalogos();
         this.loadFases(fur.id_centro_costo, fur.id_fase ?? 0);
       },
-      error: (err) => alert(errorMessage(err)),
+      error: (err: unknown) => alert(errorMessage(err)),
     });
   }
 
@@ -500,38 +533,39 @@ export class DocumentosOrigenComponent {
   private loadCatalogos() {
     if (!this.centrosCostos().length) {
       this.centrosCostosService.getSelect().subscribe({
-        next: (res: any) => this.centrosCostos.set(Array.isArray(res) ? res : (res?.data || [])),
+        next: (res) => this.centrosCostos.set(res),
         error: () => this.centrosCostos.set([]),
       });
     }
     if (!this.categorias().length) {
       this.categoriasService.getSelect().subscribe({
-        next: (res: any) => this.categorias.set(Array.isArray(res) ? res : (res?.data || [])),
+        next: (res) => this.categorias.set(res),
         error: () => this.categorias.set([]),
       });
     }
     if (!this.anexos().length) {
       this.anexosService.getSelect('Proveedor').subscribe({
-        next: (res: any) => this.anexos.set(Array.isArray(res) ? res : (res?.data || [])),
+        next: (res) => this.anexos.set(res),
         error: () => this.anexos.set([]),
       });
     }
   }
 
-  private loadProductos(tipoProducto: TipoProducto = this.formData.tipo_oc as TipoProducto) {
-    this.productosService.getSelect(tipoProducto).subscribe({
-      next: (res: any) => this.productos.set(Array.isArray(res) ? res : (res?.data || [])),
+  /** Productos del tipo de la OC; un tipo desconocido (datos antiguos) carga el catálogo sin filtrar. */
+  private loadProductos(tipoOc: string = this.formData.tipo_oc) {
+    this.productosService.getSelect(opcionValida(this.tiposOc, tipoOc) ?? undefined).subscribe({
+      next: (res) => this.productos.set(res),
       error: () => this.productos.set([]),
     });
   }
 
-  confirmDelete(item: { id?: number; numero_oc?: string }): void {
-    if (!item.id) return;
+  confirmDelete(item: { id?: number; numero_oc?: string | null }): void {
+    if (!this.permisos.eliminar() || !item.id) return;
     const label = item.numero_oc ? `"${item.numero_oc}"` : `ID ${item.id}`;
     if (!confirm(`¿Eliminar el documento de origen ${label}? Esta acción no se puede deshacer.`)) return;
     this.service.delete(item.id).subscribe({
       next: () => this.load(),
-      error: (err) => alert(errorMessage(err)),
+      error: (err: unknown) => alert(errorMessage(err)),
     });
   }
 

@@ -50,6 +50,29 @@ import {
   PptoEstadoGrupo,
 } from '../centros-costos/interfaces/centros-costos.interface';
 import { createPaginatedQuery } from '@shared/data-access/create-paginated-query';
+import { valorDeEvento } from '@shared/utils/eventos';
+import { ExportarBotonesComponent } from '../../shared/components/exportar-botones/exportar-botones';
+import type { DatosExportacion } from '../../shared/utils/exportar';
+import { MSG_SIN_PERMISO } from '@app/core/auth/auth.interceptor';
+import { permisosDePantalla } from '@app/core/auth/permisos-pantalla';
+import { PermisosService } from '@app/core/auth/permisos.service';
+import { AvisosService } from '@app/core/avisos/avisos.service';
+
+/** Datos del modal rápido "Nueva / Editar fase asignada". */
+interface ModalFaseForm {
+  id: number | null;
+  IdpptoFase: string;
+  CostoDirecto: number | null;
+}
+
+/** Datos del modal rápido "Nueva / Editar categoría asignada". */
+interface ModalCategoriaForm {
+  id: number | null;
+  faseNombre: string;
+  IdpptoFase: string;
+  IdpptoFaseCategoria: string;
+  CostoDirecto: number | null;
+}
 
 /** Filtros de la lista lateral de centros de costos, tal como los edita la toolbar. */
 interface FiltrosCC {
@@ -66,15 +89,30 @@ interface FiltrosCC {
 const FILTROS_CC_VACIOS: FiltrosCC = { search: '', empresa: '', periodo: '', cliente: '', estado: '', grupo: '' };
 const CC_PAGE_SIZE = 50;
 
+/** Todas las claves de {@link FiltrosCentrosCostos} (las ausentes valen `undefined` en ambos lados). */
+const CLAVES_FILTROS_CC: readonly (keyof FiltrosCentrosCostos)[] = [
+  'search', 'estado', 'empresa', 'periodo', 'cliente', 'centroCosto', 'pptoEstado', 'pptoEstadoGrupo',
+];
+
 function mismosFiltros(a: FiltrosCentrosCostos, b: FiltrosCentrosCostos): boolean {
-  const claves = new Set([...Object.keys(a), ...Object.keys(b)]) as Set<keyof FiltrosCentrosCostos>;
-  return [...claves].every((k) => a[k] === b[k]);
+  return CLAVES_FILTROS_CC.every((k) => a[k] === b[k]);
+}
+
+/** `true` si el valor tiene la forma mínima de un centro de costo (estado de navegación `fromCC`). */
+function esCentroCosto(valor: unknown): valor is CentroCosto {
+  return typeof valor === 'object' && valor !== null && 'CentroCosto' in valor && typeof valor.CentroCosto === 'string';
+}
+
+/** Centro de costo enviado por "Ppto" de Centros de costos (`state: { fromCC }`), si lo hay. */
+function centroCostoDeEstado(estado: unknown): CentroCosto | null {
+  if (typeof estado !== 'object' || estado === null || !('fromCC' in estado)) return null;
+  return esCentroCosto(estado.fromCC) ? estado.fromCC : null;
 }
 
 @Component({
   selector: 'app-presupuestos',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, ExportarBotonesComponent],
   templateUrl: './presupuestos.html',
   styleUrls: ['./presupuestos.css']
   
@@ -85,6 +123,37 @@ export class PresupuestosComponent implements OnInit {
   private empresasService = inject(EmpresasService);
   private router = inject(Router);
   private documentosOrigenService = inject(DocumentosOrigenService);
+  private readonly permisosSesion = inject(PermisosService);
+  private readonly avisos = inject(AvisosService);
+
+  // ==========================================
+  // PERMISOS (plan 05, etapa D3; acciones del anexo §7.3)
+  // ==========================================
+  /**
+   * Permisos del módulo `presupuestos`: POST → crear, PATCH → editar, DELETE → eliminar;
+   * aplicar plantilla (POST `/:id/aplicar-plantilla`) → editar. Marcar "Aprobado" en el paso 5
+   * es un PATCH más (editar): el módulo no admite Aprobar.
+   */
+  protected readonly permisos = permisosDePantalla('presupuestos');
+
+  /**
+   * Asistente en solo lectura (pasos 1 y 2): un presupuesto guardado se modifica con `editar`
+   * (PATCH en línea); el alta (filas locales y "+ Agregar" de la grilla) con `crear`.
+   */
+  readonly soloLectura = computed(() => (this.editingId() ? !this.permisos.editar() : !this.permisos.crear()));
+
+  /**
+   * "Guardar presupuesto" (pasos 3 a 5): hace PATCH si hay un presupuesto en edición o
+   * seleccionado (editar) y POST si no (crear).
+   */
+  readonly puedeGuardarPresupuesto = computed(() =>
+    this.editingId() || this.selectedPresupuestoId() ? this.permisos.editar() : this.permisos.crear(),
+  );
+
+  /** Modales rápidos de fase/categoría: alta (POST) → crear; edición (PATCH) → editar. */
+  private puedeModal(modo: 'new' | 'edit'): boolean {
+    return modo === 'edit' ? this.permisos.editar() : this.permisos.crear();
+  }
 
   // Estado general
   loading = signal<boolean>(false);
@@ -167,6 +236,7 @@ export class PresupuestosComponent implements OnInit {
   }
 
   openEditPresupuesto(ppto: PresupuestoPrincipal) {
+    if (!this.permisos.editar()) return;
     this.abrirPresupuestoEnForm(ppto, 1);
   } // 'Todos' | 'Materiales' | 'Mano de Obra' | 'Equipos & Subc.'
   showNuevaCategoria = signal(false);
@@ -247,10 +317,10 @@ export class PresupuestosComponent implements OnInit {
   // Modales directos y rápidos para Fase y Categoría (Dashboard)
   modalFaseOpen = signal<boolean>(false);
   modalFaseModo = signal<'new' | 'edit'>('new');
-  modalFaseData = {
-    id: null as number | null,
+  modalFaseData: ModalFaseForm = {
+    id: null,
     IdpptoFase: '',
-    CostoDirecto: null as number | null,
+    CostoDirecto: null,
   };
 
   // Modal Compras y Documentos Origen por Fase
@@ -338,12 +408,12 @@ export class PresupuestosComponent implements OnInit {
 
   modalCategoriaOpen = signal<boolean>(false);
   modalCategoriaModo = signal<'new' | 'edit'>('new');
-  modalCategoriaData = {
-    id: null as number | null,
+  modalCategoriaData: ModalCategoriaForm = {
+    id: null,
     faseNombre: '',
     IdpptoFase: '',
     IdpptoFaseCategoria: '',
-    CostoDirecto: null as number | null,
+    CostoDirecto: null,
   };
   categoriasDisponiblesModal = signal<FaseCategoriaMaestra[]>([]);
 
@@ -435,6 +505,7 @@ export class PresupuestosComponent implements OnInit {
   }
 
   adjustNumeric(field: 'gg' | 'utilidad' | 'viaticos' | 'descuento', delta: number) {
+    if (!this.puedeGuardarPresupuesto()) return;
     if (field === 'gg') {
       this.pctGG.set(ajustarParametro(this.pctGG(), delta));
     } else if (field === 'utilidad') {
@@ -447,6 +518,7 @@ export class PresupuestosComponent implements OnInit {
   }
 
   addFormFase() {
+    if (this.soloLectura()) return;
     const fase = this.fasesMaestras().find((item) => item.IdpptoFase === this.newFaseId);
     const categoria = this.categoriasFaseMaestra().find((item) => item.IdpptoFaseCategoria === this.newFaseCategoriaId); const catReal = this.categoriasReal().find((c) => c.id === Number(this.newFaseCategoriaRealId));
     if (!fase || !categoria) {
@@ -502,8 +574,9 @@ export class PresupuestosComponent implements OnInit {
   }
 
   actualizarCategoriaReal(fase: FilaFormFase, event: Event) {
-    const select = event.target as HTMLSelectElement;
-    const realId = select.value && select.value !== 'undefined' ? Number(select.value) : undefined;
+    if (this.soloLectura()) return;
+    const valor = valorDeEvento(event);
+    const realId = valor && valor !== 'undefined' ? Number(valor) : undefined;
     fase.id_categoria = realId;
     if (realId) {
       const realDesc = this.categoriasReal().find((c: CategoriaSelect) => c.id === realId)?.nombre || '';
@@ -515,6 +588,7 @@ export class PresupuestosComponent implements OnInit {
   }
 
   abrirModalFase(modo: 'new' | 'edit', fase?: DetalleFase) {
+    if (!this.puedeModal(modo)) return;
     const ppto = this.presupuestoActivo();
     if (!ppto) {
       alert('Seleccione primero un presupuesto.');
@@ -542,7 +616,7 @@ export class PresupuestosComponent implements OnInit {
 
   guardarModalFase() {
     const ppto = this.presupuestoActivo();
-    if (!ppto) return;
+    if (!ppto || !this.puedeModal(this.modalFaseModo())) return;
     if (!this.modalFaseData.IdpptoFase) {
       alert('Seleccione una fase maestra.');
       return;
@@ -582,6 +656,7 @@ export class PresupuestosComponent implements OnInit {
   }
 
   abrirModalCategoria(modo: 'new' | 'edit', cat?: DetalleFaseCate) {
+    if (!this.puedeModal(modo)) return;
     const ppto = this.presupuestoActivo();
     const fase = this.selectedFase();
     if (!ppto || !fase?.IdpptoFase) {
@@ -690,7 +765,7 @@ export class PresupuestosComponent implements OnInit {
   guardarModalCategoria() {
     const ppto = this.presupuestoActivo();
     const fase = this.selectedFase();
-    if (!ppto || !fase) return;
+    if (!ppto || !fase || !this.puedeModal(this.modalCategoriaModo())) return;
     if (!this.modalCategoriaData.IdpptoFaseCategoria) {
       alert('Seleccione una categoría.');
       return;
@@ -768,6 +843,7 @@ export class PresupuestosComponent implements OnInit {
   }
 
   guardarFaseCategoria() {
+    if (!this.puedeGuardarFormularioFila) return;
     if (this.editingFilaIndex !== null) {
       this.actualizarFilaFormFase();
       return;
@@ -877,6 +953,7 @@ export class PresupuestosComponent implements OnInit {
 
   eliminarFase(fase: DetalleFase, event?: Event) {
     event?.stopPropagation();
+    if (!this.permisos.eliminar()) return;
     if (!confirm(`¿Eliminar la fase "${fase.NombreFase || fase.IdpptoFase}" y sus categorías?`)) return;
     this.presupuestosService.deleteFaseAsignada(fase.id).subscribe({
       next: () => this.recargarPresupuestoActivo(),
@@ -886,6 +963,7 @@ export class PresupuestosComponent implements OnInit {
 
   eliminarCategoria(categoria: DetalleFaseCate, event?: Event) {
     event?.stopPropagation();
+    if (!this.permisos.eliminar()) return;
     if (!confirm(`¿Eliminar la categoría "${categoria.CategoriaInsumo || categoria.IdpptoFaseCategoria}"?`)) return;
     this.presupuestosService.deleteCategoriaAsignada(categoria.id).subscribe({
       next: () => this.recargarPresupuestoActivo(),
@@ -1008,7 +1086,30 @@ export class PresupuestosComponent implements OnInit {
     return !!this.editingId() && !!this.presupuestoActivo();
   }
 
+  /**
+   * Botón del formulario inferior del paso 2: editar una fila (local o PATCH) basta con no estar
+   * en solo lectura; agregar una fila a un presupuesto guardado es un POST y exige `crear`.
+   */
+  get puedeGuardarFormularioFila(): boolean {
+    if (this.soloLectura()) return false;
+    const editando = this.editingFilaIndex !== null || this.faseFormMode === 'edit-fase' || this.faseFormMode === 'edit-categoria';
+    return editando || !this.fasesPersistidas || this.permisos.crear();
+  }
+
+  /** Quitar una fila: si ya está guardada es un DELETE (eliminar); si es local basta con no estar en solo lectura. */
+  puedeQuitarFila(fila: FilaFormFase): boolean {
+    if (this.soloLectura()) return false;
+    const guardada = this.fasesPersistidas && (!!fila.idCategoriaDetalle || !!fila.idFaseDetalle);
+    return !guardada || this.permisos.eliminar();
+  }
+
+  /** Plantilla: en un presupuesto guardado es POST `/:id/aplicar-plantilla` (editar); en el alta, filas locales. */
+  get puedeUsarPlantilla(): boolean {
+    return this.plantillaVaAlServidor ? this.permisos.editar() : !this.soloLectura();
+  }
+
   updateFormFaseSubtotal(index: number, newSubtotal: number) {
+    if (this.soloLectura()) return;
     this.formFases.update(items => {
       const newItems = [...items];
       newItems[index] = { ...newItems[index], subtotal: Number(newSubtotal) || 0 };
@@ -1018,7 +1119,7 @@ export class PresupuestosComponent implements OnInit {
 
   /** Al salir del input de monto: si la fila ya existe en el servidor, guarda el nuevo monto. */
   persistirSubtotalFila(index: number) {
-    if (!this.fasesPersistidas) return;
+    if (!this.fasesPersistidas || this.soloLectura()) return;
     const fila = this.formFases()[index];
     if (!fila) return;
     const monto = Number(fila.subtotal) || 0;
@@ -1034,6 +1135,7 @@ export class PresupuestosComponent implements OnInit {
   }
 
   onCategoriaRealChange(index: number, valor: string) {
+    if (this.soloLectura()) return;
     const filas = this.formFases();
     const fila = filas[index];
     if (!fila) return;
@@ -1085,6 +1187,7 @@ export class PresupuestosComponent implements OnInit {
 
   /** Carga la fila en el formulario inferior para cambiar su categoría o monto. */
   editarFilaFormFase(index: number) {
+    if (this.soloLectura()) return;
     const fila = this.formFases()[index];
     if (!fila) return;
     this.faseFormMode = 'new-fase';
@@ -1099,7 +1202,7 @@ export class PresupuestosComponent implements OnInit {
 
   removeFormFase(index: number) {
     const fila = this.formFases()[index];
-    if (!fila) return;
+    if (!fila || !this.puedeQuitarFila(fila)) return;
     if (this.editingFilaIndex !== null) this.cancelarEdicionFase();
 
     // Presupuesto nuevo (o fila aún no guardada): solo se quita de la lista.
@@ -1118,9 +1221,14 @@ export class PresupuestosComponent implements OnInit {
     const isLastCategory = numCategoriasFase <= 1;
 
     // Si es la última categoría o si es una fila de fase sin categorías, borramos la fase completa
-    const peticion = (fila.idCategoriaDetalle && !isLastCategory)
-      ? this.presupuestosService.deleteCategoriaAsignada(fila.idCategoriaDetalle)
-      : this.presupuestosService.deleteFaseAsignada(fila.idFaseDetalle!);
+    let peticion: Observable<void>;
+    if (fila.idCategoriaDetalle && !isLastCategory) {
+      peticion = this.presupuestosService.deleteCategoriaAsignada(fila.idCategoriaDetalle);
+    } else if (fila.idFaseDetalle !== undefined) {
+      peticion = this.presupuestosService.deleteFaseAsignada(fila.idFaseDetalle);
+    } else {
+      return; // Inalcanzable: una fila guardada que no es "categoría no última" siempre tiene su fase.
+    }
 
     this.loading.set(true);
     peticion.pipe(finalize(() => this.loading.set(false))).subscribe({
@@ -1135,7 +1243,10 @@ export class PresupuestosComponent implements OnInit {
    * - Si no â†’ se crea la fila en la fase destino (reutilizándola si ya existe) y se borra del origen.
    */
   private moverFilaAOtraFase(fila: FilaFormFase, idFase: string, idCategoria: string, monto: number) {
-    const presupuesto = this.presupuestoActivo()!;
+    const presupuesto = this.presupuestoActivo();
+    // Solo se llama con una fila guardada de un presupuesto guardado (ver actualizarFilaFormFase).
+    if (!presupuesto) return;
+    const { idFaseDetalle, idCategoriaDetalle } = fila;
     const contexto = {
       IdPresupuesto: String(presupuesto.IdPresupuesto),
       id_empresa: presupuesto.id_empresa,
@@ -1151,9 +1262,10 @@ export class PresupuestosComponent implements OnInit {
     let pasos: Observable<unknown>;
     if (!destino && hermanas.length === 0) {
       // Cambio en sitio: la fase origen pasa a ser la fase destino.
-      const cambiarFase = api.updateFaseAsignada(fila.idFaseDetalle!, { IdpptoFase: idFase, CostoDirecto: monto });
-      if (fila.idCategoriaDetalle) {
-        pasos = cambiarFase.pipe(concatMap(() => api.updateCategoriaAsignada(fila.idCategoriaDetalle!, {
+      if (idFaseDetalle === undefined) return; // Inalcanzable: sin hermanas, la fila guardada tiene su fase.
+      const cambiarFase = api.updateFaseAsignada(idFaseDetalle, { IdpptoFase: idFase, CostoDirecto: monto });
+      if (idCategoriaDetalle) {
+        pasos = cambiarFase.pipe(concatMap(() => api.updateCategoriaAsignada(idCategoriaDetalle, {
           IdpptoFase: idFase,
           ...(idCategoria ? { IdpptoFaseCategoria: idCategoria } : {}),
           CostoDirecto: monto, id_categoria: this.newFaseCategoriaRealId ? Number(this.newFaseCategoriaRealId) : undefined,
@@ -1192,9 +1304,14 @@ export class PresupuestosComponent implements OnInit {
           }),
         );
       }
-      const borrarOrigen = hermanas.length === 0
-        ? api.deleteFaseAsignada(fila.idFaseDetalle!)
-        : api.deleteCategoriaAsignada(fila.idCategoriaDetalle!);
+      let borrarOrigen: Observable<void>;
+      if (hermanas.length === 0 && idFaseDetalle !== undefined) {
+        borrarOrigen = api.deleteFaseAsignada(idFaseDetalle);
+      } else if (hermanas.length > 0 && idCategoriaDetalle !== undefined) {
+        borrarOrigen = api.deleteCategoriaAsignada(idCategoriaDetalle);
+      } else {
+        return; // Inalcanzable: la fila guardada tiene su fase (o su categoría, si la fase tiene más).
+      }
       pasos = crear.pipe(concatMap(() => borrarOrigen));
     }
 
@@ -1213,7 +1330,8 @@ export class PresupuestosComponent implements OnInit {
 
   /** Guarda los cambios de la fila en edición (local en presupuesto nuevo, en el servidor si ya existe). */
   private actualizarFilaFormFase() {
-    const index = this.editingFilaIndex!;
+    const index = this.editingFilaIndex;
+    if (index === null) return;
     const fila = this.formFases()[index];
     if (!fila) {
       this.cancelarEdicionFase();
@@ -1252,7 +1370,8 @@ export class PresupuestosComponent implements OnInit {
       return;
     }
 
-    const presupuesto = this.presupuestoActivo()!;
+    const presupuesto = this.presupuestoActivo();
+    if (!presupuesto) return; // Inalcanzable: `persistida` implica presupuesto activo.
     let peticion: Observable<unknown>;
     if (fila.idCategoriaDetalle) {
       if (!idCategoria) {
@@ -1276,8 +1395,10 @@ export class PresupuestosComponent implements OnInit {
         IdpptoFaseCategoria: idCategoria,
         CostoDirecto: monto, id_categoria: this.newFaseCategoriaRealId ? Number(this.newFaseCategoriaRealId) : undefined,
       });
+    } else if (fila.idFaseDetalle !== undefined) {
+      peticion = this.presupuestosService.updateFaseAsignada(fila.idFaseDetalle, { CostoDirecto: monto });
     } else {
-      peticion = this.presupuestosService.updateFaseAsignada(fila.idFaseDetalle!, { CostoDirecto: monto });
+      return; // Inalcanzable: una fila guardada sin categoría tiene su fase.
     }
     this.loading.set(true);
     peticion.pipe(finalize(() => this.loading.set(false))).subscribe({
@@ -1290,6 +1411,7 @@ export class PresupuestosComponent implements OnInit {
   }
 
   openNewPresupuestoForm(centroCosto?: CentroCosto) {
+    if (!this.permisos.crear()) return;
     this.editingId.set(null);
     this.formData = this.emptyForm();
     this.formStep.set(1);
@@ -1453,6 +1575,7 @@ export class PresupuestosComponent implements OnInit {
 
   /** Datos Generales: abre el paso Fases y Costos del presupuesto y el selector de plantillas. */
   cargarPlantillaEnForm(p: PresupuestoPrincipal) {
+    if (!this.permisos.editar()) return;
     this.abrirPresupuestoEnForm(p, 2);
     this.abrirModalPlantillas();
   }
@@ -1468,8 +1591,9 @@ export class PresupuestosComponent implements OnInit {
   }
 
   guardarOActualizarPresupuesto() {
-    if (this.editingId()) {
-      const id = this.editingId()!;
+    if (this.soloLectura()) return;
+    const id = this.editingId();
+    if (id) {
       const payload: Partial<PresupuestoPrincipal> = {
         ...this.formData,
         Concepto: this.formData.Concepto,
@@ -1482,8 +1606,9 @@ export class PresupuestosComponent implements OnInit {
         next: () => {
           this.loading.set(false);
           this.recargarPresupuestosDelCCActual();
-          if (this.selectedCC()) {
-            this.onSelectCC(this.selectedCC()!);
+          const cc = this.selectedCC();
+          if (cc) {
+            this.onSelectCC(cc);
           }
           alert('Presupuesto actualizado con éxito.');
         },
@@ -1506,7 +1631,12 @@ export class PresupuestosComponent implements OnInit {
     const lista = this.presupuestosDelCC();
     if (!id) return lista;
     const actual = lista.filter(p => String(p.IdPresupuesto ?? p.id ?? '') === id);
-    return actual.length ? actual : (this.formData?.id_centro_costo ? [this.formData as PresupuestoPrincipal] : []);
+    return actual.length ? actual : (this.formData?.id_centro_costo ? [this.presupuestoDelFormulario()] : []);
+  }
+
+  /** `formData` como presupuesto completo para la grilla (el formulario siempre lleva `IdPresupuesto`). */
+  private presupuestoDelFormulario(): PresupuestoPrincipal {
+    return { ...this.formData, IdPresupuesto: this.formData.IdPresupuesto ?? '' };
   }
 
   private getSiguienteNumeroAdicional(pptos: PresupuestoPrincipal[]): number {
@@ -1523,6 +1653,7 @@ export class PresupuestosComponent implements OnInit {
   }
 
   agregarPresupuesto() {
+    if (!this.permisos.crear()) return;
     const cc = this.selectedCC();
     const idCc = cc?.id ?? cc?.id_centro_costo ?? this.formData.id_centro_costo;
     if (!idCc) {
@@ -1575,8 +1706,7 @@ export class PresupuestosComponent implements OnInit {
         else if (Array.isArray(res) && res.length > 0) pptos = res;
         this.presupuestosDelCC.set(pptos);
 
-        const c = creado as PresupuestoPrincipal | null;
-        const nuevoId = String(c?.IdPresupuesto ?? '');
+        const nuevoId = String(creado?.IdPresupuesto ?? '');
         if (nuevoId) {
           this.selectedPresupuestoId.set(nuevoId);
         }
@@ -1596,6 +1726,7 @@ export class PresupuestosComponent implements OnInit {
   }
 
   eliminarPresupuestoDeCC(p: PresupuestoPrincipal) {
+    if (!this.permisos.eliminar()) return;
     const id = String(p.IdPresupuesto || p.id || '');
     if (confirm(`¿Eliminar el presupuesto "${id}"? Esta acción no se puede deshacer.`)) {
       this.loading.set(true);
@@ -1636,6 +1767,7 @@ export class PresupuestosComponent implements OnInit {
   }
 
   savePresupuestoCompleto() {
+    if (!this.puedeGuardarPresupuesto()) return;
     if (this.editingId() && !String(this.formData.IdPresupuesto ?? '').trim()) {
       alert('El ID de Presupuesto es obligatorio.');
       this.formStep.set(1);
@@ -1725,6 +1857,35 @@ export class PresupuestosComponent implements OnInit {
   presupuestosDelCC = signal<PresupuestoPrincipal[]>([]);
   selectedPresupuestoId = signal<string | null>(null);
 
+  /** Presupuestos (base y adicionales) del centro de costos seleccionado, listos para exportar. */
+  readonly datosExportacion = computed<DatosExportacion>(() => {
+    const cc = this.selectedCC();
+    const codigoCC = cc ? cc.CodCentroCto || `CC-${cc.id ?? cc.id_centro_costo}` : '';
+    return {
+      nombre: codigoCC ? `Presupuestos_${codigoCC}` : 'Presupuestos',
+      columnas: [
+        'Tipo', 'Código', 'Proyecto', 'Concepto', 'Versión', 'Costo Directo (S/)', 'Gastos Generales (S/)',
+        'Utilidad (S/)', 'Viáticos (S/)', 'SubTotal sin IGV (S/)', 'IGV (S/)', 'Total (S/)', 'Estado', 'Fecha Aprobación',
+      ],
+      filas: this.presupuestosDelCC().map((p) => [
+        this.isBaseContractual(p) ? 'PRESUPUESTO PRINCIPAL' : p.TipoPpto || 'ADICIONAL',
+        p.IdPresupuesto,
+        p.Proyecto,
+        p.Concepto,
+        p.Version || 'V1',
+        p.CostoDirecto,
+        p.GastosGenerales,
+        p.Utilidad,
+        p.Viaticos,
+        p.SubTotalSinIGV,
+        p.IGV,
+        p.Total,
+        p.Estado || 'PENDIENTE',
+        p.FechaAprobacion || p.FechaCreacion,
+      ]),
+    };
+  });
+
   // Paginación (legacy)
   currentPage = signal<number>(1);
   pageSize = signal<number>(10);
@@ -1739,11 +1900,23 @@ export class PresupuestosComponent implements OnInit {
       this.sincronizarDescripcionesCategorias();
     });
 
-    const navigationState = this.router.getCurrentNavigation()?.extras.state ?? history.state;
-    const fromCC = navigationState?.['fromCC'] as CentroCosto | undefined;
-    if (fromCC) {
-      this.openNewPresupuestoForm(fromCC);
+    const navigationState: unknown = this.router.getCurrentNavigation()?.extras.state ?? history.state;
+    const fromCC = centroCostoDeEstado(navigationState);
+    // Se espera a que los permisos estén cargados (el guard ya lo hace al navegar; esto cubre la recarga).
+    if (fromCC) void this.permisosSesion.listo().then(() => this.abrirAltaDesdeCentroCosto(fromCC));
+  }
+
+  /**
+   * "Ppto" de Centros de costos abre el alta precargada con el centro de costo, solo con permiso
+   * de crear. Sin él no se abre y se muestra el aviso global "No tienes permiso…" (el usuario
+   * llegó por un enlace explícito y debe saber por qué no se abrió el formulario).
+   */
+  private abrirAltaDesdeCentroCosto(centroCosto: CentroCosto): void {
+    if (!this.permisos.crear()) {
+      this.avisos.mostrar(MSG_SIN_PERMISO);
+      return;
     }
+    this.openNewPresupuestoForm(centroCosto);
   }
 
   loadCatalogos() {
@@ -1818,7 +1991,7 @@ export class PresupuestosComponent implements OnInit {
 
   aplicarPlantillaSeleccionada() {
     const id = this.selectedPlantilla();
-    if (!id) return;
+    if (!id || !this.puedeUsarPlantilla) return;
     const modo: ModoPlantilla = this.hayFasesParaPlantilla ? this.modoPlantilla() : 'agregar';
     if (modo === 'reemplazar' && this.plantillaVaAlServidor
       && !confirm('Se eliminarán TODAS las fases y categorías actuales del presupuesto y se cargarán las de la plantilla. ¿Continuar?')) {
@@ -1962,8 +2135,8 @@ export class PresupuestosComponent implements OnInit {
       next: (res) => {
         const list = res.data || [];
         this.loading.set(false);
-        if (this.selectedCC()) {
-          const current = this.selectedCC()!;
+        const current = this.selectedCC();
+        if (current) {
           const currentId = current.id ?? current.id_centro_costo;
           const matchedIndex = list.findIndex((c: CentroCosto) =>
             (currentId != null && (c.id === currentId || c.id_centro_costo === currentId)) ||
@@ -2127,6 +2300,7 @@ export class PresupuestosComponent implements OnInit {
 
   /** Acción de la tabla: abre "Fases y Costos" del presupuesto y el selector de plantillas encima. */
   cargarPlantillaEnPpto(ppto: PresupuestoPrincipal) {
+    if (!this.permisos.editar()) return;
     this.abrirFasesModal(ppto);
     this.abrirModalPlantillas();
   }
@@ -2249,6 +2423,7 @@ export class PresupuestosComponent implements OnInit {
   }
 
   editModal(item: PresupuestoPrincipal) {
+    if (!this.permisos.editar()) return;
     this.abrirPresupuestoEnForm(item, 1);
   }
 
@@ -2258,11 +2433,16 @@ export class PresupuestosComponent implements OnInit {
     this.editingId.set(null);
   }
 
-  delete(id: string | number) {
+  /** `id` puede faltar (`IdPresupuesto || id` de la fila); se conserva el comportamiento previo. */
+  delete(id: string | number | undefined) {
+    if (!this.permisos.eliminar()) return;
     const idStr = String(id);
     if (confirm(`¿Eliminar el Presupuesto "${idStr}"? Esta acción no se puede deshacer.`)) {
       this.presupuestosService.deletePresupuesto(idStr).subscribe({
-        next: () => { if (this.selectedCC()) this.onSelectCC(this.selectedCC()!); else this.loadData(); },
+        next: () => {
+          const cc = this.selectedCC();
+          if (cc) this.onSelectCC(cc); else this.loadData();
+        },
         error: (err) => alert('Error al eliminar: ' + (err.error?.message || err.message))
       });
     }

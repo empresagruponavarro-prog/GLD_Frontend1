@@ -1,6 +1,8 @@
 import { ChangeDetectionStrategy, Component, HostListener, computed, input, output, signal } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { ObraPlano } from '../../obra.interface';
+import { valorDeEvento } from '@shared/utils/eventos';
+import { PermisosObra, SIN_PERMISOS_OBRA } from '../../obra-permisos';
 
 @Component({
   selector: 'app-planos-tab',
@@ -11,6 +13,8 @@ import { ObraPlano } from '../../obra.interface';
 })
 export class PlanosTabComponent {
   readonly planos = input<readonly ObraPlano[]>([]);
+  /** Permisos del módulo `obra`; sin ellos la pestaña queda en solo lectura. */
+  readonly permisos = input<PermisosObra>(SIN_PERMISOS_OBRA);
   readonly subir = output<void>();
   readonly ver = output<ObraPlano>();
   readonly descargar = output<ObraPlano>();
@@ -37,7 +41,8 @@ export class PlanosTabComponent {
       return;
     }
 
-    const button = event.currentTarget as HTMLElement;
+    const button = event.currentTarget;
+    if (!(button instanceof HTMLElement)) return;
     const rect = button.getBoundingClientRect();
     const menuHeight = 185;
     const espacioAbajo = window.innerHeight - rect.bottom;
@@ -63,6 +68,6 @@ export class PlanosTabComponent {
   });
 
   protected onFilterQuery(event: Event): void {
-    this.filtroQuery.set((event.target as HTMLInputElement).value);
+    this.filtroQuery.set(valorDeEvento(event));
   }
 }

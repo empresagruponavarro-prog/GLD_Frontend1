@@ -7,6 +7,7 @@
     <button class="btn btn-secondary" (click)="loadEmpresas()" [disabled]="loading()">
       <i class="fa-solid fa-arrows-rotate" [class.fa-spin]="loading()"></i> {{ loading() ? 'Actualizando...' : 'Actualizar' }}
     </button>
+    <app-exportar-botones [datos]="datosExportacion()" [cargando]="loading()" />
     @if (permisos.crear()) {
       <button class="btn btn-primary" (click)="openModal()">
         <i class="fa-solid fa-building-circle-check"></i> + Nueva Empresa

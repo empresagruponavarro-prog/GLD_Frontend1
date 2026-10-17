@@ -1,7 +1,8 @@
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, effect, inject, signal } from '@angular/core';
 import { FormArray, FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { forkJoin } from 'rxjs';
+import { permisosDePantalla } from '@app/core/auth/permisos-pantalla';
 import { DataTableComponent } from '../../../shared/components/data-table/data-table';
 import { ModalComponent } from '../../../shared/components/modal/modal';
 import { SearchSelectComponent } from '../../../shared/components/search-select/search-select';
@@ -48,6 +49,12 @@ type AprobacionGroup = ReturnType<typeof aprobacionGroup>;
 })
 export class BandejaAprobacionComponent {
   private readonly service = inject(RequerimientosService);
+  /**
+   * "Revisar" es de lectura (siempre visible). Observar / Rechazar / Aprobar y elegir al ganador →
+   * aprobar (`FlujoAprobacionController`); sin él, la revisión queda en solo lectura.
+   * Imprimir el cuadro comparativo es libre.
+   */
+  protected readonly permisos = permisosDePantalla('requerimientos.aprobacion');
 
   protected readonly fmtNum = fmtNum;
   protected readonly fmtMoney = fmtMoney;
@@ -113,7 +120,18 @@ export class BandejaAprobacionComponent {
 
   constructor() {
     this.service.getTrabajadoresSelect().subscribe({ next: (r) => this.trabajadores.set(r), error: () => this.trabajadores.set([]) });
+    // Sin permiso de aprobar, el formulario de la revisión queda en solo lectura.
+    effect(() => {
+      this.permisos.aprobar();
+      this.aplicarEdicionRevision();
+    });
     this.load();
+  }
+
+  /** Habilita o deshabilita el formulario de la revisión según el permiso de aprobar. */
+  private aplicarEdicionRevision(): void {
+    if (this.permisos.aprobar()) this.revision.enable({ emitEvent: false });
+    else this.revision.disable({ emitEvent: false });
   }
 
   protected get lineas(): FormArray<AprobacionGroup> {
@@ -159,15 +177,17 @@ export class BandejaAprobacionComponent {
         this.revision.reset({ id_aprobador: null, comentario: '', comentario_adjudicacion: '' });
         this.lineas.clear();
         for (const l of r.lineas ?? []) this.lineas.push(aprobacionGroup(l));
+        // Las líneas nuevas nacen habilitadas: se reaplica el solo lectura si no hay permiso.
+        this.aplicarEdicionRevision();
         this.seleccionado.set(r);
         if (r.tipo === 'COMPRA') {
           this.service.getCuadroComparativo(r.id).subscribe({
             next: (c) => this.cuadro.set(c),
-            error: (err) => this.modalError.set(errorMessage(err)),
+            error: (err: unknown) => this.modalError.set(errorMessage(err)),
           });
         }
       },
-      error: (err) => this.modalError.set(errorMessage(err)),
+      error: (err: unknown) => this.modalError.set(errorMessage(err)),
     });
   }
 
@@ -184,6 +204,7 @@ export class BandejaAprobacionComponent {
 
   /** Elegir al ganador: las líneas que no cotiza quedan en 0 y las demás en lo que ofrece. */
   protected elegir(p: CuadroProveedor): void {
+    if (!this.permisos.aprobar()) return;
     this.ganadora.set(p.id_cotizacion);
     this.modalError.set('');
     for (const g of this.lineas.controls) {
@@ -204,7 +225,7 @@ export class BandejaAprobacionComponent {
   protected aprobar(): void {
     const r = this.seleccionado();
     const idAprobador = this.revision.controls.id_aprobador.value;
-    if (!r) return;
+    if (!r || !this.permisos.aprobar()) return;
     if (!idAprobador) return this.modalError.set('Seleccione al aprobador.');
     if (this.esCompra() && this.ganadora() === null) return this.modalError.set('Elija la cotización ganadora en el cuadro comparativo.');
     const lineas = this.lineas.getRawValue();
@@ -244,7 +265,7 @@ export class BandejaAprobacionComponent {
     const r = this.seleccionado();
     const idAprobador = this.revision.controls.id_aprobador.value;
     const comentario = this.revision.controls.comentario.value.trim();
-    if (!r) return;
+    if (!r || !this.permisos.aprobar()) return;
     if (!idAprobador) return this.modalError.set('Seleccione al aprobador.');
     if (!comentario) return this.modalError.set(accion === 'observar' ? 'Indique qué debe corregir el solicitante.' : 'Indique el motivo del rechazo.');
     if (accion === 'observar') this.resolver(this.service.observar(r.id, idAprobador, comentario), `${r.numero} devuelto con observaciones.`);
@@ -261,7 +282,7 @@ export class BandejaAprobacionComponent {
         this.message.set(mensaje);
         this.load();
       },
-      error: (err) => {
+      error: (err: unknown) => {
         this.isSaving.set(false);
         this.modalError.set(errorMessage(err));
       },

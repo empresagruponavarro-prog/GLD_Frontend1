@@ -95,12 +95,14 @@
                   <th [class.bandeja-cuadro__ganadora]="ganadora() === p.id_cotizacion">
                     <div>{{ p.proveedor ?? '—' }}</div>
                     <small>{{ p.numero }}</small>
-                    <div>
-                      <button class="btn" [class.btn-primary]="ganadora() === p.id_cotizacion" [class.btn-secondary]="ganadora() !== p.id_cotizacion" type="button" (click)="elegir(p)">
-                        <i class="fa-solid" [class.fa-circle-check]="ganadora() === p.id_cotizacion" [class.fa-circle]="ganadora() !== p.id_cotizacion"></i>
-                        {{ ganadora() === p.id_cotizacion ? 'Elegida' : 'Elegir' }}
-                      </button>
-                    </div>
+                    @if (permisos.aprobar()) {
+                      <div>
+                        <button class="btn" [class.btn-primary]="ganadora() === p.id_cotizacion" [class.btn-secondary]="ganadora() !== p.id_cotizacion" type="button" (click)="elegir(p)">
+                          <i class="fa-solid" [class.fa-circle-check]="ganadora() === p.id_cotizacion" [class.fa-circle]="ganadora() !== p.id_cotizacion"></i>
+                          {{ ganadora() === p.id_cotizacion ? 'Elegida' : 'Elegir' }}
+                        </button>
+                      </div>
+                    }
                   </th>
                 }
               </tr>
@@ -255,13 +257,19 @@
     <p class="bandeja-form__hint"><i class="fa-solid fa-spinner fa-spin"></i> Cargando requerimiento...</p>
   }
 
+  @if (seleccionado() && !permisos.aprobar()) {
+    <p class="bandeja-form__hint" role="note" data-testid="revision-solo-lectura">
+      <i class="fa-solid fa-lock"></i> Solo lectura: no tienes permiso para aprobar, observar ni rechazar requerimientos.
+    </p>
+  }
+
   @if (modalError()) {
     <p class="badge badge-danger" role="alert" style="white-space: pre-line">{{ modalError() }}</p>
   }
 
   <div modal-footer class="modal-footer">
     <button class="btn btn-secondary" type="button" (click)="closeModal()" [disabled]="isSaving()">Cerrar</button>
-    @if (seleccionado()) {
+    @if (seleccionado() && permisos.aprobar()) {
       <button class="btn btn-secondary" type="button" (click)="observar()" [disabled]="isSaving()"><i class="fa-solid fa-comment-dots"></i> Observar</button>
       <button class="btn btn-danger" type="button" (click)="rechazar()" [disabled]="isSaving()"><i class="fa-solid fa-xmark"></i> Rechazar</button>
       <button class="btn btn-primary" type="button" (click)="aprobar()" [disabled]="isSaving()"><i class="fa-solid fa-check"></i> Aprobar</button>

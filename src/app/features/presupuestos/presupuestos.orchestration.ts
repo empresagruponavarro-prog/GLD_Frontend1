@@ -64,8 +64,11 @@ export type ModoPlantilla = 'agregar' | 'reemplazar';
 
 export function mensajeDeError(error: unknown): string {
   if (error && typeof error === 'object') {
-    const errObj = error as { error?: { message?: string }; message?: string };
-    return errObj.error?.message || errObj.message || 'Error desconocido';
+    // `error.error.message` (cuerpo del backend) o `error.message`; se conserva el valor tal cual.
+    const cuerpo = 'error' in error ? error.error : undefined;
+    const delBackend = typeof cuerpo === 'object' && cuerpo !== null && 'message' in cuerpo ? cuerpo.message : undefined;
+    const propio = 'message' in error ? error.message : undefined;
+    return String(delBackend || propio || 'Error desconocido');
   }
   return String(error || 'Error desconocido');
 }

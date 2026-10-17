@@ -228,7 +228,7 @@
               <span class="w-2.5 h-2.5 rounded-xs bg-slate-300 inline-block"></span> Meta Curva S
             </span>
             <span class="text-[10px] font-mono font-semibold" [class]="form.controls.porcentaje_real.value < form.controls.porcentaje_meta.value ? 'text-rose-600' : 'text-emerald-700'">
-              Desvío: {{ (form.controls.porcentaje_real.value - form.controls.porcentaje_meta.value) | number: '+1.2-2' }} pts
+              Desvío: {{ form.controls.porcentaje_real.value - form.controls.porcentaje_meta.value > 0 ? '+' : '' }}{{ (form.controls.porcentaje_real.value - form.controls.porcentaje_meta.value) | number: '1.2-2' }} pts
             </span>
           </div>
           <div class="relative w-full bg-slate-200 h-2.5 rounded-full overflow-hidden">
@@ -283,7 +283,7 @@
 
         <!-- Botones de Acción -->
         <div class="flex items-center gap-2.5 ml-auto shrink-0">
-          @if (isEdit) {
+          @if (puedeEliminar()) {
             <button
               type="button"
               id="btn-semana-eliminar"
@@ -306,20 +306,22 @@
           >
             Cancelar
           </button>
-          <button
-            type="submit"
-            form="form-semana"
-            id="btn-semana-guardar"
-            [disabled]="isSaving() || isDeleting()"
-            class="px-5 py-2 rounded-xl bg-[#2d7d5f] hover:bg-[#24674e] text-white text-xs font-semibold shadow-sm flex items-center gap-2 transition-all cursor-pointer disabled:opacity-50"
-          >
-            @if (isSaving()) {
-              <i class="fa-solid fa-spinner fa-spin"></i> Guardando...
-            } @else {
-              <span class="material-symbols-outlined text-sm">save</span>
-              <span>{{ isEdit ? 'Guardar Cambios' : 'Programar Semana' }}</span>
-            }
-          </button>
+          @if (puedeGuardar()) {
+            <button
+              type="submit"
+              form="form-semana"
+              id="btn-semana-guardar"
+              [disabled]="isSaving() || isDeleting()"
+              class="px-5 py-2 rounded-xl bg-[#2d7d5f] hover:bg-[#24674e] text-white text-xs font-semibold shadow-sm flex items-center gap-2 transition-all cursor-pointer disabled:opacity-50"
+            >
+              @if (isSaving()) {
+                <i class="fa-solid fa-spinner fa-spin"></i> Guardando...
+              } @else {
+                <span class="material-symbols-outlined text-sm">save</span>
+                <span>{{ isEdit ? 'Guardar Cambios' : 'Programar Semana' }}</span>
+              }
+            </button>
+          }
         </div>
       </div>
     </form>

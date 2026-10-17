@@ -26,6 +26,7 @@ import { PermisosAdminService } from './permisos-admin.service';
 import { PantallaConCambiosPendientes } from './roles.guard';
 import { AuthService } from '@app/core/auth/auth.service';
 import { PermisosService } from '@app/core/auth/permisos.service';
+import { permisosDePantalla } from '@app/core/auth/permisos-pantalla';
 import {
   EstadoColumna,
   MapaPermisos,
@@ -107,6 +108,11 @@ export class RolesComponent implements PantallaConCambiosPendientes {
   readonly #permisosService = inject(PermisosAdminService);
   /** Permisos de la sesión: se recargan al guardar la matriz del rol del propio usuario. */
   readonly #permisosSesion = inject(PermisosService);
+  /**
+   * + Nuevo rol → crear; Editar rol, la matriz y Guardar/Descartar permisos → editar; Eliminar rol →
+   * eliminar. El grupo Administración es siempre estricto en la API.
+   */
+  protected readonly permisos = permisosDePantalla('admin.roles');
   readonly #auth = inject(AuthService);
   readonly #document = inject(DOCUMENT);
   readonly #injector = inject(Injector);
@@ -148,14 +154,18 @@ export class RolesComponent implements PantallaConCambiosPendientes {
   protected readonly rolSeleccionado = computed(() => this.roles().find((r) => r.id === this.rolId()) ?? null);
   /** Matriz de solo lectura (Administrador). */
   protected readonly bloqueado = computed(() => this.matriz()?.bloqueado ?? false);
+  /** Sin permiso de editar roles: matriz en solo lectura, sin Guardar/Descartar. */
+  protected readonly sinPermisoEditar = computed(() => !this.permisos.editar());
+  /** La matriz no se puede modificar (Administrador o sin permiso de editar). */
+  protected readonly soloLectura = computed(() => this.bloqueado() || this.sinPermisoEditar());
   protected readonly cambios = computed(() =>
-    this.bloqueado() ? 0 : contarCambios(this.catalogo(), this.#original(), this.#actual()),
+    this.soloLectura() ? 0 : contarCambios(this.catalogo(), this.#original(), this.#actual()),
   );
   protected readonly puedeGuardar = computed(
-    () => this.matriz() !== null && !this.bloqueado() && this.cambios() > 0 && !this.isSaving(),
+    () => this.matriz() !== null && !this.soloLectura() && this.cambios() > 0 && !this.isSaving(),
   );
   protected readonly casillasDeshabilitadas = computed(
-    () => this.bloqueado() || this.isSaving() || this.isLoadingMatriz(),
+    () => this.soloLectura() || this.isSaving() || this.isLoadingMatriz(),
   );
 
   /** Matriz lista para la plantilla: grupos con su fila de "marcar todos" y sus módulos. */
@@ -329,7 +339,7 @@ export class RolesComponent implements PantallaConCambiosPendientes {
   }
 
   descartarCambios(): void {
-    if (this.isSaving()) return;
+    if (this.isSaving() || this.sinPermisoEditar()) return;
     this.#actual.set(this.#original());
     this.guardarError.set(null);
   }
@@ -444,12 +454,13 @@ export class RolesComponent implements PantallaConCambiosPendientes {
   // ---- Crear / editar rol ----
 
   openModal(): void {
+    if (!this.permisos.crear()) return;
     this.abrirFormulario(null);
   }
 
   editarSeleccionado(): void {
     const rol = this.rolSeleccionado();
-    if (rol) this.abrirFormulario(rol);
+    if (rol && this.permisos.editar()) this.abrirFormulario(rol);
   }
 
   closeModal(): void {
@@ -468,6 +479,7 @@ export class RolesComponent implements PantallaConCambiosPendientes {
     const nombre = v.nombre.trim();
     const descripcion = v.descripcion.trim();
     const rol = this.editando();
+    if (!(rol ? this.permisos.editar() : this.permisos.crear())) return;
     const cambiaNombre = !rol || (!rol.es_sistema && nombre !== rol.nombre);
 
     if (cambiaNombre && this.nombreDuplicado(nombre, rol?.id)) {
@@ -519,7 +531,7 @@ export class RolesComponent implements PantallaConCambiosPendientes {
   }
 
   askDelete(rol: RolAdmin): void {
-    if (this.motivoNoEliminar(rol)) return;
+    if (!this.permisos.eliminar() || this.motivoNoEliminar(rol)) return;
     this.guardarFoco();
     this.deleteError.set(null);
     this.porEliminar.set(rol);
@@ -535,7 +547,7 @@ export class RolesComponent implements PantallaConCambiosPendientes {
 
   confirmDelete(): void {
     const rol = this.porEliminar();
-    if (!rol || this.isDeleting()) return;
+    if (!rol || this.isDeleting() || !this.permisos.eliminar()) return;
     this.isDeleting.set(true);
     this.deleteError.set(null);
     this.#rolesService.eliminarRol(rol.id).subscribe({

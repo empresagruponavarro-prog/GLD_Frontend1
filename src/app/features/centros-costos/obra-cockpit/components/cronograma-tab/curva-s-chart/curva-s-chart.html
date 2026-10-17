@@ -155,7 +155,8 @@
         <!-- Puntos y Eje X de cada semana -->
         @for (pt of points(); track pt.semana.id) {
           <g
-            class="cursor-pointer group"
+            class="group"
+            [class.cursor-pointer]="seleccionable()"
             (mouseenter)="onPointHover(pt)"
             (mouseleave)="onPointLeave()"
             (click)="onPointClick(pt)"
@@ -285,16 +286,18 @@
                 [class.text-emerald-400]="hp.desviacion >= 0"
                 [class.text-rose-400]="hp.desviacion < 0"
               >
-                {{ hp.desviacion | number: '+1.2-2' }} pts
+                {{ hp.desviacion > 0 ? '+' : '' }}{{ hp.desviacion | number: '1.2-2' }} pts
               </span>
             </div>
           </div>
 
           <!-- Pista de interacción -->
-          <div class="mt-2 pt-1.5 border-t border-slate-800/60 text-[9px] text-slate-400 flex items-center gap-1">
-            <span class="material-symbols-outlined text-xs text-emerald-400">touch_app</span>
-            <span>Clic para abrir opciones de la semana</span>
-          </div>
+          @if (seleccionable()) {
+            <div class="mt-2 pt-1.5 border-t border-slate-800/60 text-[9px] text-slate-400 flex items-center gap-1">
+              <span class="material-symbols-outlined text-xs text-emerald-400">touch_app</span>
+              <span>Clic para abrir opciones de la semana</span>
+            </div>
+          }
         </div>
       }
     </div>

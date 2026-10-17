@@ -1,10 +1,11 @@
-import { ChangeDetectionStrategy, Component, effect, inject, input, output, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, effect, inject, input, output, signal } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ModalComponent } from '@shared/components/modal/modal';
 import { errorMessage } from '@app/features/almacen/almacen.utils';
 import { sinVacios } from '../../obra.calc';
 import { ObraDatosGenerales, UpdateGeneralesPayload } from '../../obra.interface';
 import { ObraService } from '../../obra.service';
+import { PermisosObra, SIN_PERMISOS_OBRA } from '../../obra-permisos';
 
 @Component({
   selector: 'app-generales-dialog',
@@ -20,6 +21,8 @@ export class GeneralesDialogComponent {
   readonly idCentroCosto = input.required<number>();
   readonly nombreObra = input<string>('');
   readonly generales = input<ObraDatosGenerales | undefined>(undefined);
+  /** Permisos de `obra`: guardar la ficha (`PATCH …/generales`) exige `editar`. */
+  readonly permisos = input<PermisosObra>(SIN_PERMISOS_OBRA);
 
   readonly closed = output<void>();
   readonly saved = output<void>();
@@ -51,6 +54,9 @@ export class GeneralesDialogComponent {
 
   protected readonly isSaving = signal(false);
   protected readonly formError = signal('');
+  protected readonly puedeGuardar = computed(() => this.permisos().editar);
+  /** Sin permiso de guardar, el formulario se muestra en solo lectura. */
+  protected readonly soloLectura = computed(() => !this.puedeGuardar());
 
   protected readonly form = new FormGroup({
     expediente_codigo: new FormControl('', { nonNullable: true, validators: [Validators.maxLength(100)] }),
@@ -90,10 +96,13 @@ export class GeneralesDialogComponent {
         contacto_cliente_telefono: g?.contacto_cliente_telefono ?? '',
         contacto_cliente_correo: g?.contacto_cliente_correo ?? '',
       });
+      if (this.soloLectura()) this.form.disable({ emitEvent: false });
+      else this.form.enable({ emitEvent: false });
     });
   }
 
   protected onSubmit(): void {
+    if (!this.puedeGuardar()) return;
     this.form.markAllAsTouched();
     if (this.form.invalid) {
       this.formError.set('Revisa los valores: coordenadas válidas, números positivos y correo correcto.');

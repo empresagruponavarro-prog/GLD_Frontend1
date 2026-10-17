@@ -16,6 +16,7 @@ import {
   ObraDocumento,
 } from '../../obra.interface';
 import { ObraService } from '../../obra.service';
+import { PermisosObra, SIN_PERMISOS_OBRA, puedeGuardarObra } from '../../obra-permisos';
 
 export type OrigenDocumento = 'local' | 'enlace';
 
@@ -64,6 +65,11 @@ export class DocumentoDialogComponent {
   readonly documento = input<ObraDocumento | null>(null);
   /** Nombre de la obra, para la cabecera. */
   readonly nombreObra = input<string>('');
+  /**
+   * Permisos de `obra`: guardar exige `crear` (alta) o `editar` (detalle); Eliminar, `eliminar`;
+   * subir archivo, `crear`. Abierto desde «Detalle» sin `editar`, el formulario es de solo lectura.
+   */
+  readonly permisos = input<PermisosObra>(SIN_PERMISOS_OBRA);
 
   readonly closed = output<void>();
   readonly saved = output<void>();
@@ -77,6 +83,12 @@ export class DocumentoDialogComponent {
   protected readonly extensionesTexto = DOCUMENTO_EXTENSIONES.join(', ');
   protected readonly isSaving = signal(false);
   protected readonly formError = signal('');
+  protected readonly puedeGuardar = computed(() => puedeGuardarObra(this.permisos(), this.documento() !== null));
+  /** Sin permiso de guardar, el formulario se muestra en solo lectura. */
+  protected readonly soloLectura = computed(() => !this.puedeGuardar());
+  protected readonly puedeEliminar = computed(() => this.documento() !== null && this.permisos().eliminar);
+  /** Subir un archivo (`POST …/documentos/archivo`) exige `crear` en el backend, también al editar. */
+  protected readonly puedeSubirArchivo = computed(() => this.puedeGuardar() && this.permisos().crear);
   /** Error de la selección/subida del archivo (se muestra junto al control). */
   protected readonly archivoError = signal('');
 
@@ -134,7 +146,8 @@ export class DocumentoDialogComponent {
     effect(() => {
       const abierto = this.isOpen();
       const d = this.documento();
-      // Solo isOpen y documento disparan el efecto; lo demás se lee sin dependencia.
+      const soloLectura = this.soloLectura();
+      // Solo isOpen, documento y los permisos disparan el efecto; lo demás se lee sin dependencia.
       untracked(() => {
         if (!abierto) {
           // Modal cerrado sin guardar: se aborta la subida y se borra el archivo huérfano.
@@ -165,6 +178,8 @@ export class DocumentoDialogComponent {
         this.archivoNombre.set(esExterno ? '' : nombreArchivoDocumento(original));
         this.archivoBytes.set(null);
         this.arrastrando.set(false);
+        if (soloLectura) this.form.disable({ emitEvent: false });
+        else this.form.enable({ emitEvent: false });
       });
     });
   }
@@ -193,7 +208,7 @@ export class DocumentoDialogComponent {
 
   /** Cambia entre archivo local y enlace: limpia el otro origen y descarta lo subido sin guardar. */
   protected setOrigen(nuevo: OrigenDocumento): void {
-    if (this.origen() === nuevo) return;
+    if (this.origen() === nuevo || this.soloLectura()) return;
     this.cancelarSubida();
     this.#descartarPendiente();
     this.archivoError.set('');
@@ -208,6 +223,7 @@ export class DocumentoDialogComponent {
 
   /** Quita el archivo actual del formulario y descarta si había subida pendiente. */
   protected quitarArchivo(): void {
+    if (this.soloLectura()) return;
     this.#descartarPendiente();
     this.form.patchValue({ archivo_url: '' });
     this.claveLocal.set('');
@@ -218,7 +234,8 @@ export class DocumentoDialogComponent {
 
   /** Valida y sube el archivo elegido; al terminar llena archivo_url con la clave devuelta. */
   protected onArchivoSeleccionado(event: Event): void {
-    const inputEl = event.target as HTMLInputElement;
+    const inputEl = event.target;
+    if (!(inputEl instanceof HTMLInputElement) || !this.puedeSubirArchivo()) return;
     const archivo = inputEl.files?.[0];
     inputEl.value = ''; // permite volver a elegir el mismo archivo
     if (archivo) this.#procesarArchivo(archivo);
@@ -226,13 +243,13 @@ export class DocumentoDialogComponent {
 
   protected onArrastrar(event: DragEvent): void {
     event.preventDefault();
-    if (!this.subiendo() && !this.isSaving()) this.arrastrando.set(true);
+    if (!this.subiendo() && !this.isSaving() && this.puedeSubirArchivo()) this.arrastrando.set(true);
   }
 
   protected onSoltar(event: DragEvent): void {
     event.preventDefault();
     this.arrastrando.set(false);
-    if (this.subiendo() || this.isSaving()) return;
+    if (this.subiendo() || this.isSaving() || !this.puedeSubirArchivo()) return;
     const archivo = event.dataTransfer?.files?.[0];
     if (archivo) this.#procesarArchivo(archivo);
   }
@@ -241,7 +258,7 @@ export class DocumentoDialogComponent {
 
     const punto = archivo.name.lastIndexOf('.');
     const ext = punto >= 0 ? archivo.name.slice(punto).toLowerCase() : '';
-    if (!(DOCUMENTO_EXTENSIONES as readonly string[]).includes(ext)) {
+    if (!DOCUMENTO_EXTENSIONES.some((e) => e === ext)) {
       this.archivoError.set(`Formato no permitido${ext ? ` (${ext})` : ''}. Usa: ${this.extensionesTexto}`);
       return;
     }
@@ -286,6 +303,8 @@ export class DocumentoDialogComponent {
     const clave = this.#pendiente;
     if (!clave) return;
     this.#pendiente = null;
+    // `DELETE …/archivo` exige `eliminar` en el backend: sin él no se pide (el archivo queda huérfano).
+    if (!this.permisos().eliminar) return;
     this.#service.descartarArchivoDocumento(this.idCentroCosto(), clave).subscribe({ error: () => undefined });
   }
 
@@ -320,6 +339,7 @@ export class DocumentoDialogComponent {
   }
 
   protected onSubmit(): void {
+    if (!this.puedeGuardar()) return;
     this.form.markAllAsTouched();
     if (this.subiendo()) {
       this.formError.set('Espera a que termine la subida del archivo.');
@@ -387,7 +407,7 @@ export class DocumentoDialogComponent {
 
   protected onDelete(): void {
     const d = this.documento();
-    if (!d || !confirm(`¿Eliminar el documento "${d.titulo}"?`)) return;
+    if (!d || !this.puedeEliminar() || !confirm(`¿Eliminar el documento "${d.titulo}"?`)) return;
     this.isSaving.set(true);
     this.#service.deleteDocumento(this.idCentroCosto(), d.id).subscribe({
       next: () => {

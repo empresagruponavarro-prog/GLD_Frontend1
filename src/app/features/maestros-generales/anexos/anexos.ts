@@ -4,7 +4,9 @@ import { FormsModule } from '@angular/forms';
 import { permisosDePantalla } from '@app/core/auth/permisos-pantalla';
 import { mensajeError } from '@shared/utils/errores-http';
 import { DataTableComponent } from '../../../shared/components/data-table/data-table';
+import { ExportarBotonesComponent } from '../../../shared/components/exportar-botones/exportar-botones';
 import { ModalComponent } from '../../../shared/components/modal/modal';
+import { traerTodasLasPaginas, type DatosExportacion } from '../../../shared/utils/exportar';
 import { DataTable } from '../../../shared/interfaces';
 import { Anexo, AnexoQuery, SelectOption, TipoAnexo } from './interfaces/anexos.interface';
 import { AnexosService } from './anexos.service';
@@ -12,7 +14,7 @@ import { AnexosService } from './anexos.service';
 @Component({
   selector: 'app-anexos',
   standalone: true,
-  imports: [CommonModule, FormsModule, DataTableComponent, ModalComponent],
+  imports: [CommonModule, FormsModule, DataTableComponent, ModalComponent, ExportarBotonesComponent],
   templateUrl: './anexos.html',
   styleUrl: './anexos.css',
 })
@@ -100,6 +102,30 @@ export class AnexosComponent {
       estado: this.estadoFilter() ?? undefined,
     };
   }
+
+  /** Exporta todos los anexos que cumplen los filtros activos (no solo la página visible). */
+  readonly exportarAnexos = async (): Promise<DatosExportacion> => {
+    const filtros = this.buildQuery();
+    const filas = await traerTodasLasPaginas((page, pageSize) => this.service.getAll({ ...filtros, page, pageSize }));
+    return {
+      nombre: 'Anexos',
+      columnas: ['ID', 'Tipo', 'Especialidad', 'Tipo Doc', 'N° Documento', 'Anexo', 'Nombre Comercial', 'Dirección', 'Contacto', 'Teléfono', 'Correo', 'Estado'],
+      filas: filas.map((a) => [
+        a.id,
+        a.tipoAnexo,
+        this.nombreEspecialidad(a.AnexoEspecialidadId),
+        this.nombreTipoDoc(a.AnexoTipoDocIdeId),
+        a.NumeroDocIde,
+        a.Anexo,
+        a.NombreComercial,
+        a.Direccion,
+        a.Contacto,
+        a.Telefono,
+        a.Correo,
+        a.estado ? 'Activo' : 'Inactivo',
+      ]),
+    };
+  };
 
   onSearch(value: string) {
     this.anexoFilter.set(value);

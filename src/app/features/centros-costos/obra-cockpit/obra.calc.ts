@@ -148,9 +148,11 @@ export function iconoCategoriaDocumento(categoria: string): string {
 
 /** Convierte cadenas vacías en undefined para no enviar campos vacíos al backend. */
 export function sinVacios<T extends object>(obj: T): T {
-  return Object.fromEntries(
-    Object.entries(obj).filter(([, v]) => v !== '' && v !== null && v !== undefined),
-  ) as T;
+  const copia = { ...obj };
+  for (const [clave, valor] of Object.entries(copia)) {
+    if (valor === '' || valor === null || valor === undefined) Reflect.deleteProperty(copia, clave);
+  }
+  return copia;
 }
 
 /** Minúsculas sin tildes para comparar texto de forma tolerante. */

@@ -1,12 +1,14 @@
 import { Component, OnInit, inject, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { permisosDePantalla } from '@app/core/auth/permisos-pantalla';
 
 // Service & Interfaces
 import { ObraService } from './obra.service';
 import { errorMessage } from '@app/features/almacen/almacen.utils';
 import { nombreArchivoDocumento } from './obra.calc';
 import { ObraCockpit, ObraSemana, ObraResidente, ObraPlano, ObraDocumento, ObraIncidencia } from './obra.interface';
+import { PermisosObra } from './obra-permisos';
 
 // Tabs
 import { CronogramaTabComponent } from './components/cronograma-tab/cronograma-tab';
@@ -46,6 +48,15 @@ export class ObraCockpitComponent implements OnInit {
   private route = inject(ActivatedRoute);
   private router = inject(Router);
   private obraService = inject(ObraService);
+
+  /** Permisos del módulo `obra` (plan 05, etapa D3): ocultan altas, ediciones y eliminaciones. */
+  protected readonly permisos = permisosDePantalla('obra');
+  /** Los mismos permisos como valor plano, para los inputs de pestañas y diálogos. */
+  protected readonly permisosObra = computed<PermisosObra>(() => ({
+    crear: this.permisos.crear(),
+    editar: this.permisos.editar(),
+    eliminar: this.permisos.eliminar(),
+  }));
 
   idCentroCosto = signal<number>(0);
   loading = signal<boolean>(false);
@@ -121,7 +132,7 @@ export class ObraCockpitComponent implements OnInit {
         this.cockpit.set(data);
         this.loading.set(false);
       },
-      error: (err) => {
+      error: (err: unknown) => {
         console.error('Error cargando cockpit', err);
         this.loading.set(false);
       },
@@ -160,20 +171,25 @@ export class ObraCockpitComponent implements OnInit {
 
   // --- Handlers for Cronograma Tab ---
   onNuevaSemana(): void {
+    if (!this.permisos.crear()) return;
     this.selectedSemana.set(null);
     this.showSemanaDialog.set(true);
   }
   onGenerarLoteSemanas(): void {
+    if (!this.permisos.crear()) return;
     this.showGeneradorSemanasDialog.set(true);
   }
   onEditarSemana(sem: ObraSemana): void {
+    if (!this.permisos.editar()) return;
     this.selectedSemana.set(sem);
     this.showSemanaDialog.set(true);
   }
   onRegistrarAvanceSemana(sem: ObraSemana): void {
+    if (!this.permisos.editar()) return;
     this.selectedSemanaParaAvance.set(sem);
   }
   onEliminarSemana(sem: ObraSemana): void {
+    if (!this.permisos.eliminar()) return;
     if (!confirm(`¿Eliminar ${sem.etiqueta_semana} (${sem.fase_principal})? Esta acción no se puede deshacer.`)) return;
     this.obraService.deleteSemana(this.idCentroCosto(), sem.id).subscribe({
       next: () => this.cargarCockpit(this.idCentroCosto()),
@@ -186,9 +202,11 @@ export class ObraCockpitComponent implements OnInit {
 
   // --- Handlers for Directorio Tab ---
   onNuevoResidente(): void {
+    if (!this.permisos.crear()) return;
     this.selectedResidente.set(null);
     this.showResidenteDialog.set(true);
   }
+  /** Abre la ficha del residente: editable con `editar`, en solo lectura sin él. */
   onEditarResidente(res: ObraResidente): void {
     this.selectedResidente.set(res);
     this.showResidenteDialog.set(true);
@@ -196,16 +214,19 @@ export class ObraCockpitComponent implements OnInit {
 
   // --- Handlers for Obra / Ficha Técnica ---
   onEditarObra(): void {
+    if (!this.permisos.editar()) return;
     this.showGeneralesDialog.set(true);
   }
 
   // --- Handlers for Planos Tab ---
   onSubirPlano(): void {
+    if (!this.permisos.crear()) return;
     this.selectedPlano.set(null);
     this.planoDialogModo.set('crear');
     this.showPlanoDialog.set(true);
   }
   onEditarPlano(plano: ObraPlano): void {
+    if (!this.permisos.editar()) return;
     this.selectedPlano.set(plano);
     this.planoDialogModo.set('editar');
     this.showPlanoDialog.set(true);
@@ -248,6 +269,7 @@ export class ObraCockpitComponent implements OnInit {
     });
   }
   onNuevaVersionPlano(plano: ObraPlano): void {
+    if (!this.permisos.editar()) return;
     this.selectedPlano.set(plano);
     this.planoDialogModo.set('version');
     this.showPlanoDialog.set(true);
@@ -257,6 +279,7 @@ export class ObraCockpitComponent implements OnInit {
     this.showHistorialDialog.set(true);
   }
   onEliminarPlano(plano: ObraPlano): void {
+    if (!this.permisos.eliminar()) return;
     const msg = plano.id_plano_anterior
       ? `¿Eliminar la versión ${plano.version} de ${plano.codigo_plano}? La versión anterior volverá a quedar vigente.`
       : `¿Eliminar el plano ${plano.codigo_plano} (${plano.version}) y su archivo? Esta acción no se puede deshacer.`;
@@ -269,9 +292,11 @@ export class ObraCockpitComponent implements OnInit {
 
   // --- Handlers for Documentos Tab ---
   onAnexarDocumento(): void {
+    if (!this.permisos.crear()) return;
     this.selectedDocumento.set(null);
     this.showDocumentoDialog.set(true);
   }
+  /** Abre el detalle del documento: editable con `editar`, en solo lectura sin él. */
   onVerDetalleDocumento(doc: ObraDocumento): void {
     this.selectedDocumento.set(doc);
     this.showDocumentoDialog.set(true);
@@ -285,6 +310,7 @@ export class ObraCockpitComponent implements OnInit {
   }
 
   onEliminarDocumento(doc: ObraDocumento): void {
+    if (!this.permisos.eliminar()) return;
     this.errorEliminarDocumento.set('');
     this.documentoEliminar.set(doc);
   }
@@ -293,7 +319,7 @@ export class ObraCockpitComponent implements OnInit {
   }
   confirmarEliminarDocumento(): void {
     const doc = this.documentoEliminar();
-    if (!doc || this.eliminandoDocumento()) return;
+    if (!doc || this.eliminandoDocumento() || !this.permisos.eliminar()) return;
     this.eliminandoDocumento.set(true);
     this.errorEliminarDocumento.set('');
     this.obraService.deleteDocumento(this.idCentroCosto(), doc.id).subscribe({
@@ -336,6 +362,7 @@ export class ObraCockpitComponent implements OnInit {
 
   // --- Handlers for Incidencias Tab ---
   onReportarIncidencia(): void {
+    if (!this.permisos.crear()) return;
     this.selectedIncidencia.set(null);
     this.showIncidenciaDialog.set(true);
   }
@@ -344,15 +371,19 @@ export class ObraCockpitComponent implements OnInit {
     this.showIncidenciaDetalleDialog.set(true);
   }
   onResolverIncidencia(inc: ObraIncidencia): void {
+    if (!this.permisos.editar()) return;
     this.incidenciaParaResolver.set(inc);
     this.showIncidenciaResolverDialog.set(true);
   }
+  /** Abre el formulario de la incidencia para editarla (`editar`) o eliminarla desde él (`eliminar`). */
   onEditarDesdeDetalle(inc: ObraIncidencia): void {
+    if (!this.permisos.editar() && !this.permisos.eliminar()) return;
     this.showIncidenciaDetalleDialog.set(false);
     this.selectedIncidencia.set(inc);
     this.showIncidenciaDialog.set(true);
   }
   onResolverDesdeDetalle(inc: ObraIncidencia): void {
+    if (!this.permisos.editar()) return;
     this.showIncidenciaDetalleDialog.set(false);
     this.incidenciaParaResolver.set(inc);
     this.showIncidenciaResolverDialog.set(true);

@@ -3,8 +3,8 @@ import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { ActivatedRouteSnapshot, RouterStateSnapshot, provideRouter } from '@angular/router';
 import { environment } from '@env';
-import { GrupoCatalogo, MatrizPermisosRol, Permisos, SIN_PERMISOS } from '@app/core/auth/permisos.models';
-import { MIS_PERMISOS_URL, MemoryStorage, guardarSesion, misPermisos, provideSesionStorage } from '@app/core/auth/auth.testing';
+import { GrupoCatalogo, MatrizPermisosRol, MisPermisos, Permisos, SIN_PERMISOS } from '@app/core/auth/permisos.models';
+import { MIS_PERMISOS_URL, MemoryStorage, cargarPermisos, guardarSesion, misPermisos, provideSesionStorage } from '@app/core/auth/auth.testing';
 import { PermisosService } from '@app/core/auth/permisos.service';
 import { RolesComponent } from './roles';
 import { rolesPendientesGuard } from './roles.guard';
@@ -67,14 +67,27 @@ const MATRIZ_PROMOTOR = matrizDe(PROMOTOR, {
 });
 const MATRIZ_ADMIN = matrizDe(ADMIN, {}, true);
 
+/** Permisos de la sesión: Administrador → todo; otro rol → crear, editar y eliminar en `admin.roles`. */
+function permisosSesion(rol: string): MisPermisos {
+  return rol === 'Administrador'
+    ? misPermisos(rol, {}, true)
+    : misPermisos(rol, { 'admin.roles': { crear: true, editar: true, eliminar: true } });
+}
+
 /** Por defecto la sesión es de un Administrador (el único que llega a esta pantalla hoy). */
-async function setup(roles: RolAdmin[] = ROLES, matrizInicial: MatrizPermisosRol = MATRIZ_PROMOTOR, rolSesion = 'Administrador') {
+async function setup(
+  roles: RolAdmin[] = ROLES,
+  matrizInicial: MatrizPermisosRol = MATRIZ_PROMOTOR,
+  rolSesion = 'Administrador',
+  sesion: MisPermisos = permisosSesion(rolSesion),
+) {
   storage.clear();
   guardarSesion(storage, rolSesion);
   TestBed.configureTestingModule({
     imports: [RolesComponent],
     providers: providers(),
   });
+  await cargarPermisos(sesion);
   const http = TestBed.inject(HttpTestingController);
   const fixture = TestBed.createComponent(RolesComponent);
   http.expectOne(API).flush(roles);
@@ -647,6 +660,70 @@ describe('RolesComponent — crear, editar y eliminar roles', () => {
     expect(q('.modal-content')).not.toBeNull();
     http.expectOne((r) => r.method === 'POST').flush({ ...VISITA, id: 5, nombre: 'Almacenero' });
     http.expectOne(API).flush(ROLES);
+  });
+});
+
+describe('RolesComponent — botones y matriz según permisos (admin.roles)', () => {
+  afterEach(() => TestBed.inject(HttpTestingController).verify());
+
+  const BOTONES = {
+    nuevo: '[data-testid="roles-nuevo"]',
+    editar: '[data-testid="rol-editar"]',
+    eliminar: '[data-testid="rol-eliminar"]',
+    guardar: '[data-testid="permisos-guardar"]',
+  };
+  const montarCon = (acciones: Partial<Permisos>, matriz = MATRIZ_PROMOTOR) =>
+    setup(ROLES, matriz, 'Jefe de Área', misPermisos('Jefe de Área', { 'admin.roles': acciones }));
+  const visibles = (q: (sel: string) => Element | null) =>
+    Object.fromEntries(Object.entries(BOTONES).map(([k, sel]) => [k, q(sel) !== null]));
+
+  it('con solo ver: sin Nuevo, Editar, Eliminar ni Guardar; matriz en solo lectura con su propio aviso', async () => {
+    const { el, q, click, casilla, contador } = await montarCon({});
+    expect(visibles(q)).toEqual({ nuevo: false, editar: false, eliminar: false, guardar: false });
+    expect(q('[data-testid="permisos-solo-lectura"]')?.textContent).toContain('Solo lectura: no tienes permiso para editar roles');
+    expect(q('[data-testid="permisos-bloqueado"]')).toBeNull();
+    const casillas = Array.from(el.querySelectorAll<HTMLInputElement>('.permisos-tabla input[type="checkbox"]'));
+    expect(casillas.length).toBeGreaterThan(0);
+    expect(casillas.every((c) => c.disabled)).toBe(true);
+    expect(q('caption')?.textContent).toContain('(solo lectura)');
+    // Los valores guardados se muestran igual (Anexos: ver y crear).
+    expect(casilla('maestros.anexos', 'crear')?.checked).toBe(true);
+    await click(casilla('maestros.productos', 'ver'));
+    expect(contador()).toBeNull();
+    expect(q('[data-testid="permisos-descartar"]')).toBeNull();
+  });
+
+  it('sin editar, el rol Administrador muestra el aviso de solo lectura y no el del Administrador', async () => {
+    const { q, elegirRol, http, render } = await montarCon({});
+    await elegirRol('Administrador');
+    http.expectOne(permisosUrl(1)).flush(MATRIZ_ADMIN);
+    await render();
+    expect(q('[data-testid="permisos-solo-lectura"]')).not.toBeNull();
+    expect(q('[data-testid="permisos-bloqueado"]')).toBeNull();
+  });
+
+  it('crear → + Nuevo rol; editar → Editar, Guardar y matriz editable; eliminar → Eliminar', async () => {
+    expect(visibles((await montarCon({ crear: true })).q)).toEqual({ nuevo: true, editar: false, eliminar: false, guardar: false });
+    TestBed.resetTestingModule();
+    const conEditar = await montarCon({ editar: true });
+    expect(visibles(conEditar.q)).toEqual({ nuevo: false, editar: true, eliminar: false, guardar: true });
+    expect(conEditar.q('[data-testid="permisos-solo-lectura"]')).toBeNull();
+    await conEditar.click(conEditar.casilla('maestros.productos', 'ver'));
+    expect(conEditar.contador()).toBe('1 cambio sin guardar');
+    expect(conEditar.botonGuardar().disabled).toBe(false);
+    TestBed.resetTestingModule();
+    expect(visibles((await montarCon({ eliminar: true })).q)).toEqual({ nuevo: false, editar: false, eliminar: true, guardar: false });
+  });
+
+  it('los métodos no hacen nada sin el permiso (defensa)', async () => {
+    const { cmp, q, render, http } = await montarCon({});
+    cmp.openModal();
+    cmp.editarSeleccionado();
+    cmp.askDelete(VISITA);
+    cmp.guardarPermisos();
+    await render();
+    expect(q('.modal-content')).toBeNull();
+    http.expectNone(permisosUrl(2));
   });
 });
 

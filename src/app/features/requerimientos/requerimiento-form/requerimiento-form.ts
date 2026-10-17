@@ -1,6 +1,8 @@
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, effect, inject, signal } from '@angular/core';
 import { FormArray, FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { permisosDePantalla } from '@app/core/auth/permisos-pantalla';
+import { PermisosService } from '@app/core/auth/permisos.service';
 import { SearchSelectComponent } from '../../../shared/components/search-select/search-select';
 import { errorMessage, fmtMoney, fmtNum, todayISO } from '../../almacen/almacen.utils';
 import { FasePorCentroCosto } from '../../presupuestos/interfaces/presupuestos.interface';
@@ -14,6 +16,7 @@ import {
   ESTADO_LABEL,
   ItemCatalogo,
   Requerimiento,
+  RequerimientoLineaPayload,
   RequerimientoPayload,
   SelectOption,
   TIPOS_REQUERIMIENTO,
@@ -53,6 +56,13 @@ export class RequerimientoFormComponent {
   private readonly presupuestos = inject(PresupuestosService);
   private readonly router = inject(Router);
   private readonly idParam = inject(ActivatedRoute).snapshot.paramMap.get('id');
+  private readonly permisosSesion = inject(PermisosService);
+  /**
+   * Módulo `requerimientos` (anexo §7.3): Guardar borrador → crear (alta) / editar (edición);
+   * "Guardar y enviar" exige además poder guardar (enviar solo exige ver). Anular → basta ver.
+   * Generar orden de compra → crear en `documentos.origen`. Imprimir el FUR es libre.
+   */
+  protected readonly permisos = permisosDePantalla('requerimientos');
 
   protected readonly estadoLabel = ESTADO_LABEL;
   protected readonly avanceLabel = AVANCE_LABEL;
@@ -80,19 +90,29 @@ export class RequerimientoFormComponent {
   protected readonly esCompra = computed(() => this.tipoActual() === 'COMPRA');
 
   protected readonly esNuevo = this.idParam === null;
-  /** Solo BORRADOR y OBSERVADO se pueden modificar; el resto es de lectura. */
+  /** Guardar exige crear en el alta y editar en la edición. */
+  protected readonly puedeGuardar = computed(() => (this.esNuevo ? this.permisos.crear() : this.permisos.editar()));
+  /** Alta sin permiso de crear: el formulario queda vacío, deshabilitado y sin botones de guardar. */
+  protected readonly altaSinPermiso = computed(() => this.esNuevo && !this.permisos.crear());
+  /** Solo BORRADOR y OBSERVADO se pueden modificar (y solo con permiso de editar); el resto es de lectura. */
   protected readonly soloLectura = computed(() => {
     const r = this.requerimiento();
-    return r !== null && !esEditable(r.estado);
+    return r !== null && (!esEditable(r.estado) || !this.permisos.editar());
   });
   protected readonly ultimaObservacion = computed(() => {
     const r = this.requerimiento();
     if (r?.estado !== 'OBSERVADO') return null;
     return [...(r.eventos ?? [])].reverse().find((e) => e.accion === 'OBSERVAR') ?? null;
   });
+  /** Generar la OC abre un alta en documentos de origen: exige crear en `documentos.origen`. */
   protected readonly puedeGenerarOc = computed(() => {
     const r = this.requerimiento();
-    return r?.estado === 'APROBADO' && r.tipo === 'COMPRA' && r.avance !== 'ATENDIDO';
+    return (
+      r?.estado === 'APROBADO' &&
+      r.tipo === 'COMPRA' &&
+      r.avance !== 'ATENDIDO' &&
+      this.permisosSesion.puede('documentos.origen', 'crear')
+    );
   });
   /** Las compras muestran sus cotizaciones desde que se envían. */
   protected readonly muestraCotizaciones = computed(() => {
@@ -127,7 +147,18 @@ export class RequerimientoFormComponent {
       this.form.controls.id_fase.setValue(null, { emitEvent: false });
       this.loadFases(id);
     });
+    // Sin permiso de guardar, el formulario queda en solo lectura.
+    effect(() => {
+      this.puedeGuardar();
+      this.aplicarEdicion();
+    });
     if (this.idParam !== null) this.load(Number(this.idParam));
+  }
+
+  /** Habilita o deshabilita el formulario según el permiso de guardar. */
+  private aplicarEdicion(): void {
+    if (this.puedeGuardar()) this.form.enable({ emitEvent: false });
+    else this.form.disable({ emitEvent: false });
   }
 
   protected get lineas(): FormArray<LineaGroup> {
@@ -142,7 +173,7 @@ export class RequerimientoFormComponent {
         this.isLoading.set(false);
         if (esEditable(r.estado)) this.patchForm(r);
       },
-      error: (err) => {
+      error: (err: unknown) => {
         this.isLoading.set(false);
         this.loadError.set(errorMessage(err));
       },
@@ -180,6 +211,8 @@ export class RequerimientoFormComponent {
       this.lineas.push(g);
     }
     if (this.lineas.length === 0) this.lineas.push(lineaGroup());
+    // Las líneas nuevas nacen habilitadas: se reaplica el solo lectura si no hay permiso.
+    this.aplicarEdicion();
   }
 
   private loadFases(idCentroCosto: number | null, seleccionada: number | null = null): void {
@@ -196,28 +229,32 @@ export class RequerimientoFormComponent {
 
   // ---------------------------------------------------------------- líneas
   protected addLinea(): void {
+    if (!this.puedeGuardar()) return;
     this.lineas.push(lineaGroup());
   }
 
   protected removeLinea(index: number): void {
+    if (!this.puedeGuardar()) return;
     if (this.lineas.length > 1) this.lineas.removeAt(index);
   }
 
   protected onItemPicked(linea: LineaGroup, item: ItemCatalogo): void {
+    if (!this.puedeGuardar()) return;
     linea.patchValue({ id_producto: item.id, etiqueta: `${item.codigo} — ${item.descripcion}`, tipo: item.tipo_producto });
   }
 
   // ---------------------------------------------------------------- acciones
   protected save(enviar = false): void {
+    if (!this.puedeGuardar()) return;
     const error = this.validate();
-    if (error) {
-      this.formError.set(error);
+    const payload = error ? null : this.buildPayload();
+    if (error || !payload) {
+      this.formError.set(error ?? 'Complete los datos obligatorios.');
       this.form.markAllAsTouched();
       return;
     }
     this.isSaving.set(true);
     this.formError.set('');
-    const payload = this.buildPayload();
     const actual = this.requerimiento();
     const guardar$ = actual ? this.service.update(actual.id, payload) : this.service.create(payload);
     guardar$.subscribe({
@@ -228,7 +265,7 @@ export class RequerimientoFormComponent {
               this.isSaving.set(false);
               void this.router.navigate(['/requerimientos']);
             },
-            error: (err) => this.onSaveError(err, r),
+            error: (err: unknown) => this.onSaveError(err, r),
           });
           return;
         }
@@ -240,7 +277,7 @@ export class RequerimientoFormComponent {
           void this.router.navigate(['/requerimientos', r.id]);
         }
       },
-      error: (err) => this.onSaveError(err),
+      error: (err: unknown) => this.onSaveError(err),
     });
   }
 
@@ -256,7 +293,7 @@ export class RequerimientoFormComponent {
     if (!r || !confirm(`¿Anular ${r.numero}? Esta acción no se puede deshacer.`)) return;
     this.service.anular(r.id).subscribe({
       next: (res) => this.requerimiento.set(res),
-      error: (err) => alert(errorMessage(err)),
+      error: (err: unknown) => alert(errorMessage(err)),
     });
   }
 
@@ -268,7 +305,7 @@ export class RequerimientoFormComponent {
 
   protected generarOc(): void {
     const r = this.requerimiento();
-    if (r) void this.router.navigate(['/documentos/origen'], { queryParams: { requerimiento: r.id } });
+    if (r && this.puedeGenerarOc()) void this.router.navigate(['/documentos/origen'], { queryParams: { requerimiento: r.id } });
   }
 
   private validate(): string | null {
@@ -295,26 +332,33 @@ export class RequerimientoFormComponent {
     return null;
   }
 
-  private buildPayload(): RequerimientoPayload {
+  /** Payload del formulario; `null` si falta un dato obligatorio (no ocurre tras `validate`). */
+  private buildPayload(): RequerimientoPayload | null {
     const v = this.form.getRawValue();
     const text = (s: string) => s.trim() || undefined;
-    return {
-      fecha: v.fecha,
-      fecha_requerida: text(v.fecha_requerida),
-      id_centro_costo: v.id_centro_costo as number,
-      id_fase: v.id_fase ?? undefined,
-      id_solicitante: v.id_solicitante as number,
-      tipo: v.tipo,
-      id_beneficiario: v.id_beneficiario ?? undefined,
-      id_area: v.id_area ?? undefined,
-      justificacion: v.justificacion.trim(),
-      lineas: v.lineas.map((l) => ({
-        id_producto: l.id_producto as number,
+    if (v.id_centro_costo === null || v.id_solicitante === null) return null;
+    const lineas: RequerimientoLineaPayload[] = [];
+    for (const l of v.lineas) {
+      if (l.id_producto === null) return null;
+      lineas.push({
+        id_producto: l.id_producto,
         cantidad: l.cantidad.trim(),
         precio_referencial: text(l.precio_referencial),
         observaciones: text(l.observaciones),
         id_beneficiario: l.id_beneficiario ?? undefined,
-      })),
+      });
+    }
+    return {
+      fecha: v.fecha,
+      fecha_requerida: text(v.fecha_requerida),
+      id_centro_costo: v.id_centro_costo,
+      id_fase: v.id_fase ?? undefined,
+      id_solicitante: v.id_solicitante,
+      tipo: v.tipo,
+      id_beneficiario: v.id_beneficiario ?? undefined,
+      id_area: v.id_area ?? undefined,
+      justificacion: v.justificacion.trim(),
+      lineas,
     };
   }
 }

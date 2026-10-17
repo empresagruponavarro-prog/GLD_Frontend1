@@ -69,6 +69,7 @@
                 <button
                   type="button"
                   (click)="setCantidad(n)"
+                  [disabled]="soloLectura()"
                   class="px-1.5 py-0.5 rounded text-[10px] transition-colors cursor-pointer"
                   [class.bg-emerald-100]="form.controls.cantidad_semanas.value === n"
                   [class.text-emerald-800]="form.controls.cantidad_semanas.value === n"
@@ -101,6 +102,7 @@
           <!-- Opción 1: Curva S Sigmoide -->
           <button
             type="button"
+            [disabled]="soloLectura()"
             (click)="setDistribucion('s_curve')"
             class="text-left p-3 rounded-xl border transition-all cursor-pointer flex flex-col justify-between w-full"
             [class.border-emerald-600]="form.controls.distribucion.value === 's_curve'"
@@ -120,6 +122,7 @@
           <!-- Opción 2: Lineal -->
           <button
             type="button"
+            [disabled]="soloLectura()"
             (click)="setDistribucion('lineal')"
             class="text-left p-3 rounded-xl border transition-all cursor-pointer flex flex-col justify-between w-full"
             [class.border-emerald-600]="form.controls.distribucion.value === 'lineal'"
@@ -139,6 +142,7 @@
           <!-- Opción 3: En Cero -->
           <button
             type="button"
+            [disabled]="soloLectura()"
             (click)="setDistribucion('cero')"
             class="text-left p-3 rounded-xl border transition-all cursor-pointer flex flex-col justify-between w-full"
             [class.border-emerald-600]="form.controls.distribucion.value === 'cero'"
@@ -251,20 +255,22 @@
           >
             Cancelar
           </button>
-          <button
-            type="submit"
-            form="form-generador"
-            id="btn-generar-guardar"
-            [disabled]="isSaving() || semanasGeneradas().length === 0"
-            class="px-5 py-2 rounded-xl bg-[#2d7d5f] hover:bg-[#24674e] text-white text-xs font-semibold shadow-sm flex items-center gap-2 transition-all cursor-pointer disabled:opacity-50"
-          >
-            @if (isSaving()) {
-              <i class="fa-solid fa-spinner fa-spin"></i> Generando...
-            } @else {
-              <span class="material-symbols-outlined text-sm">auto_awesome</span>
-              <span>Generar y Guardar {{ semanasGeneradas().length }} Semanas</span>
-            }
-          </button>
+          @if (puedeGuardar()) {
+            <button
+              type="submit"
+              form="form-generador"
+              id="btn-generar-guardar"
+              [disabled]="isSaving() || semanasGeneradas().length === 0"
+              class="px-5 py-2 rounded-xl bg-[#2d7d5f] hover:bg-[#24674e] text-white text-xs font-semibold shadow-sm flex items-center gap-2 transition-all cursor-pointer disabled:opacity-50"
+            >
+              @if (isSaving()) {
+                <i class="fa-solid fa-spinner fa-spin"></i> Generando...
+              } @else {
+                <span class="material-symbols-outlined text-sm">auto_awesome</span>
+                <span>Generar y Guardar {{ semanasGeneradas().length }} Semanas</span>
+              }
+            </button>
+          }
         </div>
       </div>
     </form>

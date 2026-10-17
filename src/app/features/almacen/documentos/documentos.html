@@ -4,9 +4,11 @@
     <p class="content-subtitle">{{ config.subtitulo }}</p>
   </div>
   <div style="display: flex; gap: 0.5rem; align-items: center">
-    <button class="btn btn-primary" type="button" (click)="openCreate()">
-      <i class="fa-solid fa-plus"></i> {{ config.nuevo }}
-    </button>
+    @if (permisos.crear()) {
+      <button class="btn btn-primary" type="button" (click)="openCreate()">
+        <i class="fa-solid fa-plus"></i> {{ config.nuevo }}
+      </button>
+    }
     <button class="btn btn-secondary" type="button" (click)="load()" [disabled]="isLoading()">
       <i class="fa-solid fa-arrows-rotate" [class.fa-spin]="isLoading()"></i>
       {{ isLoading() ? 'Cargando...' : 'Actualizar' }}
@@ -19,26 +21,26 @@
     <div class="toolbar-filters-row">
       <div class="toolbar-filters-left">
         <label class="toolbar-check">Desde
-          <input type="date" class="toolbar-select" [value]="fDesde()" (change)="applyFilter('desde', $any($event.target).value)" />
+          <input type="date" class="toolbar-select" [value]="fDesde()" (change)="applyFilter('desde', valorDe($event))" />
         </label>
         <label class="toolbar-check">Hasta
-          <input type="date" class="toolbar-select" [value]="fHasta()" (change)="applyFilter('hasta', $any($event.target).value)" />
+          <input type="date" class="toolbar-select" [value]="fHasta()" (change)="applyFilter('hasta', valorDe($event))" />
         </label>
-        <select class="toolbar-select" [value]="fAlmacen() ?? ''" (change)="applyFilter('almacen', $any($event.target).value)">
+        <select class="toolbar-select" [value]="fAlmacen() ?? ''" (change)="applyFilter('almacen', valorDe($event))">
           <option value="">Todos los almacenes</option>
           @for (a of almacenes(); track a.id) {
             <option [value]="a.id">{{ a.nombre }}</option>
           }
         </select>
         @if (config.motivos.length > 1) {
-          <select class="toolbar-select" [value]="fMotivo()" (change)="applyFilter('motivo', $any($event.target).value)">
+          <select class="toolbar-select" [value]="fMotivo()" (change)="applyFilter('motivo', valorDe($event))">
             <option value="">Todos los motivos</option>
             @for (m of config.motivos; track m) {
               <option [value]="m">{{ motivoLabel[m] }}</option>
             }
           </select>
         }
-        <select class="toolbar-select" [value]="fEstado()" (change)="applyFilter('estado', $any($event.target).value)">
+        <select class="toolbar-select" [value]="fEstado()" (change)="applyFilter('estado', valorDe($event))">
           <option value="">Todos los estados</option>
           <option value="REGISTRADO">Registrado</option>
           <option value="ANULADO">Anulado</option>
@@ -96,7 +98,7 @@
         <button class="table-action-btn" type="button" title="Ver detalle" (click)="openDetail(item)">
           <i class="fa-solid fa-eye"></i>
         </button>
-        @if (item.estado === 'REGISTRADO' && !item.id_documento_anula) {
+        @if (item.estado === 'REGISTRADO' && !item.id_documento_anula && permisos.anular()) {
           <button class="table-action-btn table-action-btn--danger" type="button" title="Anular" (click)="anular(item)">
             <i class="fa-solid fa-ban"></i>
           </button>

@@ -2,6 +2,7 @@ import { ChangeDetectionStrategy, Component, computed, input, output } from '@an
 import { CommonModule, DatePipe } from '@angular/common';
 import { ModalComponent } from '@shared/components/modal/modal';
 import { ObraIncidencia } from '../../obra.interface';
+import { PermisosObra, SIN_PERMISOS_OBRA } from '../../obra-permisos';
 
 @Component({
   selector: 'app-incidencia-detalle-dialog',
@@ -15,10 +16,16 @@ export class IncidenciaDetalleDialogComponent {
   readonly idCentroCosto = input.required<number>();
   readonly nombreObra = input<string>('');
   readonly incidencia = input<ObraIncidencia | null>(null);
+  /** Permisos de `obra`: «Editar Datos» exige `editar` o `eliminar` (el formulario permite borrar); «Resolver», `editar`. */
+  readonly permisos = input<PermisosObra>(SIN_PERMISOS_OBRA);
 
   readonly closed = output<void>();
   readonly editar = output<ObraIncidencia>();
   readonly resolver = output<ObraIncidencia>();
+
+  /** El formulario de la incidencia sirve para editarla (`editar`) o eliminarla (`eliminar`). */
+  protected readonly puedeAbrirEdicion = computed(() => this.permisos().editar || this.permisos().eliminar);
+  protected readonly puedeResolver = computed(() => this.permisos().editar && !this.esResuelta());
 
   protected readonly esResuelta = computed(() => {
     return (this.incidencia()?.estado ?? '').toUpperCase() === 'RESUELTA';
@@ -43,14 +50,14 @@ export class IncidenciaDetalleDialogComponent {
 
   protected onEditar(): void {
     const inc = this.incidencia();
-    if (inc) {
+    if (inc && this.puedeAbrirEdicion()) {
       this.editar.emit(inc);
     }
   }
 
   protected onResolver(): void {
     const inc = this.incidencia();
-    if (inc) {
+    if (inc && this.puedeResolver()) {
       this.resolver.emit(inc);
     }
   }

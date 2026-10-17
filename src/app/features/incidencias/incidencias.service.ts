@@ -40,8 +40,15 @@ export class IncidenciasService {
     return this.http.delete<void>(`${this.apiUrl}/${id}`);
   }
 
-  exportExcel(filters?: Partial<IncidenciaFiltros>): Observable<Blob> {
+  exportCsv(filters?: Partial<IncidenciaFiltros>): Observable<Blob> {
     return this.http.get(`${this.apiUrl}/export`, {
+      params: filtrosAParams(filters),
+      responseType: 'blob',
+    });
+  }
+
+  exportXlsx(filters?: Partial<IncidenciaFiltros>): Observable<Blob> {
+    return this.http.get(`${this.apiUrl}/export/xlsx`, {
       params: filtrosAParams(filters),
       responseType: 'blob',
     });

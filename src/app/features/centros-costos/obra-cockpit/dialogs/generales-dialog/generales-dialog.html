@@ -381,19 +381,21 @@
             Cancelar
           </button>
 
-          <button
-            type="submit"
-            class="inline-flex items-center gap-1.5 px-5 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs transition-all shadow-sm disabled:opacity-50 cursor-pointer"
-            [disabled]="isSaving()"
-          >
-            @if (isSaving()) {
-              <span class="material-symbols-outlined text-sm animate-spin">progress_activity</span>
-              <span>Guardando...</span>
-            } @else {
-              <span class="material-symbols-outlined text-sm">save</span>
-              <span>Guardar Ficha Técnica</span>
-            }
-          </button>
+          @if (puedeGuardar()) {
+            <button
+              type="submit"
+              class="inline-flex items-center gap-1.5 px-5 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs transition-all shadow-sm disabled:opacity-50 cursor-pointer"
+              [disabled]="isSaving()"
+            >
+              @if (isSaving()) {
+                <span class="material-symbols-outlined text-sm animate-spin">progress_activity</span>
+                <span>Guardando...</span>
+              } @else {
+                <span class="material-symbols-outlined text-sm">save</span>
+                <span>Guardar Ficha Técnica</span>
+              }
+            </button>
+          }
         </div>
       </div>
     </form>

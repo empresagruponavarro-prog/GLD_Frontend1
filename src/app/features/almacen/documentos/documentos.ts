@@ -2,6 +2,8 @@ import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@a
 import { toSignal } from '@angular/core/rxjs-interop';
 import { FormArray, FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
+import { permisosDePantalla } from '@app/core/auth/permisos-pantalla';
+import { opcionValida, valorDeEvento } from '@shared/utils/eventos';
 import { DataTableComponent } from '../../../shared/components/data-table/data-table';
 import { ModalComponent } from '../../../shared/components/modal/modal';
 import { SearchSelectComponent } from '../../../shared/components/search-select/search-select';
@@ -71,6 +73,16 @@ const TIPOS: Record<RutaDocumento, TipoConfig> = {
   },
 };
 
+const RUTAS_DOCUMENTO: readonly RutaDocumento[] = ['ingresos', 'salidas', 'transferencias', 'inventario-inicial'];
+const ESTADOS_DOCUMENTO = ['REGISTRADO', 'ANULADO'] as const;
+type EstadoDocumento = (typeof ESTADOS_DOCUMENTO)[number];
+
+/** Configuración según `data.tipo` de la ruta (las rutas siempre lo declaran; si faltara, Entradas). */
+function configDeRuta(tipo: unknown): TipoConfig {
+  const ruta = typeof tipo === 'string' ? opcionValida(RUTAS_DOCUMENTO, tipo) : null;
+  return TIPOS[ruta ?? 'ingresos'];
+}
+
 function lineaGroup() {
   return new FormGroup({
     id_producto: new FormControl<number | null>(null, { validators: [Validators.required] }),
@@ -96,7 +108,14 @@ type LineaGroup = ReturnType<typeof lineaGroup>;
 export class DocumentosAlmacenComponent {
   private readonly service = inject(AlmacenService);
 
-  protected readonly config: TipoConfig = TIPOS[inject(ActivatedRoute).snapshot.data['tipo'] as RutaDocumento];
+  protected readonly config: TipoConfig = configDeRuta(inject(ActivatedRoute).snapshot.data['tipo']);
+  /**
+   * Un componente para 4 rutas: el módulo sale de `data.modulo` de la ruta activa
+   * (`almacen.inventario-inicial`, `.ingresos`, `.salidas`, `.transferencias`).
+   * Nuevo → crear; Anular (`POST /:id/anular`) → anular. El detalle es de solo lectura.
+   */
+  protected readonly permisos = permisosDePantalla();
+  protected readonly valorDe = valorDeEvento;
   protected readonly motivoLabel = MOTIVO_LABEL;
   protected readonly muestraOc = this.config.ruta === 'ingresos';
   protected readonly fmtNum = fmtNum;
@@ -125,7 +144,7 @@ export class DocumentosAlmacenComponent {
   protected readonly fHasta = signal('');
   protected readonly fAlmacen = signal<number | null>(null);
   protected readonly fMotivo = signal<Motivo | ''>('');
-  protected readonly fEstado = signal<'REGISTRADO' | 'ANULADO' | ''>('');
+  protected readonly fEstado = signal<EstadoDocumento | ''>('');
 
   // Catálogos
   protected readonly almacenes = signal<SelectOption[]>([]);
@@ -221,10 +240,10 @@ export class DocumentosAlmacenComponent {
         this.fAlmacen.set(value === '' ? null : Number(value));
         break;
       case 'motivo':
-        this.fMotivo.set(value as Motivo | '');
+        this.fMotivo.set(opcionValida(this.config.motivos, value) ?? '');
         break;
       case 'estado':
-        this.fEstado.set(value as 'REGISTRADO' | 'ANULADO' | '');
+        this.fEstado.set(opcionValida(ESTADOS_DOCUMENTO, value) ?? '');
         break;
     }
     this.page.set(1);
@@ -259,6 +278,7 @@ export class DocumentosAlmacenComponent {
 
   // ------------------------------------------------------------ formulario
   protected openCreate(): void {
+    if (!this.permisos.crear()) return;
     this.form.reset({
       fecha: todayISO(),
       motivo: this.config.motivos[0],
@@ -301,21 +321,23 @@ export class DocumentosAlmacenComponent {
   }
 
   protected save(): void {
+    if (!this.permisos.crear()) return;
     const error = this.validate();
-    if (error) {
-      this.formError.set(error);
+    const payload = error ? null : this.buildPayload();
+    if (error || !payload) {
+      this.formError.set(error ?? 'Seleccione el almacén.');
       this.form.markAllAsTouched();
       return;
     }
     this.isSaving.set(true);
     this.formError.set('');
-    this.service.createDocumento(this.config.ruta, this.buildPayload()).subscribe({
+    this.service.createDocumento(this.config.ruta, payload).subscribe({
       next: () => {
         this.isSaving.set(false);
         this.closeForm();
         this.load();
       },
-      error: (err) => {
+      error: (err: unknown) => {
         this.isSaving.set(false);
         this.formError.set(errorMessage(err));
       },
@@ -346,13 +368,16 @@ export class DocumentosAlmacenComponent {
     return null;
   }
 
-  private buildPayload(): DocumentoPayload {
+  /** Payload del formulario ya validado (`null` solo si falta el almacén). */
+  private buildPayload(): DocumentoPayload | null {
     const v = this.form.getRawValue();
+    const idAlmacen = v.id_almacen;
+    if (idAlmacen === null) return null;
     const text = (s: string) => s.trim() || undefined;
     return {
       fecha: v.fecha,
       motivo: v.motivo,
-      id_almacen: v.id_almacen as number,
+      id_almacen: idAlmacen,
       id_almacen_destino: this.esTransferencia ? (v.id_almacen_destino ?? undefined) : undefined,
       documento_referencia: text(v.documento_referencia),
       id_proveedor: this.muestraProveedor() ? (v.id_proveedor ?? undefined) : undefined,
@@ -362,12 +387,19 @@ export class DocumentosAlmacenComponent {
       id_entregado_a: this.esSalida ? (v.id_entregado_a ?? undefined) : undefined,
       motivo_trabajo: this.esSalida ? text(v.motivo_trabajo) : undefined,
       observaciones: text(v.observaciones),
-      lineas: v.lineas.map((l) => ({
-        id_producto: l.id_producto as number,
-        cantidad: l.cantidad.trim(),
-        costo_unitario: this.muestraCosto ? text(l.costo_unitario) : undefined,
-        observaciones: text(l.observaciones),
-      })),
+      // `validate` ya exige un producto en cada línea.
+      lineas: v.lineas.flatMap((l) =>
+        l.id_producto === null
+          ? []
+          : [
+              {
+                id_producto: l.id_producto,
+                cantidad: l.cantidad.trim(),
+                costo_unitario: this.muestraCosto ? text(l.costo_unitario) : undefined,
+                observaciones: text(l.observaciones),
+              },
+            ],
+      ),
     };
   }
 
@@ -377,7 +409,7 @@ export class DocumentosAlmacenComponent {
     this.isDetailOpen.set(true);
     this.service.getDocumento(this.config.ruta, doc.id).subscribe({
       next: (full) => this.detail.set(full),
-      error: (err) => alert(errorMessage(err)),
+      error: (err: unknown) => alert(errorMessage(err)),
     });
   }
 
@@ -387,13 +419,14 @@ export class DocumentosAlmacenComponent {
   }
 
   protected anular(doc: Documento): void {
+    if (!this.permisos.anular()) return;
     if (!confirm(`¿Anular ${doc.numero}? Se generará el movimiento inverso en el kardex.`)) return;
     this.service.anularDocumento(this.config.ruta, doc.id).subscribe({
       next: () => {
         this.closeDetail();
         this.load();
       },
-      error: (err) => alert(errorMessage(err)),
+      error: (err: unknown) => alert(errorMessage(err)),
     });
   }
 }

@@ -1,4 +1,4 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { permisosDePantalla } from '@app/core/auth/permisos-pantalla';
@@ -6,12 +6,14 @@ import { mensajeError } from '@shared/utils/errores-http';
 import { EmpresasService } from './empresas.service';
 import { Empresa } from './interfaces';
 import { DataTableComponent } from '../../../shared/components/data-table/data-table';
+import { ExportarBotonesComponent } from '../../../shared/components/exportar-botones/exportar-botones';
+import type { DatosExportacion } from '../../../shared/utils/exportar';
 import { DataTable } from '../../../shared/interfaces';
 
 @Component({
   selector: 'app-empresas',
   standalone: true,
-  imports: [CommonModule, FormsModule, DataTableComponent],
+  imports: [CommonModule, FormsModule, DataTableComponent, ExportarBotonesComponent],
   templateUrl: './empresas.html'
 })
 export class EmpresasComponent {
@@ -30,6 +32,20 @@ export class EmpresasComponent {
   ];
 
   empresas = signal<Empresa[]>([]);
+  /** Lo que la tabla muestra, listo para exportar a Excel o CSV. */
+  readonly datosExportacion = computed<DatosExportacion>(() => ({
+    nombre: 'Empresas',
+    columnas: ['Código', 'RUC', 'Razón Social', 'Domicilio Fiscal', 'Dirección Entrega', 'Correo Compras'],
+    filas: this.empresas().map((e) => [
+      e.CodEmpresa,
+      e.RUC || e.ruc,
+      e.RazonSocial || e.razon_social,
+      e.DomicilioFiscal || e.domicilio_fiscal,
+      e.DireccionEntrega || e.direccion_entrega,
+      e.CorreoCompras || e.correo_compras,
+    ]),
+  }));
+
   showModal = signal<boolean>(false);
   loading = signal<boolean>(false);
   editingId = signal<number | string | null>(null);

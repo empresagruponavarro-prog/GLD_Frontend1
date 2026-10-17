@@ -5,6 +5,7 @@ import { errorMessage } from '@app/features/almacen/almacen.utils';
 import { estadoPlanoClass } from '../../obra.calc';
 import { ObraPlano } from '../../obra.interface';
 import { ObraService } from '../../obra.service';
+import { PermisosObra, SIN_PERMISOS_OBRA } from '../../obra-permisos';
 
 @Component({
   selector: 'app-historial-planos-dialog',
@@ -19,6 +20,8 @@ export class HistorialPlanosDialogComponent {
   readonly isOpen = input(false);
   readonly idCentroCosto = input.required<number>();
   readonly plano = input<ObraPlano | null>(null);
+  /** Permisos de `obra`: «Emitir nueva versión» (`POST …/planos/:id/versiones`) exige `editar`. */
+  readonly permisos = input<PermisosObra>(SIN_PERMISOS_OBRA);
 
   readonly closed = output<void>();
   /** Solicita emitir una nueva versión del plano vigente. */

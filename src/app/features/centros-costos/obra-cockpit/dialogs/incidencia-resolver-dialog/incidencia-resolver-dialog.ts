@@ -1,10 +1,11 @@
-import { ChangeDetectionStrategy, Component, effect, inject, input, output, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, effect, inject, input, output, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ModalComponent } from '@shared/components/modal/modal';
 import { errorMessage } from '@app/features/almacen/almacen.utils';
 import { ObraIncidencia } from '../../obra.interface';
 import { ObraService } from '../../obra.service';
+import { PermisosObra, SIN_PERMISOS_OBRA } from '../../obra-permisos';
 
 @Component({
   selector: 'app-incidencia-resolver-dialog',
@@ -21,12 +22,17 @@ export class IncidenciaResolverDialogComponent {
   readonly nombreObra = input<string>('');
   readonly incidencia = input<ObraIncidencia | null>(null);
   readonly responsables = input<readonly string[]>([]);
+  /** Permisos de `obra`: resolver (`PATCH …/incidencias/:id`) exige `editar`. */
+  readonly permisos = input<PermisosObra>(SIN_PERMISOS_OBRA);
 
   readonly closed = output<void>();
   readonly saved = output<void>();
 
   protected readonly isSaving = signal(false);
   protected readonly formError = signal('');
+  protected readonly puedeGuardar = computed(() => this.permisos().editar);
+  /** Sin permiso de guardar, el formulario se muestra en solo lectura. */
+  protected readonly soloLectura = computed(() => !this.puedeGuardar());
 
   protected readonly form = new FormGroup({
     accion_solicitada_o_ejecutada: new FormControl('', {
@@ -48,10 +54,13 @@ export class IncidenciaResolverDialogComponent {
         accion_solicitada_o_ejecutada: inc?.accion_solicitada_o_ejecutada ?? '',
         responsable: inc?.responsable ?? '',
       });
+      if (this.soloLectura()) this.form.disable({ emitEvent: false });
+      else this.form.enable({ emitEvent: false });
     });
   }
 
   protected onSubmit(): void {
+    if (!this.puedeGuardar()) return;
     if (this.form.invalid) {
       this.form.markAllAsTouched();
       this.formError.set('Por favor, indica la solución técnica ejecutada en obra.');
@@ -75,7 +84,7 @@ export class IncidenciaResolverDialogComponent {
           this.isSaving.set(false);
           this.saved.emit();
         },
-        error: (err) => {
+        error: (err: unknown) => {
           this.isSaving.set(false);
           this.formError.set(errorMessage(err) || 'No se pudo resolver la incidencia');
         },

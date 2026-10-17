@@ -4,12 +4,14 @@
       <h2 class="font-bold text-sm text-on-surface">Comité Técnico y Residentes Asignados</h2>
       <p class="text-xs text-on-surface-variant">Canales directos de escalamiento y supervisión de campo de GLD Arquitectura en Obra Tambo VES.</p>
     </div>
-    <div class="flex items-center gap-2">
-      <button class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary text-on-primary text-xs font-semibold shadow-sm hover:opacity-95" (click)="asignar.emit()">
-        <span class="material-symbols-outlined text-sm">person_add</span>
-        <span>+ Asignar Nuevo Residente / Contacto</span>
-      </button>
-    </div>
+    @if (permisos().crear) {
+      <div class="flex items-center gap-2">
+        <button class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary text-on-primary text-xs font-semibold shadow-sm hover:opacity-95" (click)="asignar.emit()">
+          <span class="material-symbols-outlined text-sm">person_add</span>
+          <span>+ Asignar Nuevo Residente / Contacto</span>
+        </button>
+      </div>
+    }
   </div>
   <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
     @if (residentes().length > 0) {

@@ -22,7 +22,7 @@
             <span class="text-[11px] font-mono text-on-surface-variant truncate"># CC-{{ idCentroCosto() }}@if (nombreObra()) {: {{ nombreObra() }}}</span>
           </div>
           <h2 id="doc-titulo-dialogo" class="text-2xl font-extrabold text-on-surface leading-tight m-0">
-            {{ isEdit ? 'Editar documento técnico / acta' : 'Anexar documento técnico / acta' }}
+            {{ isEdit ? (soloLectura() ? 'Detalle del documento técnico / acta' : 'Editar documento técnico / acta') : 'Anexar documento técnico / acta' }}
           </h2>
           <p class="text-sm text-on-surface-variant mt-1 mb-0">Registro oficial de actas, resoluciones y trazabilidad bajo norma GLD.</p>
         </div>
@@ -120,11 +120,11 @@
           </span>
           <div class="flex items-center gap-4 text-xs text-on-surface">
             <label for="doc-origen-local" class="inline-flex items-center gap-1.5 cursor-pointer">
-              <input id="doc-origen-local" type="radio" name="doc-origen" value="local" class="accent-primary" [checked]="origen() === 'local'" [disabled]="isSaving()" (change)="setOrigen('local')" />
+              <input id="doc-origen-local" type="radio" name="doc-origen" value="local" class="accent-primary" [checked]="origen() === 'local'" [disabled]="isSaving() || soloLectura()" (change)="setOrigen('local')" />
               <span>Archivo local</span>
             </label>
             <label for="doc-origen-enlace" class="inline-flex items-center gap-1.5 cursor-pointer">
-              <input id="doc-origen-enlace" type="radio" name="doc-origen" value="enlace" class="accent-primary" [checked]="origen() === 'enlace'" [disabled]="isSaving()" (change)="setOrigen('enlace')" />
+              <input id="doc-origen-enlace" type="radio" name="doc-origen" value="enlace" class="accent-primary" [checked]="origen() === 'enlace'" [disabled]="isSaving() || soloLectura()" (change)="setOrigen('enlace')" />
               <span>Enlace en la nube (BIM / Drive)</span>
             </label>
           </div>
@@ -175,12 +175,16 @@
                       <span class="material-symbols-outlined text-[18px]">download</span>
                     </button>
                   }
-                  <button type="button" class="inline-flex items-center gap-1.5 px-3.5 h-9 rounded-lg border border-slate-200 bg-white text-xs font-semibold text-on-surface hover:bg-slate-50 cursor-pointer" (click)="inputArchivo.click()" [disabled]="isSaving()">
-                    <span class="material-symbols-outlined text-[16px]" aria-hidden="true">upload</span> Reemplazar
-                  </button>
-                  <button type="button" class="w-9 h-9 rounded-lg border border-slate-200 bg-white text-on-surface-variant hover:text-error hover:bg-rose-50 flex items-center justify-center cursor-pointer" (click)="quitarArchivo()" [disabled]="isSaving()" title="Quitar archivo" aria-label="Quitar archivo">
-                    <span class="material-symbols-outlined text-[18px]">delete</span>
-                  </button>
+                  @if (puedeSubirArchivo()) {
+                    <button type="button" class="inline-flex items-center gap-1.5 px-3.5 h-9 rounded-lg border border-slate-200 bg-white text-xs font-semibold text-on-surface hover:bg-slate-50 cursor-pointer" (click)="inputArchivo.click()" [disabled]="isSaving()">
+                      <span class="material-symbols-outlined text-[16px]" aria-hidden="true">upload</span> Reemplazar
+                    </button>
+                  }
+                  @if (!soloLectura()) {
+                    <button type="button" class="w-9 h-9 rounded-lg border border-slate-200 bg-white text-on-surface-variant hover:text-error hover:bg-rose-50 flex items-center justify-center cursor-pointer" (click)="quitarArchivo()" [disabled]="isSaving()" title="Quitar archivo" aria-label="Quitar archivo">
+                      <span class="material-symbols-outlined text-[18px]">delete</span>
+                    </button>
+                  }
                 </div>
               </div>
             } @else {
@@ -189,10 +193,14 @@
                 <div class="w-11 h-11 rounded-full bg-white border border-primary/20 text-primary flex items-center justify-center" aria-hidden="true">
                   <span class="material-symbols-outlined text-2xl">cloud_upload</span>
                 </div>
-                <p class="text-sm text-on-surface m-0">Arrastra un archivo aquí o</p>
-                <button type="button" class="inline-flex items-center gap-1.5 px-4 h-9 rounded-lg bg-primary text-on-primary text-xs font-semibold shadow-sm hover:opacity-95 cursor-pointer" (click)="inputArchivo.click()" [disabled]="isSaving()">
-                  <span class="material-symbols-outlined text-[16px]" aria-hidden="true">upload</span> Seleccionar archivo
-                </button>
+                @if (puedeSubirArchivo()) {
+                  <p class="text-sm text-on-surface m-0">Arrastra un archivo aquí o</p>
+                  <button type="button" class="inline-flex items-center gap-1.5 px-4 h-9 rounded-lg bg-primary text-on-primary text-xs font-semibold shadow-sm hover:opacity-95 cursor-pointer" (click)="inputArchivo.click()" [disabled]="isSaving()">
+                    <span class="material-symbols-outlined text-[16px]" aria-hidden="true">upload</span> Seleccionar archivo
+                  </button>
+                } @else {
+                  <p class="text-sm text-on-surface m-0">Sin archivo adjunto</p>
+                }
               </div>
             }
             @if (archivoError()) {
@@ -238,9 +246,11 @@
   <!-- PIE -->
   <div modal-footer class="sticky bottom-0 flex flex-wrap items-center justify-between gap-3 px-6 py-4 bg-slate-50 border-t border-slate-100">
     @if (isEdit) {
-      <button type="button" id="btn-documento-eliminar" class="inline-flex items-center gap-1.5 px-3.5 h-10 rounded-xl border border-rose-200 bg-white text-xs font-semibold text-rose-700 hover:bg-rose-50 cursor-pointer" (click)="onDelete()" [disabled]="isSaving()">
-        <span class="material-symbols-outlined text-[18px]" aria-hidden="true">delete</span> Eliminar
-      </button>
+      @if (puedeEliminar()) {
+        <button type="button" id="btn-documento-eliminar" class="inline-flex items-center gap-1.5 px-3.5 h-10 rounded-xl border border-rose-200 bg-white text-xs font-semibold text-rose-700 hover:bg-rose-50 cursor-pointer" (click)="onDelete()" [disabled]="isSaving()">
+          <span class="material-symbols-outlined text-[18px]" aria-hidden="true">delete</span> Eliminar
+        </button>
+      }
     } @else {
       <span class="inline-flex items-center gap-1.5 text-[11px] text-on-surface-variant">
         <span class="material-symbols-outlined text-[16px]" aria-hidden="true">info</span> Los campos marcados con * son obligatorios
@@ -248,13 +258,15 @@
     }
     <div class="flex items-center gap-2.5 ml-auto">
       <button type="button" class="px-5 h-10 rounded-xl border border-slate-200 bg-white text-sm font-semibold text-on-surface hover:bg-slate-50 cursor-pointer" (click)="closed.emit()" [disabled]="isSaving()">Cancelar</button>
-      <button type="submit" form="form-documento" id="btn-documento-guardar" class="inline-flex items-center gap-2 px-5 h-10 rounded-xl bg-primary text-on-primary text-sm font-semibold shadow-sm hover:opacity-95 disabled:opacity-60 cursor-pointer" [disabled]="isSaving() || subiendo()">
-        @if (isSaving()) {
-          <span class="material-symbols-outlined text-[18px] animate-spin" aria-hidden="true">progress_activity</span> Guardando…
-        } @else {
-          <span class="material-symbols-outlined text-[18px]" aria-hidden="true">save</span> Guardar documento
-        }
-      </button>
+      @if (puedeGuardar()) {
+        <button type="submit" form="form-documento" id="btn-documento-guardar" class="inline-flex items-center gap-2 px-5 h-10 rounded-xl bg-primary text-on-primary text-sm font-semibold shadow-sm hover:opacity-95 disabled:opacity-60 cursor-pointer" [disabled]="isSaving() || subiendo()">
+          @if (isSaving()) {
+            <span class="material-symbols-outlined text-[18px] animate-spin" aria-hidden="true">progress_activity</span> Guardando…
+          } @else {
+            <span class="material-symbols-outlined text-[18px]" aria-hidden="true">save</span> Guardar documento
+          }
+        </button>
+      }
     </div>
   </div>
 </app-modal>

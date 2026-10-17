@@ -1,10 +1,11 @@
-import { ChangeDetectionStrategy, Component, effect, inject, input, output, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, effect, inject, input, output, signal } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ModalComponent } from '@shared/components/modal/modal';
 import { errorMessage } from '@app/features/almacen/almacen.utils';
 import { sinVacios } from '../../obra.calc';
 import { ESTADOS_INCIDENCIA, IncidenciaPayload, ObraIncidencia, PRIORIDADES_INCIDENCIA } from '../../obra.interface';
 import { ObraService } from '../../obra.service';
+import { PermisosObra, SIN_PERMISOS_OBRA, puedeGuardarObra } from '../../obra-permisos';
 
 @Component({
   selector: 'app-incidencia-dialog',
@@ -22,6 +23,8 @@ export class IncidenciaDialogComponent {
   readonly incidencia = input<ObraIncidencia | null>(null);
   /** Sugerencias para el campo responsable (residentes de la obra). */
   readonly responsables = input<readonly string[]>([]);
+  /** Permisos de `obra`: guardar exige `crear` (alta) o `editar` (edición); Eliminar, `eliminar`. */
+  readonly permisos = input<PermisosObra>(SIN_PERMISOS_OBRA);
 
   readonly closed = output<void>();
   readonly saved = output<void>();
@@ -42,6 +45,10 @@ export class IncidenciaDialogComponent {
   protected readonly estados = ESTADOS_INCIDENCIA;
   protected readonly isSaving = signal(false);
   protected readonly formError = signal('');
+  protected readonly puedeGuardar = computed(() => puedeGuardarObra(this.permisos(), this.incidencia() !== null));
+  /** Sin permiso de guardar, el formulario se muestra en solo lectura. */
+  protected readonly soloLectura = computed(() => !this.puedeGuardar());
+  protected readonly puedeEliminar = computed(() => this.incidencia() !== null && this.permisos().eliminar);
 
   protected readonly form = new FormGroup({
     titulo: new FormControl('', { nonNullable: true, validators: [Validators.required, Validators.maxLength(255)] }),
@@ -54,6 +61,7 @@ export class IncidenciaDialogComponent {
   });
 
   protected setPlazo(valor: string): void {
+    if (this.soloLectura()) return;
     this.form.controls.plazo_resolucion.setValue(valor);
   }
 
@@ -71,6 +79,8 @@ export class IncidenciaDialogComponent {
         plazo_resolucion: i?.plazo_resolucion ?? '',
         estado: i?.estado ?? 'PENDIENTE',
       });
+      if (this.soloLectura()) this.form.disable({ emitEvent: false });
+      else this.form.enable({ emitEvent: false });
     });
   }
 
@@ -79,6 +89,7 @@ export class IncidenciaDialogComponent {
   }
 
   protected onSubmit(): void {
+    if (!this.puedeGuardar()) return;
     this.form.markAllAsTouched();
     if (this.form.invalid) {
       this.formError.set('Completa el título y la descripción de la incidencia.');
@@ -114,7 +125,7 @@ export class IncidenciaDialogComponent {
 
   protected onDelete(): void {
     const i = this.incidencia();
-    if (!i || !confirm(`¿Eliminar la incidencia ${i.codigo_incidencia}?`)) return;
+    if (!i || !this.puedeEliminar() || !confirm(`¿Eliminar la incidencia ${i.codigo_incidencia}?`)) return;
     this.isSaving.set(true);
     this.#service.deleteIncidencia(this.idCentroCosto(), i.id).subscribe({
       next: () => {

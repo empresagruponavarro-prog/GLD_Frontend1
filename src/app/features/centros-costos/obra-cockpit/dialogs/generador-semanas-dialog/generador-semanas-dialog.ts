@@ -5,6 +5,7 @@ import { ModalComponent } from '@shared/components/modal/modal';
 import { errorMessage } from '@app/features/almacen/almacen.utils';
 import { ObraSemana, SemanaPayload } from '../../obra.interface';
 import { ObraService } from '../../obra.service';
+import { PermisosObra, SIN_PERMISOS_OBRA } from '../../obra-permisos';
 
 export interface PreviaSemana {
   numero_semana: number;
@@ -31,12 +32,17 @@ export class GeneradorSemanasDialogComponent {
   readonly nombreObra = input<string>('');
   readonly fechaInicioSugerida = input<string | undefined>(undefined);
   readonly semanasExistentes = input<readonly ObraSemana[]>([]);
+  /** Permisos de `obra`: generar el lote (`POST …/cronograma/lote`) exige `crear`. */
+  readonly permisos = input<PermisosObra>(SIN_PERMISOS_OBRA);
 
   readonly closed = output<void>();
   readonly saved = output<ObraSemana[]>();
 
   protected readonly isSaving = signal(false);
   protected readonly formError = signal('');
+  protected readonly puedeGuardar = computed(() => this.permisos().crear);
+  /** Sin permiso de guardar, el formulario se muestra en solo lectura. */
+  protected readonly soloLectura = computed(() => !this.puedeGuardar());
 
   protected readonly form = new FormGroup({
     fecha_inicio: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
@@ -50,8 +56,10 @@ export class GeneradorSemanasDialogComponent {
     effect(() => {
       if (!this.isOpen()) return;
       this.formError.set('');
+      this.form.enable({ emitEvent: false });
 
       const existentes = this.semanasExistentes();
+      const sugerida = this.fechaInicioSugerida();
       let fechaIni = '';
 
       if (existentes.length > 0) {
@@ -62,8 +70,8 @@ export class GeneradorSemanasDialogComponent {
           d.setDate(d.getDate() + 1);
           fechaIni = d.toISOString().slice(0, 10);
         }
-      } else if (this.fechaInicioSugerida()) {
-        fechaIni = this.fechaInicioSugerida()!.slice(0, 10);
+      } else if (sugerida) {
+        fechaIni = sugerida.slice(0, 10);
       } else {
         fechaIni = new Date().toISOString().slice(0, 10);
       }
@@ -75,6 +83,7 @@ export class GeneradorSemanasDialogComponent {
         fase_defecto: 'Ejecución de Obra',
         modo: existentes.length > 0 ? 'continuar' : 'reemplazar',
       });
+      if (this.soloLectura()) this.form.disable({ emitEvent: false });
     });
   }
 
@@ -135,14 +144,17 @@ export class GeneradorSemanasDialogComponent {
   });
 
   protected setCantidad(n: number): void {
+    if (this.soloLectura()) return;
     this.form.controls.cantidad_semanas.setValue(n);
   }
 
   protected setDistribucion(d: 's_curve' | 'lineal' | 'cero'): void {
+    if (this.soloLectura()) return;
     this.form.controls.distribucion.setValue(d);
   }
 
   protected onSubmit(): void {
+    if (!this.puedeGuardar()) return;
     this.form.markAllAsTouched();
     if (this.form.invalid) {
       this.formError.set('Por favor completa todos los campos requeridos correctamente.');

@@ -7,8 +7,12 @@
     </p>
   </div>
   <div style="display: flex; gap: 0.5rem; align-items: center">
-    <button class="btn btn-primary" type="button" (click)="nuevoDirecto()"><i class="fa-solid fa-plus"></i> Registro directo</button>
-    <a class="btn btn-secondary" routerLink="/tesoreria/programacion"><i class="fa-solid fa-calendar-check"></i> Programar pagos</a>
+    @if (permisos.crear()) {
+      <button class="btn btn-primary" type="button" (click)="nuevoDirecto()"><i class="fa-solid fa-plus"></i> Registro directo</button>
+    }
+    @if (puedeProgramar()) {
+      <a class="btn btn-secondary" routerLink="/tesoreria/programacion"><i class="fa-solid fa-calendar-check"></i> Programar pagos</a>
+    }
     <button class="btn btn-secondary" type="button" (click)="load()" [disabled]="isLoading()">
       <i class="fa-solid fa-arrows-rotate" [class.fa-spin]="isLoading()"></i>
       {{ isLoading() ? 'Cargando...' : 'Actualizar' }}
@@ -24,26 +28,26 @@
   <section class="toolbar-shell">
     <div class="toolbar-filters-row">
       <div class="toolbar-filters-left">
-        <input type="text" class="toolbar-select" placeholder="Buscar documento, proveedor, concepto o FUR..." maxlength="100" [value]="fSearch()" (input)="onSearch($any($event.target).value)" />
-        <select class="toolbar-select" [value]="fClase()" (change)="setFilter('clase', $any($event.target).value)" aria-label="Clase de documento">
+        <input type="text" class="toolbar-select" placeholder="Buscar documento, proveedor, concepto o FUR..." maxlength="100" [value]="fSearch()" (input)="onSearch(valorDe($event))" />
+        <select class="toolbar-select" [value]="fClase()" (change)="setFilter('clase', valorDe($event))" aria-label="Clase de documento">
           <option value="">Todas las clases</option>
           @for (c of clases; track c) {
             <option [value]="c">{{ claseLabel[c] }}</option>
           }
         </select>
-        <select class="toolbar-select" [value]="fEstadoPago()" (change)="setFilter('estadoPago', $any($event.target).value)" aria-label="Estado de pago">
+        <select class="toolbar-select" [value]="fEstadoPago()" (change)="setFilter('estadoPago', valorDe($event))" aria-label="Estado de pago">
           <option value="">Todo estado de pago</option>
           @for (e of estadosPago; track e) {
             <option [value]="e">{{ estadoPagoLabel[e] }}</option>
           }
         </select>
-        <select class="toolbar-select" [value]="fArea()" (change)="setFilter('area', $any($event.target).value)" aria-label="Área">
+        <select class="toolbar-select" [value]="fArea()" (change)="setFilter('area', valorDe($event))" aria-label="Área">
           <option value="">Todas las áreas</option>
           @for (a of areas(); track a.id) {
             <option [value]="a.id">{{ a.nombre }}</option>
           }
         </select>
-        <select class="toolbar-select" [value]="fEstado()" (change)="setFilter('estado', $any($event.target).value)" aria-label="Estado del documento">
+        <select class="toolbar-select" [value]="fEstado()" (change)="setFilter('estado', valorDe($event))" aria-label="Estado del documento">
           <option value="">Vigentes y anulados</option>
           <option value="REGISTRADO">Solo vigentes</option>
           <option value="ANULADO">Solo anulados</option>
@@ -53,19 +57,19 @@
     <div class="toolbar-filters-row">
       <div class="toolbar-filters-left">
         <label class="toolbar-check">Emisión desde
-          <input type="date" class="toolbar-select" [value]="fDesde()" (change)="setFilter('desde', $any($event.target).value)" />
+          <input type="date" class="toolbar-select" [value]="fDesde()" (change)="setFilter('desde', valorDe($event))" />
         </label>
         <label class="toolbar-check">hasta
-          <input type="date" class="toolbar-select" [value]="fHasta()" (change)="setFilter('hasta', $any($event.target).value)" />
+          <input type="date" class="toolbar-select" [value]="fHasta()" (change)="setFilter('hasta', valorDe($event))" />
         </label>
         <label class="toolbar-check">Vence hasta
-          <input type="date" class="toolbar-select" [value]="fVence()" (change)="setFilter('vence', $any($event.target).value)" />
+          <input type="date" class="toolbar-select" [value]="fVence()" (change)="setFilter('vence', valorDe($event))" />
         </label>
         <label class="toolbar-check">Importe de
-          <input type="number" min="0" class="toolbar-select adm-importe" [value]="fMontoMin()" (change)="setFilter('min', $any($event.target).value)" />
+          <input type="number" min="0" class="toolbar-select adm-importe" [value]="fMontoMin()" (change)="setFilter('min', valorDe($event))" />
         </label>
         <label class="toolbar-check">a
-          <input type="number" min="0" class="toolbar-select adm-importe" [value]="fMontoMax()" (change)="setFilter('max', $any($event.target).value)" />
+          <input type="number" min="0" class="toolbar-select adm-importe" [value]="fMontoMax()" (change)="setFilter('max', valorDe($event))" />
         </label>
         <button class="toolbar-reset" type="button" (click)="resetFilters()"><i class="fa-solid fa-rotate-left"></i> Restablecer</button>
       </div>
@@ -205,10 +209,14 @@
             </select>
           </div>
         </div>
-        @if (tienePagos()) {
-          <small class="adm-hint">Con pagos registrados solo se pueden cambiar los días de crédito, el vencimiento y el área.</small>
+        @if (!permisos.editar()) {
+          <small class="adm-hint" data-testid="deducciones-solo-lectura">Solo lectura: no tienes permiso para editar las deducciones.</small>
+        } @else {
+          @if (tienePagos()) {
+            <small class="adm-hint">Con pagos registrados solo se pueden cambiar los días de crédito, el vencimiento y el área.</small>
+          }
+          <button class="btn btn-primary" type="submit" [disabled]="isSavingDetalle()"><i class="fa-solid fa-floppy-disk"></i> {{ isSavingDetalle() ? 'Guardando...' : 'Guardar cambios' }}</button>
         }
-        <button class="btn btn-primary" type="submit" [disabled]="isSavingDetalle()"><i class="fa-solid fa-floppy-disk"></i> {{ isSavingDetalle() ? 'Guardando...' : 'Guardar cambios' }}</button>
       </form>
     }
 
@@ -234,7 +242,7 @@
 
     <h3 class="adm-section">Programación y pagos</h3>
     @if (d.programaciones.length === 0 && d.pagos.length === 0) {
-      <p class="adm-hint">Aún no hay pagos programados. <a routerLink="/tesoreria/programacion">Programar pagos</a>.</p>
+      <p class="adm-hint">Aún no hay pagos programados.@if (puedeProgramar()) { <a routerLink="/tesoreria/programacion">Programar pagos</a>.}</p>
     }
     @if (d.programaciones.length) {
       <div class="table-card">

@@ -1,6 +1,6 @@
 import { Service, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { Observable, map } from 'rxjs';
+import { Observable } from 'rxjs';
 import { environment } from '@env';
 import { CreateDocumentoOrigen, DocumentoOrigen, DocumentoOrigenDetalle, DocumentoOrigenPaginated, DocumentoOrigenQuery, DocumentoOrigenDetalleLinea } from './interfaces/documentos-origen.interface';
 
@@ -27,24 +27,8 @@ export class DocumentosOrigenService {
       }
     });
 
-    return this.http.get<any>(this.apiUrl, { params }).pipe(
-      map((res: any): DocumentoOrigenPaginated => {
-        const items: DocumentoOrigen[] = Array.isArray(res)
-          ? res
-          : (res?.items ?? res?.data ?? []);
-        const total = Array.isArray(res)
-          ? res.length
-          : (res?.total ?? res?.meta?.total ?? items.length);
-
-        return {
-          data: items,
-          total,
-          page: res?.page ?? res?.meta?.page ?? page,
-          pageSize: res?.pageSize ?? res?.meta?.pageSize ?? pageSize,
-          totalPages: res?.totalPages ?? res?.meta?.totalPages ?? (Math.ceil(total / pageSize) || 1),
-        };
-      })
-    );
+    // El backend responde `Paginated<DocumentoOrigenResponseDto>` ({ data, total, page, pageSize, totalPages }).
+    return this.http.get<DocumentoOrigenPaginated>(this.apiUrl, { params });
   }
 
   getById(id: number): Observable<DocumentoOrigenDetalle> {

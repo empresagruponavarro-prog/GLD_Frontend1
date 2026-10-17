@@ -1,9 +1,11 @@
-import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { environment } from '@env';
 import { permisosDePantalla } from '@app/core/auth/permisos-pantalla';
+import { ExportarBotonesComponent } from '../../../shared/components/exportar-botones/exportar-botones';
 import { ModalComponent } from '../../../shared/components/modal/modal';
+import type { DatosExportacion } from '../../../shared/utils/exportar';
 import { errorMessage } from '../../almacen/almacen.utils';
 import { Area } from '../../requerimientos/requerimientos.models';
 
@@ -11,7 +13,7 @@ import { Area } from '../../requerimientos/requerimientos.models';
 @Component({
   selector: 'app-areas',
   standalone: true,
-  imports: [ReactiveFormsModule, ModalComponent],
+  imports: [ReactiveFormsModule, ModalComponent, ExportarBotonesComponent],
   templateUrl: './areas.html',
   host: { class: 'page-scroll' },
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -23,6 +25,11 @@ export class AreasComponent {
   protected readonly permisos = permisosDePantalla('maestros.areas');
 
   protected readonly items = signal<Area[]>([]);
+  protected readonly datosExportacion = computed<DatosExportacion>(() => ({
+    nombre: 'Areas',
+    columnas: ['Código', 'Nombre', 'Estado'],
+    filas: this.items().map((a) => [a.codigo, a.nombre, a.estado ? 'Activa' : 'Inactiva']),
+  }));
   protected readonly isLoading = signal(false);
   protected readonly isModalOpen = signal(false);
   protected readonly isSaving = signal(false);

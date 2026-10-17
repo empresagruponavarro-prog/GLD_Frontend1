@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, effect, inject, input, output, signal, untracked } from '@angular/core';
 import { FormArray, FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { RouterLink } from '@angular/router';
+import { permisosDePantalla } from '@app/core/auth/permisos-pantalla';
 import { ModalComponent } from '../../../shared/components/modal/modal';
 import { SearchSelectComponent } from '../../../shared/components/search-select/search-select';
 import { errorMessage, fmtMoney, fmtNum, todayISO } from '../../almacen/almacen.utils';
@@ -48,6 +49,11 @@ type LineaGroup = ReturnType<typeof lineaGroup>;
 })
 export class CotizacionesPanelComponent {
   private readonly service = inject(RequerimientosService);
+  /**
+   * Módulo `requerimientos` (anexo §7.3, `CotizacionController`): Registrar → crear; Editar → editar;
+   * Eliminar → eliminar. Cerrar el cuadro y Reabrir → basta ver. Imprimir el cuadro es libre.
+   */
+  protected readonly permisos = permisosDePantalla('requerimientos');
 
   readonly requerimiento = input.required<Requerimiento>();
   readonly changed = output<void>();
@@ -72,6 +78,13 @@ export class CotizacionesPanelComponent {
   protected readonly puedeCotizar = computed(() => this.requerimiento().estado === 'ENVIADO');
   protected readonly puedeCerrar = computed(() => this.puedeCotizar() && this.cotizaciones().length > 0);
   protected readonly puedeReabrir = computed(() => this.requerimiento().estado === 'COTIZADO');
+  protected readonly puedeRegistrar = computed(() => this.puedeCotizar() && this.permisos.crear());
+  protected readonly puedeEditar = computed(() => this.puedeCotizar() && this.permisos.editar());
+  protected readonly puedeEliminar = computed(() => this.puedeCotizar() && this.permisos.eliminar());
+  protected readonly tituloModal = computed(() => {
+    const c = this.editando();
+    return c ? `Editar cotización ${c.numero}` : 'Registrar cotización';
+  });
 
   protected readonly form = new FormGroup({
     id_proveedor: new FormControl<number | null>(null, { validators: [Validators.required] }),
@@ -111,7 +124,7 @@ export class CotizacionesPanelComponent {
         this.cotizaciones.set(r);
         this.isLoading.set(false);
       },
-      error: (err) => {
+      error: (err: unknown) => {
         this.cotizaciones.set([]);
         this.isLoading.set(false);
         this.error.set(errorMessage(err));
@@ -121,6 +134,7 @@ export class CotizacionesPanelComponent {
 
   // ---------------------------------------------------------------- modal
   protected nueva(): void {
+    if (!this.puedeRegistrar()) return;
     this.editando.set(null);
     this.modalError.set('');
     this.form.reset({
@@ -138,6 +152,7 @@ export class CotizacionesPanelComponent {
   }
 
   protected editar(c: Cotizacion): void {
+    if (!this.puedeEditar()) return;
     this.editando.set(c);
     this.modalError.set('');
     this.form.reset({
@@ -180,13 +195,14 @@ export class CotizacionesPanelComponent {
   }
 
   protected guardar(): void {
+    const actual = this.editando();
+    if (actual ? !this.puedeEditar() : !this.puedeRegistrar()) return;
     const error = this.validar();
-    if (error) {
-      this.modalError.set(error);
+    const payload = error ? null : this.armarPayload();
+    if (error || !payload) {
+      this.modalError.set(error ?? 'Seleccione al proveedor.');
       return;
     }
-    const payload = this.armarPayload();
-    const actual = this.editando();
     const id = this.requerimiento().id;
     this.isSaving.set(true);
     this.modalError.set('');
@@ -199,7 +215,7 @@ export class CotizacionesPanelComponent {
         this.load();
         this.changed.emit();
       },
-      error: (err) => {
+      error: (err: unknown) => {
         this.isSaving.set(false);
         this.modalError.set(errorMessage(err));
       },
@@ -207,14 +223,14 @@ export class CotizacionesPanelComponent {
   }
 
   protected eliminar(c: Cotizacion): void {
-    if (!confirm(`¿Eliminar la cotización ${c.numero} de ${c.proveedor ?? 'este proveedor'}?`)) return;
+    if (!this.puedeEliminar() || !confirm(`¿Eliminar la cotización ${c.numero} de ${c.proveedor ?? 'este proveedor'}?`)) return;
     this.service.deleteCotizacion(this.requerimiento().id, c.id).subscribe({
       next: () => {
         this.message.set('Cotización eliminada.');
         this.load();
         this.changed.emit();
       },
-      error: (err) => alert(errorMessage(err)),
+      error: (err: unknown) => alert(errorMessage(err)),
     });
   }
 
@@ -226,7 +242,7 @@ export class CotizacionesPanelComponent {
         this.message.set('Cuadro comparativo cerrado.');
         this.changed.emit();
       },
-      error: (err) => alert(errorMessage(err)),
+      error: (err: unknown) => alert(errorMessage(err)),
     });
   }
 
@@ -237,7 +253,7 @@ export class CotizacionesPanelComponent {
         this.message.set('Cotizaciones reabiertas.');
         this.changed.emit();
       },
-      error: (err) => alert(errorMessage(err)),
+      error: (err: unknown) => alert(errorMessage(err)),
     });
   }
 
@@ -262,12 +278,14 @@ export class CotizacionesPanelComponent {
     return alguna ? null : 'La cotización debe ofrecer al menos un ítem.';
   }
 
-  private armarPayload(): CotizacionPayload {
+  /** Payload de la cotización; `null` si falta el proveedor (no ocurre tras `validar`). */
+  private armarPayload(): CotizacionPayload | null {
     const v = this.form.getRawValue();
     const texto = (s: string) => s.trim() || undefined;
     const entero = (s: string) => (s.trim() === '' ? undefined : Number(s));
+    if (v.id_proveedor === null) return null;
     return {
-      id_proveedor: v.id_proveedor as number,
+      id_proveedor: v.id_proveedor,
       fecha: v.fecha,
       referencia: texto(v.referencia),
       moneda_id: v.moneda_id,

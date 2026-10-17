@@ -13,10 +13,13 @@
           <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
           <span>Actualizar</span>
         </button>
-        <button type="button" (click)="nuevaPlantilla()" class="px-4 py-2 rounded-lg bg-[#0e5941] hover:bg-[#0a4231] text-white text-xs font-bold transition-all shadow-sm flex items-center space-x-1.5 cursor-pointer">
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"></path></svg>
-          <span>Nueva Plantilla</span>
-        </button>
+        <app-exportar-botones [datos]="datosExportacion()" />
+        @if (permisos.crear()) {
+          <button type="button" (click)="nuevaPlantilla()" class="px-4 py-2 rounded-lg bg-[#0e5941] hover:bg-[#0a4231] text-white text-xs font-bold transition-all shadow-sm flex items-center space-x-1.5 cursor-pointer">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"></path></svg>
+            <span>Nueva Plantilla</span>
+          </button>
+        }
       </div>
     </div>
 
@@ -127,13 +130,15 @@
     <!-- ======================================================== -->
     <section class="w-[70%] flex-1 h-full flex flex-col bg-slate-50 overflow-hidden relative">
 
-      @if (selectedPlantilla()) {
+      @if (selectedPlantilla(); as plantilla) {
         <!-- CABECERA PRINCIPAL (DASHBOARD BAR) -->
         <div class="bg-white/80 backdrop-blur-md border-b border-slate-200/80 px-8 py-5 shrink-0 z-10 flex flex-col md:flex-row md:items-start justify-between gap-4">
           <div class="flex-1">
+            <!-- Editor en línea: solo lectura sin permiso de editar -->
+            <fieldset class="min-w-0" [disabled]="soloLectura()">
             <div class="flex items-center space-x-3 mb-2">
-              <input type="text" [(ngModel)]="selectedPlantilla()!.Nombre" class="text-xl font-extrabold text-slate-900 tracking-tight bg-transparent border-b border-transparent hover:border-slate-300 focus:border-emerald-500 focus:outline-none w-full max-w-lg transition-colors">
-              @if (selectedPlantilla()!.Activo) {
+              <input type="text" [(ngModel)]="plantilla.Nombre" class="text-xl font-extrabold text-slate-900 tracking-tight bg-transparent border-b border-transparent hover:border-slate-300 focus:border-emerald-500 focus:outline-none w-full max-w-lg transition-colors">
+              @if (plantilla.Activo) {
                 <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200 shrink-0">
                   <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 mr-1.5 animate-pulse"></span>
                   Plantilla Activa
@@ -144,16 +149,17 @@
                   Inactiva
                 </span>
               }
-              <span class="text-xs font-mono text-slate-400 bg-slate-100 px-2 py-0.5 rounded border border-slate-200/60 shrink-0">ID: {{ selectedPlantilla()!.IdPlantilla }}</span>
+              <span class="text-xs font-mono text-slate-400 bg-slate-100 px-2 py-0.5 rounded border border-slate-200/60 shrink-0">ID: {{ plantilla.IdPlantilla }}</span>
             </div>
-            <textarea [(ngModel)]="selectedPlantilla()!.Descripcion" class="w-full text-xs text-slate-500 max-w-2xl font-normal leading-relaxed bg-transparent border border-transparent hover:border-slate-300 focus:border-emerald-500 focus:outline-none focus:bg-white rounded p-1 resize-none h-12 transition-colors"></textarea>
+            <textarea [(ngModel)]="plantilla.Descripcion" class="w-full text-xs text-slate-500 max-w-2xl font-normal leading-relaxed bg-transparent border border-transparent hover:border-slate-300 focus:border-emerald-500 focus:outline-none focus:bg-white rounded p-1 resize-none h-12 transition-colors"></textarea>
             
             <div class="mt-2">
               <label class="flex items-center space-x-2 text-xs text-slate-600 font-medium cursor-pointer w-max">
-                <input type="checkbox" [(ngModel)]="selectedPlantilla()!.Activo" class="rounded text-emerald-600 focus:ring-emerald-500 border-slate-300">
+                <input type="checkbox" [(ngModel)]="plantilla.Activo" class="rounded text-emerald-600 focus:ring-emerald-500 border-slate-300">
                 <span>Plantilla Habilitada (Activa)</span>
               </label>
             </div>
+            </fieldset>
           </div>
 
           <!-- BOTONES DE ACCIÓN GENERAL -->
@@ -162,6 +168,7 @@
               Descartar
             </button>
 
+            @if (!soloLectura()) {
             <button type="button" (click)="addFase()" class="group px-3.5 py-2 rounded-xl border border-emerald-600/30 bg-emerald-50 hover:bg-emerald-100/70 active:scale-95 text-xs font-bold text-emerald-800 transition-all duration-150 flex items-center space-x-1.5 shadow-2xs cursor-pointer">
               <svg class="w-4 h-4 text-emerald-600 transition-transform group-hover:rotate-90 duration-150" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
@@ -175,6 +182,7 @@
               </svg>
               <span class="">Guardar Cambios</span>
             </button>
+            }
           </div>
         </div>
 
@@ -183,21 +191,23 @@
           <div class="flex items-center space-x-6">
             <div class="flex items-center space-x-1.5">
               <span class="text-slate-400 font-medium">Total Fases:</span>
-              <strong class="text-slate-800 font-mono font-bold">{{ selectedPlantilla()!.fases.length }} Fases</strong>
+              <strong class="text-slate-800 font-mono font-bold">{{ plantilla.fases.length }} Fases</strong>
             </div>
             <div class="h-3 w-px bg-slate-200"></div>
             <div class="flex items-center space-x-1.5">
               <span class="text-slate-400 font-medium">Categorías:</span>
-              <strong class="text-slate-800 font-mono font-bold">{{ getTotalCategorias(selectedPlantilla()!) }} Categorías</strong>
+              <strong class="text-slate-800 font-mono font-bold">{{ getTotalCategorias(plantilla) }} Categorías</strong>
             </div>
           </div>
         </div>
 
         <!-- CUERPO PRINCIPAL (WORKSPACE CON OVERFLOW-Y-AUTO INDEPENDIENTE) -->
         <div class="flex-1 overflow-y-auto p-8 space-y-6">
-          <div cdkDropList (cdkDropListDropped)="dropFase($event)" class="space-y-6">
+          <!-- Fases y subfases: solo lectura y sin arrastrar sin permiso de editar -->
+          <fieldset class="min-w-0" [disabled]="soloLectura()">
+          <div cdkDropList [cdkDropListDisabled]="soloLectura()" (cdkDropListDropped)="dropFase($event)" class="space-y-6">
 
-          @for (fase of selectedPlantilla()!.fases; track fase.IdpptoFase + i; let i = $index) {
+          @for (fase of plantilla.fases; track fase.IdpptoFase + i; let i = $index) {
             <section class="bg-white rounded-xl border border-slate-200/80 shadow-xs overflow-hidden transition-all duration-150 hover:shadow-sm" cdkDrag>
               
               <!-- CABECERA DE FASE -->
@@ -205,11 +215,13 @@
                 <div class="flex items-center space-x-3 w-full">
                   <div class="flex items-center space-x-2 w-full max-w-2xl">
                     <!-- Drag handle for phase -->
+                    @if (!soloLectura()) {
                     <div cdkDragHandle class="cursor-move text-slate-400 hover:text-slate-600 transition-colors p-1" title="Arrastrar fase">
                       <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
                         <path d="M7 19v-2h2v2H7zm0-6v-2h2v2H7zm0-6V5h2v2H7zm6 12v-2h2v2h-2zm0-6v-2h2v2h-2zm0-6V5h2v2h-2z"></path>
                       </svg>
                     </div>
+                    }
                     <span class="w-6 h-6 rounded-md bg-emerald-600 text-white font-mono text-xs font-bold flex items-center justify-center shadow-2xs shrink-0">
                       {{ (i + 1).toString().padStart(2, '0') }}
                     </span>
@@ -219,6 +231,7 @@
                 </div>
 
                 <!-- Acciones CRUD de la Fase -->
+                @if (!soloLectura()) {
                 <div class="flex items-center space-x-1.5 shrink-0 pl-4">
                   <!-- Eliminar Fase -->
                   <button type="button" title="Eliminar fase" (click)="removeFase(fase)" class="p-1.5 rounded-lg text-slate-500 hover:text-rose-600 hover:bg-rose-50 active:scale-95 transition-all cursor-pointer">
@@ -230,6 +243,7 @@
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path></svg>
                   </button>
                 </div>
+                }
               </div>
 
               <!-- TABLA DE CATEGORÍAS -->
@@ -243,18 +257,20 @@
                       <th scope="col" class="w-16 py-2.5 pr-4 text-center">ACCIONES</th>
                     </tr>
                   </thead>
-                  <tbody class="divide-y divide-slate-100 text-xs" cdkDropList (cdkDropListDropped)="dropCategoria(fase, $event)">
+                  <tbody class="divide-y divide-slate-100 text-xs" cdkDropList [cdkDropListDisabled]="soloLectura()" (cdkDropListDropped)="dropCategoria(fase, $event)">
                     
                     @for (cat of fase.categorias; track $index) {
                       <tr class="group/row hover:bg-slate-50/80 transition-colors bg-white" cdkDrag>
                         <td class="py-3 px-5">
                           <div class="flex items-center space-x-3">
                             <!-- Icono de Drag (mover de lugar) -->
+                            @if (!soloLectura()) {
                             <div cdkDragHandle class="cursor-move text-slate-300 hover:text-slate-500 transition-colors p-1" title="Arrastrar para reordenar">
                               <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
                                 <path d="M7 19v-2h2v2H7zm0-6v-2h2v2H7zm0-6V5h2v2H7zm6 12v-2h2v2h-2zm0-6v-2h2v2h-2zm0-6V5h2v2h-2z"></path>
                               </svg>
                             </div>
+                            }
                             <select [(ngModel)]="cat.id_categoria" (change)="actualizarCategoriaReal(cat, $event)" class="bg-slate-50 p-1.5 rounded border border-slate-200 text-[11px] font-semibold text-slate-700 whitespace-normal leading-snug w-full min-w-[200px] focus:ring-1 focus:ring-[#529b7b] focus:border-[#529b7b] outline-none">
                               <option [ngValue]="undefined">-- Seleccione Categoría --</option>
                               <option [ngValue]="null">-- Seleccione Categoría --</option>
@@ -276,6 +292,7 @@
                           </div>
                         </td>
                         <td class="py-3 pr-4 text-center">
+                          @if (!soloLectura()) {
                           <div class="flex items-center justify-center space-x-2">
                             <!-- Editar -->
                             <button type="button" title="Editar Sub Fase" (click)="abrirModalCategoria('edit', fase, cat)" class="p-1 rounded text-slate-400 hover:text-slate-700 hover:bg-slate-100 active:scale-95 transition-all cursor-pointer">
@@ -291,6 +308,7 @@
                               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"></path></svg>
                             </button>
                           </div>
+                          }
                         </td>
                       </tr>
                     }
@@ -315,8 +333,10 @@
           }
 
           </div>
+          </fieldset>
 
           <!-- ZONA VACÍA PARA AGREGAR NUEVA FASE RÁPIDA -->
+          @if (!soloLectura()) {
           <button type="button" (click)="addFase()" class="w-full py-4 border-2 border-dashed border-slate-200 hover:border-emerald-400 rounded-xl bg-slate-50/50 hover:bg-emerald-50/30 flex items-center justify-center space-x-2 text-xs font-bold text-slate-500 hover:text-emerald-700 transition-all duration-150 group cursor-pointer">
             <div class="w-6 h-6 rounded-full bg-slate-200/80 group-hover:bg-emerald-100 text-slate-500 group-hover:text-emerald-600 flex items-center justify-center transition-colors">
               <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -325,6 +345,7 @@
             </div>
             <span class="">Insertar Fase Adicional</span>
           </button>
+          }
 
         </div>
 
@@ -337,9 +358,11 @@
             </div>
             <h3 class="text-lg font-bold text-slate-800 mb-1">Selecciona una plantilla</h3>
             <p class="text-sm text-slate-500 mb-6">Elige una plantilla del catálogo lateral para editar su estructura, o crea una nueva.</p>
-            <button (click)="nuevaPlantilla()" class="px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm shadow-sm transition-all cursor-pointer">
-              Crear Nueva Plantilla
-            </button>
+            @if (permisos.crear()) {
+              <button (click)="nuevaPlantilla()" class="px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm shadow-sm transition-all cursor-pointer">
+                Crear Nueva Plantilla
+              </button>
+            }
           </div>
         </div>
       }
@@ -400,6 +423,8 @@
                   <span class="block text-[11px] text-slate-500">Agregar fases después</span>
                 </span>
               </label>
+              <!-- Copiar hace además PUT /plantillas/:id/fases (editar) -->
+              @if (permisos.editar()) {
               <label class="flex items-start gap-2 p-3 rounded border cursor-pointer transition" [class]="nuevaForm.origen === 'copiar' ? 'border-[#529b7b] bg-[#529b7b]/8' : 'border-[#d1dcd7] hover:border-[#529b7b]/60'">
                 <input id="np-origen-copiar" type="radio" name="origen" value="copiar" [(ngModel)]="nuevaForm.origen" class="mt-0.5 text-[#529b7b] focus:ring-[#529b7b]">
                 <span>
@@ -407,6 +432,7 @@
                   <span class="block text-[11px] text-slate-500">Duplica fases y categorías</span>
                 </span>
               </label>
+              }
             </div>
             @if (nuevaForm.origen === 'copiar') {
               <select id="np-plantilla-origen" name="IdPlantillaOrigen" [(ngModel)]="nuevaForm.IdPlantillaOrigen"
@@ -419,6 +445,8 @@
             }
           </div>
 
+          <!-- Crearla inactiva hace además PUT /plantillas/:id (editar); sin él se crea activa -->
+          @if (permisos.editar()) {
           <label class="flex items-center justify-between gap-3 p-3 rounded border border-[#d1dcd7] bg-[#f6f8f7] cursor-pointer">
             <span>
               <span class="block font-bold text-slate-800">Plantilla activa</span>
@@ -426,6 +454,7 @@
             </span>
             <input id="np-activo" name="Activo" type="checkbox" [(ngModel)]="nuevaForm.Activo" class="w-4 h-4 rounded-sm text-[#529b7b] focus:ring-[#529b7b] border-slate-300">
           </label>
+          }
 
           @if (nuevaError()) {
             <div class="p-2.5 rounded border border-rose-200 bg-rose-50 text-rose-700 text-[11px]">{{ nuevaError() }}</div>

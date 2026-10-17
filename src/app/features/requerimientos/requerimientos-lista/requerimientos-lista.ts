@@ -1,5 +1,8 @@
-import { ChangeDetectionStrategy, Component, DestroyRef, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, computed, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
+import { permisosDePantalla } from '@app/core/auth/permisos-pantalla';
+import { PermisosService } from '@app/core/auth/permisos.service';
+import { opcionValida, valorDeEvento } from '@shared/utils/eventos';
 import { DataTableComponent } from '../../../shared/components/data-table/data-table';
 import { DataTable } from '../../../shared/interfaces';
 import { errorMessage } from '../../almacen/almacen.utils';
@@ -28,6 +31,16 @@ import { ESTADOS_ANULABLES, avanceBadge, esEditable, estadoBadge } from '../requ
 export class RequerimientosListaComponent {
   private readonly service = inject(RequerimientosService);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly permisosSesion = inject(PermisosService);
+  /**
+   * Nuevo → crear; Eliminar borrador → eliminar; sin `editar` el enlace al formulario dice solo "Ver"
+   * (el formulario se ajusta en D3). Enviar a aprobación y Anular exigen solo `ver` en el backend
+   * (decisión 2026-10-16): basta el acceso a la pantalla, con su regla de estado.
+   */
+  protected readonly permisos = permisosDePantalla('requerimientos');
+  /** "Generar OC" abre el alta en Documentos de origen: exige crear allí. */
+  protected readonly puedeGenerarOc = computed(() => this.permisosSesion.puede('documentos.origen', 'crear'));
+  protected readonly valorDe = valorDeEvento;
 
   protected readonly estados = ESTADOS_REQUERIMIENTO;
   protected readonly estadoLabel = ESTADO_LABEL;
@@ -95,8 +108,8 @@ export class RequerimientosListaComponent {
   }
 
   protected applyFilter(target: 'estado' | 'tipo' | 'desde' | 'hasta', value: string): void {
-    if (target === 'estado') this.fEstado.set(value as EstadoRequerimiento | '');
-    else if (target === 'tipo') this.fTipo.set(value as TipoRequerimiento | '');
+    if (target === 'estado') this.fEstado.set(opcionValida(ESTADOS_REQUERIMIENTO, value) ?? '');
+    else if (target === 'tipo') this.fTipo.set(opcionValida(TIPOS_REQUERIMIENTO, value) ?? '');
     else if (target === 'desde') this.fDesde.set(value);
     else this.fHasta.set(value);
     this.page.set(1);
@@ -138,7 +151,7 @@ export class RequerimientosListaComponent {
   }
 
   protected canGenerarOc(item: Requerimiento): boolean {
-    return item.estado === 'APROBADO' && item.tipo === 'COMPRA' && item.avance !== 'ATENDIDO';
+    return this.puedeGenerarOc() && item.estado === 'APROBADO' && item.tipo === 'COMPRA' && item.avance !== 'ATENDIDO';
   }
 
   protected enviar(item: Requerimiento): void {
@@ -148,7 +161,7 @@ export class RequerimientosListaComponent {
         this.message.set(`${item.numero} enviado a aprobación.`);
         this.load();
       },
-      error: (err) => alert(errorMessage(err)),
+      error: (err: unknown) => alert(errorMessage(err)),
     });
   }
 
@@ -159,18 +172,19 @@ export class RequerimientosListaComponent {
         this.message.set(`${item.numero} anulado.`);
         this.load();
       },
-      error: (err) => alert(errorMessage(err)),
+      error: (err: unknown) => alert(errorMessage(err)),
     });
   }
 
   protected eliminar(item: Requerimiento): void {
+    if (!this.permisos.eliminar()) return;
     if (!confirm(`¿Eliminar el borrador ${item.numero}?`)) return;
     this.service.delete(item.id).subscribe({
       next: () => {
         this.message.set(`${item.numero} eliminado.`);
         this.load();
       },
-      error: (err) => alert(errorMessage(err)),
+      error: (err: unknown) => alert(errorMessage(err)),
     });
   }
 }

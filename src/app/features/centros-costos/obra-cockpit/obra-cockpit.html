@@ -20,10 +20,12 @@
             <span class="material-symbols-outlined text-sm">arrow_back</span>
             <span>Volver a Centros de Costos</span>
           </button>
-          <button class="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-surface-container-high text-on-surface text-xs font-semibold hover:bg-surface-container-highest transition-colors shadow-sm cursor-pointer" (click)="onEditarObra()" title="Editar ficha técnica y datos de obra">
-            <span class="material-symbols-outlined text-sm text-primary">edit</span>
-            <span>Editar Obra</span>
-          </button>
+          @if (permisos.editar()) {
+            <button class="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-surface-container-high text-on-surface text-xs font-semibold hover:bg-surface-container-highest transition-colors shadow-sm cursor-pointer" (click)="onEditarObra()" title="Editar ficha técnica y datos de obra">
+              <span class="material-symbols-outlined text-sm text-primary">edit</span>
+              <span>Editar Obra</span>
+            </button>
+          }
           <div class="relative inline-block text-left" id="exportMenuWrapper">
             <button class="inline-flex items-center gap-1 px-3 py-1 rounded-lg bg-primary text-on-primary text-xs font-semibold shadow-sm hover:opacity-90 transition-colors" (click)="toggleExportMenu()">
               <span class="material-symbols-outlined text-sm">ios_share</span>
@@ -129,6 +131,7 @@
               [semanas]="semanas()" 
               [kpis]="kpis()" 
               [cabecera]="cabecera()" 
+              [permisos]="permisosObra()"
               (nueva)="onNuevaSemana()"
               (generarLote)="onGenerarLoteSemanas()"
               (editar)="onEditarSemana($event)"
@@ -141,6 +144,7 @@
           @if (activeTab() === 'tab-directorio') {
             <app-directorio-tab
               [residentes]="residentes()"
+              [permisos]="permisosObra()"
               (asignar)="onNuevoResidente()"
               (editar)="onEditarResidente($event)">
             </app-directorio-tab>
@@ -149,6 +153,7 @@
           @if (activeTab() === 'tab-planos') {
             <app-planos-tab
               [planos]="planos()"
+              [permisos]="permisosObra()"
               (subir)="onSubirPlano()"
               (ver)="onVerPlano($event)"
               (descargar)="onDescargarPlano($event)"
@@ -163,6 +168,7 @@
             <app-documentos-tab
               [documentos]="documentos()"
               [error]="errorDocumento()"
+              [permisos]="permisosObra()"
               (anexar)="onAnexarDocumento()"
               (verDetalle)="onVerDetalleDocumento($event)"
               (ver)="onVerDocumento($event)"
@@ -174,6 +180,7 @@
           @if (activeTab() === 'tab-incidencias') {
             <app-incidencias-tab
               [incidencias]="incidencias()"
+              [permisos]="permisosObra()"
               (reportar)="onReportarIncidencia()"
               (verBitacora)="onVerBitacora($event)"
               (resolver)="onResolverIncidencia($event)">
@@ -254,19 +261,19 @@
 
   <!-- Dialogs integration -->
   @if (showSemanaDialog()) {
-    <app-semana-dialog [isOpen]="true" [idCentroCosto]="idCentroCosto()" [nombreObra]="cockpit()?.nombre_obra || ''" [responsables]="responsablesIncidencia()" [semana]="selectedSemana()" [semanasExistentes]="semanas()" [fechaInicioObra]="cabecera()?.fecha_inicio" (closed)="showSemanaDialog.set(false)" (saved)="onDialogSaved()"></app-semana-dialog>
+    <app-semana-dialog [isOpen]="true" [permisos]="permisosObra()" [idCentroCosto]="idCentroCosto()" [nombreObra]="cockpit()?.nombre_obra || ''" [responsables]="responsablesIncidencia()" [semana]="selectedSemana()" [semanasExistentes]="semanas()" [fechaInicioObra]="cabecera()?.fecha_inicio" (closed)="showSemanaDialog.set(false)" (saved)="onDialogSaved()"></app-semana-dialog>
   }
   @if (showGeneradorSemanasDialog()) {
-    <app-generador-semanas-dialog [isOpen]="true" [idCentroCosto]="idCentroCosto()" [nombreObra]="cockpit()?.nombre_obra || ''" [fechaInicioSugerida]="cabecera()?.fecha_inicio" [semanasExistentes]="semanas()" (closed)="showGeneradorSemanasDialog.set(false)" (saved)="onDialogSaved()"></app-generador-semanas-dialog>
+    <app-generador-semanas-dialog [isOpen]="true" [permisos]="permisosObra()" [idCentroCosto]="idCentroCosto()" [nombreObra]="cockpit()?.nombre_obra || ''" [fechaInicioSugerida]="cabecera()?.fecha_inicio" [semanasExistentes]="semanas()" (closed)="showGeneradorSemanasDialog.set(false)" (saved)="onDialogSaved()"></app-generador-semanas-dialog>
   }
   @if (selectedSemanaParaAvance(); as semAvance) {
-    <app-semana-avance-dialog [isOpen]="true" [idCentroCosto]="idCentroCosto()" [nombreObra]="cockpit()?.nombre_obra || ''" [semana]="semAvance" (closed)="selectedSemanaParaAvance.set(null)" (saved)="onDialogSaved()"></app-semana-avance-dialog>
+    <app-semana-avance-dialog [isOpen]="true" [permisos]="permisosObra()" [idCentroCosto]="idCentroCosto()" [nombreObra]="cockpit()?.nombre_obra || ''" [semana]="semAvance" (closed)="selectedSemanaParaAvance.set(null)" (saved)="onDialogSaved()"></app-semana-avance-dialog>
   }
   @if (showResidenteDialog()) {
-    <app-residente-dialog [isOpen]="true" [idCentroCosto]="idCentroCosto()" [residente]="selectedResidente()" (closed)="showResidenteDialog.set(false)" (saved)="onDialogSaved()"></app-residente-dialog>
+    <app-residente-dialog [isOpen]="true" [permisos]="permisosObra()" [idCentroCosto]="idCentroCosto()" [residente]="selectedResidente()" (closed)="showResidenteDialog.set(false)" (saved)="onDialogSaved()"></app-residente-dialog>
   }
   @if (showPlanoDialog()) {
-    <app-plano-dialog [isOpen]="true" [idCentroCosto]="idCentroCosto()" [nombreObra]="cockpit()?.nombre_obra || ''" [plano]="selectedPlano()" [modo]="planoDialogModo()" [planosExistentes]="planos()" [responsables]="responsablesPlano()" (closed)="showPlanoDialog.set(false)" (saved)="onDialogSaved()"></app-plano-dialog>
+    <app-plano-dialog [isOpen]="true" [permisos]="permisosObra()" [idCentroCosto]="idCentroCosto()" [nombreObra]="cockpit()?.nombre_obra || ''" [plano]="selectedPlano()" [modo]="planoDialogModo()" [planosExistentes]="planos()" [responsables]="responsablesPlano()" (closed)="showPlanoDialog.set(false)" (saved)="onDialogSaved()"></app-plano-dialog>
   }
   @if (showPlanoVisorDialog()) {
     <app-plano-visor-dialog [isOpen]="true" [idCentroCosto]="idCentroCosto()" [plano]="selectedPlanoParaVer()" (closed)="showPlanoVisorDialog.set(false)" (nuevaVersion)="onNuevaVersionPlano($event)"></app-plano-visor-dialog>
@@ -278,21 +285,21 @@
     <app-documento-vista-dialog [isOpen]="true" [idCentroCosto]="idCentroCosto()" [documento]="docVista" (closed)="documentoVista.set(null)"></app-documento-vista-dialog>
   }
   @if (showDocumentoDialog()) {
-    <app-documento-dialog [isOpen]="true" [idCentroCosto]="idCentroCosto()" [nombreObra]="cockpit()?.nombre_obra || ''" [documento]="selectedDocumento()" (closed)="showDocumentoDialog.set(false)" (saved)="onDialogSaved()"></app-documento-dialog>
+    <app-documento-dialog [isOpen]="true" [permisos]="permisosObra()" [idCentroCosto]="idCentroCosto()" [nombreObra]="cockpit()?.nombre_obra || ''" [documento]="selectedDocumento()" (closed)="showDocumentoDialog.set(false)" (saved)="onDialogSaved()"></app-documento-dialog>
   }
   @if (showIncidenciaDialog()) {
-    <app-incidencia-dialog [isOpen]="true" [idCentroCosto]="idCentroCosto()" [nombreObra]="cockpit()?.nombre_obra || ''" [incidencia]="selectedIncidencia()" [responsables]="responsablesIncidencia()" (closed)="showIncidenciaDialog.set(false)" (saved)="onDialogSaved()"></app-incidencia-dialog>
+    <app-incidencia-dialog [isOpen]="true" [permisos]="permisosObra()" [idCentroCosto]="idCentroCosto()" [nombreObra]="cockpit()?.nombre_obra || ''" [incidencia]="selectedIncidencia()" [responsables]="responsablesIncidencia()" (closed)="showIncidenciaDialog.set(false)" (saved)="onDialogSaved()"></app-incidencia-dialog>
   }
   @if (showIncidenciaDetalleDialog()) {
-    <app-incidencia-detalle-dialog [isOpen]="true" [idCentroCosto]="idCentroCosto()" [nombreObra]="cockpit()?.nombre_obra || ''" [incidencia]="incidenciaParaDetalle()" (closed)="showIncidenciaDetalleDialog.set(false)" (editar)="onEditarDesdeDetalle($event)" (resolver)="onResolverDesdeDetalle($event)"></app-incidencia-detalle-dialog>
+    <app-incidencia-detalle-dialog [isOpen]="true" [permisos]="permisosObra()" [idCentroCosto]="idCentroCosto()" [nombreObra]="cockpit()?.nombre_obra || ''" [incidencia]="incidenciaParaDetalle()" (closed)="showIncidenciaDetalleDialog.set(false)" (editar)="onEditarDesdeDetalle($event)" (resolver)="onResolverDesdeDetalle($event)"></app-incidencia-detalle-dialog>
   }
   @if (showIncidenciaResolverDialog()) {
-    <app-incidencia-resolver-dialog [isOpen]="true" [idCentroCosto]="idCentroCosto()" [nombreObra]="cockpit()?.nombre_obra || ''" [incidencia]="incidenciaParaResolver()" [responsables]="responsablesIncidencia()" (closed)="showIncidenciaResolverDialog.set(false)" (saved)="onDialogSaved()"></app-incidencia-resolver-dialog>
+    <app-incidencia-resolver-dialog [isOpen]="true" [permisos]="permisosObra()" [idCentroCosto]="idCentroCosto()" [nombreObra]="cockpit()?.nombre_obra || ''" [incidencia]="incidenciaParaResolver()" [responsables]="responsablesIncidencia()" (closed)="showIncidenciaResolverDialog.set(false)" (saved)="onDialogSaved()"></app-incidencia-resolver-dialog>
   }
   @if (showHistorialDialog()) {
-    <app-historial-planos-dialog [isOpen]="true" [idCentroCosto]="idCentroCosto()" [plano]="selectedPlano()" (closed)="showHistorialDialog.set(false)" (verPlano)="onVerPlano($event)" (nuevaVersion)="onNuevaVersionPlano($event)"></app-historial-planos-dialog>
+    <app-historial-planos-dialog [isOpen]="true" [permisos]="permisosObra()" [idCentroCosto]="idCentroCosto()" [plano]="selectedPlano()" (closed)="showHistorialDialog.set(false)" (verPlano)="onVerPlano($event)" (nuevaVersion)="onNuevaVersionPlano($event)"></app-historial-planos-dialog>
   }
   @if (showGeneralesDialog()) {
-    <app-generales-dialog [isOpen]="true" [idCentroCosto]="idCentroCosto()" [generales]="generales()" (closed)="showGeneralesDialog.set(false)" (saved)="onDialogSaved()"></app-generales-dialog>
+    <app-generales-dialog [isOpen]="true" [permisos]="permisosObra()" [idCentroCosto]="idCentroCosto()" [generales]="generales()" (closed)="showGeneralesDialog.set(false)" (saved)="onDialogSaved()"></app-generales-dialog>
   }
 </div>

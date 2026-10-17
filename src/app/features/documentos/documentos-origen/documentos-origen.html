@@ -6,14 +6,16 @@
     </div>
 
     <div style="display: flex; gap: 0.5rem; align-items: center;">
-      <button class="btn btn-primary" type="button" (click)="openFurPicker()" title="Crear una OC a partir de un requerimiento aprobado">
-        <i class="fa-solid fa-file-circle-check"></i>
-        Desde requerimiento
-      </button>
-      <button class="btn btn-secondary" type="button" (click)="openModal()">
-        <i class="fa-solid fa-plus"></i>
-        Nuevo documento
-      </button>
+      @if (permisos.crear()) {
+        <button class="btn btn-primary" type="button" (click)="openFurPicker()" title="Crear una OC a partir de un requerimiento aprobado">
+          <i class="fa-solid fa-file-circle-check"></i>
+          Desde requerimiento
+        </button>
+        <button class="btn btn-secondary" type="button" (click)="openModal()">
+          <i class="fa-solid fa-plus"></i>
+          Nuevo documento
+        </button>
+      }
       <button class="btn btn-secondary" (click)="load()" [disabled]="loading()">
         <i class="fa-solid fa-arrows-rotate" [class.fa-spin]="loading()"></i>
         {{ loading() ? 'Cargando...' : 'Actualizar' }}
@@ -105,10 +107,10 @@
         <input
           type="number"
           class="toolbar-select"
-          placeholder="Detalle Fase"
+          placeholder="Fase (ID)"
           min="1"
-          [ngModel]="idDetalleFaseFilter()"
-          (ngModelChange)="idDetalleFaseFilter.set($event); onFilterChange()"
+          [ngModel]="idFaseFilter()"
+          (ngModelChange)="idFaseFilter.set($event); onFilterChange()"
         />
 
         <button class="toolbar-reset" type="button" (click)="resetFilters()">
@@ -182,22 +184,26 @@
             <i class="fa-solid fa-file-pdf"></i>
           </button>
           <span *ngIf="!item.oc_pdf" style="color: var(--text-muted);">—</span>
-          <button
-            class="table-action-btn"
-            type="button"
-            (click)="openEdit(item)"
-            title="Editar documento"
-          >
-            <i class="fa-solid fa-pen-to-square"></i>
-          </button>
-          <button
-            class="table-action-btn table-action-btn--danger"
-            type="button"
-            (click)="confirmDelete(item)"
-            title="Eliminar documento"
-          >
-            <i class="fa-solid fa-trash"></i>
-          </button>
+          @if (permisos.editar()) {
+            <button
+              class="table-action-btn"
+              type="button"
+              (click)="openEdit(item)"
+              title="Editar documento"
+            >
+              <i class="fa-solid fa-pen-to-square"></i>
+            </button>
+          }
+          @if (permisos.eliminar()) {
+            <button
+              class="table-action-btn table-action-btn--danger"
+              type="button"
+              (click)="confirmDelete(item)"
+              title="Eliminar documento"
+            >
+              <i class="fa-solid fa-trash"></i>
+            </button>
+          }
         </div>
       </td>
     </tr>
@@ -400,7 +406,11 @@
                 <td>{{ fur.centro_costo ?? '—' }}</td>
                 <td>{{ fur.solicitante ?? '—' }}</td>
                 <td>{{ fur.avance === 'PARCIAL' ? 'Atención parcial' : 'Sin atender' }}</td>
-                <td align="right"><button class="btn btn-primary" type="button" (click)="usarRequerimiento(fur.id)">Usar</button></td>
+                <td align="right">
+                  @if (permisos.crear()) {
+                    <button class="btn btn-primary" type="button" (click)="usarRequerimiento(fur.id)">Usar</button>
+                  }
+                </td>
               </tr>
             } @empty {
               <tr><td colspan="6" style="text-align: center; color: var(--text-muted)">No hay requerimientos aprobados pendientes de ordenar.</td></tr>

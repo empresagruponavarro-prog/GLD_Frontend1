@@ -1,7 +1,10 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
+import { hayBoton } from '@app/core/auth/pantalla.testing';
 import { ObraDocumento } from '../../obra.interface';
+import { PermisosObra } from '../../obra-permisos';
+import { TODOS_PERMISOS_OBRA, camposEditables, permisosObra } from '../../obra-cockpit.testing';
 import { DocumentoDialogComponent } from './documento-dialog';
 
 const guardado: ObraDocumento = {
@@ -29,8 +32,9 @@ describe('DocumentoDialogComponent', () => {
   const dialogo = () => fixture.componentInstance as unknown as Dialogo;
   const texto = () => (fixture.nativeElement as HTMLElement).textContent?.replace(/\s+/g, ' ') ?? '';
 
-  const abrir = (documento: ObraDocumento | null, nombreObra = '') => {
+  const abrir = (documento: ObraDocumento | null, nombreObra = '', permisos: PermisosObra = TODOS_PERMISOS_OBRA) => {
     fixture.componentRef.setInput('idCentroCosto', 10);
+    fixture.componentRef.setInput('permisos', permisos);
     fixture.componentRef.setInput('nombreObra', nombreObra);
     fixture.componentRef.setInput('documento', documento);
     fixture.componentRef.setInput('isOpen', true);
@@ -186,6 +190,76 @@ describe('DocumentoDialogComponent', () => {
 
       expect(texto()).toContain('Seleccionar archivo');
       expect(el.querySelector('#doc-archivo-nombre')).toBeNull();
+    });
+  });
+
+  describe('permisos (obra)', () => {
+    const conArchivo: ObraDocumento = { ...guardado, archivo_url: 'obras/10/documentos/1a2b3c4d_Acta.pdf' };
+    const el = () => fixture.nativeElement as HTMLElement;
+    const pdf = () => new File(['%PDF'], 'acta.pdf', { type: 'application/pdf' });
+
+    it('«Detalle» con solo ver: solo lectura; sin Guardar, Eliminar, Reemplazar ni Quitar; ver/descargar siguen', () => {
+      abrir(conArchivo, '', permisosObra());
+
+      expect(texto()).toContain('Detalle del documento técnico / acta');
+      expect(camposEditables(el())).toHaveLength(0);
+      expect(el().querySelector('#btn-documento-guardar')).toBeNull();
+      expect(el().querySelector('#btn-documento-eliminar')).toBeNull();
+      expect(hayBoton(el(), 'Reemplazar')).toBe(false);
+      expect(el().querySelector('[aria-label="Quitar archivo"]')).toBeNull();
+      expect(el().querySelector('[aria-label="Ver archivo"]')).not.toBeNull();
+      expect(el().querySelector('[aria-label="Descargar archivo"]')).not.toBeNull();
+
+      soltar(pdf());
+      el().querySelector('form')?.dispatchEvent(new Event('submit'));
+      http.expectNone(() => true);
+    });
+
+    it('con editar sin crear: guarda los datos pero no sube archivos (POST …/archivo exige crear)', () => {
+      abrir(conArchivo, '', permisosObra({ editar: true }));
+
+      expect(camposEditables(el()).length).toBeGreaterThan(0);
+      expect(el().querySelector('#btn-documento-guardar')).not.toBeNull();
+      expect(el().querySelector('[aria-label="Quitar archivo"]')).not.toBeNull();
+      expect(hayBoton(el(), 'Reemplazar')).toBe(false);
+      soltar(pdf());
+      http.expectNone(() => true);
+    });
+
+    it('alta sin crear: sin Guardar ni zona de carga', () => {
+      abrir(null, '', permisosObra({ editar: true, eliminar: true }));
+
+      expect(el().querySelector('#btn-documento-guardar')).toBeNull();
+      expect(texto()).toContain('Sin archivo adjunto');
+      expect(texto()).not.toContain('Seleccionar archivo');
+    });
+
+    it('Eliminar exige eliminar', () => {
+      abrir(guardado, '', permisosObra({ eliminar: true }));
+
+      expect(el().querySelector('#btn-documento-eliminar')).not.toBeNull();
+      expect(el().querySelector('#btn-documento-guardar')).toBeNull();
+    });
+
+    it('el descarte del archivo subido sin guardar (DELETE …/archivo) exige eliminar', () => {
+      const subirYCerrar = () => {
+        soltar(pdf());
+        http
+          .expectOne((r) => r.method === 'POST' && r.url.endsWith('/documentos/archivo'))
+          .flush({ archivo_url: 'obras/10/documentos/9f8e7d6c_acta.pdf', nombre_original: 'acta.pdf', bytes: 4 });
+        fixture.componentRef.setInput('isOpen', false);
+        fixture.detectChanges();
+        TestBed.tick();
+      };
+      const esDescarte = (r: { method: string; url: string }) => r.method === 'DELETE' && r.url.endsWith('/documentos/archivo');
+
+      abrir(null, '', permisosObra({ crear: true }));
+      subirYCerrar();
+      http.expectNone(esDescarte);
+
+      abrir(null, '', permisosObra({ crear: true, eliminar: true }));
+      subirYCerrar();
+      expect(http.expectOne(esDescarte).request.params.get('clave')).toBe('obras/10/documentos/9f8e7d6c_acta.pdf');
     });
   });
 });

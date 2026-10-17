@@ -22,6 +22,8 @@ export interface ChartPoint {
 export class CurvaSChartComponent {
   readonly semanas = input<readonly ObraSemana[]>([]);
   readonly semanaActiva = input<number | undefined>(undefined);
+  /** Clic en un punto abre el avance de la semana (exige `editar` en `obra`); false = solo consulta. */
+  readonly seleccionable = input(false);
 
   readonly seleccionarSemana = output<ObraSemana>();
 
@@ -133,6 +135,7 @@ export class CurvaSChartComponent {
   }
 
   protected onPointClick(pt: ChartPoint): void {
+    if (!this.seleccionable()) return;
     this.seleccionarSemana.emit(pt.semana);
   }
 }

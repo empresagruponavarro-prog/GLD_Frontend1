@@ -50,9 +50,11 @@
   <div modal-footer class="modal-footer">
     <button type="button" class="btn btn-secondary" (click)="closed.emit()">Cerrar</button>
     @if (vigente(); as v) {
-      <button type="button" id="btn-historial-nueva-version" class="btn btn-primary" (click)="nuevaVersion.emit(v)">
-        <i class="fa-solid fa-code-branch"></i> Emitir nueva versión
-      </button>
+      @if (permisos().editar) {
+        <button type="button" id="btn-historial-nueva-version" class="btn btn-primary" (click)="nuevaVersion.emit(v)">
+          <i class="fa-solid fa-code-branch"></i> Emitir nueva versión
+        </button>
+      }
     }
   </div>
 </app-modal>

@@ -4,7 +4,9 @@ import { FormsModule } from '@angular/forms';
 import { permisosDePantalla } from '@app/core/auth/permisos-pantalla';
 import { mensajeError } from '@shared/utils/errores-http';
 import { DataTableComponent } from '../../../shared/components/data-table/data-table';
+import { ExportarBotonesComponent } from '../../../shared/components/exportar-botones/exportar-botones';
 import { ModalComponent } from '../../../shared/components/modal/modal';
+import { traerTodasLasPaginas, type DatosExportacion } from '../../../shared/utils/exportar';
 import { DataTable } from '../../../shared/interfaces';
 import {
   Alternativa,
@@ -24,7 +26,7 @@ import { ProductosService } from './productos.service';
 @Component({
   selector: 'app-productos',
   standalone: true,
-  imports: [CommonModule, FormsModule, DataTableComponent, ModalComponent, ProductoPickerComponent],
+  imports: [CommonModule, FormsModule, DataTableComponent, ModalComponent, ProductoPickerComponent, ExportarBotonesComponent],
   templateUrl: './productos.html',
   styleUrl: './productos.css',
 })
@@ -127,6 +129,27 @@ export class ProductosComponent {
     };
   }
 
+  /** Exporta todos los productos que cumplen los filtros activos (no solo la página visible). */
+  readonly exportarProductos = async (): Promise<DatosExportacion> => {
+    const filtros = this.buildQuery();
+    const filas = await traerTodasLasPaginas((page, pageSize) => this.service.getAll({ ...filtros, page, pageSize }));
+    return {
+      nombre: 'Catalogo_Bienes_Servicios',
+      columnas: ['ID', 'Código', 'Descripción', 'Categoría', 'Unidad de Medida', 'Tipo', 'Clase', 'Stock', 'Estado'],
+      filas: filas.map((p) => [
+        p.id,
+        p.codigo,
+        p.descripcion,
+        this.nombreCategoria(p.id_categoria),
+        this.nombreUnidadMedida(p.id_unidad_medida),
+        p.tipo_producto,
+        this.claseLabel[p.clase_inventario],
+        p.stock,
+        p.estado ? 'Activo' : 'Inactivo',
+      ]),
+    };
+  };
+
   onSearchCodigo(value: string) {
     this.codigoFilter.set(value);
     this.debouncedLoad();
@@ -200,7 +223,7 @@ export class ProductosComponent {
 
   onAlternativaPicked(prioridad: number, p: ProductoElegido) {
     if (this.editingId() === p.id) {
-      alert('Un producto no puede ser alternativa de sí mismo.');
+      alert('Un bien o servicio no puede ser alternativo de sí mismo.');
       return;
     }
     const slots = [...this.alternativas()];
@@ -319,7 +342,7 @@ export class ProductosComponent {
           next: () => this.finishSave(),
           error: (err: unknown) => {
             this.finishSave();
-            alert('El producto se guardó, pero no las alternativas: ' + mensajeError(err));
+            alert('El bien o servicio se guardó, pero no las alternativas: ' + mensajeError(err));
           },
         });
       },
@@ -337,7 +360,7 @@ export class ProductosComponent {
   deleteProducto(item: Producto) {
     if (!this.permisos.eliminar()) return;
     const label = item.descripcion || item.codigo || `ID ${item.id}`;
-    if (!confirm(`¿Desactivar el producto "${label}"? El registro quedará inactivo.`)) return;
+    if (!confirm(`¿Desactivar "${label}"? El registro quedará inactivo.`)) return;
     this.service.delete(item.id).subscribe({
       next: () => this.load(),
       error: (err: unknown) => alert('Error al desactivar: ' + mensajeError(err)),

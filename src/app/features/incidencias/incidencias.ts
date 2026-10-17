@@ -1,6 +1,7 @@
 import { Component, inject, signal, AfterViewChecked } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import type { Observable } from 'rxjs';
 import { permisosDePantalla } from '@app/core/auth/permisos-pantalla';
 import { mensajeError } from '@shared/utils/errores-http';
 import { IncidenciasService } from './incidencias.service';
@@ -318,13 +319,21 @@ export class IncidenciasComponent implements AfterViewChecked {
     }
   }
 
-  exportExcel() {
-    this.service.exportExcel(this.filters).subscribe({
+  exportCsv() {
+    this.descargar(this.service.exportCsv(this.filters), 'csv');
+  }
+
+  exportXlsx() {
+    this.descargar(this.service.exportXlsx(this.filters), 'xlsx');
+  }
+
+  private descargar(archivo$: Observable<Blob>, extension: 'csv' | 'xlsx') {
+    archivo$.subscribe({
       next: (blob) => {
         const url = window.URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = `Registro_Casos_GLD_${new Date().toISOString().substring(0, 10)}.csv`;
+        a.download = `Registro_Casos_GLD_${new Date().toISOString().substring(0, 10)}.${extension}`;
         a.click();
         window.URL.revokeObjectURL(url);
       },

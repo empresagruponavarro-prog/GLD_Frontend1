@@ -3,6 +3,8 @@ import { DatePipe, DecimalPipe } from '@angular/common';
 import { clampPct, estadoSemanaClass, ordenarSemanas } from '../../obra.calc';
 import { ESTADOS_SEMANA, ObraCabecera, ObraKpi, ObraSemana } from '../../obra.interface';
 import { CurvaSChartComponent } from './curva-s-chart/curva-s-chart';
+import { valorDeEvento } from '@shared/utils/eventos';
+import { PermisosObra, SIN_PERMISOS_OBRA } from '../../obra-permisos';
 
 @Component({
   selector: 'app-cronograma-tab',
@@ -15,6 +17,8 @@ export class CronogramaTabComponent {
   readonly semanas = input<readonly ObraSemana[]>([]);
   readonly kpis = input<ObraKpi | undefined>(undefined);
   readonly cabecera = input<ObraCabecera | undefined>(undefined);
+  /** Permisos del módulo `obra`; sin ellos la pestaña queda en solo lectura. */
+  readonly permisos = input<PermisosObra>(SIN_PERMISOS_OBRA);
 
   readonly nueva = output<void>();
   readonly editar = output<ObraSemana>();
@@ -46,6 +50,6 @@ export class CronogramaTabComponent {
   });
 
   protected onFiltro(event: Event): void {
-    this.filtroEstado.set((event.target as HTMLSelectElement).value);
+    this.filtroEstado.set(valorDeEvento(event));
   }
 }

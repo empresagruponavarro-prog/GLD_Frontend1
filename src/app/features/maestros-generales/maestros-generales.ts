@@ -19,7 +19,7 @@ export class MaestrosGeneralesComponent {
   subModules: SubModuleCard[] = [
     { title: 'Empresas', description: 'Registro y administración de datos de empresas', icon: 'fa-solid fa-building', route: '/admin/empresas' },
     { title: 'Anexos', description: 'Maestro de anexos', icon: 'fa-solid fa-paperclip', route: '/anexos' },
-    { title: 'Productos', description: 'Maestro de productos y servicios', icon: 'fa-solid fa-box', route: '/productos' },
+    { title: 'Catálogo de Bienes y Servicios', description: 'Maestro de bienes y servicios', icon: 'fa-solid fa-box', route: '/productos' },
     { title: 'Áreas de la empresa', description: 'Costos, Procura, Sistemas… (requerimientos y documentos de origen)', icon: 'fa-solid fa-sitemap', route: '/maestros-generales/areas' },
     { title: 'Especialidades', description: 'Maestro de especialidades', icon: 'fa-solid fa-user-doctor', route: '/maestros-generales/especialidades' },
     { title: 'Tipo Documento de Identidad', description: 'Maestro de tipos de documento', icon: 'fa-solid fa-id-card', route: '/maestros-generales/tipo-doc-identidad' },

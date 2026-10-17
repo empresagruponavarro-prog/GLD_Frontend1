@@ -9,6 +9,7 @@
       <i class="fa-solid fa-arrows-rotate" [class.fa-spin]="loading()"></i>
       {{ loading() ? 'Cargando...' : 'Actualizar' }}
     </button>
+    <app-exportar-botones [obtener]="exportarCentros" [cargando]="loading()" />
     @if (permisos.crear()) {
       <button class="btn btn-primary" (click)="openModal()">
         <i class="fa-solid fa-plus"></i>

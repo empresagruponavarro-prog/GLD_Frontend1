@@ -8,14 +8,18 @@
       data-testid="roles-actualizar">
       <i class="fa-solid fa-arrows-rotate" [class.fa-spin]="isLoading()" aria-hidden="true"></i> {{ isLoading() ? 'Actualizando...' : 'Actualizar' }}
     </button>
-    <button type="button" class="btn btn-secondary" (click)="openModal()" data-testid="roles-nuevo">
-      <i class="fa-solid fa-shield-halved" aria-hidden="true"></i> + Nuevo rol
-    </button>
-    <button type="button" class="btn btn-primary" (click)="guardarPermisos()" [disabled]="!puedeGuardar()"
-      [attr.aria-busy]="isSaving()" data-testid="permisos-guardar">
-      <i class="fa-solid" [class.fa-floppy-disk]="!isSaving()" [class.fa-circle-notch]="isSaving()" [class.fa-spin]="isSaving()" aria-hidden="true"></i>
-      {{ isSaving() ? 'Guardando...' : 'Guardar permisos' }}
-    </button>
+    @if (permisos.crear()) {
+      <button type="button" class="btn btn-secondary" (click)="openModal()" data-testid="roles-nuevo">
+        <i class="fa-solid fa-shield-halved" aria-hidden="true"></i> + Nuevo rol
+      </button>
+    }
+    @if (permisos.editar()) {
+      <button type="button" class="btn btn-primary" (click)="guardarPermisos()" [disabled]="!puedeGuardar()"
+        [attr.aria-busy]="isSaving()" data-testid="permisos-guardar">
+        <i class="fa-solid" [class.fa-floppy-disk]="!isSaving()" [class.fa-circle-notch]="isSaving()" [class.fa-spin]="isSaving()" aria-hidden="true"></i>
+        {{ isSaving() ? 'Guardando...' : 'Guardar permisos' }}
+      </button>
+    }
   </div>
 </div>
 
@@ -63,25 +67,29 @@
             <i class="fa-solid fa-lock" aria-hidden="true"></i> Sistema
           </span>
         }
-        <button type="button" class="btn btn-secondary roles-action-btn" (click)="editarSeleccionado()"
-          title="Editar" [attr.aria-label]="'Editar rol ' + rol.nombre" data-testid="rol-editar">
-          <i class="fa-solid fa-pen-to-square" aria-hidden="true"></i> Editar
-        </button>
-        @if (motivoNoEliminar(rol); as motivo) {
-          <!-- El title va en el envoltorio: los botones deshabilitados no muestran tooltip en todos los navegadores. -->
-          <span class="roles-disabled-wrap" [title]="motivo">
-            <button type="button" class="btn btn-danger roles-action-btn" disabled
-              [attr.aria-label]="'Eliminar rol ' + rol.nombre" [attr.aria-describedby]="'rol-motivo-' + rol.id"
-              data-testid="rol-eliminar">
+        @if (permisos.editar()) {
+          <button type="button" class="btn btn-secondary roles-action-btn" (click)="editarSeleccionado()"
+            title="Editar" [attr.aria-label]="'Editar rol ' + rol.nombre" data-testid="rol-editar">
+            <i class="fa-solid fa-pen-to-square" aria-hidden="true"></i> Editar
+          </button>
+        }
+        @if (permisos.eliminar()) {
+          @if (motivoNoEliminar(rol); as motivo) {
+            <!-- El title va en el envoltorio: los botones deshabilitados no muestran tooltip en todos los navegadores. -->
+            <span class="roles-disabled-wrap" [title]="motivo">
+              <button type="button" class="btn btn-danger roles-action-btn" disabled
+                [attr.aria-label]="'Eliminar rol ' + rol.nombre" [attr.aria-describedby]="'rol-motivo-' + rol.id"
+                data-testid="rol-eliminar">
+                <i class="fa-solid fa-trash" aria-hidden="true"></i> Eliminar
+              </button>
+              <span class="roles-sr-only" [id]="'rol-motivo-' + rol.id">{{ motivo }}</span>
+            </span>
+          } @else {
+            <button type="button" class="btn btn-danger roles-action-btn" (click)="askDelete(rol)"
+              title="Eliminar" [attr.aria-label]="'Eliminar rol ' + rol.nombre" data-testid="rol-eliminar">
               <i class="fa-solid fa-trash" aria-hidden="true"></i> Eliminar
             </button>
-            <span class="roles-sr-only" [id]="'rol-motivo-' + rol.id">{{ motivo }}</span>
-          </span>
-        } @else {
-          <button type="button" class="btn btn-danger roles-action-btn" (click)="askDelete(rol)"
-            title="Eliminar" [attr.aria-label]="'Eliminar rol ' + rol.nombre" data-testid="rol-eliminar">
-            <i class="fa-solid fa-trash" aria-hidden="true"></i> Eliminar
-          </button>
+          }
         }
       </div>
       @if (rol.descripcion) {
@@ -90,7 +98,7 @@
     }
 
     <div class="permisos-barra__estado" aria-live="polite">
-      @if (cambios() > 0) {
+      @if (cambios() > 0 && permisos.editar()) {
         <span class="permisos-pendientes" data-testid="permisos-contador">
           <i class="fa-solid fa-pen" aria-hidden="true"></i> {{ cambiosTexto(cambios()) }}
         </span>
@@ -102,7 +110,12 @@
     </div>
   </div>
 
-  @if (bloqueado()) {
+  @if (sinPermisoEditar()) {
+    <div role="note" class="roles-sistema-note permisos-bloqueado" data-testid="permisos-solo-lectura">
+      <i class="fa-solid fa-lock" aria-hidden="true"></i>
+      <span>Solo lectura: no tienes permiso para editar roles.</span>
+    </div>
+  } @else if (bloqueado()) {
     <div role="note" class="roles-sistema-note permisos-bloqueado" data-testid="permisos-bloqueado">
       <i class="fa-solid fa-lock" aria-hidden="true"></i>
       <span>El Administrador tiene todos los permisos. Su matriz no se puede modificar.</span>
@@ -113,7 +126,7 @@
   <div class="permisos-tabla-wrap">
     <table class="permisos-tabla" data-testid="permisos-matriz" [attr.aria-busy]="isLoading()">
       <caption class="roles-sr-only">
-        Permisos por módulo{{ rolSeleccionado() ? ' del rol ' + rolSeleccionado()?.nombre : '' }}{{ bloqueado() ? ' (solo lectura)' : '' }}
+        Permisos por módulo{{ rolSeleccionado() ? ' del rol ' + rolSeleccionado()?.nombre : '' }}{{ soloLectura() ? ' (solo lectura)' : '' }}
       </caption>
       <thead>
         <tr>

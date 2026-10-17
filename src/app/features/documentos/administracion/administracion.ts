@@ -1,6 +1,9 @@
-import { ChangeDetectionStrategy, Component, DestroyRef, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, computed, effect, inject, signal } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, RouterLink } from '@angular/router';
+import { permisosDePantalla } from '@app/core/auth/permisos-pantalla';
+import { PermisosService } from '@app/core/auth/permisos.service';
+import { opcionValida, valorDeEvento } from '@shared/utils/eventos';
 import { DataTableComponent } from '../../../shared/components/data-table/data-table';
 import { ModalComponent } from '../../../shared/components/modal/modal';
 import { SearchSelectComponent } from '../../../shared/components/search-select/search-select';
@@ -19,8 +22,10 @@ import {
   DocumentoDetalle,
   DocumentoDirectoPayload,
   DocumentoQuery,
+  ESTADOS_DOCUMENTO,
   ESTADOS_PAGO,
   ESTADO_PAGO_LABEL,
+  EstadoDocumento,
   EstadoPago,
   estadoPagoBadge,
 } from './administracion.models';
@@ -43,6 +48,16 @@ export class DocumentosAdministracionComponent {
   private readonly requerimientos = inject(RequerimientosService);
   private readonly destroyRef = inject(DestroyRef);
   private readonly route = inject(ActivatedRoute);
+  /**
+   * Registro directo → crear; formulario de deducciones (PATCH `/:id/deducciones`) → editar (sin él,
+   * solo lectura). "Anular documento" exige solo `ver` en el backend (decisión 2026-10-16): basta el
+   * acceso a la pantalla, con su regla de estado. Imprimir y el expediente son libres.
+   */
+  protected readonly permisos = permisosDePantalla('documentos.administracion');
+  private readonly permisosSesion = inject(PermisosService);
+  /** "Programar pagos" lleva a Tesorería → Programación: solo si se puede ver esa pantalla. */
+  protected readonly puedeProgramar = computed(() => this.permisosSesion.puedeVer('tesoreria.programacion'));
+  protected readonly valorDe = valorDeEvento;
 
   protected readonly fmtMoney = fmtMoney;
   protected readonly fmtNum = fmtNum;
@@ -80,7 +95,7 @@ export class DocumentosAdministracionComponent {
   protected readonly fSearch = signal('');
   protected readonly fClase = signal<ClaseDocumento | ''>('');
   protected readonly fEstadoPago = signal<EstadoPago | ''>('');
-  protected readonly fEstado = signal<'REGISTRADO' | 'ANULADO' | ''>('');
+  protected readonly fEstado = signal<EstadoDocumento | ''>('');
   protected readonly fArea = signal('');
   protected readonly fDesde = signal('');
   protected readonly fHasta = signal('');
@@ -136,6 +151,11 @@ export class DocumentosAdministracionComponent {
   constructor() {
     this.destroyRef.onDestroy(() => clearTimeout(this.searchTimer));
     this.deducciones.controls.retencion_auto.valueChanges.subscribe(() => this.sincronizarRetencion());
+    // Sin permiso de editar, el formulario de deducciones queda en solo lectura (y reacciona a la recarga de permisos).
+    effect(() => {
+      this.permisos.editar();
+      this.aplicarEdicionDeducciones();
+    });
     this.requerimientos.getAreas().subscribe({ next: (r) => this.areas.set(r), error: () => this.areas.set([]) });
     this.requerimientos.getAnexosSelect().subscribe({ next: (r) => this.anexos.set(r), error: () => this.anexos.set([]) });
     this.requerimientos.getCentrosCostosSelect().subscribe({ next: (r) => this.centrosCostos.set(r), error: () => this.centrosCostos.set([]) });
@@ -182,9 +202,9 @@ export class DocumentosAdministracionComponent {
 
   protected setFilter(target: 'clase' | 'estadoPago' | 'estado' | 'area' | 'desde' | 'hasta' | 'vence' | 'min' | 'max', value: string): void {
     switch (target) {
-      case 'clase': this.fClase.set(value as ClaseDocumento | ''); break;
-      case 'estadoPago': this.fEstadoPago.set(value as EstadoPago | ''); break;
-      case 'estado': this.fEstado.set(value as 'REGISTRADO' | 'ANULADO' | ''); break;
+      case 'clase': this.fClase.set(opcionValida(CLASES_DOCUMENTO, value) ?? ''); break;
+      case 'estadoPago': this.fEstadoPago.set(opcionValida(ESTADOS_PAGO, value) ?? ''); break;
+      case 'estado': this.fEstado.set(opcionValida(ESTADOS_DOCUMENTO, value) ?? ''); break;
       case 'area': this.fArea.set(value); break;
       case 'desde': this.fDesde.set(value); break;
       case 'hasta': this.fHasta.set(value); break;
@@ -233,7 +253,7 @@ export class DocumentosAdministracionComponent {
     this.isDetalleOpen.set(true);
     this.service.getById(id).subscribe({
       next: (d) => this.mostrar(d),
-      error: (err) => this.detalleError.set(errorMessage(err)),
+      error: (err: unknown) => this.detalleError.set(errorMessage(err)),
     });
   }
 
@@ -252,8 +272,21 @@ export class DocumentosAdministracionComponent {
       fecha_vencimiento: d.fecha_vencimiento_manual ?? '',
       id_area: d.id_area,
     });
-    // Con pagos registrados los montos quedan fijos: solo se editan crédito, vencimiento y área.
-    const bloqueados = d.pagos.some((p) => p.estado === 'REGISTRADO');
+    this.aplicarEdicionDeducciones();
+  }
+
+  /**
+   * Habilita los campos de deducciones según el permiso y el estado del documento: sin `editar`,
+   * todo en solo lectura; con pagos registrados los montos quedan fijos (solo se editan crédito,
+   * vencimiento y área).
+   */
+  private aplicarEdicionDeducciones(): void {
+    if (!this.permisos.editar()) {
+      this.deducciones.disable({ emitEvent: false });
+      return;
+    }
+    this.deducciones.enable({ emitEvent: false });
+    const bloqueados = this.tienePagos();
     const montos = ['renta_4ta', 'dscto_compras', 'dscto_intervencion', 'dscto_otros', 'detraccion_porcentaje', 'retencion_auto', 'afecto_igv'] as const;
     for (const k of montos) {
       if (bloqueados) this.deducciones.controls[k].disable({ emitEvent: false });
@@ -262,10 +295,10 @@ export class DocumentosAdministracionComponent {
     this.sincronizarRetencion(bloqueados);
   }
 
-  /** El monto de la retención solo se escribe a mano si no es automática y no hay pagos. */
+  /** El monto de la retención solo se escribe a mano si no es automática, no hay pagos y se puede editar. */
   private sincronizarRetencion(bloqueados = this.tienePagos()): void {
     const c = this.deducciones.controls;
-    if (bloqueados || c.retencion_auto.value) c.retencion_monto.disable({ emitEvent: false });
+    if (bloqueados || c.retencion_auto.value || !this.permisos.editar()) c.retencion_monto.disable({ emitEvent: false });
     else c.retencion_monto.enable({ emitEvent: false });
   }
 
@@ -276,7 +309,7 @@ export class DocumentosAdministracionComponent {
 
   protected guardarDeducciones(): void {
     const d = this.detalle();
-    if (!d) return;
+    if (!d || !this.permisos.editar()) return;
     const v = this.deducciones.getRawValue();
     const monto = (s: string) => (s.trim() === '' ? 0 : Number(s));
     for (const [nombre, valor] of [['Renta 4.ª', v.renta_4ta], ['Descuento de compras', v.dscto_compras], ['Descuento de intervención', v.dscto_intervencion], ['Otros descuentos', v.dscto_otros]] as const) {
@@ -307,7 +340,7 @@ export class DocumentosAdministracionComponent {
         this.message.set(`${res.numero_documento ?? 'Documento'} actualizado.`);
         this.load();
       },
-      error: (err) => {
+      error: (err: unknown) => {
         this.isSavingDetalle.set(false);
         this.detalleError.set(errorMessage(err));
       },
@@ -325,12 +358,13 @@ export class DocumentosAdministracionComponent {
         this.message.set(`${res.numero_documento ?? 'Documento'} anulado.`);
         this.load();
       },
-      error: (err) => this.detalleError.set(errorMessage(err)),
+      error: (err: unknown) => this.detalleError.set(errorMessage(err)),
     });
   }
 
   // ------------------------------------------------------------ registro directo
   protected nuevoDirecto(): void {
+    if (!this.permisos.crear()) return;
     this.directoError.set('');
     this.directo.reset({
       clase_documento: 'PAGO_SERVICIO',
@@ -347,6 +381,7 @@ export class DocumentosAdministracionComponent {
   }
 
   protected guardarDirecto(): void {
+    if (!this.permisos.crear()) return;
     const v = this.directo.getRawValue();
     if (!v.id_anexo) return this.directoError.set('Seleccione al proveedor o beneficiario.');
     if (!v.concepto.trim()) return this.directoError.set('Indique el concepto.');
@@ -381,7 +416,7 @@ export class DocumentosAdministracionComponent {
         this.load();
         this.abrir(d.id);
       },
-      error: (err) => {
+      error: (err: unknown) => {
         this.isSavingDirecto.set(false);
         this.directoError.set(errorMessage(err));
       },

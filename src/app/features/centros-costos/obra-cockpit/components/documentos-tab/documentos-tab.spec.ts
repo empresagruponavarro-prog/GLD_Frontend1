@@ -1,6 +1,8 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { DocumentosTabComponent } from './documentos-tab';
 import { ObraDocumento } from '../../obra.interface';
+import { hayBoton } from '@app/core/auth/pantalla.testing';
+import { TODOS_PERMISOS_OBRA, montar, permisosObra } from '../../obra-cockpit.testing';
 
 const doc = (over: Partial<ObraDocumento>): ObraDocumento => ({
   id: 1,
@@ -33,6 +35,7 @@ describe('DocumentosTabComponent', () => {
     fixture = TestBed.createComponent(DocumentosTabComponent);
     el = fixture.nativeElement as HTMLElement;
     fixture.componentRef.setInput('documentos', docs);
+    fixture.componentRef.setInput('permisos', TODOS_PERMISOS_OBRA);
     fixture.detectChanges();
   });
 
@@ -125,5 +128,29 @@ describe('DocumentosTabComponent', () => {
     fixture.componentRef.setInput('error', 'No se pudo descargar');
     fixture.detectChanges();
     expect(el.querySelector('[role="alert"]')?.textContent).toContain('No se pudo descargar');
+  });
+});
+
+describe('DocumentosTabComponent: botones según permisos (obra)', () => {
+  const docs = [doc({ id: 1, titulo: 'Acta de entrega', archivo_url: 'k/ab12cd34_acta.pdf' })];
+
+  it('con solo ver: sin Anexar ni Eliminar; Ver, Descargar y Detalle siguen', async () => {
+    const { el } = await montar(DocumentosTabComponent, { documentos: docs, permisos: permisosObra() });
+
+    expect(hayBoton(el, 'Anexar Documento')).toBe(false);
+    expect(el.querySelector('button[aria-label^="Eliminar "]')).toBeNull();
+    expect(el.querySelector('button[aria-label^="Ver "]')).not.toBeNull();
+    expect(el.querySelector('button[aria-label^="Descargar "]')).not.toBeNull();
+    expect(el.querySelector('button[aria-label^="Detalle"]')).not.toBeNull();
+  });
+
+  it('crear → Anexar; eliminar → Eliminar', async () => {
+    const crear = await montar(DocumentosTabComponent, { documentos: docs, permisos: permisosObra({ crear: true }) });
+    expect(hayBoton(crear.el, 'Anexar Documento')).toBe(true);
+    expect(crear.el.querySelector('button[aria-label^="Eliminar "]')).toBeNull();
+
+    const eliminar = await montar(DocumentosTabComponent, { documentos: docs, permisos: permisosObra({ eliminar: true }) });
+    expect(hayBoton(eliminar.el, 'Anexar Documento')).toBe(false);
+    expect(eliminar.el.querySelector('button[aria-label^="Eliminar "]')).not.toBeNull();
   });
 });

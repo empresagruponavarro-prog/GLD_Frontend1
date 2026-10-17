@@ -13,7 +13,7 @@
           <span class="material-symbols-outlined text-2xl">contact_page</span>
         </div>
         <div class="flex items-center gap-3">
-          <h2 class="text-[17px] font-bold text-on-surface m-0 leading-none">{{ isEdit ? 'Editar residente / contacto' : 'Asignar nuevo residente / contacto' }}</h2>
+          <h2 class="text-[17px] font-bold text-on-surface m-0 leading-none">{{ isEdit ? (soloLectura() ? 'Ficha del residente / contacto' : 'Editar residente / contacto') : 'Asignar nuevo residente / contacto' }}</h2>
           <span class="px-2 py-0.5 rounded text-[10px] font-extrabold uppercase tracking-wide text-primary bg-primary/10 border border-primary/20">Obra Activa</span>
         </div>
       </div>
@@ -144,7 +144,7 @@
 
   <!-- CUSTOM FOOTER -->
   <div modal-footer class="p-5 border-t border-surface-container/60 bg-surface-container-lowest rounded-b-[20px] flex items-center justify-end gap-3">
-    @if (isEdit) {
+    @if (puedeEliminar()) {
       <button type="button" class="px-4 py-2 rounded-lg border border-error text-error text-sm font-semibold hover:bg-error/5 transition-colors mr-auto flex items-center gap-1.5" (click)="onDelete()" [disabled]="isSaving()">
         <span class="material-symbols-outlined text-[18px]">person_remove</span> Desasignar
       </button>
@@ -152,12 +152,14 @@
     <button type="button" class="px-5 py-2 rounded-lg border border-surface-container text-on-surface text-sm font-semibold hover:bg-surface-container transition-colors" (click)="closed.emit()" [disabled]="isSaving()">
       Cancelar
     </button>
-    <button type="submit" form="form-residente" class="px-5 py-2 rounded-lg bg-primary text-on-primary text-sm font-semibold hover:opacity-95 transition-opacity flex items-center gap-1.5" [disabled]="isSaving()">
-      @if (isSaving()) {
-        <span class="material-symbols-outlined animate-spin text-[18px]">progress_activity</span> Guardando...
-      } @else {
-        <span class="material-symbols-outlined text-[18px]">save</span> Guardar
-      }
-    </button>
+    @if (puedeGuardar()) {
+      <button type="submit" form="form-residente" class="px-5 py-2 rounded-lg bg-primary text-on-primary text-sm font-semibold hover:opacity-95 transition-opacity flex items-center gap-1.5" [disabled]="isSaving()">
+        @if (isSaving()) {
+          <span class="material-symbols-outlined animate-spin text-[18px]">progress_activity</span> Guardando...
+        } @else {
+          <span class="material-symbols-outlined text-[18px]">save</span> Guardar
+        }
+      </button>
+    }
   </div>
 </app-modal>

@@ -121,19 +121,21 @@
           >
             Cancelar
           </button>
-          <button
-            type="submit"
-            form="form-resolver"
-            [disabled]="isSaving()"
-            class="px-5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold shadow-xs flex items-center gap-2 transition-all cursor-pointer disabled:opacity-50"
-          >
-            @if (isSaving()) {
-              <i class="fa-solid fa-spinner fa-spin"></i> Guardando...
-            } @else {
-              <span class="material-symbols-outlined text-sm">verified</span>
-              <span>Confirmar y Resolver Incidencia</span>
-            }
-          </button>
+          @if (puedeGuardar()) {
+            <button
+              type="submit"
+              form="form-resolver"
+              [disabled]="isSaving()"
+              class="px-5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold shadow-xs flex items-center gap-2 transition-all cursor-pointer disabled:opacity-50"
+            >
+              @if (isSaving()) {
+                <i class="fa-solid fa-spinner fa-spin"></i> Guardando...
+              } @else {
+                <span class="material-symbols-outlined text-sm">verified</span>
+                <span>Confirmar y Resolver Incidencia</span>
+              }
+            </button>
+          }
         </div>
       </form>
     }

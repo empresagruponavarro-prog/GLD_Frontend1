@@ -4,10 +4,12 @@
       <h2 class="font-bold text-sm text-on-surface">Control de Incidencias Técnicas &amp; RFI de Obra</h2>
       <p class="text-xs text-on-surface-variant">Consultas a proyectistas, interferencias y requerimientos de materiales con resolución inmediata.</p>
     </div>
-    <button type="button" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-error text-on-error text-xs font-semibold shadow-sm hover:opacity-95 transition-all cursor-pointer" (click)="reportar.emit()">
-      <span class="material-symbols-outlined text-sm">warning</span>
-      <span>+ Reportar Nueva Incidencia en Obra</span>
-    </button>
+    @if (permisos().crear) {
+      <button type="button" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-error text-on-error text-xs font-semibold shadow-sm hover:opacity-95 transition-all cursor-pointer" (click)="reportar.emit()">
+        <span class="material-symbols-outlined text-sm">warning</span>
+        <span>+ Reportar Nueva Incidencia en Obra</span>
+      </button>
+    }
   </div>
 
   <!-- Filtros -->
@@ -71,7 +73,7 @@
             }
             <div class="flex gap-1.5">
               <button type="button" class="px-2 py-0.5 rounded bg-surface-container-high text-on-surface text-[11px] font-semibold hover:bg-surface-container-highest cursor-pointer transition-colors" (click)="verBitacora.emit(incidencia)">Ver Detalle</button>
-              @if (!esResuelta(incidencia)) {
+              @if (!esResuelta(incidencia) && permisos().editar) {
                 <button type="button" class="px-2 py-0.5 rounded bg-primary text-on-primary text-[11px] font-semibold hover:opacity-90 cursor-pointer" (click)="resolver.emit(incidencia)">Resolver</button>
               }
             </div>

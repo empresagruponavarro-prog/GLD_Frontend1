@@ -8,7 +8,9 @@ import { mensajeError } from '@shared/utils/errores-http';
 import { LucideAngularModule, ArrowLeft, Copy, Check, Lock, Calendar, CloudUpload, FileText, CircleCheck, Contact, Clock } from 'lucide-angular';
 
 import { DataTableComponent } from '../../shared/components/data-table/data-table';
+import { ExportarBotonesComponent } from '../../shared/components/exportar-botones/exportar-botones';
 import { ModalComponent } from '../../shared/components/modal/modal';
+import { traerTodasLasPaginas, type DatosExportacion } from '../../shared/utils/exportar';
 import { DataTable } from '../../shared/interfaces';
 import { CentroCosto, CreateCentroCostoDto, CatalogosFiltros, FiltrosCentrosCostos, ResumenFinanciero } from './interfaces';
 import { CentrosCostosService } from './centros-costos.service';
@@ -20,7 +22,7 @@ import { Empresa } from '../administration/empresas/interfaces';
 @Component({
   selector: 'app-centros-costos',
   standalone: true,
-  imports: [CommonModule, FormsModule, DataTableComponent, ModalComponent, LucideAngularModule],
+  imports: [CommonModule, FormsModule, DataTableComponent, ModalComponent, LucideAngularModule, ExportarBotonesComponent],
   templateUrl: './centros-costos.html',
   styleUrl: './centros-costos.css'
 })
@@ -182,6 +184,27 @@ export class CentrosCostosComponent {
       error: (err: unknown) => { console.error(err); this.loading.set(false); }
     });
   }
+
+  /** Exporta todos los centros de costo que cumplen los filtros activos (no solo la página visible). */
+  readonly exportarCentros = async (): Promise<DatosExportacion> => {
+    const filtros = this.buildFiltros();
+    const filas = await traerTodasLasPaginas((page, pageSize) => this.centrosCostosService.getAll(page, pageSize, filtros));
+    return {
+      nombre: 'Centros_de_Costos',
+      columnas: ['ID', 'Centro de Costo', 'Empresa', 'Cliente', 'Periodo', 'Fecha Inicio', 'Fin Programado', 'Estado', 'Ppto. Estado'],
+      filas: filas.map((c) => [
+        c.id ?? c.id_centro_costo,
+        c.CentroCosto,
+        c.Empresa || c.CodEmpresa,
+        c.Cliente || c.CodCliente,
+        c.periodo ?? c.IdPeriodo,
+        c.FechaIncio,
+        c.FechaFinProg,
+        c.Estado,
+        c.PresupuestoEstado,
+      ]),
+    };
+  };
 
   onSearch(value: string) {
     this.search.set(value);

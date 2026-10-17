@@ -6,9 +6,11 @@
     </p>
   </div>
   <div style="display: flex; gap: 0.5rem; align-items: center">
-    <a class="btn btn-primary" routerLink="/requerimientos/nuevo">
-      <i class="fa-solid fa-plus"></i> Nuevo requerimiento
-    </a>
+    @if (permisos.crear()) {
+      <a class="btn btn-primary" routerLink="/requerimientos/nuevo">
+        <i class="fa-solid fa-plus"></i> Nuevo requerimiento
+      </a>
+    }
     <button class="btn btn-secondary" type="button" (click)="load()" [disabled]="isLoading()">
       <i class="fa-solid fa-arrows-rotate" [class.fa-spin]="isLoading()"></i>
       {{ isLoading() ? 'Cargando...' : 'Actualizar' }}
@@ -30,25 +32,25 @@
           placeholder="Buscar por número o justificación..."
           maxlength="100"
           [value]="fSearch()"
-          (input)="onSearch($any($event.target).value)"
+          (input)="onSearch(valorDe($event))"
         />
-        <select class="toolbar-select" [value]="fEstado()" (change)="applyFilter('estado', $any($event.target).value)">
+        <select class="toolbar-select" [value]="fEstado()" (change)="applyFilter('estado', valorDe($event))">
           <option value="">Todos los estados</option>
           @for (e of estados; track e) {
             <option [value]="e">{{ estadoLabel[e] }}</option>
           }
         </select>
-        <select class="toolbar-select" [value]="fTipo()" (change)="applyFilter('tipo', $any($event.target).value)">
+        <select class="toolbar-select" [value]="fTipo()" (change)="applyFilter('tipo', valorDe($event))">
           <option value="">Todos los tipos</option>
           @for (t of tipos; track t) {
             <option [value]="t">{{ tipoLabel[t] }}</option>
           }
         </select>
         <label class="toolbar-check">Desde
-          <input type="date" class="toolbar-select" [value]="fDesde()" (change)="applyFilter('desde', $any($event.target).value)" />
+          <input type="date" class="toolbar-select" [value]="fDesde()" (change)="applyFilter('desde', valorDe($event))" />
         </label>
         <label class="toolbar-check">Hasta
-          <input type="date" class="toolbar-select" [value]="fHasta()" (change)="applyFilter('hasta', $any($event.target).value)" />
+          <input type="date" class="toolbar-select" [value]="fHasta()" (change)="applyFilter('hasta', valorDe($event))" />
         </label>
         <button class="toolbar-reset" type="button" (click)="resetFilters()">
           <i class="fa-solid fa-rotate-left"></i> Restablecer
@@ -96,8 +98,9 @@
         }
       </td>
       <td align="center">
-        <a class="table-action-btn" [routerLink]="['/requerimientos', item.id]" [title]="esEditable(item.estado) ? 'Ver / editar' : 'Ver detalle'">
-          <i class="fa-solid" [class.fa-pen-to-square]="esEditable(item.estado)" [class.fa-eye]="!esEditable(item.estado)"></i>
+        @let editable = esEditable(item.estado) && permisos.editar();
+        <a class="table-action-btn" [routerLink]="['/requerimientos', item.id]" [title]="editable ? 'Ver / editar' : 'Ver detalle'">
+          <i class="fa-solid" [class.fa-pen-to-square]="editable" [class.fa-eye]="!editable"></i>
         </a>
         @if (esEditable(item.estado)) {
           <button class="table-action-btn table-action-btn--primary" type="button" title="Enviar a aprobación" (click)="enviar(item)">
@@ -110,9 +113,11 @@
           </a>
         }
         @if (item.estado === 'BORRADOR') {
-          <button class="table-action-btn table-action-btn--danger" type="button" title="Eliminar borrador" (click)="eliminar(item)">
-            <i class="fa-solid fa-trash"></i>
-          </button>
+          @if (permisos.eliminar()) {
+            <button class="table-action-btn table-action-btn--danger" type="button" title="Eliminar borrador" (click)="eliminar(item)">
+              <i class="fa-solid fa-trash"></i>
+            </button>
+          }
         } @else if (canAnular(item)) {
           <button class="table-action-btn table-action-btn--danger" type="button" title="Anular" (click)="anular(item)">
             <i class="fa-solid fa-ban"></i>

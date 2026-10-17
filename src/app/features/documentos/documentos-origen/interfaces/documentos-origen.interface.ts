@@ -116,7 +116,8 @@ export interface DocumentoOrigenQuery {
   id_centro_costo?: number;
   id_categoria?: number;
   id_anexo?: number;
-  id_detalle_fase_categoria?: number;
+  /** Fase del presupuesto (`id_fase` en el backend). */
+  id_fase?: number;
 }
 
 export interface DocumentoOrigenPaginated {

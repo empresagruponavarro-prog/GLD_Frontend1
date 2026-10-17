@@ -1,6 +1,8 @@
 import { ChangeDetectionStrategy, Component, computed, input, output, signal } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { ESTADOS_INCIDENCIA, ObraIncidencia, PRIORIDADES_INCIDENCIA } from '../../obra.interface';
+import { valorDeEvento } from '@shared/utils/eventos';
+import { PermisosObra, SIN_PERMISOS_OBRA } from '../../obra-permisos';
 
 @Component({
   selector: 'app-incidencias-tab',
@@ -11,6 +13,8 @@ import { ESTADOS_INCIDENCIA, ObraIncidencia, PRIORIDADES_INCIDENCIA } from '../.
 })
 export class IncidenciasTabComponent {
   readonly incidencias = input<readonly ObraIncidencia[]>([]);
+  /** Permisos del módulo `obra`; sin ellos la pestaña queda en solo lectura. */
+  readonly permisos = input<PermisosObra>(SIN_PERMISOS_OBRA);
   readonly reportar = output<void>();
   readonly verBitacora = output<ObraIncidencia>();
   readonly resolver = output<ObraIncidencia>();
@@ -46,10 +50,10 @@ export class IncidenciasTabComponent {
   }
 
   protected onFiltroEstado(event: Event): void {
-    this.filtroEstado.set((event.target as HTMLSelectElement).value);
+    this.filtroEstado.set(valorDeEvento(event));
   }
 
   protected onFiltroPrioridad(event: Event): void {
-    this.filtroPrioridad.set((event.target as HTMLSelectElement).value);
+    this.filtroPrioridad.set(valorDeEvento(event));
   }
 }

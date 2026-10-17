@@ -1,14 +1,15 @@
 <div class="content-header">
   <div>
-    <h1 class="content-title">Productos</h1>
+    <h1 class="content-title">Catálogo de Bienes y Servicios</h1>
     <p class="content-subtitle">
-      Maestro de productos y servicios.
+      Maestro de bienes y servicios que se piden, compran y almacenan.
     </p>
   </div>
   <div style="display: flex; gap: 0.5rem; align-items: center">
+    <app-exportar-botones [obtener]="exportarProductos" [cargando]="loading()" />
     @if (permisos.crear()) {
       <button class="btn btn-primary" type="button" (click)="openCreate()">
-        <i class="fa-solid fa-plus"></i> Nuevo Producto
+        <i class="fa-solid fa-plus"></i> Nuevo Bien o Servicio
       </button>
     }
     <button
@@ -120,7 +121,7 @@
     [pageSize]="pageSize()"
     [pageSizeOptions]="[10, 20, 50, 100]"
     [minWidth]="'1100px'"
-    emptyMessage="No hay productos registrados."
+    emptyMessage="No hay bienes ni servicios registrados."
     emptyIcon="fa-solid fa-box"
     [rowTemplate]="productoRow"
     (pageChange)="onPageChange($event)"
@@ -193,10 +194,10 @@
 <!-- Modal formulario (crear / editar) -->
 <app-modal
   [isOpen]="showModal()"
-  [title]="editingId() !== null ? 'Editar Producto' : 'Nuevo Producto'"
+  [title]="editingId() !== null ? 'Editar Bien o Servicio' : 'Nuevo Bien o Servicio'"
   maxWidth="760px"
   [loading]="saving()"
-  submitText="Guardar Producto"
+  submitText="Guardar"
   (closed)="closeModal()"
   (saved)="saveProducto()"
 >
@@ -245,7 +246,7 @@
           class="form-control"
           [(ngModel)]="formData.descripcion"
           maxlength="255"
-          placeholder="Descripción del producto"
+          placeholder="Descripción del bien o servicio"
         />
       </div>
 
@@ -340,7 +341,7 @@
           <div class="producto-alt__picker">
             <app-producto-picker
               [label]="alternativaLabel(n)"
-              placeholder="Buscar producto alternativo..."
+              placeholder="Buscar bien o servicio alternativo..."
               (picked)="onAlternativaPicked(n, $event)"
             />
           </div>
@@ -385,7 +386,7 @@
 <!-- Modal detalle (solo lectura) -->
 <app-modal
   [isOpen]="showDetail()"
-  title="Detalle del Producto"
+  title="Detalle del Bien o Servicio"
   maxWidth="760px"
   [showDefaultFooter]="false"
   (closed)="closeDetail()"

@@ -5,6 +5,7 @@ import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angula
 import { Observable, Subscription } from 'rxjs';
 import { ModalComponent } from '@shared/components/modal/modal';
 import { errorMessage } from '@app/features/almacen/almacen.utils';
+import { valorDeEvento } from '@shared/utils/eventos';
 import { sinVacios } from '../../obra.calc';
 import {
   DISCIPLINAS_PLANO,
@@ -15,6 +16,7 @@ import {
   PlanoPayload,
 } from '../../obra.interface';
 import { ObraService } from '../../obra.service';
+import { PermisosObra, SIN_PERMISOS_OBRA } from '../../obra-permisos';
 
 export type ModoPlano = 'crear' | 'editar' | 'version';
 
@@ -69,6 +71,11 @@ export class PlanoDialogComponent {
   readonly modo = input<ModoPlano>('crear');
   readonly planosExistentes = input<readonly ObraPlano[]>([]);
   readonly responsables = input<readonly string[]>([]);
+  /**
+   * Permisos de `obra`: guardar exige `crear` (alta) o `editar` (edición y nueva versión, que el
+   * backend marca `@Accion('editar')`); Eliminar, `eliminar`; subir archivo, `crear`.
+   */
+  readonly permisos = input<PermisosObra>(SIN_PERMISOS_OBRA);
 
   readonly closed = output<void>();
   readonly saved = output<void>();
@@ -88,6 +95,12 @@ export class PlanoDialogComponent {
   protected readonly extensionesTexto = PLANO_EXTENSIONES.join(', ');
   protected readonly isSaving = signal(false);
   protected readonly formError = signal('');
+  protected readonly puedeGuardar = computed(() => (this.modo() === 'crear' ? this.permisos().crear : this.permisos().editar));
+  /** Sin permiso de guardar, el formulario se muestra en solo lectura. */
+  protected readonly soloLectura = computed(() => !this.puedeGuardar());
+  protected readonly puedeEliminar = computed(() => this.modo() === 'editar' && this.permisos().eliminar);
+  /** Subir un archivo (`POST …/planos/archivo`) exige `crear` en el backend, también al editar o versionar. */
+  protected readonly puedeSubirArchivo = computed(() => this.puedeGuardar() && this.permisos().crear);
 
   /** Tipo de origen: subida local o enlace externo / nube / BIM 360 */
   protected readonly tipoOrigen = signal<'local' | 'nube'>('local');
@@ -159,6 +172,7 @@ export class PlanoDialogComponent {
       this.archivoNombre.set(modo === 'version' ? '' : nombreArchivo(p?.archivo_url));
       this.tipoOrigen.set(p?.archivo_url && /^https?:\/\//i.test(p.archivo_url) ? 'nube' : 'local');
       const c = this.form.controls;
+      this.form.enable({ emitEvent: false });
       if (modo === 'crear') {
         c.codigo_plano.enable();
         c.disciplina.enable();
@@ -170,20 +184,21 @@ export class PlanoDialogComponent {
         if (modo === 'editar') c.version.disable();
         else c.version.enable();
       }
+      if (this.soloLectura()) this.form.disable({ emitEvent: false });
     });
   }
 
   /** Al cambiar de disciplina, si estamos en modo crear autogeneramos el correlativo */
   protected onDisciplinaChange(event: Event): void {
-    const select = event.target as HTMLSelectElement;
     if (this.modo() === 'crear') {
-      const cod = generarSiguienteCodigoPlano(select.value, this.planosExistentes());
+      const cod = generarSiguienteCodigoPlano(valorDeEvento(event), this.planosExistentes());
       this.form.controls.codigo_plano.setValue(cod);
     }
   }
 
   /** Permite al usuario regenerar el código automáticamente en base a la disciplina actual */
   protected regenerarCodigo(): void {
+    if (this.soloLectura()) return;
     const disc = this.form.controls.disciplina.value || 'Arquitectura';
     const cod = generarSiguienteCodigoPlano(disc, this.planosExistentes());
     this.form.controls.codigo_plano.setValue(cod);
@@ -191,6 +206,7 @@ export class PlanoDialogComponent {
 
   /** Quita el archivo actual del formulario y descarta si había subida pendiente. */
   protected quitarArchivo(): void {
+    if (this.soloLectura()) return;
     this.#descartarPendiente();
     this.form.patchValue({ archivo_url: '', formato_peso: '' });
     this.archivoNombre.set('');
@@ -198,13 +214,14 @@ export class PlanoDialogComponent {
 
   /** Valida y sube el archivo elegido con el botón; al terminar llena archivo_url y formato/peso. */
   protected onArchivoSeleccionado(event: Event): void {
-    const inputEl = event.target as HTMLInputElement;
+    const inputEl = event.target;
+    if (!(inputEl instanceof HTMLInputElement) || !this.puedeSubirArchivo()) return;
     const archivo = inputEl.files?.[0];
     inputEl.value = ''; // permite volver a elegir el mismo archivo
     if (!archivo) return;
 
     const ext = archivo.name.slice(archivo.name.lastIndexOf('.')).toLowerCase();
-    if (!(PLANO_EXTENSIONES as readonly string[]).includes(ext)) {
+    if (!PLANO_EXTENSIONES.some((e) => e === ext)) {
       this.formError.set(`Formato no permitido. Usa: ${this.extensionesTexto}`);
       return;
     }
@@ -247,10 +264,13 @@ export class PlanoDialogComponent {
     const clave = this.#pendiente;
     if (!clave) return;
     this.#pendiente = null;
+    // `DELETE …/archivo` exige `eliminar` en el backend: sin él no se pide (el archivo queda huérfano).
+    if (!this.permisos().eliminar) return;
     this.#service.descartarArchivoPlano(this.idCentroCosto(), clave).subscribe({ error: () => undefined });
   }
 
   protected onSubmit(): void {
+    if (!this.puedeGuardar()) return;
     this.form.markAllAsTouched();
     if (this.subiendo()) {
       this.formError.set('Espera a que termine la subida del archivo');
@@ -299,7 +319,7 @@ export class PlanoDialogComponent {
 
   protected onDelete(): void {
     const p = this.plano();
-    if (!p) return;
+    if (!p || !this.puedeEliminar()) return;
     const msg = p.id_plano_anterior
       ? `¿Eliminar la versión ${p.version} de ${p.codigo_plano}? La versión anterior volverá a quedar vigente.`
       : `¿Eliminar el plano ${p.codigo_plano}?`;

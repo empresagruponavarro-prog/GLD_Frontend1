@@ -170,14 +170,17 @@
 
       <!-- Footer con Acciones -->
       <div class="flex items-center justify-between pt-4 mt-4 border-t border-slate-100">
-        <button
-          type="button"
-          (click)="onEditar()"
-          class="px-4 py-2 rounded-xl border border-slate-200 text-slate-700 hover:bg-slate-50 text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
-        >
-          <span class="material-symbols-outlined text-sm">edit</span>
-          <span>Editar Datos</span>
-        </button>
+        @if (puedeAbrirEdicion()) {
+          <button
+            type="button"
+            id="btn-incidencia-editar"
+            (click)="onEditar()"
+            class="px-4 py-2 rounded-xl border border-slate-200 text-slate-700 hover:bg-slate-50 text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
+          >
+            <span class="material-symbols-outlined text-sm">edit</span>
+            <span>Editar Datos</span>
+          </button>
+        }
 
         <div class="flex items-center gap-2.5">
           <button
@@ -188,7 +191,7 @@
             Cerrar
           </button>
 
-          @if (!esResuelta()) {
+          @if (puedeResolver()) {
             <button
               type="button"
               (click)="onResolver()"
