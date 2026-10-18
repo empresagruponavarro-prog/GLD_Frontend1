@@ -117,6 +117,11 @@ export class CotizacionesPanelComponent {
     return this.form.controls.lineas;
   }
 
+  /** Precio referencial del FUR para la línea i (solo lectura; el precio cotizado se digita aparte). */
+  protected precioRef(i: number): string | null {
+    return this.requerimiento().lineas?.[i]?.precio_referencial ?? null;
+  }
+
   protected load(id = this.requerimiento().id): void {
     this.isLoading.set(true);
     this.service.getCotizaciones(id).subscribe({

@@ -28,6 +28,10 @@
   margin: 0.25rem 0 0.75rem;
 }
 
+.cot-panel__ref {
+  color: var(--info-color);
+}
+
 .cot-form__grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));

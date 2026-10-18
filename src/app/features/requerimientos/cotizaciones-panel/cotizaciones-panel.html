@@ -192,6 +192,7 @@
             <th style="width: 70px">Cotiza</th>
             <th>Ítem</th>
             <th style="text-align: right">Solicitado</th>
+            <th style="text-align: right; width: 110px">P. ref.</th>
             <th style="width: 110px">Cantidad</th>
             <th style="width: 130px">Precio unit.</th>
             <th style="width: 110px">Días entrega</th>
@@ -204,6 +205,7 @@
               <td align="center"><input type="checkbox" formControlName="cotiza" [attr.aria-label]="'Cotiza ítem ' + (i + 1)" /></td>
               <td>{{ l.controls.etiqueta.value }}</td>
               <td align="right">{{ fmtNum(l.controls.solicitada.value) }} {{ l.controls.unidad.value }}</td>
+              <td align="right" class="cot-panel__ref">{{ fmtMoney(precioRef(i)) }}</td>
               <td><input class="form-control" inputmode="decimal" formControlName="cantidad" [attr.aria-label]="'Cantidad ítem ' + (i + 1)" /></td>
               <td><input class="form-control" inputmode="decimal" formControlName="precio_unitario" placeholder="0.00" [attr.aria-label]="'Precio ítem ' + (i + 1)" /></td>
               <td><input class="form-control" inputmode="numeric" formControlName="plazo_entrega_dias" [attr.aria-label]="'Entrega ítem ' + (i + 1)" /></td>
