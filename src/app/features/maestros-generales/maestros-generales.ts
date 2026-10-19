@@ -23,5 +23,6 @@ export class MaestrosGeneralesComponent {
     { title: 'Áreas de la empresa', description: 'Costos, Procura, Sistemas… (requerimientos y documentos de origen)', icon: 'fa-solid fa-sitemap', route: '/maestros-generales/areas' },
     { title: 'Especialidades', description: 'Maestro de especialidades', icon: 'fa-solid fa-user-doctor', route: '/maestros-generales/especialidades' },
     { title: 'Tipo Documento de Identidad', description: 'Maestro de tipos de documento', icon: 'fa-solid fa-id-card', route: '/maestros-generales/tipo-doc-identidad' },
+    { title: 'Unidades de Medida', description: 'KG, M2, CIENTO… y sus equivalencias', icon: 'fa-solid fa-ruler-combined', route: '/maestros-generales/unidades-medida' },
   ];
 }

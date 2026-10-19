@@ -104,6 +104,7 @@ export const MENU_LATERAL: readonly SeccionMenu[] = [
           { etiqueta: 'Anexos', ruta: '/anexos', icono: 'fa-solid fa-paperclip', modulo: 'maestros.anexos' },
           { etiqueta: 'Catálogo de Bienes y Servicios', ruta: '/productos', icono: 'fa-solid fa-box', modulo: 'maestros.productos' },
           { etiqueta: 'Áreas', ruta: '/maestros-generales/areas', icono: 'fa-solid fa-sitemap', modulo: 'maestros.areas' },
+          { etiqueta: 'Unidades de Medida', ruta: '/maestros-generales/unidades-medida', icono: 'fa-solid fa-ruler-combined', modulo: 'maestros.generales' },
           { etiqueta: 'Centros de Costos', ruta: '/centros-costos', icono: 'fa-solid fa-building-flag', modulo: 'centros-costos' },
           { etiqueta: 'Presupuestos', ruta: '/presupuestos', icono: 'fa-solid fa-file-invoice-dollar', modulo: 'presupuestos' },
           { etiqueta: 'Plantillas', ruta: '/presupuestos/plantillas', icono: 'fa-solid fa-copy', modulo: 'presupuestos.plantillas' },
