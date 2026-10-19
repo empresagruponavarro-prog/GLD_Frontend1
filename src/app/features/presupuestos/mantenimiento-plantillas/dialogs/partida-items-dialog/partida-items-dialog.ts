@@ -33,6 +33,7 @@ export interface ItemFila {
   descripcion_producto: string;
   tipo_producto: TipoProducto;
   categoria_producto?: string | null;
+  id_categoria?: number;
   id_unidad_medida: number;
   simbolo_unidad?: string | null;
   Cantidad: number;
@@ -83,6 +84,7 @@ export class PartidaItemsDialogComponent implements OnInit {
   errorMensaje = signal<string | null>(null);
   filas = signal<ItemFila[]>([]);
   unidadesMedida = signal<SelectOption[]>([]);
+  categorias = signal<SelectOption[]>([]);
 
   // Búsqueda interactiva de productos para selector rápido
   busquedaProducto = signal('');
@@ -115,6 +117,7 @@ export class PartidaItemsDialogComponent implements OnInit {
 
   ngOnInit(): void {
     this.cargarUnidades();
+    this.cargarCategorias();
     this.cargarItems();
     this.configurarBuscador();
   }
@@ -123,6 +126,13 @@ export class PartidaItemsDialogComponent implements OnInit {
     this.productosService.getUnidadesMedidaSelect().subscribe({
       next: (res) => this.unidadesMedida.set(res || []),
       error: (err) => console.error('Error cargando unidades de medida:', err),
+    });
+  }
+
+  private cargarCategorias(): void {
+    this.productosService.getCategoriasSelect().subscribe({
+      next: (res) => this.categorias.set(res || []),
+      error: (err) => console.error('Error cargando categorías:', err),
     });
   }
 
@@ -143,6 +153,7 @@ export class PartidaItemsDialogComponent implements OnInit {
             descripcion_producto: it.producto?.descripcion || '',
             tipo_producto: it.producto?.tipo_producto || 'PRODUCTO',
             categoria_producto: it.producto?.categoria,
+            id_categoria: it.producto?.id_categoria,
             id_unidad_medida: it.id_unidad_medida,
             simbolo_unidad: it.unidad?.simbolo || it.unidad?.codigo,
             Cantidad: cant,
@@ -205,6 +216,9 @@ export class PartidaItemsDialogComponent implements OnInit {
     fila.codigo_producto = producto.codigo;
     fila.descripcion_producto = producto.descripcion;
     fila.tipo_producto = producto.tipo_producto;
+    fila.id_categoria = producto.id_categoria;
+    const cat = this.categorias().find((opt) => opt.id === producto.id_categoria);
+    fila.categoria_producto = cat?.nombre || '';
     fila.id_unidad_medida = producto.id_unidad_medida;
     const u = this.unidadesMedida().find((opt) => opt.id === producto.id_unidad_medida);
     fila.simbolo_unidad = u?.nombre || '';
@@ -213,6 +227,14 @@ export class PartidaItemsDialogComponent implements OnInit {
     this.mostrarResultados.set(false);
     this.indiceFilaSeleccionando.set(null);
     this.busquedaProducto.set('');
+  }
+
+  onCambiarCategoria(fila: ItemFila, valor: unknown): void {
+    const idCat = valor && valor !== 'undefined' ? Number(valor) : undefined;
+    fila.id_categoria = idCat;
+    const cat = this.categorias().find((opt) => opt.id === idCat);
+    fila.categoria_producto = cat?.nombre || '';
+    this.filas.set([...this.filas()]);
   }
 
   cerrarDropdown(): void {
@@ -234,12 +256,15 @@ export class PartidaItemsDialogComponent implements OnInit {
   agregarFila(): void {
     if (this.soloLectura) return;
     const unidadDefault = this.unidadesMedida()[0];
+    const catDefault = this.categorias()[0];
     const nueva: ItemFila = {
       Item: '',
       id_producto: 0,
       codigo_producto: '',
       descripcion_producto: '',
       tipo_producto: 'PRODUCTO',
+      id_categoria: catDefault ? catDefault.id : undefined,
+      categoria_producto: catDefault ? catDefault.nombre : '',
       id_unidad_medida: unidadDefault ? unidadDefault.id : 1,
       simbolo_unidad: unidadDefault ? unidadDefault.nombre : 'UND',
       Cantidad: 1,
@@ -287,6 +312,7 @@ export class PartidaItemsDialogComponent implements OnInit {
         id: f.id,
         id_producto: f.id_producto,
         id_unidad_medida: f.id_unidad_medida,
+        id_categoria: f.id_categoria,
         Item: f.Item ? f.Item.trim() : undefined,
         Cantidad: redondear(f.Cantidad),
         CostoUnitario: redondear(f.CostoUnitario),

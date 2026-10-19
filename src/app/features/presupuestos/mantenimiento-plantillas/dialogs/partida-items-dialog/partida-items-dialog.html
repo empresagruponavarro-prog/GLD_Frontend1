@@ -1,5 +1,5 @@
 <div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-150">
-  <div class="relative w-full max-w-6xl max-h-[92vh] flex flex-col bg-white rounded-2xl shadow-2xl border border-slate-200/80 overflow-hidden">
+  <div class="relative w-full max-w-7xl max-h-[92vh] flex flex-col bg-white rounded-2xl shadow-2xl border border-slate-200/80 overflow-hidden">
     
     <!-- CABECERA DEL MODAL -->
     <header class="px-6 py-4 bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 text-white flex items-center justify-between shrink-0 shadow-sm">
@@ -57,7 +57,7 @@
     <!-- BARRA DE ACCIONES SUPERIOR -->
     <div class="px-6 py-2.5 bg-slate-50 border-b border-slate-200/80 flex items-center justify-between shrink-0">
       <div class="flex items-center space-x-2 text-xs text-slate-500">
-        <span>Catálogo de productos y servicios asociados a esta partida.</span>
+        <span>Catálogo de productos y servicios asociados a esta partida con su respectiva Categoría de Costo Directo.</span>
       </div>
       @if (!soloLectura) {
         <button
@@ -105,8 +105,9 @@
             <thead>
               <tr class="bg-slate-100/80 border-b border-slate-200 text-[10px] font-bold text-slate-600 uppercase tracking-wider">
                 <th scope="col" class="py-2.5 px-3 w-16 text-center">Ítem</th>
-                <th scope="col" class="py-2.5 px-3 w-20 text-center">Tipo</th>
-                <th scope="col" class="py-2.5 px-3 min-w-[280px]">Producto / Servicio (Catálogo)</th>
+                <th scope="col" class="py-2.5 px-3 w-16 text-center">Tipo</th>
+                <th scope="col" class="py-2.5 px-3 min-w-[210px]">Categoría CD</th>
+                <th scope="col" class="py-2.5 px-3 min-w-[260px]">Producto / Servicio (Catálogo)</th>
                 <th scope="col" class="py-2.5 px-3 w-24 text-center">Unidad</th>
                 <th scope="col" class="py-2.5 px-3 w-24 text-right">Cantidad</th>
                 <th scope="col" class="py-2.5 px-3 w-28 text-right">Costo U. (S/)</th>
@@ -143,6 +144,21 @@
                         PRD
                       </span>
                     }
+                  </td>
+
+                  <!-- Categoría de Costo Directo -->
+                  <td class="py-2 px-2">
+                    <select
+                      [(ngModel)]="fila.id_categoria"
+                      (ngModelChange)="onCambiarCategoria(fila, $event)"
+                      [disabled]="soloLectura"
+                      class="w-full px-2 py-1 text-xs font-semibold rounded border border-slate-200 bg-slate-50 text-slate-700 outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 truncate"
+                    >
+                      <option [ngValue]="undefined">-- Sin categoría --</option>
+                      @for (cat of categorias(); track cat.id) {
+                        <option [ngValue]="cat.id">{{ cat.nombre }}</option>
+                      }
+                    </select>
                   </td>
 
                   <!-- Buscador / Selector de Producto -->

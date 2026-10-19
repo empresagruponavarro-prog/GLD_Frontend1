@@ -86,6 +86,7 @@ export interface SyncPartidaItemsDto {
     id?: number;
     id_producto: number;
     id_unidad_medida: number;
+    id_categoria?: number;
     Item?: string;
     Cantidad: number;
     CostoUnitario: number;

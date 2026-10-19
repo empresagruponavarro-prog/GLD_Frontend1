@@ -195,8 +195,8 @@
             </div>
             <div class="h-3 w-px bg-slate-200"></div>
             <div class="flex items-center space-x-1.5">
-              <span class="text-slate-400 font-medium">Categorías:</span>
-              <strong class="text-slate-800 font-mono font-bold">{{ getTotalCategorias(plantilla) }} Categorías</strong>
+              <span class="text-slate-400 font-medium">Partidas:</span>
+              <strong class="text-slate-800 font-mono font-bold">{{ getTotalCategorias(plantilla) }} Partidas</strong>
             </div>
           </div>
         </div>
@@ -246,15 +246,14 @@
                 }
               </div>
 
-              <!-- TABLA DE CATEGORÍAS -->
+              <!-- TABLA DE SUB FASES / PARTIDAS -->
               <div class="p-0 overflow-x-auto">
                 <table class="w-full text-left border-collapse">
                   <thead>
                     <tr class="border-b border-slate-100 bg-slate-50/70 text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
-                      <th scope="col" class="py-2.5 px-5">Categoría</th>
                       <th scope="col" class="py-2.5 px-5">Sub Fase / Partida</th>
                       <th scope="col" class="w-48 py-2.5 px-3 text-right">Costo Referencial (S/)</th>
-                      <th scope="col" class="w-16 py-2.5 pr-4 text-center">ACCIONES</th>
+                      <th scope="col" class="w-24 py-2.5 pr-4 text-center">ACCIONES</th>
                     </tr>
                   </thead>
                   <tbody class="divide-y divide-slate-100 text-xs" cdkDropList [cdkDropListDisabled]="soloLectura()" (cdkDropListDropped)="dropCategoria(fase, $event)">
@@ -271,19 +270,10 @@
                               </svg>
                             </div>
                             }
-                            <select [(ngModel)]="cat.id_categoria" (change)="actualizarCategoriaReal(cat, $event)" class="bg-slate-50 p-1.5 rounded border border-slate-200 text-[11px] font-semibold text-slate-700 whitespace-normal leading-snug w-full min-w-[200px] focus:ring-1 focus:ring-[#529b7b] focus:border-[#529b7b] outline-none">
-                              <option [ngValue]="undefined">-- Seleccione Categoría --</option>
-                              <option [ngValue]="null">-- Seleccione Categoría --</option>
-                              @for (cr of categoriasReal(); track cr.id) {
-                                <option [ngValue]="cr.id">{{ cr.nombre }}</option>
-                              }
-                            </select>
+                            <span class="inline-flex items-center px-2.5 py-1 rounded text-xs font-semibold bg-[#529b7b]/10 text-[#2d634d] border border-[#529b7b]/25 uppercase tracking-wide">
+                              {{ cat.NombreCategoria || cat.IdpptoFaseCategoria }}
+                            </span>
                           </div>
-                        </td>
-                        <td class="py-3 px-5">
-                          <span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium bg-[#529b7b]/10 text-[#2d634d] border border-[#529b7b]/25 uppercase">
-                            {{ cat.NombreCategoria || cat.IdpptoFaseCategoria }}
-                          </span>
                         </td>
                         <td class="py-3 px-3 text-right">
                           <div class="inline-flex items-center space-x-2 justify-end">
@@ -349,7 +339,7 @@
                     @empty {
                       <tr>
                         <td colspan="3" class="py-6 text-center text-slate-400 text-xs">
-                          No hay categorías configuradas para esta fase.
+                          No hay partidas configuradas para esta fase.
                         </td>
                       </tr>
                     }
