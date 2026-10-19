@@ -107,13 +107,11 @@
                 <th scope="col" class="py-2.5 px-3 w-16 text-center">Ítem</th>
                 <th scope="col" class="py-2.5 px-3 w-16 text-center">Tipo</th>
                 <th scope="col" class="py-2.5 px-3 min-w-[210px]">Categoría CD</th>
-                <th scope="col" class="py-2.5 px-3 min-w-[260px]">Producto / Servicio (Catálogo)</th>
+                <th scope="col" class="py-2.5 px-3 min-w-[280px]">Producto / Servicio (Catálogo)</th>
                 <th scope="col" class="py-2.5 px-3 w-24 text-center">Unidad</th>
                 <th scope="col" class="py-2.5 px-3 w-24 text-right">Cantidad</th>
-                <th scope="col" class="py-2.5 px-3 w-28 text-right">Costo U. (S/)</th>
-                <th scope="col" class="py-2.5 px-3 w-28 text-right">Venta U. (S/)</th>
-                <th scope="col" class="py-2.5 px-3 w-28 text-right bg-slate-50/50">Costo Total</th>
-                <th scope="col" class="py-2.5 px-3 w-28 text-right bg-slate-50/50">Venta Total</th>
+                <th scope="col" class="py-2.5 px-3 w-32 text-right">Costo U. (S/)</th>
+                <th scope="col" class="py-2.5 px-3 w-32 text-right bg-slate-50/50">Costo Total</th>
                 @if (!soloLectura) {
                   <th scope="col" class="py-2.5 px-3 w-20 text-center">Acciones</th>
                 }
@@ -172,13 +170,8 @@
                         [disabled]="soloLectura"
                         placeholder="Buscar producto o servicio en catálogo..."
                         class="w-full px-2.5 py-1 text-xs rounded border border-slate-200 bg-white focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none font-medium truncate"
-                        [title]="fila.descripcion_producto"
+                        [title]="fila.descripcion_producto + (fila.codigo_producto ? ' (' + fila.codigo_producto + ')' : '')"
                       />
-                      @if (fila.codigo_producto) {
-                        <span class="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] font-mono text-slate-400 bg-slate-100 px-1 rounded pointer-events-none">
-                          {{ fila.codigo_producto }}
-                        </span>
-                      }
                     </div>
 
                     <!-- Dropdown de resultados de búsqueda -->
@@ -249,30 +242,9 @@
                     </div>
                   </td>
 
-                  <!-- Precio Venta (Contrato) -->
-                  <td class="py-2 px-2 text-right">
-                    <div class="relative">
-                      <span class="absolute left-1.5 top-1/2 -translate-y-1/2 text-[10px] text-slate-400 font-mono">S/</span>
-                      <input
-                        type="number"
-                        step="0.01"
-                        min="0"
-                        [(ngModel)]="fila.PrecioVenta"
-                        (ngModelChange)="recalcularFila(fila)"
-                        [disabled]="soloLectura"
-                        class="w-full text-right pl-5 pr-2 py-1 text-xs font-mono font-bold rounded border border-slate-200 bg-white focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none"
-                      />
-                    </div>
-                  </td>
-
                   <!-- Costo Total Calculado -->
                   <td class="py-2 px-3 text-right font-mono font-bold text-slate-800 bg-slate-50/50">
                     S/ {{ fila.CostoTotal | number: '1.2-2' }}
-                  </td>
-
-                  <!-- Venta Total Calculada -->
-                  <td class="py-2 px-3 text-right font-mono font-bold text-emerald-700 bg-slate-50/50">
-                    S/ {{ fila.VentaTotal | number: '1.2-2' }}
                   </td>
 
                   <!-- Acciones -->
@@ -321,22 +293,6 @@
         <div class="border-l border-slate-200 pl-4">
           <span class="text-[10px] uppercase font-bold text-slate-400 block tracking-wider">Costo Directo (META)</span>
           <span class="font-bold text-slate-900 text-sm font-mono">S/ {{ totales().costoTotal | number: '1.2-2' }}</span>
-        </div>
-        <div class="border-l border-slate-200 pl-4">
-          <span class="text-[10px] uppercase font-bold text-slate-400 block tracking-wider">Precio Venta (Contrato)</span>
-          <span class="font-bold text-emerald-800 text-sm font-mono">S/ {{ totales().ventaTotal | number: '1.2-2' }}</span>
-        </div>
-        <div class="border-l border-slate-200 pl-4">
-          <span class="text-[10px] uppercase font-bold text-slate-400 block tracking-wider">Margen Bruto</span>
-          <div class="flex items-center space-x-1.5">
-            <span class="font-bold text-slate-800 text-sm font-mono">S/ {{ totales().margen | number: '1.2-2' }}</span>
-            <span
-              class="px-1.5 py-0.5 rounded text-[10px] font-bold font-mono"
-              [ngClass]="totales().margen >= 0 ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800'"
-            >
-              {{ totales().margenPct | number: '1.1-1' }}%
-            </span>
-          </div>
         </div>
       </div>
 

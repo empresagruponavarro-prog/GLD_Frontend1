@@ -97,20 +97,12 @@ export class PartidaItemsDialogComponent implements OnInit {
   // Totales calculados
   totales = computed(() => {
     let costo = 0;
-    let venta = 0;
     for (const f of this.filas()) {
       costo += f.CostoTotal;
-      venta += f.VentaTotal;
     }
     const c = redondear(costo);
-    const v = redondear(venta);
-    const margen = redondear(v - c);
-    const margenPct = v > 0 ? redondear((margen / v) * 100) : 0;
     return {
       costoTotal: c,
-      ventaTotal: v,
-      margen,
-      margenPct,
       cantidadFilas: this.filas().length,
     };
   });
