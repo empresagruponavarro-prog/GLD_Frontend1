@@ -93,7 +93,8 @@ describe('MantenimientoPlantillasComponent — permisos (presupuestos.plantillas
     expect(deshabilitado(p.el.querySelector('section textarea'))).toBe(true);
     expect(deshabilitado(p.el.querySelector('section input[type="checkbox"]'))).toBe(true);
     expect(deshabilitado(p.el.querySelector('section input[type="number"]'))).toBe(true);
-    expect(deshabilitado(p.el.querySelector('section tbody select'))).toBe(true);
+    // La categoría real ya no se elige en la tabla: se edita en el diálogo de ítems (que recibe soloLectura).
+    expect(p.el.querySelector('section tbody select')).toBeNull();
     expect(botonesVisibles(p.el, BOTONES_EDITOR)).toEqual({
       guardar: false, anadirFase: false, insertarFase: false, eliminarFase: false,
       anadirSubFase: false, editarSubFase: false, descartar: true,
