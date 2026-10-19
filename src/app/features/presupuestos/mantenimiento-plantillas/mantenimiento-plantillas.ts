@@ -10,6 +10,11 @@ import { permisosDePantalla } from '@app/core/auth/permisos-pantalla';
 import { valorDeEvento } from '@shared/utils/eventos';
 import { ExportarBotonesComponent } from '../../../shared/components/exportar-botones/exportar-botones';
 import type { DatosExportacion } from '../../../shared/utils/exportar';
+import {
+  PartidaItemsDialogComponent,
+  type PartidaInfo,
+  type GuardadoEvent,
+} from './dialogs/partida-items-dialog/partida-items-dialog';
 
 /** Formulario del pop-up "Nueva plantilla". */
 interface NuevaPlantillaForm {
@@ -23,7 +28,7 @@ interface NuevaPlantillaForm {
 @Component({
   selector: 'app-mantenimiento-plantillas',
   standalone: true,
-  imports: [CommonModule, FormsModule, DragDropModule, ExportarBotonesComponent],
+  imports: [CommonModule, FormsModule, DragDropModule, ExportarBotonesComponent, PartidaItemsDialogComponent],
   templateUrl: './mantenimiento-plantillas.html'
 })
 export class MantenimientoPlantillasComponent implements OnInit {
@@ -103,6 +108,10 @@ export class MantenimientoPlantillasComponent implements OnInit {
 
   selectedFaseMaestra = signal<string>('');
   selectedCategoriaMaestra = signal<string>('');
+
+  // Modal de gestión de ítems por partida
+  showItemsModal = signal(false);
+  partidaSeleccionadaParaItems = signal<PartidaInfo | null>(null);
 
 
   ngOnInit() {
@@ -416,5 +425,42 @@ export class MantenimientoPlantillasComponent implements OnInit {
     if (this.soloLectura()) return;
     fase.categorias = fase.categorias.filter(c => c !== cat);
     this.selectedPlantilla.set(JSON.parse(JSON.stringify(this.selectedPlantilla())));
+  }
+
+  // ==========================================
+  // MODAL DE ÍTEMS DE PARTIDA
+  // ==========================================
+  abrirModalItems(fase: PlantillaFaseDto, cat: PlantillaCategoriaDto) {
+    if (!cat.id) {
+      alert('Esta partida aún no ha sido guardada en la base de datos. Por favor pulsa "Guardar Cambios" antes de configurar sus ítems.');
+      return;
+    }
+    this.partidaSeleccionadaParaItems.set({
+      id: cat.id,
+      IdpptoFaseCategoria: cat.IdpptoFaseCategoria,
+      NombreCategoria: cat.NombreCategoria,
+      NombreFase: fase.NombreFase,
+    });
+    this.showItemsModal.set(true);
+  }
+
+  cerrarModalItems() {
+    this.showItemsModal.set(false);
+    this.partidaSeleccionadaParaItems.set(null);
+  }
+
+  onItemsGuardados(evt: GuardadoEvent) {
+    const p = this.selectedPlantilla();
+    if (!p) return;
+    for (const f of p.fases || []) {
+      const cat = (f.categorias || []).find(c => c.id === evt.idPartida);
+      if (cat) {
+        cat.CostoReferencial = evt.costoTotal;
+        cat.VentaReferencial = evt.ventaTotal;
+        cat.totalItems = evt.totalItems;
+        break;
+      }
+    }
+    this.selectedPlantilla.set(JSON.parse(JSON.stringify(p)));
   }
 }

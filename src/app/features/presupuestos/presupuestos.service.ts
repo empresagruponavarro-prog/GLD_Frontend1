@@ -36,8 +36,61 @@ export interface PlantillaCategoriaDto {
   IdpptoFaseCategoria: string;
   NombreCategoria?: string;
   CostoReferencial?: number;
+  VentaReferencial?: number;
   id_categoria?: number;
   categoria?: { id: number; descripcion: string };
+  totalItems?: number;
+}
+
+export interface PartidaItemProducto {
+  id: number;
+  codigo: string;
+  descripcion: string;
+  tipo_producto: 'PRODUCTO' | 'SERVICIO';
+  id_categoria: number;
+  categoria?: string;
+}
+
+export interface PartidaItemUnidad {
+  id: number;
+  codigo: string;
+  descripcion: string;
+  simbolo?: string;
+}
+
+export interface PartidaItem {
+  id?: number;
+  id_plantilla_categoria?: number;
+  Item?: string;
+  Orden?: number;
+  id_producto: number;
+  producto?: PartidaItemProducto;
+  id_unidad_medida: number;
+  unidad?: PartidaItemUnidad;
+  Cantidad: number;
+  CostoUnitario: number;
+  PrecioVenta: number;
+  CostoTotal?: number;
+  VentaTotal?: number;
+}
+
+export interface PartidaItemsResponse {
+  id_plantilla_categoria: number;
+  items: PartidaItem[];
+  costoTotal: number;
+  ventaTotal: number;
+}
+
+export interface SyncPartidaItemsDto {
+  items: {
+    id?: number;
+    id_producto: number;
+    id_unidad_medida: number;
+    Item?: string;
+    Cantidad: number;
+    CostoUnitario: number;
+    PrecioVenta: number;
+  }[];
 }
 
 export interface Plantilla {
@@ -94,6 +147,14 @@ export class PresupuestosService {
 
   getPlantillasActivas(): Observable<Plantilla[]> {
     return this.http.get<Plantilla[]>(`${this.apiUrl}/plantillas/activas`);
+  }
+
+  getPartidaItems(idCat: number): Observable<PartidaItemsResponse> {
+    return this.http.get<PartidaItemsResponse>(`${this.apiUrl}/plantillas/categorias/${idCat}/items`);
+  }
+
+  syncPartidaItems(idCat: number, dto: SyncPartidaItemsDto): Observable<PartidaItemsResponse> {
+    return this.http.put<PartidaItemsResponse>(`${this.apiUrl}/plantillas/categorias/${idCat}/items`, dto);
   }
 
   aplicarPlantilla(idPresupuesto: string, dto: AplicarPlantillaDto): Observable<AplicarPlantillaResult> {

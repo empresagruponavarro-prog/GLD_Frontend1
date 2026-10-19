@@ -286,29 +286,63 @@
                           </span>
                         </td>
                         <td class="py-3 px-3 text-right">
-                          <div class="inline-flex items-center relative">
-                            <span class="absolute left-2.5 text-xs text-slate-400 font-mono">S/</span>
-                            <input type="number" step="0.01" [(ngModel)]="cat.CostoReferencial" class="w-36 text-right pl-7 pr-2.5 py-1.5 rounded-lg border border-slate-200 bg-white focus:bg-white text-xs font-mono font-bold text-slate-800 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/10 outline-none transition-all shadow-2xs hover:border-slate-300">
+                          <div class="inline-flex items-center space-x-2 justify-end">
+                            <button
+                              type="button"
+                              (click)="abrirModalItems(fase, cat)"
+                              [title]="cat.totalItems ? 'Editar ' + cat.totalItems + ' ítems' : 'Gestionar ítems de la partida'"
+                              class="inline-flex items-center space-x-1 px-2 py-1 rounded-md text-[11px] font-semibold transition-all cursor-pointer"
+                              [ngClass]="cat.totalItems ? 'bg-emerald-50 text-emerald-700 border border-emerald-300 hover:bg-emerald-100 shadow-2xs' : 'bg-slate-100 text-slate-600 border border-slate-200 hover:bg-emerald-50 hover:text-emerald-700 hover:border-emerald-200'"
+                            >
+                              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                              </svg>
+                              <span>{{ cat.totalItems ? cat.totalItems + ' ítems' : '+ Ítems' }}</span>
+                            </button>
+                            <div class="inline-flex items-center relative">
+                              <span class="absolute left-2.5 text-xs text-slate-400 font-mono">S/</span>
+                              <input
+                                type="number"
+                                step="0.01"
+                                [(ngModel)]="cat.CostoReferencial"
+                                [readonly]="(cat.totalItems || 0) > 0"
+                                [title]="(cat.totalItems || 0) > 0 ? 'Calculado automáticamente a partir de sus ítems' : ''"
+                                class="w-32 text-right pl-7 pr-2.5 py-1.5 rounded-lg border text-xs font-mono font-bold outline-none transition-all shadow-2xs"
+                                [ngClass]="(cat.totalItems || 0) > 0 ? 'bg-slate-50 border-slate-200 text-slate-600 cursor-not-allowed' : 'bg-white border-slate-200 text-slate-800 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/10 hover:border-slate-300'"
+                              >
+                            </div>
                           </div>
                         </td>
                         <td class="py-3 pr-4 text-center">
-                          @if (!soloLectura()) {
-                          <div class="flex items-center justify-center space-x-2">
-                            <!-- Editar -->
-                            <button type="button" title="Editar Sub Fase" (click)="abrirModalCategoria('edit', fase, cat)" class="p-1 rounded text-slate-400 hover:text-slate-700 hover:bg-slate-100 active:scale-95 transition-all cursor-pointer">
-                              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
-                            </button>
-                            <!-- Eliminar -->
-                            <button type="button" title="Eliminar" (click)="removeCategoria(fase, cat)" class="p-1 rounded text-slate-500 hover:text-rose-600 hover:bg-rose-50 active:scale-95 transition-all cursor-pointer">
-                              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                          <div class="flex items-center justify-center space-x-1.5">
+                            <!-- Ítems Pop-up -->
+                            <button
+                              type="button"
+                              title="Gestionar Ítems (Productos/Servicios)"
+                              (click)="abrirModalItems(fase, cat)"
+                              class="p-1 rounded text-emerald-600 hover:text-emerald-800 hover:bg-emerald-50 active:scale-95 transition-all cursor-pointer"
+                            >
+                              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                              </svg>
                             </button>
 
-                            <!-- Añadir Categoría (+) -->
-                            <button type="button" title="Añadir Sub Fase" (click)="addCategoria(fase)" class="p-1 rounded text-emerald-600 hover:text-emerald-800 hover:bg-emerald-50 active:scale-95 transition-all cursor-pointer">
-                              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"></path></svg>
-                            </button>
+                            @if (!soloLectura()) {
+                              <!-- Editar -->
+                              <button type="button" title="Editar Sub Fase" (click)="abrirModalCategoria('edit', fase, cat)" class="p-1 rounded text-slate-400 hover:text-slate-700 hover:bg-slate-100 active:scale-95 transition-all cursor-pointer">
+                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
+                              </button>
+                              <!-- Eliminar -->
+                              <button type="button" title="Eliminar" (click)="removeCategoria(fase, cat)" class="p-1 rounded text-slate-500 hover:text-rose-600 hover:bg-rose-50 active:scale-95 transition-all cursor-pointer">
+                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                              </button>
+
+                              <!-- Añadir Categoría (+) -->
+                              <button type="button" title="Añadir Sub Fase" (click)="addCategoria(fase)" class="p-1 rounded text-emerald-600 hover:text-emerald-800 hover:bg-emerald-50 active:scale-95 transition-all cursor-pointer">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"></path></svg>
+                              </button>
+                            }
                           </div>
-                          }
                         </td>
                       </tr>
                     }
@@ -523,5 +557,15 @@
         </div>
       </div>
     </div>
+  }
+
+  <!-- MODAL DE GESTIÓN DE ÍTEMS DE PARTIDA -->
+  @if (showItemsModal() && partidaSeleccionadaParaItems(); as pInfo) {
+    <app-partida-items-dialog
+      [partida]="pInfo"
+      [soloLectura]="soloLectura()"
+      (cerrar)="cerrarModalItems()"
+      (guardado)="onItemsGuardados($event)"
+    />
   }
 </div>

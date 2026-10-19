@@ -1,0 +1,359 @@
+<div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-150">
+  <div class="relative w-full max-w-6xl max-h-[92vh] flex flex-col bg-white rounded-2xl shadow-2xl border border-slate-200/80 overflow-hidden">
+    
+    <!-- CABECERA DEL MODAL -->
+    <header class="px-6 py-4 bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 text-white flex items-center justify-between shrink-0 shadow-sm">
+      <div class="flex items-center space-x-3">
+        <div class="w-10 h-10 rounded-xl bg-emerald-500/20 border border-emerald-400/30 flex items-center justify-center text-emerald-400">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
+          </svg>
+        </div>
+        <div>
+          <div class="flex items-center space-x-2">
+            <h2 class="text-base font-bold tracking-tight">Ítems de Partida</h2>
+            <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold bg-emerald-500/20 text-emerald-300 border border-emerald-400/30 uppercase">
+              {{ partida.NombreFase || 'Fase' }}
+            </span>
+          </div>
+          <p class="text-xs text-slate-300 mt-0.5 font-medium">
+            {{ partida.NombreCategoria || partida.IdpptoFaseCategoria }}
+          </p>
+        </div>
+      </div>
+
+      <div class="flex items-center space-x-2">
+        @if (soloLectura) {
+          <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-500/20 text-amber-300 border border-amber-400/30">
+            Solo lectura
+          </span>
+        }
+        <button
+          type="button"
+          (click)="onCerrar()"
+          class="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-700/60 transition-colors cursor-pointer"
+          title="Cerrar ventana"
+        >
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
+    </header>
+
+    <!-- BANNER DE ERROR -->
+    @if (errorMensaje()) {
+      <div class="bg-rose-50 border-b border-rose-200 px-6 py-2.5 flex items-center justify-between text-xs text-rose-700 shrink-0">
+        <div class="flex items-center space-x-2">
+          <svg class="w-4 h-4 text-rose-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          <span class="font-medium">{{ errorMensaje() }}</span>
+        </div>
+        <button type="button" (click)="errorMensaje.set(null)" class="text-rose-500 hover:text-rose-800 font-bold ml-4">✕</button>
+      </div>
+    }
+
+    <!-- BARRA DE ACCIONES SUPERIOR -->
+    <div class="px-6 py-2.5 bg-slate-50 border-b border-slate-200/80 flex items-center justify-between shrink-0">
+      <div class="flex items-center space-x-2 text-xs text-slate-500">
+        <span>Catálogo de productos y servicios asociados a esta partida.</span>
+      </div>
+      @if (!soloLectura) {
+        <button
+          type="button"
+          (click)="agregarFila()"
+          class="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition-all shadow-xs flex items-center space-x-1.5 cursor-pointer active:scale-95"
+        >
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4" />
+          </svg>
+          <span>Añadir Ítem</span>
+        </button>
+      }
+    </div>
+
+    <!-- CUERPO / TABLA SCROLLEABLE -->
+    <div class="flex-1 overflow-y-auto p-6 bg-slate-50/50">
+      @if (cargando()) {
+        <div class="flex flex-col items-center justify-center py-20 text-slate-400">
+          <div class="w-8 h-8 border-3 border-emerald-500 border-t-transparent rounded-full animate-spin mb-3"></div>
+          <p class="text-xs font-medium">Cargando ítems de la partida...</p>
+        </div>
+      } @else if (filas().length === 0) {
+        <div class="flex flex-col items-center justify-center py-16 text-center bg-white rounded-xl border border-dashed border-slate-200">
+          <div class="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center text-slate-400 mb-3">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
+            </svg>
+          </div>
+          <h4 class="text-sm font-bold text-slate-700">Esta partida no tiene ítems</h4>
+          <p class="text-xs text-slate-500 mt-1 max-w-sm">Puedes vincular productos o servicios del catálogo con sus costos unitarios META y precios de venta.</p>
+          @if (!soloLectura) {
+            <button
+              type="button"
+              (click)="agregarFila()"
+              class="mt-4 px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition-all shadow-xs cursor-pointer"
+            >
+              + Agregar primer ítem
+            </button>
+          }
+        </div>
+      } @else {
+        <div class="bg-white rounded-xl border border-slate-200/90 shadow-2xs overflow-visible">
+          <table class="w-full text-left border-collapse text-xs">
+            <thead>
+              <tr class="bg-slate-100/80 border-b border-slate-200 text-[10px] font-bold text-slate-600 uppercase tracking-wider">
+                <th scope="col" class="py-2.5 px-3 w-16 text-center">Ítem</th>
+                <th scope="col" class="py-2.5 px-3 w-20 text-center">Tipo</th>
+                <th scope="col" class="py-2.5 px-3 min-w-[280px]">Producto / Servicio (Catálogo)</th>
+                <th scope="col" class="py-2.5 px-3 w-24 text-center">Unidad</th>
+                <th scope="col" class="py-2.5 px-3 w-24 text-right">Cantidad</th>
+                <th scope="col" class="py-2.5 px-3 w-28 text-right">Costo U. (S/)</th>
+                <th scope="col" class="py-2.5 px-3 w-28 text-right">Venta U. (S/)</th>
+                <th scope="col" class="py-2.5 px-3 w-28 text-right bg-slate-50/50">Costo Total</th>
+                <th scope="col" class="py-2.5 px-3 w-28 text-right bg-slate-50/50">Venta Total</th>
+                @if (!soloLectura) {
+                  <th scope="col" class="py-2.5 px-3 w-20 text-center">Acciones</th>
+                }
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-100">
+              @for (fila of filas(); track $index) {
+                <tr class="hover:bg-slate-50/70 transition-colors group">
+                  <!-- Ítem (número de fila / identificador) -->
+                  <td class="py-2 px-2 text-center">
+                    <input
+                      type="text"
+                      [(ngModel)]="fila.Item"
+                      [disabled]="soloLectura"
+                      placeholder="ej. 1.01"
+                      class="w-full text-center px-1.5 py-1 text-xs font-mono font-medium rounded border border-slate-200 bg-white focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none"
+                    />
+                  </td>
+
+                  <!-- Tipo (PRODUCTO / SERVICIO) -->
+                  <td class="py-2 px-2 text-center">
+                    @if (fila.tipo_producto === 'SERVICIO') {
+                      <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-800 border border-amber-200">
+                        SRV
+                      </span>
+                    } @else {
+                      <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold bg-blue-100 text-blue-800 border border-blue-200">
+                        PRD
+                      </span>
+                    }
+                  </td>
+
+                  <!-- Buscador / Selector de Producto -->
+                  <td class="py-2 px-3 relative">
+                    <div class="relative">
+                      <input
+                        type="text"
+                        [ngModel]="fila.descripcion_producto"
+                        (ngModelChange)="onBuscarInput($event, $index)"
+                        (blur)="cerrarDropdown()"
+                        [disabled]="soloLectura"
+                        placeholder="Buscar producto o servicio en catálogo..."
+                        class="w-full px-2.5 py-1 text-xs rounded border border-slate-200 bg-white focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none font-medium truncate"
+                        [title]="fila.descripcion_producto"
+                      />
+                      @if (fila.codigo_producto) {
+                        <span class="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] font-mono text-slate-400 bg-slate-100 px-1 rounded pointer-events-none">
+                          {{ fila.codigo_producto }}
+                        </span>
+                      }
+                    </div>
+
+                    <!-- Dropdown de resultados de búsqueda -->
+                    @if (mostrarResultados() && indiceFilaSeleccionando() === $index) {
+                      <div class="absolute left-3 right-3 top-full mt-1 z-30 bg-white border border-slate-300 rounded-xl shadow-xl max-h-56 overflow-y-auto divide-y divide-slate-100">
+                        @for (prod of resultadosBusqueda(); track prod.id) {
+                          <div
+                            (mousedown)="seleccionarProducto(prod, $index)"
+                            class="p-2 hover:bg-emerald-50/70 cursor-pointer flex items-center justify-between text-xs transition-colors"
+                          >
+                            <div class="flex-1 pr-2">
+                              <div class="font-semibold text-slate-800">{{ prod.descripcion }}</div>
+                              <div class="text-[10px] text-slate-400 font-mono">Código: {{ prod.codigo }}</div>
+                            </div>
+                            <div class="flex items-center space-x-1.5 shrink-0">
+                              <span
+                                class="px-1.5 py-0.5 rounded text-[9px] font-bold"
+                                [ngClass]="prod.tipo_producto === 'SERVICIO' ? 'bg-amber-100 text-amber-800' : 'bg-blue-100 text-blue-800'"
+                              >
+                                {{ prod.tipo_producto }}
+                              </span>
+                            </div>
+                          </div>
+                        }
+                      </div>
+                    }
+                  </td>
+
+                  <!-- Unidad de Medida -->
+                  <td class="py-2 px-2 text-center">
+                    <select
+                      [(ngModel)]="fila.id_unidad_medida"
+                      [disabled]="soloLectura"
+                      class="w-full px-1.5 py-1 text-xs font-semibold rounded border border-slate-200 bg-slate-50 text-slate-700 outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
+                    >
+                      @for (u of unidadesMedida(); track u.id) {
+                        <option [ngValue]="u.id">{{ u.nombre }}</option>
+                      }
+                    </select>
+                  </td>
+
+                  <!-- Cantidad -->
+                  <td class="py-2 px-2 text-right">
+                    <input
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      [(ngModel)]="fila.Cantidad"
+                      (ngModelChange)="recalcularFila(fila)"
+                      [disabled]="soloLectura"
+                      class="w-full text-right px-2 py-1 text-xs font-mono font-bold rounded border border-slate-200 bg-white focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none"
+                    />
+                  </td>
+
+                  <!-- Costo Unitario (META) -->
+                  <td class="py-2 px-2 text-right">
+                    <div class="relative">
+                      <span class="absolute left-1.5 top-1/2 -translate-y-1/2 text-[10px] text-slate-400 font-mono">S/</span>
+                      <input
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        [(ngModel)]="fila.CostoUnitario"
+                        (ngModelChange)="recalcularFila(fila)"
+                        [disabled]="soloLectura"
+                        class="w-full text-right pl-5 pr-2 py-1 text-xs font-mono font-bold rounded border border-slate-200 bg-white focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none"
+                      />
+                    </div>
+                  </td>
+
+                  <!-- Precio Venta (Contrato) -->
+                  <td class="py-2 px-2 text-right">
+                    <div class="relative">
+                      <span class="absolute left-1.5 top-1/2 -translate-y-1/2 text-[10px] text-slate-400 font-mono">S/</span>
+                      <input
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        [(ngModel)]="fila.PrecioVenta"
+                        (ngModelChange)="recalcularFila(fila)"
+                        [disabled]="soloLectura"
+                        class="w-full text-right pl-5 pr-2 py-1 text-xs font-mono font-bold rounded border border-slate-200 bg-white focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none"
+                      />
+                    </div>
+                  </td>
+
+                  <!-- Costo Total Calculado -->
+                  <td class="py-2 px-3 text-right font-mono font-bold text-slate-800 bg-slate-50/50">
+                    S/ {{ fila.CostoTotal | number: '1.2-2' }}
+                  </td>
+
+                  <!-- Venta Total Calculada -->
+                  <td class="py-2 px-3 text-right font-mono font-bold text-emerald-700 bg-slate-50/50">
+                    S/ {{ fila.VentaTotal | number: '1.2-2' }}
+                  </td>
+
+                  <!-- Acciones -->
+                  @if (!soloLectura) {
+                    <td class="py-2 px-2 text-center">
+                      <div class="flex items-center justify-center space-x-1">
+                        <button
+                          type="button"
+                          (click)="duplicarFila($index)"
+                          title="Duplicar ítem"
+                          class="p-1 rounded text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer"
+                        >
+                          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                          </svg>
+                        </button>
+                        <button
+                          type="button"
+                          (click)="eliminarFila($index)"
+                          title="Eliminar fila"
+                          class="p-1 rounded text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer"
+                        >
+                          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                          </svg>
+                        </button>
+                      </div>
+                    </td>
+                  }
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    </div>
+
+    <!-- PIE DEL MODAL (MÉTRICAS + BOTONES) -->
+    <footer class="px-6 py-3.5 bg-white border-t border-slate-200/90 flex flex-wrap items-center justify-between gap-4 shrink-0 shadow-xs">
+      <!-- Tarjetas de resumen de totales -->
+      <div class="flex items-center space-x-6 text-xs">
+        <div>
+          <span class="text-[10px] uppercase font-bold text-slate-400 block tracking-wider">Ítems</span>
+          <span class="font-bold text-slate-800 text-sm font-mono">{{ totales().cantidadFilas }}</span>
+        </div>
+        <div class="border-l border-slate-200 pl-4">
+          <span class="text-[10px] uppercase font-bold text-slate-400 block tracking-wider">Costo Directo (META)</span>
+          <span class="font-bold text-slate-900 text-sm font-mono">S/ {{ totales().costoTotal | number: '1.2-2' }}</span>
+        </div>
+        <div class="border-l border-slate-200 pl-4">
+          <span class="text-[10px] uppercase font-bold text-slate-400 block tracking-wider">Precio Venta (Contrato)</span>
+          <span class="font-bold text-emerald-800 text-sm font-mono">S/ {{ totales().ventaTotal | number: '1.2-2' }}</span>
+        </div>
+        <div class="border-l border-slate-200 pl-4">
+          <span class="text-[10px] uppercase font-bold text-slate-400 block tracking-wider">Margen Bruto</span>
+          <div class="flex items-center space-x-1.5">
+            <span class="font-bold text-slate-800 text-sm font-mono">S/ {{ totales().margen | number: '1.2-2' }}</span>
+            <span
+              class="px-1.5 py-0.5 rounded text-[10px] font-bold font-mono"
+              [ngClass]="totales().margen >= 0 ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800'"
+            >
+              {{ totales().margenPct | number: '1.1-1' }}%
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Botones de Acción -->
+      <div class="flex items-center space-x-2.5">
+        <button
+          type="button"
+          (click)="onCerrar()"
+          [disabled]="guardando()"
+          class="px-4 py-2 rounded-xl border border-slate-200 hover:bg-slate-100 text-slate-700 text-xs font-bold transition-all shadow-2xs cursor-pointer"
+        >
+          Cerrar
+        </button>
+        @if (!soloLectura) {
+          <button
+            type="button"
+            (click)="guardar()"
+            [disabled]="guardando() || cargando()"
+            class="px-5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 disabled:bg-slate-300 text-white text-xs font-bold transition-all shadow-sm flex items-center space-x-1.5 cursor-pointer active:scale-95"
+          >
+            @if (guardando()) {
+              <div class="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+              <span>Guardando...</span>
+            } @else {
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+              </svg>
+              <span>Guardar Ítems</span>
+            }
+          </button>
+        }
+      </div>
+    </footer>
+
+  </div>
+</div>
