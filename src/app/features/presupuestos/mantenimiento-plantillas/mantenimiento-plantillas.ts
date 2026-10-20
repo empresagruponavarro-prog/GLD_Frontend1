@@ -1,4 +1,4 @@
-import { Component, ElementRef, Injector, OnInit, afterNextRender, signal, inject, computed, viewChild } from '@angular/core';
+import { Component, ElementRef, Injector, OnInit, afterNextRender, signal, inject, computed, viewChild, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { DragDropModule, CdkDragDrop, moveItemInArray } from '@angular/cdk/drag-drop';
 import { FormsModule } from '@angular/forms';
@@ -23,6 +23,14 @@ interface NuevaPlantillaForm {
   Activo: boolean;
   origen: 'vacia' | 'copiar';
   IdPlantillaOrigen: string;
+}
+
+/** Formulario del pop-up "Editar información de plantilla". */
+interface EditarPlantillaForm {
+  IdPlantilla: string;
+  Nombre: string;
+  Descripcion: string;
+  Activo: boolean;
 }
 
 @Component({
@@ -142,6 +150,124 @@ export class MantenimientoPlantillasComponent implements OnInit {
     this.service.getPlantillaCompleta(p.IdPlantilla).subscribe({
       next: (res) => this.selectedPlantilla.set(res),
       error: () => alert('Error cargando detalle de plantilla')
+    });
+  }
+
+  // ==========================================
+  // MENÚ DE TRES PUNTITOS Y ACCIONES DE PLANTILLA
+  // ==========================================
+  menuAbiertoId = signal<string | null>(null);
+
+  @HostListener('document:click')
+  onDocumentClick() {
+    this.menuAbiertoId.set(null);
+  }
+
+  toggleMenuPlantilla(event: MouseEvent, id: string) {
+    event.stopPropagation();
+    if (this.menuAbiertoId() === id) {
+      this.menuAbiertoId.set(null);
+    } else {
+      this.menuAbiertoId.set(id);
+    }
+  }
+
+  // Modal Editar Información de Plantilla
+  showEditarInfoModal = signal(false);
+  guardandoInfo = signal(false);
+  errorEditarInfo = signal('');
+  editarInfoForm: EditarPlantillaForm = {
+    IdPlantilla: '',
+    Nombre: '',
+    Descripcion: '',
+    Activo: true,
+  };
+
+  abrirEditarInfo(p: Plantilla, event?: MouseEvent) {
+    if (event) event.stopPropagation();
+    this.menuAbiertoId.set(null);
+    this.errorEditarInfo.set('');
+    this.editarInfoForm = {
+      IdPlantilla: p.IdPlantilla,
+      Nombre: p.Nombre,
+      Descripcion: p.Descripcion || '',
+      Activo: p.Activo,
+    };
+    this.showEditarInfoModal.set(true);
+  }
+
+  cerrarEditarInfo() {
+    if (this.guardandoInfo()) return;
+    this.showEditarInfoModal.set(false);
+  }
+
+  guardarEditarInfo() {
+    if (!this.editarInfoForm.Nombre.trim()) {
+      this.errorEditarInfo.set('El nombre de la plantilla es obligatorio.');
+      return;
+    }
+    this.guardandoInfo.set(true);
+    this.errorEditarInfo.set('');
+
+    const dto = {
+      Nombre: this.editarInfoForm.Nombre.trim(),
+      Descripcion: this.editarInfoForm.Descripcion.trim(),
+      Activo: this.editarInfoForm.Activo,
+    };
+
+    this.service.updatePlantilla(this.editarInfoForm.IdPlantilla, dto).subscribe({
+      next: (res) => {
+        this.guardandoInfo.set(false);
+        this.showEditarInfoModal.set(false);
+        const sel = this.selectedPlantilla();
+        if (sel && sel.IdPlantilla === this.editarInfoForm.IdPlantilla) {
+          sel.Nombre = res.Nombre;
+          sel.Descripcion = res.Descripcion;
+          sel.Activo = res.Activo;
+          this.selectedPlantilla.set({ ...sel });
+        }
+        this.loadPlantillas();
+      },
+      error: (err) => {
+        this.guardandoInfo.set(false);
+        this.errorEditarInfo.set(err?.error?.message || 'Error al actualizar la plantilla.');
+      }
+    });
+  }
+
+  toggleActivarPlantilla(p: Plantilla, event?: MouseEvent) {
+    if (event) event.stopPropagation();
+    this.menuAbiertoId.set(null);
+    const nuevoEstado = !p.Activo;
+    this.service.updatePlantilla(p.IdPlantilla, { Activo: nuevoEstado }).subscribe({
+      next: (res) => {
+        const sel = this.selectedPlantilla();
+        if (sel && sel.IdPlantilla === p.IdPlantilla) {
+          sel.Activo = res.Activo;
+          this.selectedPlantilla.set({ ...sel });
+        }
+        this.loadPlantillas();
+      },
+      error: () => alert('Error al cambiar el estado de la plantilla.')
+    });
+  }
+
+  eliminarPlantilla(p: Plantilla, event?: MouseEvent) {
+    if (event) event.stopPropagation();
+    this.menuAbiertoId.set(null);
+    const seguro = confirm(`¿Estás seguro de que deseas eliminar la plantilla "${p.Nombre}"?\nEsta acción no se puede deshacer.`);
+    if (!seguro) return;
+
+    this.service.deletePlantilla(p.IdPlantilla).subscribe({
+      next: () => {
+        if (this.selectedPlantilla()?.IdPlantilla === p.IdPlantilla) {
+          this.selectedPlantilla.set(null);
+        }
+        this.loadPlantillas();
+      },
+      error: (err) => {
+        alert(err?.error?.message || 'No se pudo eliminar la plantilla. Puede que esté asociada a presupuestos existentes.');
+      }
     });
   }
 

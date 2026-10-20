@@ -145,6 +145,9 @@ export class PresupuestosService {
   updatePlantillaFases(id: string, fases: PlantillaFaseDto[]): Observable<{ success: boolean }> {
     return this.http.put<{ success: boolean }>(`${this.apiUrl}/plantillas/${id}/fases`, fases);
   }
+  deletePlantilla(id: string): Observable<{ success: boolean }> {
+    return this.http.delete<{ success: boolean }>(`${this.apiUrl}/plantillas/${id}`);
+  }
 
   getPlantillasActivas(): Observable<Plantilla[]> {
     return this.http.get<Plantilla[]>(`${this.apiUrl}/plantillas/activas`);

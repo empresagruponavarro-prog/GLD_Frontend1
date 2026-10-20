@@ -168,15 +168,15 @@ export class PartidaItemsDialogComponent implements OnInit {
   private configurarBuscador(): void {
     this.searchSubject
       .pipe(
-        debounceTime(250),
+        debounceTime(180),
         distinctUntilChanged(),
         switchMap((term) => {
-          if (!term || term.trim().length < 2) {
-            this.buscandoProductos.set(false);
-            return of([]);
-          }
           this.buscandoProductos.set(true);
-          return this.productosService.getAll({ descripcion: term.trim(), pageSize: 25 });
+          const t = (term || '').trim();
+          if (!t) {
+            return this.productosService.getAll({ pageSize: 25 });
+          }
+          return this.productosService.getAll({ descripcion: t, pageSize: 25 });
         }),
       )
       .subscribe({
@@ -193,29 +193,43 @@ export class PartidaItemsDialogComponent implements OnInit {
       });
   }
 
-  onBuscarInput(term: string, indexFila: number): void {
+  abrirBuscador(fila: ItemFila, indexFila: number): void {
+    if (this.soloLectura) return;
+    this.indiceFilaSeleccionando.set(indexFila);
+    const term = fila.descripcion_producto || '';
+    this.busquedaProducto.set(term);
+    this.searchSubject.next(term);
+  }
+
+  onBuscarInput(fila: ItemFila, term: string, indexFila: number): void {
+    fila.descripcion_producto = term;
     this.indiceFilaSeleccionando.set(indexFila);
     this.busquedaProducto.set(term);
     this.searchSubject.next(term);
   }
 
-  seleccionarProducto(producto: Producto, indexFila: number): void {
-    const list = [...this.filas()];
-    const fila = list[indexFila];
-    if (!fila) return;
-
-    fila.id_producto = producto.id;
-    fila.codigo_producto = producto.codigo;
-    fila.descripcion_producto = producto.descripcion;
-    fila.tipo_producto = producto.tipo_producto;
-    fila.id_categoria = producto.id_categoria;
+  seleccionarProducto(fila: ItemFila, producto: Producto): void {
     const cat = this.categorias().find((opt) => opt.id === producto.id_categoria);
-    fila.categoria_producto = cat?.nombre || '';
-    fila.id_unidad_medida = producto.id_unidad_medida;
     const u = this.unidadesMedida().find((opt) => opt.id === producto.id_unidad_medida);
-    fila.simbolo_unidad = u?.nombre || '';
 
-    this.filas.set(list);
+    const actualizadas = this.filas().map((f) => {
+      if (f === fila) {
+        return {
+          ...f,
+          id_producto: producto.id,
+          codigo_producto: producto.codigo,
+          descripcion_producto: producto.descripcion,
+          tipo_producto: producto.tipo_producto,
+          id_categoria: producto.id_categoria,
+          categoria_producto: cat?.nombre || '',
+          id_unidad_medida: producto.id_unidad_medida,
+          simbolo_unidad: u?.nombre || '',
+        };
+      }
+      return f;
+    });
+
+    this.filas.set(actualizadas);
     this.mostrarResultados.set(false);
     this.indiceFilaSeleccionando.set(null);
     this.busquedaProducto.set('');
@@ -223,17 +237,25 @@ export class PartidaItemsDialogComponent implements OnInit {
 
   onCambiarCategoria(fila: ItemFila, valor: unknown): void {
     const idCat = valor && valor !== 'undefined' ? Number(valor) : undefined;
-    fila.id_categoria = idCat;
     const cat = this.categorias().find((opt) => opt.id === idCat);
-    fila.categoria_producto = cat?.nombre || '';
-    this.filas.set([...this.filas()]);
+    const actualizadas = this.filas().map((f) => {
+      if (f === fila) {
+        return {
+          ...f,
+          id_categoria: idCat,
+          categoria_producto: cat?.nombre || '',
+        };
+      }
+      return f;
+    });
+    this.filas.set(actualizadas);
   }
 
   cerrarDropdown(): void {
     setTimeout(() => {
       this.mostrarResultados.set(false);
       this.indiceFilaSeleccionando.set(null);
-    }, 200);
+    }, 250);
   }
 
   recalcularFila(fila: ItemFila): void {
