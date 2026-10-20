@@ -129,6 +129,15 @@
                       }
                     </button>
 
+                    <button type="button" 
+                            (click)="abrirFusionar(p, $event)"
+                            class="w-full px-3 py-1.5 flex items-center space-x-2 text-left hover:bg-slate-800 hover:text-white transition-colors cursor-pointer">
+                      <svg class="w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4M16 17H4m0 0l4-4m-4 4l4 4"></path>
+                      </svg>
+                      <span class="font-medium">Fusionar con...</span>
+                    </button>
+
                     <div class="my-1 border-t border-slate-800"></div>
 
                     <button type="button" 
@@ -671,6 +680,55 @@
             </button>
           </div>
         </form>
+      </div>
+    </div>
+  }
+
+  <!-- MODAL FUSIONAR PLANTILLAS -->
+  @if (showFusionarModal() && plantillaDestinoFusion(); as destino) {
+    <div class="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/50 backdrop-blur-xs p-4">
+      <div class="bg-white rounded-xl shadow-2xl w-full max-w-lg overflow-hidden flex flex-col border border-slate-200">
+        <div class="px-6 py-4 bg-[#f6f8f7] border-b border-[#d1dcd7] flex items-center justify-between">
+          <div>
+            <h3 class="font-manrope text-base font-bold text-slate-900">Fusionar plantillas</h3>
+            <p class="text-[11px] text-slate-500">Se agregará el contenido de otra plantilla dentro de <strong>{{ destino.Nombre }}</strong></p>
+          </div>
+          <button type="button" (click)="cerrarFusionar()" title="Cerrar" class="w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-slate-800 hover:bg-[#e3e9e6] transition cursor-pointer">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+          </button>
+        </div>
+
+        <div class="p-6 space-y-4 text-xs">
+          <div>
+            <label for="fu-origen" class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Plantilla a unir <span class="text-rose-500">*</span></label>
+            <select id="fu-origen" [(ngModel)]="fusionOrigenId" class="w-full h-9 px-3 rounded border border-[#d1dcd7] bg-white text-slate-800 outline-none focus:border-[#529b7b] cursor-pointer">
+              <option value="" disabled>Seleccione la plantilla...</option>
+              @for (o of otrasPlantillas(); track o.IdPlantilla) {
+                <option [value]="o.IdPlantilla">{{ o.Nombre }}{{ o.Activo ? '' : ' (inactiva)' }}</option>
+              }
+            </select>
+            <p class="mt-1.5 text-[11px] text-slate-500">Las fases y partidas que ya existan en la plantilla destino no se duplican. Los ítems de las partidas nuevas también se copian.</p>
+          </div>
+
+          <label class="flex items-center justify-between gap-3 p-3 rounded border border-[#d1dcd7] bg-[#f6f8f7] cursor-pointer">
+            <span>
+              <span class="block font-bold text-slate-800">Eliminar la plantilla unida al terminar</span>
+              <span class="block text-[11px] text-slate-500">Queda una sola plantilla con todo el contenido</span>
+            </span>
+            <input type="checkbox" [(ngModel)]="fusionEliminarOrigen" class="w-4 h-4 rounded-sm text-[#529b7b] focus:ring-[#529b7b] border-slate-300">
+          </label>
+
+          @if (errorFusionar()) {
+            <div class="p-2.5 rounded border border-rose-200 bg-rose-50 text-rose-700 text-[11px]">{{ errorFusionar() }}</div>
+          }
+        </div>
+
+        <div class="px-6 py-4 bg-[#f6f8f7] border-t border-[#d1dcd7] flex justify-end gap-2.5">
+          <button type="button" (click)="cerrarFusionar()" [disabled]="fusionando()" class="px-4 py-2 rounded-lg bg-white hover:bg-[#edf2f0] text-slate-700 font-semibold text-xs border border-[#d1dcd7] transition cursor-pointer disabled:opacity-50">Cancelar</button>
+          <button type="button" (click)="confirmarFusionar()" [disabled]="!fusionOrigenId || fusionando()" class="px-4 py-2 rounded-lg bg-[#529b7b] hover:bg-[#3d7e63] text-white font-semibold text-xs shadow-xs transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed">
+            {{ fusionando() ? 'Fusionando...' : 'Fusionar' }}
+          </button>
+        </div>
       </div>
     </div>
   }

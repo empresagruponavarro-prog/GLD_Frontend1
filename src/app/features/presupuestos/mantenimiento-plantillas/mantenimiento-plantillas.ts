@@ -272,6 +272,58 @@ export class MantenimientoPlantillasComponent implements OnInit {
   }
 
   // ==========================================
+  // FUSIONAR PLANTILLAS
+  // ==========================================
+  showFusionarModal = signal(false);
+  fusionando = signal(false);
+  errorFusionar = signal('');
+  plantillaDestinoFusion = signal<Plantilla | null>(null);
+  fusionOrigenId = '';
+  fusionEliminarOrigen = true;
+
+  otrasPlantillas = computed(() => {
+    const d = this.plantillaDestinoFusion();
+    return this.plantillas().filter(p => p.IdPlantilla !== d?.IdPlantilla);
+  });
+
+  abrirFusionar(p: Plantilla, event?: MouseEvent) {
+    if (event) event.stopPropagation();
+    this.menuAbiertoId.set(null);
+    this.plantillaDestinoFusion.set(p);
+    this.fusionOrigenId = '';
+    this.fusionEliminarOrigen = true;
+    this.errorFusionar.set('');
+    this.showFusionarModal.set(true);
+  }
+
+  cerrarFusionar() {
+    if (this.fusionando()) return;
+    this.showFusionarModal.set(false);
+  }
+
+  confirmarFusionar() {
+    const destino = this.plantillaDestinoFusion();
+    if (!destino || !this.fusionOrigenId) return;
+    this.fusionando.set(true);
+    this.errorFusionar.set('');
+    this.service.fusionarPlantilla(destino.IdPlantilla, {
+      IdPlantillaOrigen: this.fusionOrigenId,
+      EliminarOrigen: this.fusionEliminarOrigen,
+    }).subscribe({
+      next: () => {
+        this.fusionando.set(false);
+        this.showFusionarModal.set(false);
+        this.loadPlantillas();
+        this.selectPlantilla(destino);
+      },
+      error: (err) => {
+        this.fusionando.set(false);
+        this.errorFusionar.set(err?.error?.message || 'No se pudo fusionar las plantillas.');
+      }
+    });
+  }
+
+  // ==========================================
   // POP-UP "NUEVA PLANTILLA"
   // ==========================================
   showNuevaPlantillaModal = signal(false);

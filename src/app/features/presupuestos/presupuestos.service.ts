@@ -148,6 +148,9 @@ export class PresupuestosService {
   deletePlantilla(id: string): Observable<{ success: boolean }> {
     return this.http.delete<{ success: boolean }>(`${this.apiUrl}/plantillas/${id}`);
   }
+  fusionarPlantilla(idDestino: string, dto: { IdPlantillaOrigen: string; EliminarOrigen?: boolean }): Observable<{ success: boolean; fasesAgregadas: number; categoriasAgregadas: number; categoriasOmitidas: number; origenEliminado: boolean }> {
+    return this.http.post<{ success: boolean; fasesAgregadas: number; categoriasAgregadas: number; categoriasOmitidas: number; origenEliminado: boolean }>(`${this.apiUrl}/plantillas/${idDestino}/fusionar`, dto);
+  }
 
   getPlantillasActivas(): Observable<Plantilla[]> {
     return this.http.get<Plantilla[]>(`${this.apiUrl}/plantillas/activas`);
