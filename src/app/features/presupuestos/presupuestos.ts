@@ -65,6 +65,7 @@ import { MSG_SIN_PERMISO } from '@app/core/auth/auth.interceptor';
 import { permisosDePantalla } from '@app/core/auth/permisos-pantalla';
 import { PermisosService } from '@app/core/auth/permisos.service';
 import { AvisosService } from '@app/core/avisos/avisos.service';
+import { AuthService } from '@app/core/auth/auth.service';
 
 /** Datos del modal rápido "Nueva / Editar fase asignada". */
 interface ModalFaseForm {
@@ -133,6 +134,7 @@ export class PresupuestosComponent implements OnInit {
   private documentosOrigenService = inject(DocumentosOrigenService);
   private readonly permisosSesion = inject(PermisosService);
   private readonly avisos = inject(AvisosService);
+  private readonly authService = inject(AuthService);
 
   // ==========================================
   // PERMISOS (plan 05, etapa D3; acciones del anexo §7.3)
@@ -431,7 +433,8 @@ export class PresupuestosComponent implements OnInit {
   viaticos = signal<number>(0.00);
   descuento = signal<number>(0.00);
 
-  // Especialista y Control para Paso 5
+  // Especialista y Control para Paso 5 (Capturado automáticamente de la sesión)
+  readonly usuarioConectado = this.authService.usuario;
   especialista = signal<string>('');
   comentarios = signal<string>('');
 
@@ -1426,6 +1429,11 @@ export class PresupuestosComponent implements OnInit {
 
     this.formData.Estado = 'PENDIENTE';
 
+    // Capturar automáticamente el usuario que inició sesión
+    const usuarioActual = this.usuarioConectado()?.usuario || '';
+    this.especialista.set(usuarioActual);
+    this.formData.Usuario = usuarioActual;
+
     // Reset completo de todas las signals (formulario en blanco para crear)
     this.formFases.set([]);
     this.pctGG.set(0);
@@ -1544,7 +1552,7 @@ export class PresupuestosComponent implements OnInit {
       this.formData.FechaEntrega = this.formData.FechaEntrega.slice(0, 10);
     }
     this.comentarios.set(p.Comentarios || '');
-    this.especialista.set(p.Usuario || '');
+    this.especialista.set(p.Usuario || this.usuarioConectado()?.usuario || '');
     this.selectedPresupuestoId.set(pptoId);
 
     if (p.id_centro_costo || p.CodCentroCto) {
@@ -1800,7 +1808,7 @@ export class PresupuestosComponent implements OnInit {
       IGV: this.formIGV,
       Total: this.formTotalGeneral,
       Comentarios: this.comentarios(),
-      Usuario: this.especialista() || this.formData.Usuario
+      Usuario: this.especialista() || this.authService.usuario()?.usuario || this.formData.Usuario || undefined
     };
     if (!this.editingId() && !String(payload.IdPresupuesto ?? '').trim()) {
       delete payload.IdPresupuesto;
@@ -2177,7 +2185,8 @@ export class PresupuestosComponent implements OnInit {
       Viaticos: 0,
       DsctoComercial: 0,
       Estado: 'PENDIENTE',
-      Comentarios: ''
+      Comentarios: '',
+      Usuario: this.authService.usuario()?.usuario || '',
     };
   }
 

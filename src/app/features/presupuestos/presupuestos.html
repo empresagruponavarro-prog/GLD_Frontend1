@@ -1328,16 +1328,35 @@
             </div>
           </div>
 
-          <!-- Especialista Responsable -->
+          <!-- Especialista Responsable (Capturado automáticamente de la sesión) -->
           <div>
-            <label for="especialista-input" class="block text-[12px] font-bold text-slate-500 mb-2 uppercase tracking-wide">Especialista Responsable</label>
+            <div class="flex items-center justify-between mb-2">
+              <label class="block text-[12px] font-bold text-slate-500 uppercase tracking-wide">
+                Especialista Responsable
+              </label>
+              <span class="inline-flex items-center gap-1.5 text-[11px] font-semibold text-emerald-800 bg-emerald-50 border border-emerald-200 px-2.5 py-0.5 rounded-full select-none" title="El especialista es asignado automáticamente según el usuario que inició sesión y no se puede modificar">
+                <i class="fa-solid fa-lock text-emerald-600 text-[10px]"></i>
+                Capturado de la sesión activa
+              </span>
+            </div>
             <div class="flex items-center gap-3 bg-slate-50 border border-slate-200 rounded-lg px-4 py-3">
-              <div class="w-8 h-8 rounded-full bg-[#1e4838] text-white flex items-center justify-center text-[12px] font-bold shrink-0">
-                {{ especialista() ? especialista().charAt(0).toUpperCase() : '-' }}
+              <div class="w-9 h-9 rounded-full bg-[#1e4838] text-white flex items-center justify-center text-[13px] font-bold shrink-0 shadow-xs">
+                {{ especialista() ? especialista().charAt(0).toUpperCase() : (usuarioConectado()?.usuario?.charAt(0)?.toUpperCase() || '-') }}
               </div>
-              <input id="especialista-input" [ngModel]="especialista()" (ngModelChange)="especialista.set($event)" type="text"
-                     placeholder="Nombre del especialista responsable..."
-                     class="flex-1 bg-transparent text-[13px] font-semibold text-slate-700 focus:outline-none">
+              <div class="flex-1 flex flex-col justify-center">
+                <div class="text-[13px] font-bold text-slate-800 flex items-center gap-2">
+                  <span>{{ especialista() || usuarioConectado()?.usuario || 'Sin asignar' }}</span>
+                  @if (usuarioConectado()?.nombres && (!especialista() || especialista() === usuarioConectado()?.usuario)) {
+                    <span class="text-slate-500 font-normal text-[12px]">({{ usuarioConectado()?.nombres }})</span>
+                  }
+                </div>
+                <div class="text-[11px] text-slate-400 font-medium">
+                  Usuario autenticado: <strong class="text-slate-600">{{ usuarioConectado()?.usuario || 'Sesión' }}</strong>
+                  @if (usuarioConectado()?.rol) {
+                    <span> • Rol: {{ usuarioConectado()?.rol }}</span>
+                  }
+                </div>
+              </div>
             </div>
           </div>
 
