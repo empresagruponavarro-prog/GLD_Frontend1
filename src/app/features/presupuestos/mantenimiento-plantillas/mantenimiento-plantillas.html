@@ -2,20 +2,20 @@
 <!-- MAIN SPLIT WORKSPACE (h-screen w-full flex) -->
   
   <!-- CABECERA GENERAL DEL MÓDULO (Al estilo Centros de Costos) -->
-  <div class="bg-white border-b border-slate-200 px-6 py-4 shrink-0 z-20 shadow-sm">
-    <div class="flex items-center justify-between mb-4">
+  <div class="bg-white border-b border-slate-200 px-4 xl:px-6 py-3 xl:py-4 shrink-0 z-20 shadow-sm">
+    <div class="flex flex-wrap items-center justify-between gap-3 mb-3 xl:mb-4">
       <div>
-        <h1 class="text-xl font-extrabold text-slate-900 tracking-tight">Catálogo de Plantillas</h1>
+        <h1 class="text-lg xl:text-xl font-extrabold text-slate-900 tracking-tight">Catálogo de Plantillas</h1>
         <p class="text-xs text-slate-500 mt-1">Gestión y administración de estructuras base para presupuestos.</p>
       </div>
-      <div class="flex items-center space-x-2.5">
-        <button type="button" (click)="loadPlantillas()" class="px-4 py-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition-all shadow-2xs flex items-center space-x-1.5 cursor-pointer">
+      <div class="flex flex-wrap items-center gap-2">
+        <button type="button" (click)="loadPlantillas()" class="px-3 xl:px-4 py-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition-all shadow-2xs flex items-center space-x-1.5 cursor-pointer">
           <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
           <span>Actualizar</span>
         </button>
         <app-exportar-botones [datos]="datosExportacion()" />
         @if (permisos.crear()) {
-          <button type="button" (click)="nuevaPlantilla()" class="px-4 py-2 rounded-lg bg-[#0e5941] hover:bg-[#0a4231] text-white text-xs font-bold transition-all shadow-sm flex items-center space-x-1.5 cursor-pointer">
+          <button type="button" (click)="nuevaPlantilla()" class="px-3 xl:px-4 py-2 rounded-lg bg-[#0e5941] hover:bg-[#0a4231] text-white text-xs font-bold transition-all shadow-sm flex items-center space-x-1.5 cursor-pointer">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"></path></svg>
             <span>Nueva Plantilla</span>
           </button>
@@ -24,8 +24,8 @@
     </div>
 
     <!-- CAJA DE BÚSQUEDA Y FILTROS -->
-    <div class="bg-slate-50/50 border border-slate-200 rounded-xl p-3 flex flex-col gap-3">
-      <div class="flex items-center gap-3">
+    <div class="bg-slate-50/50 border border-slate-200 rounded-xl p-2.5 xl:p-3 flex flex-wrap items-center gap-2.5 xl:gap-3">
+      <div class="flex items-center gap-3 flex-1 min-w-[260px]">
         <div class="relative flex-1">
           <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
             <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
@@ -34,11 +34,11 @@
         </div>
         <button type="button" class="px-4 py-2 bg-white border border-slate-200 rounded-lg text-slate-700 text-xs font-semibold hover:bg-slate-50 transition-colors flex items-center gap-2 shadow-2xs cursor-pointer">
           <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"></path></svg>
-          Filtros Activos
+          <span class="hidden xl:inline">Filtros Activos</span>
         </button>
       </div>
       
-      <div class="flex items-center gap-3 text-xs">
+      <div class="flex flex-wrap items-center gap-3 text-xs">
         <select [(ngModel)]="statusFilter" class="py-1.5 pl-3 pr-8 bg-white border border-slate-200 rounded-lg text-slate-600 outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 shadow-2xs cursor-pointer appearance-none">
           <option>Estado: Todas</option>
           <option>Activas</option>
@@ -58,7 +58,7 @@
     <!-- ======================================================== -->
     <!-- 1. COLUMNA IZQUIERDA (30% DEL ANCHO) - CATÁLOGO DE PLANTILLAS -->
     <!-- ======================================================== -->
-    <aside class="w-[30%] min-w-[320px] max-w-[420px] h-full bg-white border-r border-slate-200/80 flex flex-col shrink-0 z-20">
+    <aside class="w-[280px] lg:w-[300px] xl:w-[340px] 2xl:w-[400px] h-full bg-white border-r border-slate-200/80 flex flex-col shrink-0 z-20">
       
       <!-- LISTA DE PLANTILLAS (SCROLLEABLE) -->
       <div class="bg-slate-100/50 border-b border-slate-200 py-2 px-4 text-[10px] font-bold text-slate-500 uppercase tracking-wider shrink-0">
@@ -182,16 +182,16 @@
     <!-- ======================================================== -->
     <!-- 2. COLUMNA DERECHA (70% DEL ANCHO) - ÁREA DE FASES Y CATEGORÍAS -->
     <!-- ======================================================== -->
-    <section class="w-[70%] flex-1 h-full flex flex-col bg-slate-50 overflow-hidden relative">
+    <section class="flex-1 min-w-0 h-full flex flex-col bg-slate-50 overflow-hidden relative">
 
       @if (selectedPlantilla(); as plantilla) {
         <!-- CABECERA PRINCIPAL (DASHBOARD BAR) -->
-        <div class="bg-white/80 backdrop-blur-md border-b border-slate-200/80 px-8 py-5 shrink-0 z-10 flex flex-col md:flex-row md:items-start justify-between gap-4">
-          <div class="flex-1">
+        <div class="bg-white/80 backdrop-blur-md border-b border-slate-200/80 px-4 xl:px-8 py-3 xl:py-5 shrink-0 z-10 flex flex-col xl:flex-row xl:items-start justify-between gap-3 xl:gap-4">
+          <div class="flex-1 min-w-0">
             <!-- Editor en línea: solo lectura sin permiso de editar -->
             <fieldset class="min-w-0" [disabled]="soloLectura()">
-            <div class="flex items-center space-x-3 mb-2">
-              <input type="text" [(ngModel)]="plantilla.Nombre" class="text-xl font-extrabold text-slate-900 tracking-tight bg-transparent border-b border-transparent hover:border-slate-300 focus:border-emerald-500 focus:outline-none w-full max-w-lg transition-colors">
+            <div class="flex flex-wrap items-center gap-x-3 gap-y-1.5 mb-2">
+              <input type="text" [(ngModel)]="plantilla.Nombre" class="text-lg xl:text-xl font-extrabold text-slate-900 tracking-tight bg-transparent border-b border-transparent hover:border-slate-300 focus:border-emerald-500 focus:outline-none flex-1 min-w-[200px] max-w-lg transition-colors">
               @if (plantilla.Activo) {
                 <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200 shrink-0">
                   <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 mr-1.5 animate-pulse"></span>
@@ -217,7 +217,7 @@
           </div>
 
           <!-- BOTONES DE ACCIÓN GENERAL -->
-          <div class="flex items-center space-x-2.5 shrink-0 pt-1">
+          <div class="flex flex-wrap items-center gap-2 shrink-0 xl:pt-1">
             <button type="button" (click)="selectedPlantilla.set(null)" class="px-3.5 py-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 active:scale-95 text-xs font-semibold text-slate-600 hover:text-slate-800 transition-all duration-150 shadow-2xs cursor-pointer">
               Descartar
             </button>
@@ -241,7 +241,7 @@
         </div>
 
         <!-- BARRA DE INFORMACIÓN RESUMEN -->
-        <div class="bg-white border-b border-slate-200/60 px-8 py-2.5 flex items-center justify-between text-xs text-slate-500 shrink-0">
+        <div class="bg-white border-b border-slate-200/60 px-4 xl:px-8 py-2 xl:py-2.5 flex items-center justify-between text-xs text-slate-500 shrink-0">
           <div class="flex items-center space-x-6">
             <div class="flex items-center space-x-1.5">
               <span class="text-slate-400 font-medium">Total Fases:</span>
@@ -256,18 +256,18 @@
         </div>
 
         <!-- CUERPO PRINCIPAL (WORKSPACE CON OVERFLOW-Y-AUTO INDEPENDIENTE) -->
-        <div class="flex-1 overflow-y-auto p-8 space-y-6">
+        <div class="flex-1 overflow-y-auto p-4 xl:p-8 space-y-4 xl:space-y-6">
           <!-- Fases y subfases: solo lectura y sin arrastrar sin permiso de editar -->
           <fieldset class="min-w-0" [disabled]="soloLectura()">
-          <div cdkDropList [cdkDropListDisabled]="soloLectura()" (cdkDropListDropped)="dropFase($event)" class="space-y-6">
+          <div cdkDropList [cdkDropListDisabled]="soloLectura()" (cdkDropListDropped)="dropFase($event)" class="space-y-4 xl:space-y-6">
 
           @for (fase of plantilla.fases; track fase.IdpptoFase + i; let i = $index) {
             <section class="bg-white rounded-xl border border-slate-200/80 shadow-xs overflow-hidden transition-all duration-150 hover:shadow-sm" cdkDrag>
               
               <!-- CABECERA DE FASE -->
-              <div class="bg-slate-100/90 border-b border-slate-200/80 px-5 py-3.5 flex items-center justify-between">
+              <div class="bg-slate-100/90 border-b border-slate-200/80 px-3 xl:px-5 py-3 xl:py-3.5 flex items-center justify-between">
                 <div class="flex items-center space-x-3 w-full">
-                  <div class="flex items-center space-x-2 w-full max-w-2xl">
+                  <div class="flex items-center space-x-2 w-full min-w-0 max-w-2xl">
                     <!-- Drag handle for phase -->
                     @if (!soloLectura()) {
                     <div cdkDragHandle class="cursor-move text-slate-400 hover:text-slate-600 transition-colors p-1" title="Arrastrar fase">
@@ -280,7 +280,7 @@
                       {{ (i + 1).toString().padStart(2, '0') }}
                     </span>
                     <span class="text-sm font-bold text-slate-800 tracking-tight w-full truncate">{{ fase.NombreFase || fase.IdpptoFase }}</span>
-                    <span class="text-[11px] font-mono text-slate-400 bg-white/80 px-2 py-0.5 rounded border border-slate-200/60 ml-2 shrink-0">Id: {{ fase.IdpptoFase }}</span>
+                    <span class="hidden xl:inline-block text-[11px] font-mono text-slate-400 bg-white/80 px-2 py-0.5 rounded border border-slate-200/60 ml-2 shrink-0">Id: {{ fase.IdpptoFase }}</span>
                   </div>
                 </div>
 
@@ -305,17 +305,17 @@
                 <table class="w-full text-left border-collapse">
                   <thead>
                     <tr class="border-b border-slate-100 bg-slate-50/70 text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
-                      <th scope="col" class="py-2.5 px-5">Sub Fase / Partida</th>
-                      <th scope="col" class="w-48 py-2.5 px-3 text-right">Costo Referencial (S/)</th>
-                      <th scope="col" class="w-24 py-2.5 pr-4 text-center">ACCIONES</th>
+                      <th scope="col" class="py-2.5 px-3 xl:px-5">Sub Fase / Partida</th>
+                      <th scope="col" class="py-2.5 px-3 text-right whitespace-nowrap">Costo Referencial (S/)</th>
+                      <th scope="col" class="w-24 py-2.5 pr-3 xl:pr-4 text-center">ACCIONES</th>
                     </tr>
                   </thead>
                   <tbody class="divide-y divide-slate-100 text-xs" cdkDropList [cdkDropListDisabled]="soloLectura()" (cdkDropListDropped)="dropCategoria(fase, $event)">
                     
                     @for (cat of fase.categorias; track $index) {
                       <tr class="group/row hover:bg-slate-50/80 transition-colors bg-white" cdkDrag>
-                        <td class="py-3 px-5">
-                          <div class="flex items-center space-x-3">
+                        <td class="py-3 px-3 xl:px-5">
+                          <div class="flex items-center space-x-2 xl:space-x-3">
                             <!-- Icono de Drag (mover de lugar) -->
                             @if (!soloLectura()) {
                             <div cdkDragHandle class="cursor-move text-slate-300 hover:text-slate-500 transition-colors p-1" title="Arrastrar para reordenar">
@@ -324,13 +324,13 @@
                               </svg>
                             </div>
                             }
-                            <span class="inline-flex items-center px-2.5 py-1 rounded text-xs font-semibold bg-[#529b7b]/10 text-[#2d634d] border border-[#529b7b]/25 uppercase tracking-wide">
+                            <span class="inline-flex items-center px-2 xl:px-2.5 py-1 rounded text-[11px] xl:text-xs font-semibold bg-[#529b7b]/10 text-[#2d634d] border border-[#529b7b]/25 uppercase tracking-wide">
                               {{ cat.NombreCategoria || cat.IdpptoFaseCategoria }}
                             </span>
                           </div>
                         </td>
                         <td class="py-3 px-3 text-right">
-                          <div class="inline-flex items-center space-x-2 justify-end">
+                          <div class="inline-flex items-center gap-1.5 xl:gap-2 justify-end whitespace-nowrap">
                             <button
                               type="button"
                               (click)="abrirModalItems(fase, cat)"
@@ -351,13 +351,13 @@
                                 [(ngModel)]="cat.CostoReferencial"
                                 [readonly]="(cat.totalItems || 0) > 0"
                                 [title]="(cat.totalItems || 0) > 0 ? 'Calculado automáticamente a partir de sus ítems' : ''"
-                                class="w-32 text-right pl-7 pr-2.5 py-1.5 rounded-lg border text-xs font-mono font-bold outline-none transition-all shadow-2xs"
+                                class="w-28 xl:w-32 text-right pl-7 pr-2.5 py-1.5 rounded-lg border text-xs font-mono font-bold outline-none transition-all shadow-2xs"
                                 [ngClass]="(cat.totalItems || 0) > 0 ? 'bg-slate-50 border-slate-200 text-slate-600 cursor-not-allowed' : 'bg-white border-slate-200 text-slate-800 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/10 hover:border-slate-300'"
                               >
                             </div>
                           </div>
                         </td>
-                        <td class="py-3 pr-4 text-center">
+                        <td class="py-3 pr-3 xl:pr-4 text-center">
                           <div class="flex items-center justify-center space-x-1.5">
                             <!-- Ítems Pop-up -->
                             <button

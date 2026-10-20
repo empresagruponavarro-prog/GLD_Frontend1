@@ -1,5 +1,5 @@
 <div
-  class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-150">
+  class="fixed inset-0 z-50 flex items-center justify-center p-2 lg:p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-150">
   <div
     class="relative w-full max-w-7xl max-h-[92vh] flex flex-col bg-white rounded-2xl shadow-2xl border border-slate-200/80 overflow-hidden">
 
@@ -79,7 +79,7 @@
     </div>
 
     <!-- CUERPO / TABLA SCROLLEABLE -->
-    <div class="flex-1 overflow-y-auto p-6 pb-64 min-h-[50px] bg-slate-50/50">
+    <div class="flex-1 overflow-auto p-3 lg:p-4 xl:p-6 pb-64 min-h-[50px] bg-slate-50/50">
       @if (cargando()) {
       <div class="flex flex-col items-center justify-center py-20 text-slate-400">
         <div class="w-8 h-8 border-3 border-emerald-500 border-t-transparent rounded-full animate-spin mb-3"></div>
@@ -112,12 +112,12 @@
               class="bg-slate-100/80 border-b border-slate-200 text-[10px] font-bold text-slate-600 uppercase tracking-wider">
               <th scope="col" class="py-2.5 px-3 w-16 text-center">Ítem</th>
               <th scope="col" class="py-2.5 px-3 w-16 text-center">Tipo</th>
-              <th scope="col" class="py-2.5 px-3 min-w-[210px]">Categoría CD</th>
-              <th scope="col" class="py-2.5 px-3 min-w-[280px]">Producto / Servicio (Catálogo)</th>
+              <th scope="col" class="py-2.5 px-3 min-w-[150px] xl:min-w-[210px]">Categoría CD</th>
+              <th scope="col" class="py-2.5 px-3 min-w-[200px] xl:min-w-[280px]">Producto / Servicio (Catálogo)</th>
               <th scope="col" class="py-2.5 px-3 w-24 text-center">Unidad</th>
               <th scope="col" class="py-2.5 px-3 w-24 text-right">Cantidad</th>
-              <th scope="col" class="py-2.5 px-3 w-32 text-right">Costo U. (S/)</th>
-              <th scope="col" class="py-2.5 px-3 w-32 text-right bg-slate-50/50">Costo Total</th>
+              <th scope="col" class="py-2.5 px-3 w-28 xl:w-32 text-right">Costo U. (S/)</th>
+              <th scope="col" class="py-2.5 px-3 w-28 xl:w-32 text-right bg-slate-50/50">Costo Total</th>
               @if (!soloLectura) {
               <th scope="col" class="py-2.5 px-3 w-20 text-center">Acciones</th>
               }

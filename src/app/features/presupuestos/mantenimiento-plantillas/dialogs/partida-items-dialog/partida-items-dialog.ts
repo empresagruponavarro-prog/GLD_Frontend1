@@ -58,6 +58,15 @@ export interface GuardadoEvent {
   totalItems: number;
 }
 
+/**
+ * Origen de los ítems del diálogo:
+ * - `plantilla`: partida de plantilla (`/presupuestos/plantillas/categorias/:id/items`).
+ * - `presupuesto`: partida de un presupuesto ya guardado (`/presupuestos/categorias-asignadas/:id/items`).
+ * - `local`: partida de un presupuesto nuevo (aún sin guardar): no llama a la API, devuelve las filas
+ *   por `guardadoLocal` y el padre las persiste al emitir el presupuesto.
+ */
+export type ModoItemsDialog = 'plantilla' | 'presupuesto' | 'local';
+
 function redondear(n: number): number {
   return Math.round(((Number(n) || 0) + Number.EPSILON) * 100) / 100;
 }
@@ -75,8 +84,13 @@ export class PartidaItemsDialogComponent implements OnInit {
 
   @Input({ required: true }) partida!: PartidaInfo;
   @Input() soloLectura = false;
+  @Input() modo: ModoItemsDialog = 'plantilla';
+  /** Solo modo `local`: ítems con los que abre el diálogo. */
+  @Input() itemsIniciales: ItemFila[] = [];
   @Output() cerrar = new EventEmitter<void>();
   @Output() guardado = new EventEmitter<GuardadoEvent>();
+  /** Solo modo `local`: filas confirmadas por el usuario. */
+  @Output() guardadoLocal = new EventEmitter<ItemFila[]>();
 
   // Estado del diálogo
   cargando = signal(true);
@@ -129,9 +143,17 @@ export class PartidaItemsDialogComponent implements OnInit {
   }
 
   cargarItems(): void {
+    if (this.modo === 'local') {
+      this.filas.set(this.itemsIniciales.map((it) => ({ ...it })));
+      this.cargando.set(false);
+      return;
+    }
     this.cargando.set(true);
     this.errorMensaje.set(null);
-    this.presupuestosService.getPartidaItems(this.partida.id).subscribe({
+    const peticion = this.modo === 'presupuesto'
+      ? this.presupuestosService.getItemsCategoriaAsignada(this.partida.id)
+      : this.presupuestosService.getPartidaItems(this.partida.id);
+    peticion.subscribe({
       next: (res: PartidaItemsResponse) => {
         const convertidas: ItemFila[] = (res.items || []).map((it) => {
           const cant = redondear(it.Cantidad);
@@ -334,8 +356,25 @@ export class PartidaItemsDialogComponent implements OnInit {
       })),
     };
 
+    if (this.modo === 'local') {
+      const filasLocales = this.filas().map((f) => ({
+        ...f,
+        Cantidad: redondear(f.Cantidad),
+        CostoUnitario: redondear(f.CostoUnitario),
+        PrecioVenta: redondear(f.PrecioVenta),
+        CostoTotal: redondear(redondear(f.Cantidad) * redondear(f.CostoUnitario)),
+        VentaTotal: redondear(redondear(f.Cantidad) * redondear(f.PrecioVenta)),
+      }));
+      this.guardadoLocal.emit(filasLocales);
+      this.cerrar.emit();
+      return;
+    }
+
     this.guardando.set(true);
-    this.presupuestosService.syncPartidaItems(this.partida.id, payload).subscribe({
+    const peticion = this.modo === 'presupuesto'
+      ? this.presupuestosService.syncItemsCategoriaAsignada(this.partida.id, payload)
+      : this.presupuestosService.syncPartidaItems(this.partida.id, payload);
+    peticion.subscribe({
       next: (res) => {
         this.guardando.set(false);
         this.guardado.emit({

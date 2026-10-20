@@ -4,9 +4,17 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 
 import { Router } from '@angular/router';
-import { Observable, concatMap, debounceTime, distinctUntilChanged, finalize, map, of, switchMap, tap } from 'rxjs';
+import { Observable, concatMap, debounceTime, distinctUntilChanged, finalize, forkJoin, map, of, switchMap, tap } from 'rxjs';
+import {
+  GuardadoEvent,
+  ItemFila,
+  ModoItemsDialog,
+  PartidaInfo,
+  PartidaItemsDialogComponent,
+} from './mantenimiento-plantillas/dialogs/partida-items-dialog/partida-items-dialog';
 import {
   FilaFormFase,
+  ItemLocalFila,
   ModoPlantilla,
   completoAFilas,
   crearFasesConCategorias,
@@ -37,7 +45,7 @@ import {
 } from './presupuestos.calc';
 import { EmpresasService } from '../administration/empresas/empresas.service';
 import { Empresa } from '../administration/empresas/interfaces';
-import { PresupuestosService, Plantilla } from './presupuestos.service';
+import { PresupuestosService, Plantilla, PartidaItemsResponse } from './presupuestos.service';
 import { PresupuestoPrincipal, DetalleFase, DetalleFaseCate, PresupuestoCompleto, FaseMaestra, FaseCategoriaMaestra } from './interfaces';
 import { DocumentosOrigenService } from '../documentos/documentos-origen/documentos-origen.service';
 import { DocumentoOrigenDetalleLinea } from '../documentos/documentos-origen/interfaces/documentos-origen.interface';
@@ -112,7 +120,7 @@ function centroCostoDeEstado(estado: unknown): CentroCosto | null {
 @Component({
   selector: 'app-presupuestos',
   standalone: true,
-  imports: [CommonModule, FormsModule, ExportarBotonesComponent],
+  imports: [CommonModule, FormsModule, ExportarBotonesComponent, PartidaItemsDialogComponent],
   templateUrl: './presupuestos.html',
   styleUrls: ['./presupuestos.css']
   
@@ -2008,9 +2016,20 @@ export class PresupuestosComponent implements OnInit {
   /** Presupuesto nuevo: rellena las filas del paso 2 sin duplicar (se guardan al emitir). */
   private aplicarPlantillaLocal(id: string, modo: ModoPlantilla) {
     this.loading.set(true);
-    this.presupuestosService.getPlantillaCompleta(id).pipe(finalize(() => this.loading.set(false))).subscribe({
-      next: (plantilla) => {
-        const r = fusionarFilasPlantilla(this.formFases(), plantillaAFilas(plantilla), modo);
+    this.presupuestosService.getPlantillaCompleta(id).pipe(
+      switchMap((plantilla) => {
+        // Trae los ítems de cada partida de la plantilla para mostrarlos/editarlos en pantalla.
+        const cats = (plantilla.fases ?? []).flatMap((f) => f.categorias ?? [])
+          .filter((c) => !!c.id && ((c as { totalItems?: number }).totalItems ?? 1) > 0);
+        if (!cats.length) return of({ plantilla, mapa: new Map<number, ItemLocalFila[]>() });
+        return forkJoin(cats.map((c) => this.presupuestosService.getPartidaItems(c.id as number).pipe(
+          map((res) => [c.id as number, this.itemsAFilasLocales(res.items)] as const),
+        ))).pipe(map((pares) => ({ plantilla, mapa: new Map<number, ItemLocalFila[]>(pares) })));
+      }),
+      finalize(() => this.loading.set(false)),
+    ).subscribe({
+      next: ({ plantilla, mapa }) => {
+        const r = fusionarFilasPlantilla(this.formFases(), plantillaAFilas(plantilla, mapa), modo);
         this.formFases.set(r.filas);
         this.cerrarModalPlantillas();
         if (r.omitidas > 0) {
@@ -2019,6 +2038,71 @@ export class PresupuestosComponent implements OnInit {
       },
       error: (err) => alert('Error al cargar detalle de plantilla: ' + mensajeDeError(err)),
     });
+  }
+
+  private itemsAFilasLocales(items: PartidaItemsResponse['items']): ItemLocalFila[] {
+    const red = (n: number) => Math.round(((Number(n) || 0) + Number.EPSILON) * 100) / 100;
+    return (items ?? []).map((it) => ({
+      Item: it.Item || '',
+      id_producto: it.id_producto,
+      codigo_producto: it.producto?.codigo || '',
+      descripcion_producto: it.producto?.descripcion || '',
+      tipo_producto: it.producto?.tipo_producto || 'PRODUCTO',
+      categoria_producto: it.producto?.categoria,
+      id_categoria: it.producto?.id_categoria,
+      id_unidad_medida: it.id_unidad_medida,
+      simbolo_unidad: it.unidad?.simbolo || it.unidad?.codigo,
+      Cantidad: red(it.Cantidad),
+      CostoUnitario: red(it.CostoUnitario),
+      PrecioVenta: red(it.PrecioVenta),
+      CostoTotal: red(it.Cantidad * it.CostoUnitario),
+      VentaTotal: red(it.Cantidad * it.PrecioVenta),
+    }));
+  }
+
+  // Ítems por partida (pop-up reutilizado de plantillas)
+  readonly itemsDialog = signal<{ index: number; modo: ModoItemsDialog; partida: PartidaInfo; items: ItemFila[] } | null>(null);
+
+  get puedeEditarItems(): boolean {
+    const d = this.itemsDialog();
+    if (this.soloLectura()) return false;
+    return d?.modo === 'presupuesto' ? this.permisos.editar() : true;
+  }
+
+  abrirItemsFila(i: number) {
+    const fila = this.formFases()[i];
+    if (!fila || !fila.idCategoria) {
+      alert('Esta fila no tiene partida/categoría para asignarle ítems.');
+      return;
+    }
+    const partidaBase = { IdpptoFaseCategoria: fila.idCategoria, NombreCategoria: fila.categoria, NombreFase: fila.nombre };
+    if (this.fasesPersistidas && fila.idCategoriaDetalle) {
+      this.itemsDialog.set({ index: i, modo: 'presupuesto', partida: { id: fila.idCategoriaDetalle, ...partidaBase }, items: [] });
+    } else {
+      this.itemsDialog.set({ index: i, modo: 'local', partida: { id: 0, ...partidaBase }, items: (fila.items ?? []) as ItemFila[] });
+    }
+  }
+
+  cerrarItemsDialog() {
+    this.itemsDialog.set(null);
+  }
+
+  onItemsGuardados(_e: GuardadoEvent) {
+    this.itemsDialog.set(null);
+    this.recargarPresupuestoActivo();
+  }
+
+  onItemsLocalesGuardados(items: ItemFila[]) {
+    const d = this.itemsDialog();
+    if (!d) return;
+    const suma = Math.round((items.reduce((a, it) => a + (Number(it.CostoTotal) || 0), 0) + Number.EPSILON) * 100) / 100;
+    this.formFases.update((fs) => fs.map((f, idx) => idx !== d.index ? f : {
+      ...f,
+      items: items.map((it) => ({ ...it })),
+      totalItems: items.length,
+      subtotal: items.length ? suma : f.subtotal,
+    }));
+    this.itemsDialog.set(null);
   }
 
   /** Presupuesto ya guardado: el backend copia la plantilla en una transacción y sin duplicar. */

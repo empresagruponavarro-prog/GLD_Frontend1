@@ -905,11 +905,10 @@
               <tr>
                 <th class="py-2 px-3 w-8">#</th>
                 <th class="py-2 px-3">Fase / Partida</th>
-                <th class="py-2 px-3 w-64">Categoría</th>
                 <th class="py-2 px-3 w-44">Sub Fase / Partida</th>
                 <th class="py-2 px-3 text-right w-36">Subtotal CD (S/)</th>
                 <th class="py-2 px-3 text-right w-16">% Inc.</th>
-                <th class="py-2 px-3 text-center w-20">Acciones</th>
+                <th class="py-2 px-3 text-center w-36">Acciones</th>
               </tr>
             </thead>
             <tbody class="divide-y divide-slate-100 text-[13px]">
@@ -917,19 +916,6 @@
                 <tr class="hover:bg-slate-50 transition" [class.bg-emerald-50]="editingFilaIndex === i">
                   <td class="py-2 px-3 font-mono text-[#2d634d] font-bold text-[12px]">{{ (i+1) < 10 ? '0'+(i+1) : (i+1) }}</td>
                   <td class="py-2 px-3 font-medium text-slate-800">{{ fase.nombre }}</td>
-                  <td class="py-2 px-3">
-                    <div class="relative flex items-center group">
-                      <input type="text"
-                             list="lista-categorias-real"
-                             [ngModel]="fase.categoriaRealDescripcion || ''"
-                             (ngModelChange)="onCategoriaRealChange(i, $event)"
-                             placeholder="Escribir o seleccionar..."
-                             class="w-full bg-white hover:bg-slate-50 focus:bg-white text-[12px] font-medium text-slate-800 border border-slate-200 hover:border-slate-300 focus:border-[#529b7b] focus:ring-1 focus:ring-[#529b7b] rounded px-2.5 py-1.5 transition outline-none shadow-2xs pr-6">
-                      <svg class="w-3.5 h-3.5 text-slate-400 absolute right-2 pointer-events-none group-focus-within:text-[#529b7b]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
-                      </svg>
-                    </div>
-                  </td>
                   <td class="py-2 px-3">
                     <span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium bg-[#529b7b]/10 text-[#2d634d] border border-[#529b7b]/25">
                       {{ fase.categoria }}
@@ -942,7 +928,9 @@
                                [ngModel]="fase.subtotal" 
                                (ngModelChange)="updateFormFaseSubtotal(i, $event)"
                                (change)="persistirSubtotalFila(i)"
-                               class="w-[110px] text-right font-mono font-bold text-slate-900 text-[12px] border border-transparent hover:border-slate-300 focus:border-[#529b7b] focus:ring-1 focus:ring-[#529b7b] rounded bg-transparent focus:bg-white pl-6 pr-2 py-1 transition-all outline-none"
+                               [readonly]="!!(fase.totalItems || fase.items?.length)"
+                               [title]="(fase.totalItems || fase.items?.length) ? 'Calculado desde los ítems de la partida' : ''"
+                               class="w-[110px] text-right font-mono font-bold text-slate-900 text-[12px] border border-transparent hover:border-slate-300 focus:border-[#529b7b] focus:ring-1 focus:ring-[#529b7b] rounded bg-transparent focus:bg-white pl-6 pr-2 py-1 transition-all outline-none read-only:cursor-not-allowed read-only:text-slate-600 read-only:hover:border-transparent read-only:focus:ring-0"
                                placeholder="0.00"
                                step="0.01">
                       </div>
@@ -952,6 +940,13 @@
                   </td>
                   <td class="py-2 px-3 text-center">
                     <div class="flex items-center justify-center gap-1">
+                    @if (fase.idCategoria) {
+                    <button type="button" (click)="abrirItemsFila(i)" title="Ver / editar ítems de la partida"
+                            class="inline-flex items-center gap-1 px-2 h-6 rounded-full text-[11px] font-semibold border transition cursor-pointer"
+                            [class]="(fase.totalItems || fase.items?.length) ? 'bg-emerald-50 text-emerald-700 border-emerald-300 hover:bg-emerald-100' : 'bg-white text-slate-500 border-slate-300 hover:bg-slate-50'">
+                      {{ (fase.totalItems || fase.items?.length) ? ((fase.totalItems || fase.items?.length) + ' ítems') : '+ Ítems' }}
+                    </button>
+                    }
                     @if (!soloLectura()) {
                     <button type="button" (click)="editarFilaFormFase(i)" title="Editar categoría / monto"
                             class="w-6 h-6 rounded-full flex items-center justify-center text-slate-400 hover:bg-emerald-50 hover:text-emerald-700 transition cursor-pointer">
@@ -985,7 +980,7 @@
             </tbody>
             <tfoot class="bg-[#1e4838]/5 border-t-2 border-[#529b7b]/30">
               <tr>
-                <td colspan="4" class="py-2.5 px-3 font-bold text-[#1e4838] text-[13px] uppercase tracking-wide">
+                <td colspan="3" class="py-2.5 px-3 font-bold text-[#1e4838] text-[13px] uppercase tracking-wide">
                   Total Costo Directo
                 </td>
                 <td class="py-2.5 px-3 text-right font-mono font-extrabold text-[#1e4838] text-[15px] tabular-nums">
@@ -995,11 +990,6 @@
               </tr>
             </tfoot>
           </table>
-          <datalist id="lista-categorias-real">
-            @for (cat of categoriasReal(); track cat.id) {
-              <option [value]="cat.nombre">{{ cat.nombre }}</option>
-            }
-          </datalist>
         </div>
         </fieldset>
 
@@ -1119,7 +1109,7 @@
           } @else {
             <!-- MODO AGREGAR NORMAL -->
             <div class="grid grid-cols-1 sm:grid-cols-12 gap-2.5 items-end">
-              <div class="sm:col-span-3">
+              <div class="sm:col-span-5">
                 <label for="fase-partida-add" class="block text-[11px] font-bold text-slate-600 uppercase mb-1">Fase/partida</label>
                 <select id="fase-partida-add" [(ngModel)]="newFaseId" (ngModelChange)="onFaseMaestraChange()"
                         class="w-full border border-slate-300 rounded-lg px-3 py-2 text-[13px] focus:outline-none focus:ring-2 focus:ring-[#529b7b]/40 focus:border-[#529b7b] bg-white">
@@ -1129,7 +1119,7 @@
                   }
                 </select>
               </div>
-              <div class="sm:col-span-3">
+              <div class="sm:col-span-4">
                 <label for="subfase-partida-add" class="block text-[11px] font-bold text-slate-600 uppercase mb-1">Sub Fase/partida</label>
                 <select id="subfase-partida-add" [(ngModel)]="newFaseCategoriaId" [disabled]="!newFaseId"
                         class="w-full border border-slate-300 rounded-lg px-3 py-2 text-[13px] focus:outline-none focus:ring-2 focus:ring-[#529b7b]/40 focus:border-[#529b7b] bg-white disabled:bg-slate-100 disabled:text-slate-400">
@@ -1137,13 +1127,6 @@
                   @for (categoria of categoriasFaseMaestra(); track categoria.id || categoria.IdpptoFaseCategoria) {
                     <option [value]="categoria.IdpptoFaseCategoria">{{ categoria.Descripcion || categoria.IdpptoFaseCategoria }}</option>
                   }
-                </select>
-              </div>
-              <div class="sm:col-span-3">
-                <label for="cat-real-add" class="block text-[11px] font-bold text-slate-600 uppercase mb-1">Categoría</label>
-                <select id="cat-real-add" [(ngModel)]="newFaseCategoriaRealId" [disabled]="!newFaseId" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-[13px] focus:outline-none focus:ring-2 focus:ring-[#529b7b]/40 focus:border-[#529b7b] bg-white disabled:bg-slate-100 disabled:text-slate-400">
-                  <option value="">{{ newFaseId ? 'Seleccione Categoría *' : 'Seleccione primero una Fase' }}</option>
-                  @for (cat of categoriasReal(); track cat.id) {<option [value]="cat.id">{{ cat.nombre }}</option>}
                 </select>
               </div>
               <div class="sm:col-span-3">
@@ -1931,4 +1914,15 @@
         </div>
       </div>
     </div>
+  }
+
+  @if (itemsDialog(); as d) {
+    <app-partida-items-dialog
+      [partida]="d.partida"
+      [modo]="d.modo"
+      [itemsIniciales]="d.items"
+      [soloLectura]="!puedeEditarItems"
+      (cerrar)="cerrarItemsDialog()"
+      (guardado)="onItemsGuardados($event)"
+      (guardadoLocal)="onItemsLocalesGuardados($event)" />
   }

@@ -308,6 +308,15 @@ export class PresupuestosService {
     return this.http.delete<void>(`${this.apiUrl}/categorias-asignadas/${id}`);
   }
 
+  /** Ítems (productos/servicios) de una partida del presupuesto guardado. */
+  getItemsCategoriaAsignada(idCat: number): Observable<PartidaItemsResponse> {
+    return this.http.get<PartidaItemsResponse>(`${this.apiUrl}/categorias-asignadas/${idCat}/items`);
+  }
+
+  syncItemsCategoriaAsignada(idCat: number, dto: SyncPartidaItemsDto): Observable<PartidaItemsResponse> {
+    return this.http.put<PartidaItemsResponse>(`${this.apiUrl}/categorias-asignadas/${idCat}/items`, dto);
+  }
+
   // Historial Versiones
   getHistorial(): Observable<Historial[]> {
     return this.http.get<Historial[]>(`${this.apiUrl}/historial-versiones`);
