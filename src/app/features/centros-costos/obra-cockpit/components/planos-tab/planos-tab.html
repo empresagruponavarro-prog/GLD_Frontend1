@@ -1,6 +1,6 @@
 <div class="flex flex-col gap-3 h-full">
   <div class="flex flex-wrap items-center justify-between gap-2 bg-surface-container-lowest p-3 rounded-xl shadow-sm border border-surface-container">
-    <div class="flex items-center gap-2 flex-1 max-w-md">
+    <div class="flex items-center gap-2 flex-1 min-w-[220px] max-w-md">
       <div class="relative w-full">
         <span class="material-symbols-outlined absolute left-3 top-2 text-on-surface-variant text-base">search</span>
         <input class="w-full pl-9 pr-3 py-1.5 rounded-lg bg-surface-container text-xs text-on-surface placeholder:text-on-surface-variant/60 focus:outline-none focus:bg-surface-container-high" [value]="filtroQuery()" (input)="onFilterQuery($event)" placeholder="Buscar por código (ej. ARQ-01), disciplina o nombre..." type="text"/>
@@ -17,7 +17,7 @@
   </div>
   <div class="bg-surface-container-lowest rounded-xl shadow-sm border border-surface-container overflow-hidden">
     <div class="overflow-x-auto">
-      <table class="w-full text-left border-collapse text-xs">
+      <table class="w-full min-w-[860px] text-left border-collapse text-xs">
         <thead>
           <tr class="bg-surface-container-high/60 text-on-surface-variant font-semibold text-[11px] uppercase tracking-wider">
             <th class="py-2.5 px-3">Código</th>

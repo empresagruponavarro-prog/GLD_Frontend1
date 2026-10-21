@@ -96,27 +96,27 @@
       <div class="xl:col-span-8 min-w-0 flex flex-col gap-3">
         <!-- Operational Navigation Tabs -->
         <div class="flex items-center gap-1 overflow-x-auto pb-0.5 scrollbar-none" id="tabContainer">
-          <button type="button" (click)="setTab('tab-cronograma')" class="tab-button flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all shadow-sm cursor-pointer" [ngClass]="activeTab() === 'tab-cronograma' ? 'bg-primary text-on-primary' : 'bg-surface-container-lowest text-on-surface-variant hover:bg-surface-container hover:text-on-surface'">
+          <button type="button" (click)="setTab('tab-cronograma')" class="tab-button shrink-0 whitespace-nowrap flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all shadow-sm cursor-pointer" [ngClass]="activeTab() === 'tab-cronograma' ? 'bg-primary text-on-primary' : 'bg-surface-container-lowest text-on-surface-variant hover:bg-surface-container hover:text-on-surface'">
             <span class="material-symbols-outlined text-sm">calendar_month</span>
             <span>Cronograma Semanal</span>
             <span class="px-1.5 py-0.2 rounded-full text-[10px]" [ngClass]="activeTab() === 'tab-cronograma' ? 'bg-on-primary/20 text-on-primary' : 'bg-surface-container-high text-on-surface-variant'">{{ kpis()?.semanas_totales || '0' }} sem</span>
           </button>
-          <button type="button" (click)="setTab('tab-directorio')" class="tab-button flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all shadow-sm cursor-pointer" [ngClass]="activeTab() === 'tab-directorio' ? 'bg-primary text-on-primary' : 'bg-surface-container-lowest text-on-surface-variant hover:bg-surface-container hover:text-on-surface'">
+          <button type="button" (click)="setTab('tab-directorio')" class="tab-button shrink-0 whitespace-nowrap flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all shadow-sm cursor-pointer" [ngClass]="activeTab() === 'tab-directorio' ? 'bg-primary text-on-primary' : 'bg-surface-container-lowest text-on-surface-variant hover:bg-surface-container hover:text-on-surface'">
             <span class="material-symbols-outlined text-sm">engineering</span>
             <span>Directorio de Residentes</span>
             <span class="px-1.5 py-0.2 rounded-full text-[10px]" [ngClass]="activeTab() === 'tab-directorio' ? 'bg-on-primary/20 text-on-primary' : 'bg-surface-container-high text-on-surface-variant'">{{ residentes().length }}</span>
           </button>
-          <button type="button" (click)="setTab('tab-planos')" class="tab-button flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all shadow-sm cursor-pointer" [ngClass]="activeTab() === 'tab-planos' ? 'bg-primary text-on-primary' : 'bg-surface-container-lowest text-on-surface-variant hover:bg-surface-container hover:text-on-surface'">
+          <button type="button" (click)="setTab('tab-planos')" class="tab-button shrink-0 whitespace-nowrap flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all shadow-sm cursor-pointer" [ngClass]="activeTab() === 'tab-planos' ? 'bg-primary text-on-primary' : 'bg-surface-container-lowest text-on-surface-variant hover:bg-surface-container hover:text-on-surface'">
             <span class="material-symbols-outlined text-sm">architecture</span>
             <span>Planos de Obra</span>
             <span class="px-1.5 py-0.2 rounded-full text-[10px]" [ngClass]="activeTab() === 'tab-planos' ? 'bg-on-primary/20 text-on-primary' : 'bg-surface-container-high text-on-surface-variant'">{{ planos().length }}</span>
           </button>
-          <button type="button" (click)="setTab('tab-documentos')" class="tab-button flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all shadow-sm cursor-pointer" [ngClass]="activeTab() === 'tab-documentos' ? 'bg-primary text-on-primary' : 'bg-surface-container-lowest text-on-surface-variant hover:bg-surface-container hover:text-on-surface'">
+          <button type="button" (click)="setTab('tab-documentos')" class="tab-button shrink-0 whitespace-nowrap flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all shadow-sm cursor-pointer" [ngClass]="activeTab() === 'tab-documentos' ? 'bg-primary text-on-primary' : 'bg-surface-container-lowest text-on-surface-variant hover:bg-surface-container hover:text-on-surface'">
             <span class="material-symbols-outlined text-sm">folder_managed</span>
             <span>Documentos Técnicos</span>
             <span class="px-1.5 py-0.2 rounded-full text-[10px]" [ngClass]="activeTab() === 'tab-documentos' ? 'bg-on-primary/20 text-on-primary' : 'bg-surface-container-high text-on-surface-variant'">{{ documentos().length }}</span>
           </button>
-          <button type="button" (click)="setTab('tab-incidencias')" class="tab-button flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all shadow-sm cursor-pointer" [ngClass]="activeTab() === 'tab-incidencias' ? 'bg-primary text-on-primary' : 'bg-surface-container-lowest text-on-surface-variant hover:bg-surface-container hover:text-on-surface'">
+          <button type="button" (click)="setTab('tab-incidencias')" class="tab-button shrink-0 whitespace-nowrap flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all shadow-sm cursor-pointer" [ngClass]="activeTab() === 'tab-incidencias' ? 'bg-primary text-on-primary' : 'bg-surface-container-lowest text-on-surface-variant hover:bg-surface-container hover:text-on-surface'">
             <span class="material-symbols-outlined text-sm">assignment_late</span>
             <span>Bitácora &amp; Incidencias</span>
             <span class="px-1.5 py-0.2 rounded-full text-[10px] font-bold" [ngClass]="activeTab() === 'tab-incidencias' ? 'bg-on-primary/20 text-on-primary' : 'bg-error-container text-on-error-container'">{{ kpis()?.incidencias_pendientes ?? 0 }} Pend</span>
