@@ -15,6 +15,7 @@ import {
   type PartidaInfo,
   type GuardadoEvent,
 } from './dialogs/partida-items-dialog/partida-items-dialog';
+import { PlantillaImprimirDialogComponent } from './dialogs/plantilla-imprimir-dialog/plantilla-imprimir-dialog';
 
 /** Formulario del pop-up "Nueva plantilla". */
 interface NuevaPlantillaForm {
@@ -36,7 +37,14 @@ interface EditarPlantillaForm {
 @Component({
   selector: 'app-mantenimiento-plantillas',
   standalone: true,
-  imports: [CommonModule, FormsModule, DragDropModule, ExportarBotonesComponent, PartidaItemsDialogComponent],
+  imports: [
+    CommonModule,
+    FormsModule,
+    DragDropModule,
+    ExportarBotonesComponent,
+    PartidaItemsDialogComponent,
+    PlantillaImprimirDialogComponent,
+  ],
   templateUrl: './mantenimiento-plantillas.html'
 })
 export class MantenimientoPlantillasComponent implements OnInit {
@@ -121,6 +129,9 @@ export class MantenimientoPlantillasComponent implements OnInit {
   showItemsModal = signal(false);
   partidaSeleccionadaParaItems = signal<PartidaInfo | null>(null);
 
+  // Modal de impresión y ficha técnica en 3 niveles
+  showImprimirModal = signal(false);
+
 
   ngOnInit() {
     this.loadPlantillas();
@@ -146,10 +157,74 @@ export class MantenimientoPlantillasComponent implements OnInit {
     });
   }
 
+  // Estado de acordeón para las fases de la plantilla seleccionada
+  readonly fasesColapsadas = signal<Set<string>>(new Set());
+
+  getFaseKey(fase: PlantillaFaseDto, index: number): string {
+    return fase.IdpptoFase ? String(fase.IdpptoFase) : (fase.id != null ? String(fase.id) : String(index));
+  }
+
+  isFaseColapsada(fase: PlantillaFaseDto, index: number): boolean {
+    return this.fasesColapsadas().has(this.getFaseKey(fase, index));
+  }
+
+  toggleFase(fase: PlantillaFaseDto, index: number, event?: Event): void {
+    if (event) event.stopPropagation();
+    const key = this.getFaseKey(fase, index);
+    const colapsadas = new Set(this.fasesColapsadas());
+    if (colapsadas.has(key)) {
+      colapsadas.delete(key);
+    } else {
+      colapsadas.add(key);
+    }
+    this.fasesColapsadas.set(colapsadas);
+  }
+
+  expandirTodasFases(): void {
+    this.fasesColapsadas.set(new Set());
+  }
+
+  colapsarTodasFases(): void {
+    const p = this.selectedPlantilla();
+    if (!p?.fases) return;
+    const todas = new Set<string>();
+    p.fases.forEach((f, idx) => {
+      todas.add(this.getFaseKey(f, idx));
+    });
+    this.fasesColapsadas.set(todas);
+  }
+
   selectPlantilla(p: Plantilla) {
+    this.fasesColapsadas.set(new Set());
     this.service.getPlantillaCompleta(p.IdPlantilla).subscribe({
       next: (res) => this.selectedPlantilla.set(res),
       error: () => alert('Error cargando detalle de plantilla')
+    });
+  }
+
+  abrirImprimirPlantilla(): void {
+    if (this.selectedPlantilla()) {
+      this.showImprimirModal.set(true);
+    }
+  }
+
+  cerrarModalImprimir(): void {
+    this.showImprimirModal.set(false);
+  }
+
+  abrirImprimirDesdeLista(p: Plantilla, event?: MouseEvent): void {
+    if (event) event.stopPropagation();
+    this.menuAbiertoId.set(null);
+    if (this.selectedPlantilla()?.IdPlantilla === p.IdPlantilla) {
+      this.showImprimirModal.set(true);
+      return;
+    }
+    this.service.getPlantillaCompleta(p.IdPlantilla).subscribe({
+      next: (res) => {
+        this.selectedPlantilla.set(res);
+        this.showImprimirModal.set(true);
+      },
+      error: () => alert('Error cargando detalle de plantilla para impresión')
     });
   }
 
