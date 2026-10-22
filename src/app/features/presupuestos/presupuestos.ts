@@ -6,7 +6,6 @@ import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { Observable, concatMap, debounceTime, distinctUntilChanged, finalize, forkJoin, map, of, switchMap, tap } from 'rxjs';
 import {
-  GuardadoEvent,
   ItemFila,
   ModoItemsDialog,
   PartidaInfo,
@@ -45,7 +44,13 @@ import {
 } from './presupuestos.calc';
 import { EmpresasService } from '../administration/empresas/empresas.service';
 import { Empresa } from '../administration/empresas/interfaces';
-import { PresupuestosService, Plantilla, PartidaItemsResponse } from './presupuestos.service';
+import {
+  PresupuestosService,
+  Plantilla,
+  PartidaItemsResponse,
+  PreviewFursPresupuestoResponse,
+  GenerarFursPresupuestoResponse,
+} from './presupuestos.service';
 import { PresupuestoPrincipal, DetalleFase, DetalleFaseCate, PresupuestoCompleto, FaseMaestra, FaseCategoriaMaestra } from './interfaces';
 import { DocumentosOrigenService } from '../documentos/documentos-origen/documentos-origen.service';
 import { DocumentoOrigenDetalleLinea } from '../documentos/documentos-origen/interfaces/documentos-origen.interface';
@@ -2095,7 +2100,7 @@ export class PresupuestosComponent implements OnInit {
     this.itemsDialog.set(null);
   }
 
-  onItemsGuardados(_e: GuardadoEvent) {
+  onItemsGuardados() {
     this.itemsDialog.set(null);
     this.recargarPresupuestoActivo();
   }
@@ -2389,6 +2394,68 @@ export class PresupuestosComponent implements OnInit {
 
   cerrarFasesModal() {
     this.showFasesModal.set(false);
+  }
+
+  // MODAL GENERAR FURs (Requerimientos) DESDE PRESUPUESTO
+  showGenerarFursModal = signal(false);
+  fursPreviewData = signal<PreviewFursPresupuestoResponse | null>(null);
+  loadingFursPreview = signal(false);
+  generandoFurs = signal(false);
+  fursResultado = signal<GenerarFursPresupuestoResponse | null>(null);
+  fechaRequeridaFur = signal('');
+  forzarGeneracionFur = signal(false);
+
+  abrirGenerarFursModal(ppto?: PresupuestoPrincipal) {
+    if (ppto) {
+      if (!this.isPptoSelected(ppto)) this.onSelectPresupuesto(ppto);
+    }
+    const id = this.selectedPresupuestoId();
+    if (!id) {
+      alert('Seleccione primero un presupuesto.');
+      return;
+    }
+
+    this.showGenerarFursModal.set(true);
+    this.loadingFursPreview.set(true);
+    this.fursResultado.set(null);
+    this.fursPreviewData.set(null);
+
+    this.presupuestosService.getPreviewFurs(id).subscribe({
+      next: (preview) => {
+        this.fursPreviewData.set(preview);
+        this.loadingFursPreview.set(false);
+      },
+      error: (err) => {
+        this.loadingFursPreview.set(false);
+        alert(mensajeDeError(err) || 'No se pudo cargar la vista previa de FURs');
+      }
+    });
+  }
+
+  cerrarGenerarFursModal() {
+    this.showGenerarFursModal.set(false);
+    this.fursResultado.set(null);
+    this.fursPreviewData.set(null);
+  }
+
+  ejecutarGeneracionFurs() {
+    const id = this.selectedPresupuestoId();
+    if (!id) return;
+
+    this.generandoFurs.set(true);
+    this.presupuestosService.generarFurs(id, {
+      fecha_requerida: this.fechaRequeridaFur() || undefined,
+      forzar: this.forzarGeneracionFur(),
+    }).subscribe({
+      next: (res) => {
+        this.generandoFurs.set(false);
+        this.fursResultado.set(res);
+      },
+      error: (err) => {
+        this.generandoFurs.set(false);
+        alert(mensajeDeError(err) || 'Error al generar los requerimientos (FURs)');
+      }
+    });
   }
 
   /** Acción de la tabla: abre "Fases y Costos" del presupuesto y el selector de plantillas encima. */

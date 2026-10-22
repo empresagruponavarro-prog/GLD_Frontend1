@@ -325,4 +325,63 @@ export class PresupuestosService {
   createHistorial(data: Partial<Historial>): Observable<Historial> {
     return this.http.post<Historial>(`${this.apiUrl}/historial-versiones`, data);
   }
+
+  // Generación de FURs por Fase (Requerimientos de Obra)
+  getPreviewFurs(idOrCode: string | number): Observable<PreviewFursPresupuestoResponse> {
+    return this.http.get<PreviewFursPresupuestoResponse>(`${this.apiUrl}/${idOrCode}/furs-preview`);
+  }
+
+  generarFurs(idOrCode: string | number, dto: GenerarFursPresupuestoDto = {}): Observable<GenerarFursPresupuestoResponse> {
+    return this.http.post<GenerarFursPresupuestoResponse>(`${this.apiUrl}/${idOrCode}/generar-furs`, dto);
+  }
 }
+
+export interface FurGeneradoItem {
+  id_producto: number;
+  codigo: string;
+  descripcion: string;
+  unidad: string;
+  cantidad: string;
+  precio_referencial: string;
+}
+
+export interface FaseFurPreview {
+  id_fase: number;
+  nombre_fase: string;
+  total_productos: number;
+  total_cantidad: number;
+  total_estimado: number;
+  fur_existente?: { id: number; numero: string; estado: string } | null;
+  items: FurGeneradoItem[];
+}
+
+export interface PreviewFursPresupuestoResponse {
+  id_presupuesto: string;
+  proyecto: string | null;
+  id_centro_costo: number;
+  centro_costo: string | null;
+  fases: FaseFurPreview[];
+}
+
+export interface GenerarFursPresupuestoDto {
+  id_solicitante?: number;
+  fecha_requerida?: string;
+  forzar?: boolean;
+}
+
+export interface GenerarFursPresupuestoResponse {
+  id_presupuesto: string;
+  furs_generados: {
+    id: number;
+    numero: string;
+    id_fase: number;
+    nombre_fase: string;
+    total_lineas: number;
+  }[];
+  fases_omitidas: {
+    id_fase: number;
+    nombre_fase: string;
+    motivo: string;
+  }[];
+}
+
