@@ -7,14 +7,16 @@
 
 <div class="content-body">
   <div class="modules-grid">
-    <div class="module-card" *ngFor="let mod of subModules" [routerLink]="mod.route">
-      <div class="module-icon">
-        <i [class]="mod.icon"></i>
+    @for (mod of subModules; track mod) {
+      <div class="module-card" [routerLink]="mod.route">
+        <div class="module-icon">
+          <i [class]="mod.icon"></i>
+        </div>
+        <span class="module-title">{{ mod.title }}</span>
+        <small style="color: var(--text-muted); font-size: 0.75rem; text-align: center; margin-top: 0.25rem;">
+          {{ mod.description }}
+        </small>
       </div>
-      <span class="module-title">{{ mod.title }}</span>
-      <small style="color: var(--text-muted); font-size: 0.75rem; text-align: center; margin-top: 0.25rem;">
-        {{ mod.description }}
-      </small>
-    </div>
+    }
   </div>
 </div>

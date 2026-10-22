@@ -5,7 +5,7 @@ import { PermisosService } from '@app/core/auth/permisos.service';
 import { opcionValida, valorDeEvento } from '@shared/utils/eventos';
 import { DataTableComponent } from '../../../shared/components/data-table/data-table';
 import { DataTable } from '../../../shared/interfaces';
-import { errorMessage } from '../../almacen/almacen.utils';
+import { errorMessage } from '@shared/utils/errores-http';
 import {
   AVANCE_LABEL,
   ESTADOS_REQUERIMIENTO,

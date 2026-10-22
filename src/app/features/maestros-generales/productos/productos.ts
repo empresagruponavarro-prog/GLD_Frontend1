@@ -1,5 +1,5 @@
 import { Component, computed, inject, signal } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { FormsModule } from '@angular/forms';
 import { permisosDePantalla } from '@app/core/auth/permisos-pantalla';
 import { mensajeError } from '@shared/utils/errores-http';
@@ -26,7 +26,7 @@ import { ProductosService } from './productos.service';
 @Component({
   selector: 'app-productos',
   standalone: true,
-  imports: [CommonModule, FormsModule, DataTableComponent, ModalComponent, ProductoPickerComponent, ExportarBotonesComponent],
+  imports: [FormsModule, DataTableComponent, ModalComponent, ProductoPickerComponent, ExportarBotonesComponent],
   templateUrl: './productos.html',
   styleUrl: './productos.css',
 })

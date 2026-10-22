@@ -5,7 +5,7 @@ import { permisosDePantalla } from '@app/core/auth/permisos-pantalla';
 
 // Service & Interfaces
 import { ObraService } from './obra.service';
-import { errorMessage } from '@app/features/almacen/almacen.utils';
+import { errorMessage } from '@shared/utils/errores-http';
 import { nombreArchivoDocumento } from './obra.calc';
 import { ObraCockpit, ObraSemana, ObraResidente, ObraPlano, ObraDocumento, ObraIncidencia } from './obra.interface';
 import { PermisosObra } from './obra-permisos';

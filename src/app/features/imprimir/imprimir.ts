@@ -1,8 +1,7 @@
-import { HttpClient } from '@angular/common/http';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
-import { environment } from '@env';
-import { errorMessage, fmtMoney, fmtNum } from '../almacen/almacen.utils';
+import { errorMessage } from '@shared/utils/errores-http';
+import { fmtMoney, fmtNum } from '@shared/utils/formato';
 import { AdministracionDocumentosService } from '../documentos/administracion/administracion.service';
 import { CLASE_LABEL, DocumentoDetalle } from '../documentos/administracion/administracion.models';
 import {
@@ -14,6 +13,7 @@ import {
 import { RequerimientosService } from '../requerimientos/requerimientos.service';
 import { Pago } from '../tesoreria/tesoreria.models';
 import { TesoreriaService } from '../tesoreria/tesoreria.service';
+import { EmpresaCabecera, ImprimirService } from './imprimir.service';
 
 export type TipoImpresion = 'fur' | 'cuadro-comparativo' | 'documento-origen' | 'comprobante-pago' | 'expediente';
 
@@ -22,12 +22,6 @@ interface Expediente {
   requerimiento: Requerimiento | null;
   cuadro_comparativo: CuadroComparativo | null;
   recepciones: { id: number; numero: string; fecha: string; estado: string; lineas: number }[];
-}
-
-interface EmpresaCabecera {
-  razon_social?: string | null;
-  ruc?: string | null;
-  domicilio_fiscal?: string | null;
 }
 
 /**
@@ -42,7 +36,7 @@ interface EmpresaCabecera {
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ImprimirComponent {
-  private readonly http = inject(HttpClient);
+  private readonly imprimirService = inject(ImprimirService);
   private readonly requerimientos = inject(RequerimientosService);
   private readonly documentos = inject(AdministracionDocumentosService);
   private readonly tesoreria = inject(TesoreriaService);
@@ -79,7 +73,7 @@ export class ImprimirComponent {
   });
 
   constructor() {
-    this.http.get<EmpresaCabecera[]>(`${environment.apiUrl}/administration/empresas`).subscribe({
+    this.imprimirService.getEmpresas().subscribe({
       next: (r) => this.empresa.set(Array.isArray(r) ? (r[0] ?? null) : null),
       error: () => this.empresa.set(null),
     });

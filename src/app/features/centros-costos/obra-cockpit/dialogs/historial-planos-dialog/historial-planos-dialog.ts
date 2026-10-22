@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, effect, inject, input, output, signal } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { ModalComponent } from '@shared/components/modal/modal';
-import { errorMessage } from '@app/features/almacen/almacen.utils';
+import { errorMessage } from '@shared/utils/errores-http';
 import { estadoPlanoClass } from '../../obra.calc';
 import { ObraPlano } from '../../obra.interface';
 import { ObraService } from '../../obra.service';

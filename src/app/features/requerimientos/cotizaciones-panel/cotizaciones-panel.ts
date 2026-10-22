@@ -4,7 +4,8 @@ import { RouterLink } from '@angular/router';
 import { permisosDePantalla } from '@app/core/auth/permisos-pantalla';
 import { ModalComponent } from '../../../shared/components/modal/modal';
 import { SearchSelectComponent } from '../../../shared/components/search-select/search-select';
-import { errorMessage, fmtMoney, fmtNum, todayISO } from '../../almacen/almacen.utils';
+import { errorMessage } from '@shared/utils/errores-http';
+import { fmtMoney, fmtNum, todayISO } from '@shared/utils/formato';
 import {
   Cotizacion,
   CotizacionPayload,

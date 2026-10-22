@@ -21,81 +21,84 @@
 <div class="content-body">
   <div class="menu-tree-container">
     <!-- Loop Root Menus -->
-    <div class="menu-root-card"
-      *ngFor="let root of treeData(); let idx = index"
-      [class.dragging]="draggedRootIdx() === idx"
-      draggable="true"
-      (dragstart)="onRootDragStart(idx, $event)"
-      (dragover)="onDragOver($event)"
-      (drop)="onRootDrop(idx)">
-      
-      <div class="menu-root-header">
-        <div class="menu-root-info">
-          <span class="menu-drag-handle" title="Mantén presionado para arrastrar y cambiar orden">
-            <i class="fa-solid fa-grip-vertical"></i>
-          </span>
-          <div>
-            <div class="menu-root-title">
-              {{ root.MenuNombre }}
-              <span class="menu-id-badge">#{{ root.MenuId }}</span>
-            </div>
-            <div class="menu-root-subtitle">
-              Sin ruta (carpeta) · orden {{ idx + 1 }} · {{ root.Imagen || 'Folder' }}
-            </div>
-          </div>
-        </div>
-        <div class="menu-actions">
-          <button class="btn-icon-action primary" (click)="openSubModal(root.MenuId)" title="Agregar Submenú">
-            <i class="fa-solid fa-plus"></i>
-          </button>
-          <button class="btn-icon-action" (click)="editRootModal(root)" title="Editar Menú Raíz">
-            <i class="fa-solid fa-pen"></i>
-          </button>
-          <button class="btn-icon-action danger" (click)="deleteRootMenu(root.MenuId)" title="Eliminar Menú Raíz">
-            <i class="fa-solid fa-trash"></i>
-          </button>
-        </div>
-      </div>
-
-      <!-- Nested Submenus List -->
-      <div class="submenu-list" *ngIf="root.submenus && root.submenus.length > 0">
-        <div class="submenu-card"
-          *ngFor="let sub of root.submenus; let sIdx = index"
-          [class.dragging]="draggedSub()?.rootIdx === idx && draggedSub()?.subIdx === sIdx"
-          draggable="true"
-          (dragstart)="onSubDragStart(idx, sIdx, $event)"
-          (dragover)="onDragOver($event)"
-          (drop)="onSubDrop(idx, sIdx)">
-          
-          <div style="display: flex; align-items: center; gap: 0.75rem;">
-            <span class="menu-drag-handle" style="font-size: 0.85rem;" title="Arrastrar submenú">
+    @for (root of treeData(); track root; let idx = $index) {
+      <div class="menu-root-card"
+        [class.dragging]="draggedRootIdx() === idx"
+        draggable="true"
+        (dragstart)="onRootDragStart(idx, $event)"
+        (dragover)="onDragOver($event)"
+        (drop)="onRootDrop(idx)">
+        <div class="menu-root-header">
+          <div class="menu-root-info">
+            <span class="menu-drag-handle" title="Mantén presionado para arrastrar y cambiar orden">
               <i class="fa-solid fa-grip-vertical"></i>
             </span>
             <div>
-              <div style="font-weight: 600; font-size: 0.875rem; color: #1e293b;">
-                {{ sub.SubMenuNombre }}
+              <div class="menu-root-title">
+                {{ root.MenuNombre }}
+                <span class="menu-id-badge">#{{ root.MenuId }}</span>
               </div>
-              <div style="font-size: 0.75rem; color: var(--text-muted);">
-                {{ sub.SubMenuVista || '/' }} · orden {{ sIdx + 1 }} · {{ sub.Imagen || 'File' }}
+              <div class="menu-root-subtitle">
+                Sin ruta (carpeta) · orden {{ idx + 1 }} · {{ root.Imagen || 'Folder' }}
               </div>
             </div>
           </div>
           <div class="menu-actions">
-            <button class="btn-icon-action" (click)="editSubModal(sub)" title="Editar Submenú">
+            <button class="btn-icon-action primary" (click)="openSubModal(root.MenuId)" title="Agregar Submenú">
+              <i class="fa-solid fa-plus"></i>
+            </button>
+            <button class="btn-icon-action" (click)="editRootModal(root)" title="Editar Menú Raíz">
               <i class="fa-solid fa-pen"></i>
             </button>
-            <button class="btn-icon-action danger" (click)="deleteSubMenu(sub.MenuId, sub.SubMenuNombre)" title="Eliminar Submenú">
+            <button class="btn-icon-action danger" (click)="deleteRootMenu(root.MenuId)" title="Eliminar Menú Raíz">
               <i class="fa-solid fa-trash"></i>
             </button>
           </div>
         </div>
+        <!-- Nested Submenus List -->
+        @if (root.submenus && root.submenus.length > 0) {
+          <div class="submenu-list">
+            @for (sub of root.submenus; track sub; let sIdx = $index) {
+              <div class="submenu-card"
+                [class.dragging]="draggedSub()?.rootIdx === idx && draggedSub()?.subIdx === sIdx"
+                draggable="true"
+                (dragstart)="onSubDragStart(idx, sIdx, $event)"
+                (dragover)="onDragOver($event)"
+                (drop)="onSubDrop(idx, sIdx)">
+                <div style="display: flex; align-items: center; gap: 0.75rem;">
+                  <span class="menu-drag-handle" style="font-size: 0.85rem;" title="Arrastrar submenú">
+                    <i class="fa-solid fa-grip-vertical"></i>
+                  </span>
+                  <div>
+                    <div style="font-weight: 600; font-size: 0.875rem; color: #1e293b;">
+                      {{ sub.SubMenuNombre }}
+                    </div>
+                    <div style="font-size: 0.75rem; color: var(--text-muted);">
+                      {{ sub.SubMenuVista || '/' }} · orden {{ sIdx + 1 }} · {{ sub.Imagen || 'File' }}
+                    </div>
+                  </div>
+                </div>
+                <div class="menu-actions">
+                  <button class="btn-icon-action" (click)="editSubModal(sub)" title="Editar Submenú">
+                    <i class="fa-solid fa-pen"></i>
+                  </button>
+                  <button class="btn-icon-action danger" (click)="deleteSubMenu(sub.MenuId, sub.SubMenuNombre)" title="Eliminar Submenú">
+                    <i class="fa-solid fa-trash"></i>
+                  </button>
+                </div>
+              </div>
+            }
+          </div>
+        }
       </div>
-    </div>
+    }
 
-    <div *ngIf="treeData().length === 0 && !loading" style="text-align: center; padding: 3rem; background: white; border-radius: var(--radius-md); border: 1px solid var(--border-color);">
-      <i class="fa-solid fa-folder-open" style="font-size: 2.5rem; color: var(--text-muted); margin-bottom: 0.5rem; display: block;"></i>
-      No hay menús registrados. Haz clic en <strong>+ Menú raíz</strong> para empezar.
-    </div>
+    @if (treeData().length === 0 && !loading) {
+      <div style="text-align: center; padding: 3rem; background: white; border-radius: var(--radius-md); border: 1px solid var(--border-color);">
+        <i class="fa-solid fa-folder-open" style="font-size: 2.5rem; color: var(--text-muted); margin-bottom: 0.5rem; display: block;"></i>
+        No hay menús registrados. Haz clic en <strong>+ Menú raíz</strong> para empezar.
+      </div>
+    }
   </div>
 </div>
 
@@ -112,41 +115,41 @@
       <input type="text" class="form-control" [(ngModel)]="rootForm.MenuId"
         placeholder="Ej. MNU001" [disabled]="!!editingRootId()"
         [style.background]="editingRootId() ? '#f1f5f9' : ''">
+      </div>
+      <div class="form-group">
+        <label>Nombre del Menú Raíz *</label>
+        <input type="text" class="form-control" [(ngModel)]="rootForm.MenuNombre" placeholder="Ej. Participación Vecinal">
+      </div>
+      <div class="form-group">
+        <label>Icono (FontAwesome)</label>
+        <input type="text" class="form-control" [(ngModel)]="rootForm.Imagen" placeholder="Ej. Users">
+      </div>
     </div>
-    <div class="form-group">
-      <label>Nombre del Menú Raíz *</label>
-      <input type="text" class="form-control" [(ngModel)]="rootForm.MenuNombre" placeholder="Ej. Participación Vecinal">
-    </div>
-    <div class="form-group">
-      <label>Icono (FontAwesome)</label>
-      <input type="text" class="form-control" [(ngModel)]="rootForm.Imagen" placeholder="Ej. Users">
-    </div>
-  </div>
-</app-modal>
+  </app-modal>
 
-<!-- Modal Submenú -->
-<app-modal
-  [isOpen]="showSubModal()"
-  [title]="editingSubNombre() ? 'Editar Submenú' : 'Nuevo Submenú'"
-  submitText="Guardar Submenú"
-  (closed)="closeModals()"
-  (saved)="saveSubMenu()">
-  <div modal-body>
-    <div class="form-group">
-      <label>Menú Padre (ID)</label>
-      <input type="text" class="form-control" [value]="subForm.MenuId" disabled style="background: #f1f5f9;">
+  <!-- Modal Submenú -->
+  <app-modal
+    [isOpen]="showSubModal()"
+    [title]="editingSubNombre() ? 'Editar Submenú' : 'Nuevo Submenú'"
+    submitText="Guardar Submenú"
+    (closed)="closeModals()"
+    (saved)="saveSubMenu()">
+    <div modal-body>
+      <div class="form-group">
+        <label>Menú Padre (ID)</label>
+        <input type="text" class="form-control" [value]="subForm.MenuId" disabled style="background: #f1f5f9;">
+      </div>
+      <div class="form-group">
+        <label>Nombre del Submenú *</label>
+        <input type="text" class="form-control" [(ngModel)]="subForm.SubMenuNombre" placeholder="Ej. Registro de Incidencias">
+      </div>
+      <div class="form-group">
+        <label>Ruta / Vista (URL)</label>
+        <input type="text" class="form-control" [(ngModel)]="subForm.SubMenuVista" placeholder="Ej. /participacion_vecinal/registro_incidencias">
+      </div>
+      <div class="form-group">
+        <label>Icono (FontAwesome)</label>
+        <input type="text" class="form-control" [(ngModel)]="subForm.Imagen" placeholder="Ej. ClipboardList">
+      </div>
     </div>
-    <div class="form-group">
-      <label>Nombre del Submenú *</label>
-      <input type="text" class="form-control" [(ngModel)]="subForm.SubMenuNombre" placeholder="Ej. Registro de Incidencias">
-    </div>
-    <div class="form-group">
-      <label>Ruta / Vista (URL)</label>
-      <input type="text" class="form-control" [(ngModel)]="subForm.SubMenuVista" placeholder="Ej. /participacion_vecinal/registro_incidencias">
-    </div>
-    <div class="form-group">
-      <label>Icono (FontAwesome)</label>
-      <input type="text" class="form-control" [(ngModel)]="subForm.Imagen" placeholder="Ej. ClipboardList">
-    </div>
-  </div>
-</app-modal>
+  </app-modal>

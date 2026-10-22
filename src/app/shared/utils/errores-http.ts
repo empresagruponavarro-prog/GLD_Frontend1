@@ -31,3 +31,19 @@ export function mensajeError(err: unknown): string {
   if (err instanceof HttpErrorResponse || err instanceof Error) return err.message || 'Error desconocido';
   return 'Error desconocido';
 }
+
+/**
+ * Mensaje de error HTTP del backend con las validaciones unidas por salto de línea.
+ * Distinto de `mensajeError` (une por coma y usa otro texto genérico): se mantiene tal cual
+ * lo usaban las pantallas que venían de `almacen.utils`, para no cambiar lo que ve el usuario.
+ */
+export function errorMessage(err: unknown): string {
+  if (err instanceof HttpErrorResponse) {
+    const cuerpo: unknown = err.error;
+    const message = typeof cuerpo === 'object' && cuerpo !== null && 'message' in cuerpo ? cuerpo.message : undefined;
+    if (Array.isArray(message)) return message.join('\n');
+    if (typeof message === 'string') return message;
+    return err.message;
+  }
+  return err instanceof Error ? err.message : 'Error inesperado';
+}

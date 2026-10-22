@@ -2,7 +2,7 @@ import { DecimalPipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, effect, inject, input, output, signal } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ModalComponent } from '@shared/components/modal/modal';
-import { errorMessage } from '@app/features/almacen/almacen.utils';
+import { errorMessage } from '@shared/utils/errores-http';
 import { clampPct, sinVacios, sugerenciaNuevaSemana } from '../../obra.calc';
 import { ESTADOS_SEMANA, ObraSemana, SemanaPayload } from '../../obra.interface';
 import { ObraService } from '../../obra.service';

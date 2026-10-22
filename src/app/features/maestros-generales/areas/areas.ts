@@ -1,13 +1,12 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
-import { environment } from '@env';
 import { permisosDePantalla } from '@app/core/auth/permisos-pantalla';
 import { ExportarBotonesComponent } from '../../../shared/components/exportar-botones/exportar-botones';
 import { ModalComponent } from '../../../shared/components/modal/modal';
 import type { DatosExportacion } from '../../../shared/utils/exportar';
-import { errorMessage } from '../../almacen/almacen.utils';
+import { errorMessage } from '@shared/utils/errores-http';
 import { Area } from '../../requerimientos/requerimientos.models';
+import { AreasService } from './areas.service';
 
 /** Áreas de la empresa (Costos y Presupuesto, Procura, Sistemas…): se usan en requerimientos, documentos de origen y el tablero. */
 @Component({
@@ -19,8 +18,7 @@ import { Area } from '../../requerimientos/requerimientos.models';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class AreasComponent {
-  private readonly http = inject(HttpClient);
-  private readonly api = `${environment.apiUrl}/maestros/area`;
+  private readonly areasService = inject(AreasService);
   /** Nueva → crear; Editar (PATCH) → editar. */
   protected readonly permisos = permisosDePantalla('maestros.areas');
 
@@ -48,7 +46,7 @@ export class AreasComponent {
 
   protected load(): void {
     this.isLoading.set(true);
-    this.http.get<Area[]>(this.api).subscribe({
+    this.areasService.getAll().subscribe({
       next: (r) => {
         this.items.set(r);
         this.isLoading.set(false);
@@ -91,8 +89,8 @@ export class AreasComponent {
     const actual = this.editando();
     this.isSaving.set(true);
     const request$ = actual
-      ? this.http.patch<Area>(`${this.api}/${actual.id}`, { nombre: v.nombre.trim(), estado: v.estado })
-      : this.http.post<Area>(this.api, { codigo: v.codigo.trim(), nombre: v.nombre.trim() });
+      ? this.areasService.update(actual.id, { nombre: v.nombre.trim(), estado: v.estado })
+      : this.areasService.create({ codigo: v.codigo.trim(), nombre: v.nombre.trim() });
     request$.subscribe({
       next: () => {
         this.isSaving.set(false);

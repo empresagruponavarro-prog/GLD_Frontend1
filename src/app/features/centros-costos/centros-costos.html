@@ -32,380 +32,398 @@
           placeholder="Buscar por código (ej. 0094e0a5), nombre de proyecto, empresa (E1, E3), o cliente..."
           [ngModel]="search()"
           (ngModelChange)="onSearch($event)"
-        />
-      </div>
+          />
+        </div>
 
-      <button class="ghost-button" type="button">
-        <i class="fa-solid fa-filter"></i>
-        Filtros Activos
-        <span *ngIf="activeFiltersCount() > 0" class="badge badge-progress" style="margin-left: 0.5rem;">
-          {{ activeFiltersCount() }}
-        </span>
-      </button>
-    </div>
-
-    <div class="toolbar-filters-row">
-      <div class="toolbar-filters-left">
-        <select class="toolbar-select" [ngModel]="empresaFilter()" (ngModelChange)="onFilterChange('empresa', $event)">
-          <option value="">Todas las Empresas</option>
-          <option *ngFor="let empresa of catalogos().empresas" [value]="empresa">{{ empresa }}</option>
-        </select>
-
-        <select class="toolbar-select" [ngModel]="clienteFilter()" (ngModelChange)="onFilterChange('cliente', $event)">
-          <option value="">Todos los Clientes</option>
-          <option *ngFor="let cliente of catalogos().clientes" [value]="cliente">{{ cliente }}</option>
-        </select>
-
-        <select class="toolbar-select" [ngModel]="estadoFilter()" (ngModelChange)="onFilterChange('estado', $event)">
-          <option value="">Estado Operativo: Todos</option>
-          <option *ngFor="let estado of estadoOptions" [value]="estado">{{ estado }}</option>
-        </select>
-
-        <select class="toolbar-select" [ngModel]="pptoEstadoFilter()" (ngModelChange)="onFilterChange('pptoEstado', $event)">
-          <option value="">Estado Presupuesto: Todos</option>
-          <option *ngFor="let estado of presupuestoEstadoOptions" [value]="estado">{{ estado }}</option>
-        </select>
-
-        <select class="toolbar-select" [ngModel]="periodoFilter()" (ngModelChange)="onFilterChange('periodo', $event)">
-          <option value="">Período: Todos los años</option>
-          <option *ngFor="let periodo of catalogos().periodos" [value]="periodo">{{ periodo }}</option>
-        </select>
-
-        <button class="toolbar-reset" type="button" (click)="resetFilters()">
-          <i class="fa-solid fa-rotate-left"></i>
-          Restablecer
+        <button class="ghost-button" type="button">
+          <i class="fa-solid fa-filter"></i>
+          Filtros Activos
+          @if (activeFiltersCount() > 0) {
+            <span class="badge badge-progress" style="margin-left: 0.5rem;">
+              {{ activeFiltersCount() }}
+            </span>
+          }
         </button>
       </div>
 
-      <div class="toolbar-meta">
-        <span>Mostrando</span>
-        <strong>{{ totalRecords() }}</strong>
-        <span>registros</span>
+      <div class="toolbar-filters-row">
+        <div class="toolbar-filters-left">
+          <select class="toolbar-select" [ngModel]="empresaFilter()" (ngModelChange)="onFilterChange('empresa', $event)">
+            <option value="">Todas las Empresas</option>
+            @for (empresa of catalogos().empresas; track empresa) {
+              <option [value]="empresa">{{ empresa }}</option>
+            }
+          </select>
+
+          <select class="toolbar-select" [ngModel]="clienteFilter()" (ngModelChange)="onFilterChange('cliente', $event)">
+            <option value="">Todos los Clientes</option>
+            @for (cliente of catalogos().clientes; track cliente) {
+              <option [value]="cliente">{{ cliente }}</option>
+            }
+          </select>
+
+          <select class="toolbar-select" [ngModel]="estadoFilter()" (ngModelChange)="onFilterChange('estado', $event)">
+            <option value="">Estado Operativo: Todos</option>
+            @for (estado of estadoOptions; track estado) {
+              <option [value]="estado">{{ estado }}</option>
+            }
+          </select>
+
+          <select class="toolbar-select" [ngModel]="pptoEstadoFilter()" (ngModelChange)="onFilterChange('pptoEstado', $event)">
+            <option value="">Estado Presupuesto: Todos</option>
+            @for (estado of presupuestoEstadoOptions; track estado) {
+              <option [value]="estado">{{ estado }}</option>
+            }
+          </select>
+
+          <select class="toolbar-select" [ngModel]="periodoFilter()" (ngModelChange)="onFilterChange('periodo', $event)">
+            <option value="">Período: Todos los años</option>
+            @for (periodo of catalogos().periodos; track periodo) {
+              <option [value]="periodo">{{ periodo }}</option>
+            }
+          </select>
+
+          <button class="toolbar-reset" type="button" (click)="resetFilters()">
+            <i class="fa-solid fa-rotate-left"></i>
+            Restablecer
+          </button>
+        </div>
+
+        <div class="toolbar-meta">
+          <span>Mostrando</span>
+          <strong>{{ totalRecords() }}</strong>
+          <span>registros</span>
+        </div>
       </div>
-    </div>
-  </section>
+    </section>
 
-  <app-data-table
-    [columns]="columns"
-    [items]="items()"
-    [loading]="loading()"
-    [totalItems]="totalRecords()"
-    [currentPage]="currentPage()"
-    [pageSize]="pageSize()"
-    [pageSizeOptions]="[20, 50, 100]"
-    emptyMessage="No hay centros de costos registrados."
-    emptyIcon="fa-solid fa-building-flag"
-    [rowTemplate]="centroRow"
-    (pageChange)="goToPage($event)"
-    (pageSizeChange)="onPageSizeChange($event)">
-  </app-data-table>
+    <app-data-table
+      [columns]="columns"
+      [items]="items()"
+      [loading]="loading()"
+      [totalItems]="totalRecords()"
+      [currentPage]="currentPage()"
+      [pageSize]="pageSize()"
+      [pageSizeOptions]="[20, 50, 100]"
+      emptyMessage="No hay centros de costos registrados."
+      emptyIcon="fa-solid fa-building-flag"
+      [rowTemplate]="centroRow"
+      (pageChange)="goToPage($event)"
+      (pageSizeChange)="onPageSizeChange($event)">
+    </app-data-table>
 
-  <ng-template #centroRow let-item>
-    <tr>
-      <td style="text-align: center; vertical-align: middle;">
-        <span class="id-badge font-mono font-bold" style="font-weight: 800; font-family: monospace; font-size: 0.85rem; color: #1e4838; background: #e8f5e9; border: 1px solid #a5d6a7; padding: 3px 8px; border-radius: 6px; display: inline-block;">
-          #{{ item.id ?? item.id_centro_costo }}
-        </span>
-      </td>
-      <td>
-        <div class="table-cell-title">{{ item.CentroCosto || '—' }}</div>
-        <div class="table-cell-subtitle">
+    <ng-template #centroRow let-item>
+      <tr>
+        <td style="text-align: center; vertical-align: middle;">
+          <span class="id-badge font-mono font-bold" style="font-weight: 800; font-family: monospace; font-size: 0.85rem; color: #1e4838; background: #e8f5e9; border: 1px solid #a5d6a7; padding: 3px 8px; border-radius: 6px; display: inline-block;">
+            #{{ item.id ?? item.id_centro_costo }}
+          </span>
+        </td>
+        <td>
+          <div class="table-cell-title">{{ item.CentroCosto || '—' }}</div>
+          <div class="table-cell-subtitle">
           </div>
-      </td>
-      <td>{{ item.Empresa || item.CodEmpresa || '—' }}</td>
-      <td>{{ item.Cliente || item.CodCliente || '—' }}</td>
-      <td>{{ item.FechaIncio ? (item.FechaIncio | date:'dd/MM/yyyy') : '—' }}</td>
-      <td>{{ item.FechaFinProg ? (item.FechaFinProg | date:'dd/MM/yyyy') : '—' }}</td>
-      <td>
-        <span
-          class="badge"
-          [ngClass]="item.Estado === 'ABIERTO' ? 'badge-progress' : 'badge-danger'"
-        >
-          {{ item.Estado || '—' }}
-        </span>
-      </td>
-      <td>
-        <span
-          class="badge"
+        </td>
+        <td>{{ item.Empresa || item.CodEmpresa || '—' }}</td>
+        <td>{{ item.Cliente || item.CodCliente || '—' }}</td>
+        <td>{{ item.FechaIncio ? (item.FechaIncio | date:'dd/MM/yyyy') : '—' }}</td>
+        <td>{{ item.FechaFinProg ? (item.FechaFinProg | date:'dd/MM/yyyy') : '—' }}</td>
+        <td>
+          <span
+            class="badge"
+            [ngClass]="item.Estado === 'ABIERTO' ? 'badge-progress' : 'badge-danger'"
+            >
+            {{ item.Estado || '—' }}
+          </span>
+        </td>
+        <td>
+          <span
+            class="badge"
           [ngClass]="{
             'badge-completed': item.PresupuestoEstado?.toUpperCase() === 'APROBADO',
             'badge-progress': item.PresupuestoEstado?.toUpperCase()?.includes('REVISION') || item.PresupuestoEstado?.toUpperCase()?.includes('DESARROLLO'),
             'badge-pending': item.PresupuestoEstado?.toUpperCase() === 'PENDIENTE',
             'badge-danger': item.PresupuestoEstado?.toUpperCase()?.includes('RECHAZADO')
           }"
-        >
-          {{ item.PresupuestoEstado || '—' }}
-        </span>
-      </td>
-      <td>
-        <div class="table-actions">
-          <!-- "Ppto" abre un alta en Presupuestos: exige crear en presupuestos. -->
-          @if (puedeCrearPresupuesto()) {
-            <button
-              class="table-action-btn table-action-btn--primary"
-              (click)="goToPresupuestos(item)"
-              title="Ir a Presupuestos"
             >
-              <i class="fa-solid fa-file-invoice-dollar"></i>
-              <span>Ppto</span>
-            </button>
-          }
-          <!-- "Datos" lleva a la obra: exige acceso (ver) a obra. -->
-          @if (puedeVerObra()) {
-            <button
-              class="table-action-btn"
-              style="font-weight: 700; gap: 0.45rem; padding-inline: 0.7rem; font-size: 0.72rem; color: #1e293b; background: #f8fafc; border-color: #cbd5e1;"
-              (click)="onVerDatos(item)"
-              title="Datos"
-            >
-              <i class="fa-solid fa-database"></i>
-              <span>Datos</span>
-            </button>
-          }
-          @if (permisos.editar()) {
-            <button
-              class="table-action-btn"
-              (click)="editModal(item)"
-              title="Editar"
-            >
-              <i class="fa-solid fa-pen"></i>
-            </button>
-          }
-          @if (permisos.eliminar()) {
-            <button
-              class="table-action-btn table-action-btn--danger"
-              (click)="delete(item)"
-              title="Eliminar"
-            >
-              <i class="fa-solid fa-trash"></i>
-            </button>
-          }
-        </div>
-      </td>
-    </tr>
-  </ng-template>
-</div>
-
-<app-modal
-  [isOpen]="showModal()"
-  [title]="editingId() !== null ? 'Editar Centro de Costo' : 'Nuevo Centro de Costo'"
-  [showHeader]="false"
-  maxWidth="750px"
-  height="750px"
-  [submitText]="editingId() !== null ? 'Guardar Centro de Costo' : 'Crear Centro'"
-  [showDefaultFooter]="false"
-  (closed)="closeModal()"
-  (saved)="save()"
->
-  <div modal-body class="cc-form-shell">
-    <div class="cc-form-page">
-      <div class="cc-form-header">
-        <div class="cc-form-header-left">
-          <button class="cc-back-button" type="button" (click)="closeModal()">
-            <lucide-icon [img]="ArrowLeft" size="14"></lucide-icon>
-          </button>
-          <div class="cc-form-header-copy">
-            <h4>Centro de Costos</h4>
-          </div>
-        </div>
-        <div class="cc-form-head-actions">
-          @if (permisos.crear()) {
-            <button class="cc-action-btn" type="button" (click)="duplicar()">Duplicar</button>
-          }
-          <button class="cc-action-btn" type="button" (click)="descartar()">Cancelar</button>
-          <button class="cc-save-btn" type="button" (click)="guardar()">
-            <lucide-icon [img]="Check" size="11"></lucide-icon>
-            Guardar Centro de Costo
-          </button>
-        </div>
-      </div>
-
-      <div class="cc-form-scroll">
-        <section class="cc-form-card">
-          <div class="cc-form-card-head">
-            <div class="cc-card-title-wrap">
-              <lucide-icon [img]="Contact" size="15" class="cc-card-icon"></lucide-icon>
-              <span class="cc-card-title">Identificación &amp; General</span>
-            </div>
-            <span class="cc-card-note">* Campos obligatorios</span>
-          </div>
-
-          <div class="cc-form-card-body">
-            <div class="cc-form-row">
-              <div class="cc-form-field">
-                <label class="cc-label">Empresa <span class="cc-required">*</span></label>
-                <div class="cc-select-wrapper">
-                  <select [(ngModel)]="formData.id_empresa">
-                    <option [ngValue]="undefined">Seleccione Empresa...</option>
-                    <option *ngFor="let empresa of empresas()" [ngValue]="empresa.id_empresa">
-                      {{ empresa.RazonSocial || empresa.razon_social || empresa.CodEmpresa }}
-                    </option>
-                  </select>
-                  <svg class="cc-select-icon" viewBox="0 0 14 14" fill="none">
-                    <path d="M3.5 5.25L7 8.75L10.5 5.25" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
-                  </svg>
-                </div>
-              </div>
-
-              <div class="cc-form-field">
-                <label class="cc-label">Cliente <span class="cc-required">*</span></label>
-                <div class="cc-select-wrapper">
-                  <select [(ngModel)]="formData.id_anexo" (ngModelChange)="onClienteChange()">
-                    <option [ngValue]="undefined">Seleccione Cliente...</option>
-                    <option *ngFor="let c of clientes()" [ngValue]="c.id">{{ c.nombre }}</option>
-                  </select>
-                  <svg class="cc-select-icon" viewBox="0 0 14 14" fill="none">
-                    <path d="M3.5 5.25L7 8.75L10.5 5.25" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
-                  </svg>
-                </div>
-                @if (!formData.id_anexo && formData.CodCliente) {
-                  <small class="cc-card-note">Cliente guardado (sin vincular a un anexo): {{ formData.CodCliente }}</small>
-                }
-              </div>
-            </div>
-
-            <div class="cc-form-row">
-              <div class="cc-form-field">
-                <label class="cc-label">Centro de Costo <span class="cc-required">*</span></label>
-                <div class="cc-input-only">
-                  <input type="text" [(ngModel)]="formData.CentroCosto" placeholder="Ej. Obra Norte">
-                </div>
-              </div>
-            </div>
-
-            <div class="cc-form-row" style="margin-top: 0.6rem;">
-              <div class="cc-form-field">
-                <label class="cc-label">Periodo Fiscal <span class="cc-required">*</span></label>
-                <div class="cc-segmented">
-                  <button type="button" class="cc-segment" [class.active]="formData.periodo === 2024" (click)="formData.periodo = 2024">2024</button>
-                  <button type="button" class="cc-segment" [class.active]="formData.periodo === 2025" (click)="formData.periodo = 2025">2025</button>
-                  <button type="button" class="cc-segment" [class.active]="formData.periodo === 2026" (click)="formData.periodo = 2026">2026</button>
-                </div>
-              </div>
-
-              <div class="cc-form-field">
-                <label class="cc-label">Estado Operativo <span class="cc-required">*</span></label>
-                <div class="cc-segmented cc-segmented-state">
-                  <button type="button" class="cc-segment" [class.active]="formData.Estado === 'ABIERTO'" (click)="formData.Estado = 'ABIERTO'">ABIERTO</button>
-                  <button type="button" class="cc-segment" [class.active]="formData.Estado === 'CERRADO'" (click)="formData.Estado = 'CERRADO'">CERRADO</button>
-                  <button type="button" class="cc-segment" [class.active]="formData.Estado === 'POR LIQUIDAR'" (click)="formData.Estado = 'POR LIQUIDAR'">LIQUIDAR</button>
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        <section class="cc-form-card">
-          <div class="cc-form-card-head">
-            <div class="cc-card-title-wrap">
-              <lucide-icon [img]="Clock" size="15" class="cc-card-icon"></lucide-icon>
-              <span class="cc-card-title">Cronograma &amp; Plazos</span>
-            </div>
-            <span class="cc-card-note">Vigencia de ejecución</span>
-          </div>
-
-          <div class="cc-form-card-body">
-            <div class="cc-form-row cc-date-grid">
-              <div class="cc-form-field">
-                <label class="cc-label">Fecha Inicio <span class="cc-required">*</span></label>
-                <div class="cc-date-input">
-                  <input type="date" [(ngModel)]="formData.FechaIncio">
-                </div>
-              </div>
-
-              <div class="cc-form-field">
-                <label class="cc-label">Fecha Fin Prog.</label>
-                <div class="cc-date-input">
-                  <input type="date" [(ngModel)]="formData.FechaFinProg">
-                </div>
-              </div>
-
-              <div class="cc-form-field">
-                <label class="cc-label">Fecha Fin Real</label>
-                <div class="cc-date-input">
-                  <input type="date" [(ngModel)]="formData.FechaFinReal">
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        <section class="cc-form-card">
-          <div class="cc-form-card-head">
-            <div class="cc-card-title-wrap">
-              <lucide-icon [img]="FileText" size="15" class="cc-card-icon"></lucide-icon>
-              <span class="cc-card-title">Presupuesto</span>
-            </div>
-            <span class="cc-card-note">Montos en soles</span>
-          </div>
-
-          <div class="cc-form-card-body">
-            <div class="cc-form-row">
-              <div class="cc-form-field">
-                <label class="cc-label">Estado Presupuesto</label>
-                <div class="cc-select-wrapper">
-                  <select [(ngModel)]="formData.PresupuestoEstado">
-                    <option *ngFor="let e of presupuestoEstadoOptions" [value]="e">{{ e }}</option>
-                  </select>
-                  <svg class="cc-select-icon" viewBox="0 0 14 14" fill="none">
-                    <path d="M3.5 5.25L7 8.75L10.5 5.25" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
-                  </svg>
-                </div>
-              </div>
-
-              <div class="cc-form-field">
-                <label class="cc-label">Presupuesto Monto</label>
-                <div class="cc-input-only">
-                  <input type="number" [(ngModel)]="formData.PresupuestoMonto">
-                </div>
-              </div>
-            </div>
-
-            <div class="cc-form-row">
-              <div class="cc-form-field">
-                <label class="cc-label">Costo Directo</label>
-                <div class="cc-input-only">
-                  <input type="number" [(ngModel)]="formData.PresupuestoCostoDirecto">
-                </div>
-              </div>
-
-              <div class="cc-form-field">
-                <label class="cc-label">Gastos Generales</label>
-                <div class="cc-input-only">
-                  <input type="number" [(ngModel)]="formData.PresupuestoGastosGenerales">
-                </div>
-              </div>
-
-              <div class="cc-form-field">
-                <label class="cc-label">Viáticos</label>
-                <div class="cc-input-only">
-                  <input type="number" [(ngModel)]="formData.PresupuestoViaticos">
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        <section class="cc-form-card">
-          <div class="cc-form-card-head">
-            <div class="cc-card-title-wrap">
-              <lucide-icon [img]="FileText" size="15" class="cc-card-icon"></lucide-icon>
-              <span class="cc-card-title">Acta de Entrega / Documento Contractual</span>
-            </div>
-            <span class="cc-card-note">No disponible por ahora</span>
-          </div>
-
-          <div class="cc-form-card-body">
-            <div class="cc-dropzone" aria-disabled="true" style="opacity: 0.6; cursor: not-allowed;">
-              <span class="cc-dropzone-icon"><lucide-icon [img]="CloudUpload" size="24"></lucide-icon></span>
-              <span class="cc-dropzone-text">Carga de archivos pendiente</span>
-            </div>
-            @if (formData.OCFile) {
-              <small class="cc-card-note">Referencia guardada anteriormente: {{ formData.OCFile }}</small>
+            {{ item.PresupuestoEstado || '—' }}
+          </span>
+        </td>
+        <td>
+          <div class="table-actions">
+            <!-- "Ppto" abre un alta en Presupuestos: exige crear en presupuestos. -->
+            @if (puedeCrearPresupuesto()) {
+              <button
+                class="table-action-btn table-action-btn--primary"
+                (click)="goToPresupuestos(item)"
+                title="Ir a Presupuestos"
+                >
+                <i class="fa-solid fa-file-invoice-dollar"></i>
+                <span>Ppto</span>
+              </button>
+            }
+            <!-- "Datos" lleva a la obra: exige acceso (ver) a obra. -->
+            @if (puedeVerObra()) {
+              <button
+                class="table-action-btn"
+                style="font-weight: 700; gap: 0.45rem; padding-inline: 0.7rem; font-size: 0.72rem; color: #1e293b; background: #f8fafc; border-color: #cbd5e1;"
+                (click)="onVerDatos(item)"
+                title="Datos"
+                >
+                <i class="fa-solid fa-database"></i>
+                <span>Datos</span>
+              </button>
+            }
+            @if (permisos.editar()) {
+              <button
+                class="table-action-btn"
+                (click)="editModal(item)"
+                title="Editar"
+                >
+                <i class="fa-solid fa-pen"></i>
+              </button>
+            }
+            @if (permisos.eliminar()) {
+              <button
+                class="table-action-btn table-action-btn--danger"
+                (click)="delete(item)"
+                title="Eliminar"
+                >
+                <i class="fa-solid fa-trash"></i>
+              </button>
             }
           </div>
-        </section>
+        </td>
+      </tr>
+    </ng-template>
+  </div>
+
+  <app-modal
+    [isOpen]="showModal()"
+    [title]="editingId() !== null ? 'Editar Centro de Costo' : 'Nuevo Centro de Costo'"
+    [showHeader]="false"
+    maxWidth="750px"
+    height="750px"
+    [submitText]="editingId() !== null ? 'Guardar Centro de Costo' : 'Crear Centro'"
+    [showDefaultFooter]="false"
+    (closed)="closeModal()"
+    (saved)="save()"
+    >
+    <div modal-body class="cc-form-shell">
+      <div class="cc-form-page">
+        <div class="cc-form-header">
+          <div class="cc-form-header-left">
+            <button class="cc-back-button" type="button" (click)="closeModal()">
+              <lucide-icon [img]="ArrowLeft" size="14"></lucide-icon>
+            </button>
+            <div class="cc-form-header-copy">
+              <h4>Centro de Costos</h4>
+            </div>
+          </div>
+          <div class="cc-form-head-actions">
+            @if (permisos.crear()) {
+              <button class="cc-action-btn" type="button" (click)="duplicar()">Duplicar</button>
+            }
+            <button class="cc-action-btn" type="button" (click)="descartar()">Cancelar</button>
+            <button class="cc-save-btn" type="button" (click)="guardar()">
+              <lucide-icon [img]="Check" size="11"></lucide-icon>
+              Guardar Centro de Costo
+            </button>
+          </div>
+        </div>
+
+        <div class="cc-form-scroll">
+          <section class="cc-form-card">
+            <div class="cc-form-card-head">
+              <div class="cc-card-title-wrap">
+                <lucide-icon [img]="Contact" size="15" class="cc-card-icon"></lucide-icon>
+                <span class="cc-card-title">Identificación &amp; General</span>
+              </div>
+              <span class="cc-card-note">* Campos obligatorios</span>
+            </div>
+
+            <div class="cc-form-card-body">
+              <div class="cc-form-row">
+                <div class="cc-form-field">
+                  <label class="cc-label">Empresa <span class="cc-required">*</span></label>
+                  <div class="cc-select-wrapper">
+                    <select [(ngModel)]="formData.id_empresa">
+                      <option [ngValue]="undefined">Seleccione Empresa...</option>
+                      @for (empresa of empresas(); track empresa) {
+                        <option [ngValue]="empresa.id_empresa">
+                          {{ empresa.RazonSocial || empresa.razon_social || empresa.CodEmpresa }}
+                        </option>
+                      }
+                    </select>
+                    <svg class="cc-select-icon" viewBox="0 0 14 14" fill="none">
+                      <path d="M3.5 5.25L7 8.75L10.5 5.25" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+                    </svg>
+                  </div>
+                </div>
+
+                <div class="cc-form-field">
+                  <label class="cc-label">Cliente <span class="cc-required">*</span></label>
+                  <div class="cc-select-wrapper">
+                    <select [(ngModel)]="formData.id_anexo" (ngModelChange)="onClienteChange()">
+                      <option [ngValue]="undefined">Seleccione Cliente...</option>
+                      @for (c of clientes(); track c) {
+                        <option [ngValue]="c.id">{{ c.nombre }}</option>
+                      }
+                    </select>
+                    <svg class="cc-select-icon" viewBox="0 0 14 14" fill="none">
+                      <path d="M3.5 5.25L7 8.75L10.5 5.25" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+                    </svg>
+                  </div>
+                  @if (!formData.id_anexo && formData.CodCliente) {
+                    <small class="cc-card-note">Cliente guardado (sin vincular a un anexo): {{ formData.CodCliente }}</small>
+                  }
+                </div>
+              </div>
+
+              <div class="cc-form-row">
+                <div class="cc-form-field">
+                  <label class="cc-label">Centro de Costo <span class="cc-required">*</span></label>
+                  <div class="cc-input-only">
+                    <input type="text" [(ngModel)]="formData.CentroCosto" placeholder="Ej. Obra Norte">
+                  </div>
+                </div>
+              </div>
+
+              <div class="cc-form-row" style="margin-top: 0.6rem;">
+                <div class="cc-form-field">
+                  <label class="cc-label">Periodo Fiscal <span class="cc-required">*</span></label>
+                  <div class="cc-segmented">
+                    <button type="button" class="cc-segment" [class.active]="formData.periodo === 2024" (click)="formData.periodo = 2024">2024</button>
+                    <button type="button" class="cc-segment" [class.active]="formData.periodo === 2025" (click)="formData.periodo = 2025">2025</button>
+                    <button type="button" class="cc-segment" [class.active]="formData.periodo === 2026" (click)="formData.periodo = 2026">2026</button>
+                  </div>
+                </div>
+
+                <div class="cc-form-field">
+                  <label class="cc-label">Estado Operativo <span class="cc-required">*</span></label>
+                  <div class="cc-segmented cc-segmented-state">
+                    <button type="button" class="cc-segment" [class.active]="formData.Estado === 'ABIERTO'" (click)="formData.Estado = 'ABIERTO'">ABIERTO</button>
+                    <button type="button" class="cc-segment" [class.active]="formData.Estado === 'CERRADO'" (click)="formData.Estado = 'CERRADO'">CERRADO</button>
+                    <button type="button" class="cc-segment" [class.active]="formData.Estado === 'POR LIQUIDAR'" (click)="formData.Estado = 'POR LIQUIDAR'">LIQUIDAR</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section class="cc-form-card">
+            <div class="cc-form-card-head">
+              <div class="cc-card-title-wrap">
+                <lucide-icon [img]="Clock" size="15" class="cc-card-icon"></lucide-icon>
+                <span class="cc-card-title">Cronograma &amp; Plazos</span>
+              </div>
+              <span class="cc-card-note">Vigencia de ejecución</span>
+            </div>
+
+            <div class="cc-form-card-body">
+              <div class="cc-form-row cc-date-grid">
+                <div class="cc-form-field">
+                  <label class="cc-label">Fecha Inicio <span class="cc-required">*</span></label>
+                  <div class="cc-date-input">
+                    <input type="date" [(ngModel)]="formData.FechaIncio">
+                  </div>
+                </div>
+
+                <div class="cc-form-field">
+                  <label class="cc-label">Fecha Fin Prog.</label>
+                  <div class="cc-date-input">
+                    <input type="date" [(ngModel)]="formData.FechaFinProg">
+                  </div>
+                </div>
+
+                <div class="cc-form-field">
+                  <label class="cc-label">Fecha Fin Real</label>
+                  <div class="cc-date-input">
+                    <input type="date" [(ngModel)]="formData.FechaFinReal">
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section class="cc-form-card">
+            <div class="cc-form-card-head">
+              <div class="cc-card-title-wrap">
+                <lucide-icon [img]="FileText" size="15" class="cc-card-icon"></lucide-icon>
+                <span class="cc-card-title">Presupuesto</span>
+              </div>
+              <span class="cc-card-note">Montos en soles</span>
+            </div>
+
+            <div class="cc-form-card-body">
+              <div class="cc-form-row">
+                <div class="cc-form-field">
+                  <label class="cc-label">Estado Presupuesto</label>
+                  <div class="cc-select-wrapper">
+                    <select [(ngModel)]="formData.PresupuestoEstado">
+                      @for (e of presupuestoEstadoOptions; track e) {
+                        <option [value]="e">{{ e }}</option>
+                      }
+                    </select>
+                    <svg class="cc-select-icon" viewBox="0 0 14 14" fill="none">
+                      <path d="M3.5 5.25L7 8.75L10.5 5.25" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+                    </svg>
+                  </div>
+                </div>
+
+                <div class="cc-form-field">
+                  <label class="cc-label">Presupuesto Monto</label>
+                  <div class="cc-input-only">
+                    <input type="number" [(ngModel)]="formData.PresupuestoMonto">
+                  </div>
+                </div>
+              </div>
+
+              <div class="cc-form-row">
+                <div class="cc-form-field">
+                  <label class="cc-label">Costo Directo</label>
+                  <div class="cc-input-only">
+                    <input type="number" [(ngModel)]="formData.PresupuestoCostoDirecto">
+                  </div>
+                </div>
+
+                <div class="cc-form-field">
+                  <label class="cc-label">Gastos Generales</label>
+                  <div class="cc-input-only">
+                    <input type="number" [(ngModel)]="formData.PresupuestoGastosGenerales">
+                  </div>
+                </div>
+
+                <div class="cc-form-field">
+                  <label class="cc-label">Viáticos</label>
+                  <div class="cc-input-only">
+                    <input type="number" [(ngModel)]="formData.PresupuestoViaticos">
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section class="cc-form-card">
+            <div class="cc-form-card-head">
+              <div class="cc-card-title-wrap">
+                <lucide-icon [img]="FileText" size="15" class="cc-card-icon"></lucide-icon>
+                <span class="cc-card-title">Acta de Entrega / Documento Contractual</span>
+              </div>
+              <span class="cc-card-note">No disponible por ahora</span>
+            </div>
+
+            <div class="cc-form-card-body">
+              <div class="cc-dropzone" aria-disabled="true" style="opacity: 0.6; cursor: not-allowed;">
+                <span class="cc-dropzone-icon"><lucide-icon [img]="CloudUpload" size="24"></lucide-icon></span>
+                <span class="cc-dropzone-text">Carga de archivos pendiente</span>
+              </div>
+              @if (formData.OCFile) {
+                <small class="cc-card-note">Referencia guardada anteriormente: {{ formData.OCFile }}</small>
+              }
+            </div>
+          </section>
+        </div>
       </div>
     </div>
-  </div>
   </app-modal>

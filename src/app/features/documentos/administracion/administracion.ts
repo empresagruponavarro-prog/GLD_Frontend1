@@ -8,7 +8,8 @@ import { DataTableComponent } from '../../../shared/components/data-table/data-t
 import { ModalComponent } from '../../../shared/components/modal/modal';
 import { SearchSelectComponent } from '../../../shared/components/search-select/search-select';
 import { DataTable } from '../../../shared/interfaces';
-import { errorMessage, fmtMoney, fmtNum, todayISO } from '../../almacen/almacen.utils';
+import { errorMessage } from '@shared/utils/errores-http';
+import { fmtMoney, fmtNum, todayISO } from '@shared/utils/formato';
 import { Area, SelectOption } from '../../requerimientos/requerimientos.models';
 import { RequerimientosService } from '../../requerimientos/requerimientos.service';
 import { AdministracionDocumentosService } from './administracion.service';

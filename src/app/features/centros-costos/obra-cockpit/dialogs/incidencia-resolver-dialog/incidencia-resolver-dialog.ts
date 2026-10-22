@@ -1,8 +1,8 @@
 import { ChangeDetectionStrategy, Component, computed, effect, inject, input, output, signal } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ModalComponent } from '@shared/components/modal/modal';
-import { errorMessage } from '@app/features/almacen/almacen.utils';
+import { errorMessage } from '@shared/utils/errores-http';
 import { ObraIncidencia } from '../../obra.interface';
 import { ObraService } from '../../obra.service';
 import { PermisosObra, SIN_PERMISOS_OBRA } from '../../obra-permisos';
@@ -10,7 +10,7 @@ import { PermisosObra, SIN_PERMISOS_OBRA } from '../../obra-permisos';
 @Component({
   selector: 'app-incidencia-resolver-dialog',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, ModalComponent],
+  imports: [ReactiveFormsModule, ModalComponent],
   templateUrl: './incidencia-resolver-dialog.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

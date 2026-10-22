@@ -4,7 +4,7 @@ import { HttpEventType } from '@angular/common/http';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Observable, Subscription } from 'rxjs';
 import { ModalComponent } from '@shared/components/modal/modal';
-import { errorMessage } from '@app/features/almacen/almacen.utils';
+import { errorMessage } from '@shared/utils/errores-http';
 import { valorDeEvento } from '@shared/utils/eventos';
 import { sinVacios } from '../../obra.calc';
 import {

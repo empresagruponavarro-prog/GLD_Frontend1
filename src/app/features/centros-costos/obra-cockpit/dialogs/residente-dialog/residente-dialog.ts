@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, effect, inject, input, output, signal } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ModalComponent } from '@shared/components/modal/modal';
-import { errorMessage } from '@app/features/almacen/almacen.utils';
+import { errorMessage } from '@shared/utils/errores-http';
 import { sinVacios } from '../../obra.calc';
 import { ESTADOS_PLANTA, ObraResidente, ResidentePayload } from '../../obra.interface';
 import { AnexosService } from '@app/features/maestros-generales/anexos/anexos.service';

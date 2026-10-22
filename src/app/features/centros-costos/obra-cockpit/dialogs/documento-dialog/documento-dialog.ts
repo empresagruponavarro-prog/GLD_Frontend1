@@ -4,7 +4,7 @@ import { toSignal } from '@angular/core/rxjs-interop';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Subscription } from 'rxjs';
 import { ModalComponent } from '@shared/components/modal/modal';
-import { errorMessage } from '@app/features/almacen/almacen.utils';
+import { errorMessage } from '@shared/utils/errores-http';
 import { formatearBytes, hoyLimaIso, iconoArchivo, nombreArchivoDocumento, sinVacios } from '../../obra.calc';
 import {
   CATEGORIAS_DOCUMENTO,
