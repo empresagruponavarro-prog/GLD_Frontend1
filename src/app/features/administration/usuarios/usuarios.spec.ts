@@ -39,6 +39,7 @@ async function setup(roles: string[] | 'error' = ROLES, usuarios: Usuario[] = [U
   if (roles === 'error') reqRoles.flush({ message: 'Fallo' }, { status: 500, statusText: 'Server Error' });
   else reqRoles.flush(roles);
   http.expectOne(API).flush(usuarios);
+  http.match(`${environment.apiUrl}/maestros/area?activas=true`).forEach((r) => r.flush([]));
   await fixture.whenStable();
   const el: HTMLElement = fixture.nativeElement;
   const q = <T extends Element>(sel: string) => el.querySelector<T>(sel);
@@ -112,6 +113,7 @@ describe('UsuariosComponent', () => {
     actualizar.click();
     http.expectOne(`${API}/roles`).flush(['Administrador', 'Almacenero', 'Supervisor']);
     http.expectOne(API).flush([{ ...USUARIO, Rol: 'Almacenero' }]);
+    http.match(`${environment.apiUrl}/maestros/area?activas=true`).forEach((r) => r.flush([]));
     await render();
     expect(el.textContent).toContain('Almacenero');
 
@@ -393,6 +395,44 @@ describe('UsuariosComponent: botones según permisos (admin.usuarios)', () => {
     const { fila } = await setup(ROLES, [YO], misPermisos('R', { 'admin.usuarios': { editar: true } }));
     const btn = fila('admin')?.querySelector<HTMLButtonElement>('[data-testid="usuario-estado-btn"]');
     expect(btn?.disabled).toBe(true);
+  });
+
+  it('muestra el área del usuario en la tabla si la tiene y "Sin área" si no', async () => {
+    const conArea: Usuario = { ...USUARIO, id_area: 1, area: { id: 1, codigo: 'SIS', nombre: 'Sistemas e Informática' } };
+    const sinArea: Usuario = { ...INACTIVO, id_area: null, area: null };
+    const { el, fila } = await setup(ROLES, [conArea, sinArea]);
+    expect(fila('aperez')?.querySelector('[data-testid="usuario-area"]')?.textContent).toContain('Sistemas e Informática');
+    expect(fila('ldiaz')?.querySelector('[data-testid="usuario-area"]')).toBeNull();
+    expect(el.textContent).toContain('Sin área');
+  });
+
+  it('marca a quien tiene permisos personalizados', async () => {
+    const personalizado: Usuario = { ...USUARIO, tiene_permisos_personalizados: true };
+    const { fila } = await setup(ROLES, [personalizado, INACTIVO]);
+    expect(fila('aperez')?.querySelector('[data-testid="usuario-personalizado"]')).not.toBeNull();
+    expect(fila('ldiaz')?.querySelector('[data-testid="usuario-personalizado"]')).toBeNull();
+  });
+
+  it('el botón de permisos abre el diálogo del usuario y lo cierra con Cerrar', async () => {
+    const { fila, el, http, render } = await setup();
+    fila('aperez')?.querySelector<HTMLButtonElement>('[data-testid="usuario-permisos-btn"]')?.click();
+    await render();
+    http.expectOne(`${API}/USR001/permisos`).flush({
+      id_usuario: 'USR001',
+      nombres: 'Ana Pérez',
+      usuario: 'aperez',
+      rol: 'Promotor',
+      area: null,
+      area_configurada: false,
+      es_administrador: false,
+      personalizado: false,
+      modulos: [],
+    });
+    await render();
+    expect(el.querySelector('[data-testid="permisos-dialog"]')).not.toBeNull();
+    el.querySelector<HTMLButtonElement>('[data-testid="permisos-cerrar"]')?.click();
+    await render();
+    expect(el.querySelector('[data-testid="permisos-dialog"]')).toBeNull();
   });
 });
 

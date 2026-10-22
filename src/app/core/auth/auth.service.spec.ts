@@ -3,7 +3,7 @@ import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { Router, provideRouter } from '@angular/router';
 import { environment } from '@env';
-import { SESION_STORAGE_KEY, Sesion, returnUrlSeguro } from './auth.models';
+import { SESION_STORAGE_KEY, Sesion, esSesion, normalizarSesion, returnUrlSeguro } from './auth.models';
 import { AuthService } from './auth.service';
 import { MemoryStorage, provideSesionStorage } from './auth.testing';
 
@@ -15,7 +15,7 @@ function sesion(expiraEnMs: number, rol = 'Administrador'): Sesion {
   return {
     token: 'tok-123',
     expiraEn: new Date(Date.now() + expiraEnMs).toISOString(),
-    usuario: { id: 'USR001', usuario: 'admin', nombres: 'Ana Pérez', rol },
+    usuario: { id: 'USR001', usuario: 'admin', nombres: 'Ana Pérez', rol, area: null },
   };
 }
 
@@ -180,6 +180,31 @@ describe('AuthService', () => {
     window.dispatchEvent(new StorageEvent('storage', { key: SESION_STORAGE_KEY }));
     expect(auth.autenticado()).toBe(true);
     expect(auth.rol()).toBe('Usuario');
+  });
+});
+
+describe('área de la sesión (plan 08)', () => {
+  const base = { token: 't', expiraEn: new Date(Date.now() + HORA).toISOString() };
+  const usuario = { id: 'U1', usuario: 'jperez', nombres: null, rol: 'Usuario' };
+
+  it('una sesión con área (o con área null, o sin el campo) es válida', () => {
+    expect(esSesion({ ...base, usuario: { ...usuario, area: { id: 7, codigo: 'PROCURA', nombre: 'Procura' } } })).toBe(true);
+    expect(esSesion({ ...base, usuario: { ...usuario, area: null } })).toBe(true);
+    expect(esSesion({ ...base, usuario })).toBe(true);
+  });
+
+  it.each([
+    ['área que no es objeto', 'Procura'],
+    ['área sin nombre', { id: 7, codigo: 'PROCURA' }],
+    ['id de área no numérico', { id: '7', codigo: 'PROCURA', nombre: 'Procura' }],
+  ])('rechaza una sesión con %s', (_caso, area) => {
+    expect(esSesion({ ...base, usuario: { ...usuario, area } })).toBe(false);
+  });
+
+  it('normalizarSesion conserva el área y deja null cuando falta', () => {
+    const conArea = normalizarSesion({ ...base, usuario: { ...usuario, area: { id: 7, codigo: 'PROCURA', nombre: 'Procura' } } });
+    expect(conArea.usuario.area).toEqual({ id: 7, codigo: 'PROCURA', nombre: 'Procura' });
+    expect(normalizarSesion({ ...base, usuario }).usuario.area).toBeNull();
   });
 });
 

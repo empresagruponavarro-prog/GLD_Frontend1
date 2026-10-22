@@ -36,7 +36,7 @@
         <i class="fa-solid fa-user-circle" style="font-size: 1.25rem; color: #5a9e80;" aria-hidden="true"></i>
         <span class="flex flex-col leading-tight">
           <span class="text-sm font-semibold" data-testid="header-usuario">{{ nombreUsuario() }}</span>
-          <span class="text-xs text-white/70" data-testid="header-rol">{{ u.rol }}</span>
+          <span class="text-xs text-white/70" data-testid="header-rol">{{ u.rol }}@if (u.area) { · <span data-testid="header-area">{{ u.area.nombre }}</span> }</span>
         </span>
         <i class="fa-solid fa-chevron-down text-xs text-white/70" aria-hidden="true"></i>
       </button>

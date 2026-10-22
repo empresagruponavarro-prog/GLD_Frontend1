@@ -28,6 +28,7 @@ import { StockActualComponent } from './features/almacen/stock/stock';
 import { RecepcionesComponent } from './features/almacen/recepciones/recepciones';
 import { DocumentosAdministracionComponent } from './features/documentos/administracion/administracion';
 import { AreasComponent } from './features/maestros-generales/areas/areas';
+import { AreasModulosComponent } from './features/administration/roles/areas-modulos/areas-modulos';
 import { UnidadesMedidaComponent } from './features/maestros-generales/unidades-medida/unidades-medida';
 import { ImprimirComponent } from './features/imprimir/imprimir';
 import { CuentasComponent } from './features/tesoreria/cuentas/cuentas';
@@ -66,6 +67,7 @@ export const routes: Routes = [
       // Administración: como el resto, la decide la matriz (la API la aplica siempre en estricto).
       rutaModulo('admin/usuarios', UsuariosComponent, 'admin.usuarios'),
       { ...rutaModulo('admin/roles', RolesComponent, 'admin.roles'), canDeactivate: [rolesPendientesGuard] },
+      { ...rutaModulo('admin/roles/areas', AreasModulosComponent, 'admin.roles'), canDeactivate: [rolesPendientesGuard] },
       rutaModulo('admin/empresas', EmpresasComponent, 'admin.empresas'),
       rutaModulo('anexos', AnexosComponent, 'maestros.anexos'),
       rutaModulo('productos', ProductosComponent, 'maestros.productos'),

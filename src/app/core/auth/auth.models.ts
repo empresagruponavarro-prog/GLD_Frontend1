@@ -4,12 +4,21 @@
  */
 export const ROL_ADMINISTRADOR = 'Administrador';
 
+/** Área del usuario en sesión (plan 08): decide qué módulos y datos ve. */
+export interface AreaSesion {
+  id: number;
+  codigo: string;
+  nombre: string;
+}
+
 /** Usuario autenticado tal como lo devuelven `POST /auth/login` y `GET /auth/me`. */
 export interface UsuarioSesion {
   id: string;
   usuario: string;
   nombres: string | null;
   rol: string;
+  /** `null` o ausente = sin área (alcance global). */
+  area?: AreaSesion | null;
 }
 
 /** Sesión persistida en `localStorage` (clave {@link SESION_STORAGE_KEY}). */
@@ -41,6 +50,12 @@ export const MSG_USUARIO_INACTIVO = 'Tu usuario está desactivado. Contacta al a
 
 export const SESION_STORAGE_KEY = 'gld.sesion';
 
+function esAreaSesion(v: unknown): v is AreaSesion {
+  if (!v || typeof v !== 'object') return false;
+  const a = v as Record<string, unknown>;
+  return typeof a['id'] === 'number' && typeof a['codigo'] === 'string' && typeof a['nombre'] === 'string';
+}
+
 function esUsuarioSesion(v: unknown): v is UsuarioSesion {
   if (!v || typeof v !== 'object') return false;
   const u = v as Record<string, unknown>;
@@ -49,7 +64,8 @@ function esUsuarioSesion(v: unknown): v is UsuarioSesion {
     typeof u['usuario'] === 'string' &&
     u['usuario'].length > 0 &&
     (u['nombres'] === null || u['nombres'] === undefined || typeof u['nombres'] === 'string') &&
-    typeof u['rol'] === 'string'
+    typeof u['rol'] === 'string' &&
+    (u['area'] === null || u['area'] === undefined || esAreaSesion(u['area']))
   );
 }
 
@@ -66,7 +82,7 @@ export function esSesion(v: unknown): v is Sesion {
   );
 }
 
-/** Normaliza la sesión (id como texto, `nombres` ausente como `null`). */
+/** Normaliza la sesión (id como texto, `nombres` y `area` ausentes como `null`). */
 export function normalizarSesion(s: Sesion): Sesion {
   return {
     token: s.token,
@@ -76,6 +92,7 @@ export function normalizarSesion(s: Sesion): Sesion {
       usuario: s.usuario.usuario,
       nombres: s.usuario.nombres ?? null,
       rol: s.usuario.rol,
+      area: s.usuario.area ?? null,
     },
   };
 }

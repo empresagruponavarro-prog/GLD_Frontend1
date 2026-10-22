@@ -1,0 +1,125 @@
+<app-modal [isOpen]="true" [title]="'Permisos de ' + usuario().Nombres" icon="fa-solid fa-shield-halved" maxWidth="1100px"
+  [showDefaultFooter]="false" (closed)="cerrar()">
+  <div class="up-contenido" data-testid="permisos-dialog">
+    @if (datos(); as d) {
+      <p class="up-resumen">
+        <span>&#64;{{ d.usuario }}</span>
+        &bull; Rol: <strong>{{ d.rol || 'Sin rol' }}</strong>
+        &bull; Área:
+        @if (d.area) {
+          <strong>{{ d.area.nombre }}</strong>
+          @if (!d.area_configurada) {
+            <span class="badge badge-pending">Área sin configurar: no restringe</span>
+          }
+        } @else {
+          <strong>Sin área</strong> (alcance global)
+        }
+        @if (d.personalizado) {
+          &bull; <span class="badge badge-progress" data-testid="permisos-personalizado">Permisos personalizados</span>
+        }
+      </p>
+      <p class="up-ayuda">
+        Los permisos salen del <strong>rol</strong>; el <strong>área</strong> puede recortarlos y una <strong>excepción</strong> reemplaza el
+        módulo completo para esta persona (concede o quita). Administración solo se da por el rol.
+        @if (d.es_administrador) {
+          <em> Es Administrador: lo tiene todo y no admite excepciones.</em>
+        } @else if (!puedeEditar()) {
+          <em> Solo el Administrador puede cambiar excepciones.</em>
+        }
+      </p>
+    }
+
+    @if (error(); as mensaje) {
+      <div role="alert" class="up-alerta up-alerta--error" data-testid="permisos-error">{{ mensaje }}</div>
+    }
+    @if (aviso(); as mensaje) {
+      <div role="status" class="up-alerta up-alerta--ok" data-testid="permisos-aviso">{{ mensaje }}</div>
+    }
+
+    @if (cargando()) {
+      <p class="up-vacio" data-testid="permisos-cargando">Cargando permisos…</p>
+    } @else if (datos()) {
+      <div class="up-barra">
+        <input type="search" class="form-control-custom up-filtro" placeholder="Buscar módulo…" aria-label="Buscar módulo"
+          [value]="filtro()" (input)="filtro.set(valorEvento($event))" />
+      </div>
+
+      <div class="up-tabla-wrap">
+        <table class="up-tabla" data-testid="permisos-tabla">
+          <thead>
+            <tr>
+              <th scope="col">Módulo</th>
+              <th scope="col">Rol da</th>
+              <th scope="col">Área</th>
+              <th scope="col">Puede (efectivo)</th>
+              <th scope="col">Origen</th>
+              <th scope="col">Excepción</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (grupo of grupos(); track grupo.nombre) {
+              <tr class="up-grupo"><th scope="colgroup" colspan="6">{{ grupo.nombre }}</th></tr>
+              @for (m of grupo.modulos; track m.id) {
+                <tr [attr.data-testid]="'permiso-' + m.clave">
+                  <th scope="row" class="up-modulo">{{ m.nombre }}<code>{{ m.clave }}</code></th>
+                  <td>{{ resumen(m.rol) }}</td>
+                  <td [class]="'up-area up-area--' + m.area">{{ etiquetaArea(m.area) }}</td>
+                  <td class="up-efectivo">{{ resumen(m.efectivo) }}</td>
+                  <td>
+                    <span [class]="'up-origen up-origen--' + m.origen">{{ etiquetaOrigen(m.origen) }}</span>
+                  </td>
+                  <td class="up-excepcion">
+                    @if (personalizable(m)) {
+                      <label class="up-personalizar">
+                        <input type="checkbox" [checked]="tieneExcepcion(m.clave)" [disabled]="!puedeEditar() || guardando()"
+                          (change)="alternar(m, $event)" [attr.data-testid]="'excepcion-' + m.clave" />
+                        Personalizar
+                      </label>
+                      @if (tieneExcepcion(m.clave)) {
+                        <div class="up-acciones">
+                          @for (accion of acciones; track accion) {
+                            @if (admite(m, accion)) {
+                              <label class="up-accion">
+                                <input type="checkbox" [checked]="valorDe(m.clave, accion)" [disabled]="!puedeEditar() || guardando()"
+                                  (change)="cambiarAccion(m, accion, $event)" [attr.data-testid]="'accion-' + m.clave + '-' + accion" />
+                                {{ etiquetasAccion[accion] }}
+                              </label>
+                            }
+                          }
+                        </div>
+                      }
+                    } @else {
+                      <span class="up-solo-rol">Solo por rol</span>
+                    }
+                  </td>
+                </tr>
+              }
+            } @empty {
+              <tr><td colspan="6" class="up-vacio">Ningún módulo coincide con la búsqueda.</td></tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  </div>
+
+  <div modal-footer class="modal-footer">
+    @if (puedeEditar() && datos()?.personalizado) {
+      <button type="button" class="btn btn-secondary" (click)="restablecer()" [disabled]="guardando()" data-testid="permisos-restablecer">
+        <i class="fa-solid fa-rotate-left" aria-hidden="true"></i> Quitar todas las excepciones
+      </button>
+    }
+    @if (puedeEditar() && sucio()) {
+      <button type="button" class="btn btn-secondary" (click)="descartar()" [disabled]="guardando()" data-testid="permisos-descartar">
+        Descartar cambios
+      </button>
+    }
+    <button type="button" class="btn btn-secondary" (click)="cerrar()" [disabled]="guardando()" data-testid="permisos-cerrar">Cerrar</button>
+    @if (puedeEditar()) {
+      <button type="button" class="btn btn-primary" (click)="guardar()" [disabled]="guardando() || !sucio()" data-testid="permisos-guardar">
+        <i class="fa-solid" [class.fa-floppy-disk]="!guardando()" [class.fa-circle-notch]="guardando()" [class.fa-spin]="guardando()" aria-hidden="true"></i>
+        {{ guardando() ? 'Guardando...' : 'Guardar excepciones' }}
+      </button>
+    }
+  </div>
+</app-modal>

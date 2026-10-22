@@ -1,0 +1,147 @@
+<div class="content-header">
+  <div>
+    <h1 class="content-title">Roles y permisos</h1>
+    <p class="content-subtitle">Elige qué módulos ve cada área. Lo que cada persona puede hacer dentro de ellos lo define su rol.</p>
+  </div>
+  <div class="areas-header-actions">
+    <button type="button" class="btn btn-secondary" (click)="cargar()" [disabled]="cargando() || guardando() !== null"
+      data-testid="areas-actualizar">
+      <i class="fa-solid fa-arrows-rotate" [class.fa-spin]="cargando()" aria-hidden="true"></i> {{ cargando() ? 'Actualizando...' : 'Actualizar' }}
+    </button>
+  </div>
+</div>
+
+<div class="content-body">
+  <app-pestanas-permisos />
+
+  @if (error(); as mensaje) {
+    <div role="alert" class="areas-alert areas-alert--error" data-testid="areas-error">
+      <i class="fa-solid fa-circle-exclamation" aria-hidden="true"></i>
+      <span>{{ mensaje }}</span>
+    </div>
+  }
+  @if (aviso(); as mensaje) {
+    <div role="status" class="areas-alert areas-alert--ok" data-testid="areas-aviso">
+      <i class="fa-solid fa-circle-check" aria-hidden="true"></i>
+      <span>{{ mensaje }}</span>
+    </div>
+  }
+
+  @if (matriz(); as m) {
+    <p class="areas-ayuda">
+      Cada celda cambia con un clic: <strong>No</strong> (el área no ve el módulo) → <strong>Solo ver</strong> (solo consulta) →
+      <strong>Completo</strong> (rige lo que permita el rol). Un área sin módulos configurados no restringe a sus usuarios.
+      Administración y el menú de módulos solo dependen del rol.
+      @if (!permisos.editar()) {
+        <em> No tienes permiso para editar: la matriz está en solo lectura.</em>
+      }
+    </p>
+
+    @if (sinConfigurar().length > 0) {
+      <div role="status" class="areas-alert areas-alert--aviso" data-testid="areas-sin-configurar">
+        <i class="fa-solid fa-triangle-exclamation" aria-hidden="true"></i>
+        <span>
+          Áreas sin módulos configurados (sus usuarios hoy no tienen restricción):
+          @for (area of sinConfigurar(); track area.id; let ultima = $last) {
+            <strong>{{ area.nombre }}</strong> ({{ area.usuarios }} usuario(s)){{ ultima ? '.' : ', ' }}
+          }
+        </span>
+      </div>
+    }
+    @if (sinArea().length > 0 && sinConfigurar().length < areas().length) {
+      <div role="status" class="areas-alert areas-alert--aviso" data-testid="areas-sin-area">
+        <i class="fa-solid fa-triangle-exclamation" aria-hidden="true"></i>
+        <span>
+          Módulos que ninguna área tiene (solo los verán el Administrador, quienes no tienen área y quienes tengan una excepción):
+          {{ sinArea().join(', ') }}.
+        </span>
+      </div>
+    }
+
+    @if (areas().length === 0) {
+      <p class="areas-vacio" data-testid="areas-vacio">No hay áreas activas. Créalas en Maestros Generales › Áreas.</p>
+    } @else {
+      <div class="table-card areas-card">
+        <table class="table areas-tabla" data-testid="areas-tabla">
+          <thead>
+            <tr>
+              <th class="areas-tabla__modulo" scope="col">Módulo</th>
+              @for (area of areas(); track area.id) {
+                <th scope="col" class="areas-tabla__area" [attr.data-testid]="'area-' + area.id">
+                  <div class="areas-area">
+                    <span class="areas-area__nombre">{{ area.nombre }}</span>
+                    <span class="areas-area__meta">
+                      {{ area.usuarios }} usuario(s) · {{ cuantosModulos(area.id) }} módulo(s)
+                    </span>
+                    @if (!area.configurada) {
+                      <span class="badge badge-pending areas-area__sin-config">Sin configurar</span>
+                    }
+                    @if (permisos.editar()) {
+                      <select class="areas-area__rapida" [attr.aria-label]="'Acción rápida para ' + area.nombre"
+                        (change)="aplicarRapida(area, $event)" [disabled]="guardando() !== null">
+                        <option value="">Acción rápida…</option>
+                        <option value="completo">Todo completo</option>
+                        <option value="solo_ver">Todo solo ver</option>
+                        <option value="limpiar">Quitar todo</option>
+                        @for (otra of areas(); track otra.id) {
+                          @if (otra.id !== area.id) {
+                            <option [value]="'copiar:' + otra.id">Copiar de {{ otra.nombre }}</option>
+                          }
+                        }
+                      </select>
+                      @if (esSucia(area)) {
+                        <div class="areas-area__acciones">
+                          <button type="button" class="btn btn-primary areas-area__guardar" (click)="guardar(area)"
+                            [disabled]="guardando() !== null" [attr.data-testid]="'area-guardar-' + area.id">
+                            <i class="fa-solid" [class.fa-floppy-disk]="guardando() !== area.id" [class.fa-circle-notch]="guardando() === area.id"
+                              [class.fa-spin]="guardando() === area.id" aria-hidden="true"></i>
+                            {{ guardando() === area.id ? 'Guardando...' : 'Guardar' }}
+                          </button>
+                          <button type="button" class="btn btn-secondary areas-area__guardar" (click)="descartar(area)"
+                            [disabled]="guardando() !== null" [attr.data-testid]="'area-descartar-' + area.id">
+                            Descartar
+                          </button>
+                        </div>
+                      }
+                    }
+                  </div>
+                </th>
+              }
+            </tr>
+          </thead>
+          <tbody>
+            @for (grupo of grupos(); track grupo.nombre) {
+              <tr class="areas-grupo">
+                <th scope="colgroup" [attr.colspan]="areas().length + 1">{{ grupo.nombre }}</th>
+              </tr>
+              @for (modulo of grupo.modulos; track modulo.id) {
+                <tr>
+                  <th scope="row" class="areas-tabla__modulo">
+                    {{ modulo.nombre }}
+                    <code class="areas-clave">{{ modulo.clave }}</code>
+                  </th>
+                  @if (modulo.configurable) {
+                    @for (area of areas(); track area.id) {
+                      <td class="areas-celda">
+                        <button type="button" class="areas-nivel" [class]="'areas-nivel areas-nivel--' + nivel(area.id, modulo.clave)"
+                          (click)="ciclar(area, modulo)" [disabled]="!permisos.editar() || guardando() !== null"
+                          [attr.aria-label]="modulo.nombre + ' en ' + area.nombre + ': ' + etiqueta(nivel(area.id, modulo.clave)) + '. Clic para cambiar'"
+                          [attr.data-testid]="'celda-' + area.id + '-' + modulo.clave">
+                          {{ etiqueta(nivel(area.id, modulo.clave)) }}
+                        </button>
+                      </td>
+                    }
+                  } @else {
+                    <td class="areas-solo-rol" [attr.colspan]="areas().length">Solo por rol (no depende del área)</td>
+                  }
+                </tr>
+              }
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  } @else if (cargando()) {
+    <p class="areas-vacio" data-testid="areas-cargando">Cargando módulos por área…</p>
+  }
+</div>
