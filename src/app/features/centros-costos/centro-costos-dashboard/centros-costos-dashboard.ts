@@ -1,5 +1,5 @@
 import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { DecimalPipe } from '@angular/common';
 import { Observable, finalize, forkJoin, map, of, switchMap } from 'rxjs';
 import { CentrosCostosDashboardService } from './centros-costos-dashboard.service';
 import { 
@@ -13,7 +13,7 @@ import { DataTable } from '../../../shared/interfaces';
 
 @Component({
   selector: 'app-centros-costos-dashboard',
-  imports: [CommonModule, DataTableComponent],
+  imports: [DecimalPipe, DataTableComponent],
   templateUrl: './centros-costos-dashboard.html',
   styleUrl: './centros-costos-dashboard.css'
 })

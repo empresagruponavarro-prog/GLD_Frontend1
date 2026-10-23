@@ -1,7 +1,6 @@
-import { HttpClient } from '@angular/common/http';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
-import { environment } from '@env';
+import { EmpresasService } from '../administration/empresas/empresas.service';
 import { errorMessage, fmtMoney, fmtNum } from '../almacen/almacen.utils';
 import { AdministracionDocumentosService } from '../documentos/administracion/administracion.service';
 import { CLASE_LABEL, DocumentoDetalle } from '../documentos/administracion/administracion.models';
@@ -42,7 +41,7 @@ interface EmpresaCabecera {
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ImprimirComponent {
-  private readonly http = inject(HttpClient);
+  private readonly empresas = inject(EmpresasService);
   private readonly requerimientos = inject(RequerimientosService);
   private readonly documentos = inject(AdministracionDocumentosService);
   private readonly tesoreria = inject(TesoreriaService);
@@ -79,7 +78,7 @@ export class ImprimirComponent {
   });
 
   constructor() {
-    this.http.get<EmpresaCabecera[]>(`${environment.apiUrl}/administration/empresas`).subscribe({
+    this.empresas.getAll().subscribe({
       next: (r) => this.empresa.set(Array.isArray(r) ? (r[0] ?? null) : null),
       error: () => this.empresa.set(null),
     });

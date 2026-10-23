@@ -1,5 +1,4 @@
 import { Component } from '@angular/core';
-import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 
 interface SubModuleCard {
@@ -12,7 +11,7 @@ interface SubModuleCard {
 @Component({
   selector: 'app-maestros-generales',
   standalone: true,
-  imports: [CommonModule, RouterModule],
+  imports: [RouterModule],
   templateUrl: './maestros-generales.html'
 })
 export class MaestrosGeneralesComponent {
