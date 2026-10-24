@@ -57,6 +57,22 @@
       <td>{{ item.Usuario }}</td>
       <td>
         <span class="badge badge-progress">{{ item.Rol || 'Sin Rol' }}</span>
+        @if (item.tiene_permisos_personalizados) {
+          <span class="badge badge-pending" title="Tiene permisos personalizados sobre los de su rol y su área" data-testid="usuario-personalizado">
+            <i class="fa-solid fa-user-gear" aria-hidden="true"></i> Personalizado
+          </span>
+        }
+      </td>
+      <td>
+        @if (item.area?.nombre) {
+          <span class="badge badge-progress" style="background: #f1f5f9; color: #334155; border: 1px solid #cbd5e1;" data-testid="usuario-area">
+            <i class="fa-solid fa-building-user" aria-hidden="true"></i> {{ item.area?.nombre }}
+          </span>
+        } @else {
+          <span style="font-size: 0.8rem; color: #94a3b8;">
+            <em>Sin área</em>
+          </span>
+        }
       </td>
       <td>
         @if (item.activo) {
@@ -74,6 +90,10 @@
           @if (permisos.editar()) {
           <button class="btn btn-secondary" style="padding: 0.25rem 0.5rem;" (click)="editModal(item)" title="Editar" aria-label="Editar usuario">
             <i class="fa-solid fa-pen-to-square" aria-hidden="true"></i>
+          </button>
+          <button type="button" class="btn btn-secondary" style="padding: 0.25rem 0.5rem;" (click)="abrirPermisos(item)"
+            title="Permisos del usuario" [attr.aria-label]="'Permisos de usuario ' + item.Usuario" data-testid="usuario-permisos-btn">
+            <i class="fa-solid fa-shield-halved" aria-hidden="true"></i>
           </button>
           @if (motivoNoDesactivar(item); as motivo) {
             <!-- El title va en el envoltorio: los botones deshabilitados no muestran tooltip en todos los navegadores. -->
@@ -107,8 +127,8 @@
 
 <!-- Modal Formulario Rediseñado -->
 @if (showModal()) {
-<div class="modal-overlay" tabindex="-1" (click)="closeModal()" (keydown.escape)="cerrarConEscape()">
-  <div class="modal-content usuario-modal" role="dialog" aria-modal="true" aria-labelledby="usuario-modal-title" (click)="$event.stopPropagation()">
+<div class="modal-overlay" tabindex="-1" (click)="onFormOverlayClick($event)" (keydown)="teclaEnFormulario($event)">
+  <div class="modal-content usuario-modal" role="dialog" aria-modal="true" aria-labelledby="usuario-modal-title">
     
     <!-- Encabezado con Icono Corporativo GLD -->
     <div class="modal-header-custom">
@@ -176,6 +196,28 @@
               <a class="field-hint" routerLink="/admin/roles" data-testid="usuario-admin-roles" style="align-self: flex-start; color: var(--gld-green-dark, #3b7a5e);">
                 <i class="fa-solid fa-user-shield" aria-hidden="true"></i> Administrar roles
               </a>
+            </div>
+
+            <!-- Área de la Empresa -->
+            <div class="field-item">
+              <label class="field-label" for="usuario-area">
+                <span>Área de la Empresa</span>
+              </label>
+              <div class="input-with-icon">
+                <i class="fa-solid fa-building-user input-prefix-icon"></i>
+                <select id="usuario-area" class="form-control-custom" formControlName="id_area" data-testid="usuario-area-select">
+                  <option [ngValue]="null">-- Sin área asignada --</option>
+                  @for (area of areas(); track area.id) {
+                    <option [ngValue]="area.id">{{ area.nombre }}</option>
+                  }
+                </select>
+              </div>
+              @if (areasError(); as aviso) {
+                <span class="field-hint" role="alert" style="color: #b45309;">
+                  <i class="fa-solid fa-triangle-exclamation" aria-hidden="true"></i> {{ aviso }}
+                </span>
+              }
+              <span class="field-hint">Área a la que pertenece el colaborador en la empresa.</span>
             </div>
           </div>
         </div>
@@ -274,7 +316,7 @@
 
 <!-- Confirmación de desactivar / reactivar / eliminar (dentro de la pantalla, sin confirm()) -->
 @if (porConfirmar(); as pendiente) {
-<div class="modal-overlay" tabindex="-1" (click)="onConfirmOverlayClick($event)" (keydown.escape)="cancelarConfirmacion()">
+<div class="modal-overlay" tabindex="-1" (click)="onConfirmOverlayClick($event)" (keydown)="teclaEnConfirmacion($event)">
   <div class="modal-content usuario-modal usuarios-confirm-modal" role="alertdialog" aria-modal="true"
     aria-labelledby="usuario-confirm-title" aria-describedby="usuario-confirm-desc" data-testid="usuario-confirm">
 
@@ -332,4 +374,9 @@
     </div>
   </div>
 </div>
+}
+
+<!-- Permisos del usuario: rol → área → excepción (plan 08) -->
+@if (usuarioPermisos(); as u) {
+  <app-usuario-permisos-dialog [usuario]="u" (closed)="cerrarPermisos()" (cambiado)="loadUsuarios()" />
 }

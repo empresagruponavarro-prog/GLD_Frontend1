@@ -2,20 +2,20 @@
 <!-- MAIN SPLIT WORKSPACE (h-screen w-full flex) -->
   
   <!-- CABECERA GENERAL DEL MÓDULO (Al estilo Centros de Costos) -->
-  <div class="bg-white border-b border-slate-200 px-6 py-4 shrink-0 z-20 shadow-sm">
-    <div class="flex items-center justify-between mb-4">
+  <div class="bg-white border-b border-slate-200 px-4 xl:px-6 py-3 xl:py-4 shrink-0 z-20 shadow-sm">
+    <div class="flex flex-wrap items-center justify-between gap-3 mb-3 xl:mb-4">
       <div>
-        <h1 class="text-xl font-extrabold text-slate-900 tracking-tight">Catálogo de Plantillas</h1>
+        <h1 class="text-lg xl:text-xl font-extrabold text-slate-900 tracking-tight">Catálogo de Plantillas</h1>
         <p class="text-xs text-slate-500 mt-1">Gestión y administración de estructuras base para presupuestos.</p>
       </div>
-      <div class="flex items-center space-x-2.5">
-        <button type="button" (click)="loadPlantillas()" class="px-4 py-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition-all shadow-2xs flex items-center space-x-1.5 cursor-pointer">
+      <div class="flex flex-wrap items-center gap-2">
+        <button type="button" (click)="loadPlantillas()" class="px-3 xl:px-4 py-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition-all shadow-2xs flex items-center space-x-1.5 cursor-pointer">
           <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
           <span>Actualizar</span>
         </button>
         <app-exportar-botones [datos]="datosExportacion()" />
         @if (permisos.crear()) {
-          <button type="button" (click)="nuevaPlantilla()" class="px-4 py-2 rounded-lg bg-[#0e5941] hover:bg-[#0a4231] text-white text-xs font-bold transition-all shadow-sm flex items-center space-x-1.5 cursor-pointer">
+          <button type="button" (click)="nuevaPlantilla()" class="px-3 xl:px-4 py-2 rounded-lg bg-[#0e5941] hover:bg-[#0a4231] text-white text-xs font-bold transition-all shadow-sm flex items-center space-x-1.5 cursor-pointer">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"></path></svg>
             <span>Nueva Plantilla</span>
           </button>
@@ -24,8 +24,8 @@
     </div>
 
     <!-- CAJA DE BÚSQUEDA Y FILTROS -->
-    <div class="bg-slate-50/50 border border-slate-200 rounded-xl p-3 flex flex-col gap-3">
-      <div class="flex items-center gap-3">
+    <div class="bg-slate-50/50 border border-slate-200 rounded-xl p-2.5 xl:p-3 flex flex-wrap items-center gap-2.5 xl:gap-3">
+      <div class="flex items-center gap-3 flex-1 min-w-[260px]">
         <div class="relative flex-1">
           <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
             <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
@@ -34,11 +34,11 @@
         </div>
         <button type="button" class="px-4 py-2 bg-white border border-slate-200 rounded-lg text-slate-700 text-xs font-semibold hover:bg-slate-50 transition-colors flex items-center gap-2 shadow-2xs cursor-pointer">
           <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"></path></svg>
-          Filtros Activos
+          <span class="hidden xl:inline">Filtros Activos</span>
         </button>
       </div>
       
-      <div class="flex items-center gap-3 text-xs">
+      <div class="flex flex-wrap items-center gap-3 text-xs">
         <select [(ngModel)]="statusFilter" class="py-1.5 pl-3 pr-8 bg-white border border-slate-200 rounded-lg text-slate-600 outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 shadow-2xs cursor-pointer appearance-none">
           <option>Estado: Todas</option>
           <option>Activas</option>
@@ -58,7 +58,7 @@
     <!-- ======================================================== -->
     <!-- 1. COLUMNA IZQUIERDA (30% DEL ANCHO) - CATÁLOGO DE PLANTILLAS -->
     <!-- ======================================================== -->
-    <aside class="w-[30%] min-w-[320px] max-w-[420px] h-full bg-white border-r border-slate-200/80 flex flex-col shrink-0 z-20">
+    <aside class="w-[280px] lg:w-[300px] xl:w-[340px] 2xl:w-[400px] h-full bg-white border-r border-slate-200/80 flex flex-col shrink-0 z-20">
       
       <!-- LISTA DE PLANTILLAS (SCROLLEABLE) -->
       <div class="bg-slate-100/50 border-b border-slate-200 py-2 px-4 text-[10px] font-bold text-slate-500 uppercase tracking-wider shrink-0">
@@ -90,12 +90,75 @@
                 </span>
               }
 
-              <div class="has-tooltip relative">
-                <button type="button" class="p-1 rounded-md text-slate-400 hover:text-slate-700 hover:bg-slate-200 transition-colors">
+              <div class="relative">
+                <button type="button" 
+                        (click)="toggleMenuPlantilla($event, p.IdPlantilla)"
+                        title="Opciones"
+                        class="p-1 rounded-md text-slate-400 hover:text-slate-700 hover:bg-slate-200 transition-colors">
                   <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z"></path>
                   </svg>
                 </button>
+
+                @if (menuAbiertoId() === p.IdPlantilla) {
+                  <div (click)="$event.stopPropagation()"
+                       class="absolute right-0 top-full mt-1.5 w-36 bg-[#0f172a] border border-slate-700/80 rounded-xl shadow-2xl py-1 text-xs text-slate-200 z-50 animate-in fade-in zoom-in-95 duration-100">
+                    <button type="button" 
+                            (click)="abrirEditarInfo(p, $event)"
+                            class="w-full px-3 py-1.5 flex items-center space-x-2 text-left hover:bg-slate-800 hover:text-white transition-colors cursor-pointer">
+                      <svg class="w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                      </svg>
+                      <span class="font-medium">Editar info</span>
+                    </button>
+
+                    <button type="button" 
+                            (click)="toggleActivarPlantilla(p, $event)"
+                            class="w-full px-3 py-1.5 flex items-center space-x-2 text-left hover:bg-slate-800 transition-colors cursor-pointer"
+                            [ngClass]="p.Activo ? 'text-amber-400 hover:text-amber-300' : 'text-emerald-400 hover:text-emerald-300'">
+                      @if (p.Activo) {
+                        <svg class="w-3.5 h-3.5 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"></path>
+                        </svg>
+                        <span class="font-medium">Desactivar</span>
+                      } @else {
+                        <svg class="w-3.5 h-3.5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                        </svg>
+                        <span class="font-medium">Activar</span>
+                      }
+                    </button>
+
+                    <button type="button" 
+                            (click)="abrirFusionar(p, $event)"
+                            class="w-full px-3 py-1.5 flex items-center space-x-2 text-left hover:bg-slate-800 hover:text-white transition-colors cursor-pointer">
+                      <svg class="w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4M16 17H4m0 0l4-4m-4 4l4 4"></path>
+                      </svg>
+                      <span class="font-medium">Fusionar con...</span>
+                    </button>
+
+                    <button type="button" 
+                            (click)="abrirImprimirDesdeLista(p, $event)"
+                            class="w-full px-3 py-1.5 flex items-center space-x-2 text-left hover:bg-slate-800 hover:text-white transition-colors cursor-pointer">
+                      <svg class="w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/>
+                      </svg>
+                      <span class="font-medium">Imprimir</span>
+                    </button>
+
+                    <div class="my-1 border-t border-slate-800"></div>
+
+                    <button type="button" 
+                            (click)="eliminarPlantilla(p, $event)"
+                            class="w-full px-3 py-1.5 flex items-center space-x-2 text-left text-red-400 hover:bg-red-950/40 hover:text-red-300 transition-colors cursor-pointer">
+                      <svg class="w-3.5 h-3.5 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                      </svg>
+                      <span class="font-medium">Eliminar</span>
+                    </button>
+                  </div>
+                }
               </div>
             </div>
 
@@ -128,16 +191,16 @@
     <!-- ======================================================== -->
     <!-- 2. COLUMNA DERECHA (70% DEL ANCHO) - ÁREA DE FASES Y CATEGORÍAS -->
     <!-- ======================================================== -->
-    <section class="w-[70%] flex-1 h-full flex flex-col bg-slate-50 overflow-hidden relative">
+    <section class="flex-1 min-w-0 h-full flex flex-col bg-slate-50 overflow-hidden relative">
 
       @if (selectedPlantilla(); as plantilla) {
         <!-- CABECERA PRINCIPAL (DASHBOARD BAR) -->
-        <div class="bg-white/80 backdrop-blur-md border-b border-slate-200/80 px-8 py-5 shrink-0 z-10 flex flex-col md:flex-row md:items-start justify-between gap-4">
-          <div class="flex-1">
+        <div class="bg-white/80 backdrop-blur-md border-b border-slate-200/80 px-4 xl:px-8 py-3 xl:py-5 shrink-0 z-10 flex flex-col xl:flex-row xl:items-start justify-between gap-3 xl:gap-4">
+          <div class="flex-1 min-w-0">
             <!-- Editor en línea: solo lectura sin permiso de editar -->
             <fieldset class="min-w-0" [disabled]="soloLectura()">
-            <div class="flex items-center space-x-3 mb-2">
-              <input type="text" [(ngModel)]="plantilla.Nombre" class="text-xl font-extrabold text-slate-900 tracking-tight bg-transparent border-b border-transparent hover:border-slate-300 focus:border-emerald-500 focus:outline-none w-full max-w-lg transition-colors">
+            <div class="flex flex-wrap items-center gap-x-3 gap-y-1.5 mb-2">
+              <input type="text" [(ngModel)]="plantilla.Nombre" class="text-lg xl:text-xl font-extrabold text-slate-900 tracking-tight bg-transparent border-b border-transparent hover:border-slate-300 focus:border-emerald-500 focus:outline-none flex-1 min-w-[200px] max-w-lg transition-colors">
               @if (plantilla.Activo) {
                 <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200 shrink-0">
                   <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 mr-1.5 animate-pulse"></span>
@@ -163,9 +226,16 @@
           </div>
 
           <!-- BOTONES DE ACCIÓN GENERAL -->
-          <div class="flex items-center space-x-2.5 shrink-0 pt-1">
+          <div class="flex flex-wrap items-center gap-2 shrink-0 xl:pt-1">
             <button type="button" (click)="selectedPlantilla.set(null)" class="px-3.5 py-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 active:scale-95 text-xs font-semibold text-slate-600 hover:text-slate-800 transition-all duration-150 shadow-2xs cursor-pointer">
               Descartar
+            </button>
+
+            <button type="button" (click)="abrirImprimirPlantilla()" title="Imprimir o exportar ficha técnica de la plantilla (3 niveles)" class="px-3.5 py-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 active:scale-95 text-xs font-semibold text-slate-700 hover:text-slate-900 transition-all duration-150 flex items-center space-x-1.5 shadow-2xs cursor-pointer">
+              <svg class="w-4 h-4 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/>
+              </svg>
+              <span>Imprimir</span>
             </button>
 
             @if (!soloLectura()) {
@@ -187,7 +257,7 @@
         </div>
 
         <!-- BARRA DE INFORMACIÓN RESUMEN -->
-        <div class="bg-white border-b border-slate-200/60 px-8 py-2.5 flex items-center justify-between text-xs text-slate-500 shrink-0">
+        <div class="bg-white border-b border-slate-200/60 px-4 xl:px-8 py-2 xl:py-2.5 flex items-center justify-between text-xs text-slate-500 shrink-0">
           <div class="flex items-center space-x-6">
             <div class="flex items-center space-x-1.5">
               <span class="text-slate-400 font-medium">Total Fases:</span>
@@ -195,28 +265,70 @@
             </div>
             <div class="h-3 w-px bg-slate-200"></div>
             <div class="flex items-center space-x-1.5">
-              <span class="text-slate-400 font-medium">Categorías:</span>
-              <strong class="text-slate-800 font-mono font-bold">{{ getTotalCategorias(plantilla) }} Categorías</strong>
+              <span class="text-slate-400 font-medium">Partidas:</span>
+              <strong class="text-slate-800 font-mono font-bold">{{ getTotalCategorias(plantilla) }} Partidas</strong>
             </div>
           </div>
+
+          <!-- BOTONES ACORDEÓN: EXPANDIR / COLAPSAR TODAS -->
+          @if (plantilla.fases.length > 0) {
+            <div class="flex items-center space-x-1 text-xs">
+              <button
+                type="button"
+                (click)="expandirTodasFases()"
+                class="px-2.5 py-1 rounded text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-colors font-medium cursor-pointer"
+                title="Expandir todas las fases"
+              >
+                Expandir todas
+              </button>
+              <span class="text-slate-300">|</span>
+              <button
+                type="button"
+                (click)="colapsarTodasFases()"
+                class="px-2.5 py-1 rounded text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-colors font-medium cursor-pointer"
+                title="Colapsar todas las fases"
+              >
+                Colapsar todas
+              </button>
+            </div>
+          }
         </div>
 
         <!-- CUERPO PRINCIPAL (WORKSPACE CON OVERFLOW-Y-AUTO INDEPENDIENTE) -->
-        <div class="flex-1 overflow-y-auto p-8 space-y-6">
+        <div class="flex-1 overflow-y-auto p-4 xl:p-8 space-y-4 xl:space-y-6">
           <!-- Fases y subfases: solo lectura y sin arrastrar sin permiso de editar -->
           <fieldset class="min-w-0" [disabled]="soloLectura()">
-          <div cdkDropList [cdkDropListDisabled]="soloLectura()" (cdkDropListDropped)="dropFase($event)" class="space-y-6">
+          <div cdkDropList [cdkDropListDisabled]="soloLectura()" (cdkDropListDropped)="dropFase($event)" class="space-y-4 xl:space-y-6">
 
           @for (fase of plantilla.fases; track fase.IdpptoFase + i; let i = $index) {
             <section class="bg-white rounded-xl border border-slate-200/80 shadow-xs overflow-hidden transition-all duration-150 hover:shadow-sm" cdkDrag>
               
-              <!-- CABECERA DE FASE -->
-              <div class="bg-slate-100/90 border-b border-slate-200/80 px-5 py-3.5 flex items-center justify-between">
-                <div class="flex items-center space-x-3 w-full">
-                  <div class="flex items-center space-x-2 w-full max-w-2xl">
+              <!-- CABECERA DE FASE (ACORDEÓN) -->
+              <div class="bg-slate-100/90 border-b border-slate-200/80 px-3 xl:px-5 py-3 xl:py-3.5 flex items-center justify-between cursor-pointer select-none transition-colors hover:bg-slate-200/60"
+                   (click)="toggleFase(fase, i)"
+                   (keydown.enter)="toggleFase(fase, i)"
+                   tabindex="0"
+                   role="button"
+                   [attr.aria-expanded]="!isFaseColapsada(fase, i)"
+                   title="Clic para expandir o colapsar esta fase">
+                <div class="flex items-center space-x-3 w-full min-w-0">
+                  <div class="flex items-center space-x-2 w-full min-w-0 max-w-3xl">
+                    <!-- Chevron de acordeón -->
+                    <button type="button"
+                            (click)="toggleFase(fase, i, $event)"
+                            class="p-1 rounded-md text-slate-400 hover:text-slate-700 hover:bg-slate-200/80 transition-colors cursor-pointer shrink-0"
+                            [title]="isFaseColapsada(fase, i) ? 'Desplegar fase' : 'Plegar fase'">
+                      <svg class="w-4 h-4 transition-transform duration-200"
+                           [class.-rotate-90]="isFaseColapsada(fase, i)"
+                           fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                      </svg>
+                    </button>
+
                     <!-- Drag handle for phase -->
                     @if (!soloLectura()) {
-                    <div cdkDragHandle class="cursor-move text-slate-400 hover:text-slate-600 transition-colors p-1" title="Arrastrar fase">
+                    <div cdkDragHandle
+                         class="cursor-move text-slate-400 hover:text-slate-600 transition-colors p-1 shrink-0" title="Arrastrar fase">
                       <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
                         <path d="M7 19v-2h2v2H7zm0-6v-2h2v2H7zm0-6V5h2v2H7zm6 12v-2h2v2h-2zm0-6v-2h2v2h-2zm0-6V5h2v2h-2z"></path>
                       </svg>
@@ -225,8 +337,17 @@
                     <span class="w-6 h-6 rounded-md bg-emerald-600 text-white font-mono text-xs font-bold flex items-center justify-center shadow-2xs shrink-0">
                       {{ (i + 1).toString().padStart(2, '0') }}
                     </span>
-                    <span class="text-sm font-bold text-slate-800 tracking-tight w-full truncate">{{ fase.NombreFase || fase.IdpptoFase }}</span>
-                    <span class="text-[11px] font-mono text-slate-400 bg-white/80 px-2 py-0.5 rounded border border-slate-200/60 ml-2 shrink-0">Id: {{ fase.IdpptoFase }}</span>
+                    <span class="text-sm font-bold text-slate-800 tracking-tight truncate">{{ fase.NombreFase || fase.IdpptoFase }}</span>
+                    <span class="hidden xl:inline-block text-[11px] font-mono text-slate-400 bg-white/80 px-2 py-0.5 rounded border border-slate-200/60 ml-2 shrink-0">Id: {{ fase.IdpptoFase }}</span>
+
+                    <!-- Resumen rápido en cabecera cuando está colapsado -->
+                    @if (isFaseColapsada(fase, i)) {
+                      <span class="inline-flex items-center gap-1.5 text-[11px] font-medium text-slate-600 bg-white/90 px-2.5 py-0.5 rounded-full border border-slate-200/80 ml-2 shrink-0 shadow-2xs">
+                        <span>{{ fase.categorias.length }} partida{{ fase.categorias.length === 1 ? '' : 's' }}</span>
+                        <span class="text-slate-300">•</span>
+                        <span class="font-mono font-bold text-slate-800">S/ {{ getSubtotalFase(fase) }}</span>
+                      </span>
+                    }
                   </div>
                 </div>
 
@@ -234,100 +355,127 @@
                 @if (!soloLectura()) {
                 <div class="flex items-center space-x-1.5 shrink-0 pl-4">
                   <!-- Eliminar Fase -->
-                  <button type="button" title="Eliminar fase" (click)="removeFase(fase)" class="p-1.5 rounded-lg text-slate-500 hover:text-rose-600 hover:bg-rose-50 active:scale-95 transition-all cursor-pointer">
+                  <button type="button" title="Eliminar fase" (click)="removeFase(fase); $event.stopPropagation()" class="p-1.5 rounded-lg text-slate-500 hover:text-rose-600 hover:bg-rose-50 active:scale-95 transition-all cursor-pointer">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
                   </button>
 
                   <!-- Añadir Categoría -->
-                  <button type="button" title="Añadir Sub Fase" (click)="addCategoria(fase)" class="p-1.5 rounded-lg text-emerald-600 hover:text-emerald-800 hover:bg-emerald-50 active:scale-95 transition-all cursor-pointer">
+                  <button type="button" title="Añadir Sub Fase" (click)="addCategoria(fase); $event.stopPropagation()" class="p-1.5 rounded-lg text-emerald-600 hover:text-emerald-800 hover:bg-emerald-50 active:scale-95 transition-all cursor-pointer">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path></svg>
                   </button>
                 </div>
                 }
               </div>
 
-              <!-- TABLA DE CATEGORÍAS -->
-              <div class="p-0 overflow-x-auto">
-                <table class="w-full text-left border-collapse">
-                  <thead>
-                    <tr class="border-b border-slate-100 bg-slate-50/70 text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
-                      <th scope="col" class="py-2.5 px-5">Categoría</th>
-                      <th scope="col" class="py-2.5 px-5">Sub Fase / Partida</th>
-                      <th scope="col" class="w-48 py-2.5 px-3 text-right">Costo Referencial (S/)</th>
-                      <th scope="col" class="w-16 py-2.5 pr-4 text-center">ACCIONES</th>
-                    </tr>
-                  </thead>
-                  <tbody class="divide-y divide-slate-100 text-xs" cdkDropList [cdkDropListDisabled]="soloLectura()" (cdkDropListDropped)="dropCategoria(fase, $event)">
-                    
-                    @for (cat of fase.categorias; track $index) {
-                      <tr class="group/row hover:bg-slate-50/80 transition-colors bg-white" cdkDrag>
-                        <td class="py-3 px-5">
-                          <div class="flex items-center space-x-3">
-                            <!-- Icono de Drag (mover de lugar) -->
-                            @if (!soloLectura()) {
-                            <div cdkDragHandle class="cursor-move text-slate-300 hover:text-slate-500 transition-colors p-1" title="Arrastrar para reordenar">
-                              <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
-                                <path d="M7 19v-2h2v2H7zm0-6v-2h2v2H7zm0-6V5h2v2H7zm6 12v-2h2v2h-2zm0-6v-2h2v2h-2zm0-6V5h2v2h-2z"></path>
-                              </svg>
-                            </div>
-                            }
-                            <select [(ngModel)]="cat.id_categoria" (change)="actualizarCategoriaReal(cat, $event)" class="bg-slate-50 p-1.5 rounded border border-slate-200 text-[11px] font-semibold text-slate-700 whitespace-normal leading-snug w-full min-w-[200px] focus:ring-1 focus:ring-[#529b7b] focus:border-[#529b7b] outline-none">
-                              <option [ngValue]="undefined">-- Seleccione Categoría --</option>
-                              <option [ngValue]="null">-- Seleccione Categoría --</option>
-                              @for (cr of categoriasReal(); track cr.id) {
-                                <option [ngValue]="cr.id">{{ cr.nombre }}</option>
+              <!-- CONTENIDO COLAPSABLE DE LA FASE (TABLA DE PARTIDAS Y FOOTER) -->
+              @if (!isFaseColapsada(fase, i)) {
+                <!-- TABLA DE SUB FASES / PARTIDAS -->
+                <div class="p-0 overflow-x-auto">
+                  <table class="w-full text-left border-collapse">
+                    <thead>
+                      <tr class="border-b border-slate-100 bg-slate-50/70 text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
+                        <th scope="col" class="py-2.5 px-3 xl:px-5">Sub Fase / Partida</th>
+                        <th scope="col" class="py-2.5 px-3 text-right whitespace-nowrap">Costo Referencial (S/)</th>
+                        <th scope="col" class="w-24 py-2.5 pr-3 xl:pr-4 text-center">ACCIONES</th>
+                      </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100 text-xs" cdkDropList [cdkDropListDisabled]="soloLectura()" (cdkDropListDropped)="dropCategoria(fase, $event)">
+                      
+                      @for (cat of fase.categorias; track $index) {
+                        <tr class="group/row hover:bg-slate-50/80 transition-colors bg-white" cdkDrag>
+                          <td class="py-3 px-3 xl:px-5">
+                            <div class="flex items-center space-x-2 xl:space-x-3">
+                              <!-- Icono de Drag (mover de lugar) -->
+                              @if (!soloLectura()) {
+                              <div cdkDragHandle class="cursor-move text-slate-300 hover:text-slate-500 transition-colors p-1" title="Arrastrar para reordenar">
+                                <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                                  <path d="M7 19v-2h2v2H7zm0-6v-2h2v2H7zm0-6V5h2v2H7zm6 12v-2h2v2h-2zm0-6v-2h2v2h-2zm0-6V5h2v2h-2z"></path>
+                                </svg>
+                              </div>
                               }
-                            </select>
-                          </div>
-                        </td>
-                        <td class="py-3 px-5">
-                          <span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium bg-[#529b7b]/10 text-[#2d634d] border border-[#529b7b]/25 uppercase">
-                            {{ cat.NombreCategoria || cat.IdpptoFaseCategoria }}
-                          </span>
-                        </td>
-                        <td class="py-3 px-3 text-right">
-                          <div class="inline-flex items-center relative">
-                            <span class="absolute left-2.5 text-xs text-slate-400 font-mono">S/</span>
-                            <input type="number" step="0.01" [(ngModel)]="cat.CostoReferencial" class="w-36 text-right pl-7 pr-2.5 py-1.5 rounded-lg border border-slate-200 bg-white focus:bg-white text-xs font-mono font-bold text-slate-800 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/10 outline-none transition-all shadow-2xs hover:border-slate-300">
-                          </div>
-                        </td>
-                        <td class="py-3 pr-4 text-center">
-                          @if (!soloLectura()) {
-                          <div class="flex items-center justify-center space-x-2">
-                            <!-- Editar -->
-                            <button type="button" title="Editar Sub Fase" (click)="abrirModalCategoria('edit', fase, cat)" class="p-1 rounded text-slate-400 hover:text-slate-700 hover:bg-slate-100 active:scale-95 transition-all cursor-pointer">
-                              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
-                            </button>
-                            <!-- Eliminar -->
-                            <button type="button" title="Eliminar" (click)="removeCategoria(fase, cat)" class="p-1 rounded text-slate-500 hover:text-rose-600 hover:bg-rose-50 active:scale-95 transition-all cursor-pointer">
-                              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
-                            </button>
+                              <span class="inline-flex items-center px-2 xl:px-2.5 py-1 rounded text-[11px] xl:text-xs font-semibold bg-[#529b7b]/10 text-[#2d634d] border border-[#529b7b]/25 uppercase tracking-wide">
+                                {{ cat.NombreCategoria || cat.IdpptoFaseCategoria }}
+                              </span>
+                            </div>
+                          </td>
+                          <td class="py-3 px-3 text-right">
+                            <div class="inline-flex items-center gap-1.5 xl:gap-2 justify-end whitespace-nowrap">
+                              <button
+                                type="button"
+                                (click)="abrirModalItems(fase, cat)"
+                                [title]="cat.totalItems ? 'Editar ' + cat.totalItems + ' ítems' : 'Gestionar ítems de la partida'"
+                                class="inline-flex items-center space-x-1 px-2 py-1 rounded-md text-[11px] font-semibold transition-all cursor-pointer"
+                                [ngClass]="cat.totalItems ? 'bg-emerald-50 text-emerald-700 border border-emerald-300 hover:bg-emerald-100 shadow-2xs' : 'bg-slate-100 text-slate-600 border border-slate-200 hover:bg-emerald-50 hover:text-emerald-700 hover:border-emerald-200'"
+                              >
+                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                                </svg>
+                                <span>{{ cat.totalItems ? cat.totalItems + ' ítems' : '+ Ítems' }}</span>
+                              </button>
+                              <div class="inline-flex items-center relative">
+                                <span class="absolute left-2.5 text-xs text-slate-400 font-mono">S/</span>
+                                <input
+                                  type="number"
+                                  step="0.01"
+                                  [(ngModel)]="cat.CostoReferencial"
+                                  [readonly]="(cat.totalItems || 0) > 0"
+                                  [title]="(cat.totalItems || 0) > 0 ? 'Calculado automáticamente a partir de sus ítems' : ''"
+                                  class="w-28 xl:w-32 text-right pl-7 pr-2.5 py-1.5 rounded-lg border text-xs font-mono font-bold outline-none transition-all shadow-2xs"
+                                  [ngClass]="(cat.totalItems || 0) > 0 ? 'bg-slate-50 border-slate-200 text-slate-600 cursor-not-allowed' : 'bg-white border-slate-200 text-slate-800 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/10 hover:border-slate-300'"
+                                >
+                              </div>
+                            </div>
+                          </td>
+                          <td class="py-3 pr-3 xl:pr-4 text-center">
+                            <div class="flex items-center justify-center space-x-1.5">
+                              <!-- Ítems Pop-up -->
+                              <button
+                                type="button"
+                                title="Gestionar Ítems (Productos/Servicios)"
+                                (click)="abrirModalItems(fase, cat)"
+                                class="p-1 rounded text-emerald-600 hover:text-emerald-800 hover:bg-emerald-50 active:scale-95 transition-all cursor-pointer"
+                              >
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                                </svg>
+                              </button>
 
-                            <!-- Añadir Categoría (+) -->
-                            <button type="button" title="Añadir Sub Fase" (click)="addCategoria(fase)" class="p-1 rounded text-emerald-600 hover:text-emerald-800 hover:bg-emerald-50 active:scale-95 transition-all cursor-pointer">
-                              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"></path></svg>
-                            </button>
-                          </div>
-                          }
-                        </td>
-                      </tr>
-                    }
-                    @empty {
-                      <tr>
-                        <td colspan="3" class="py-6 text-center text-slate-400 text-xs">
-                          No hay categorías configuradas para esta fase.
-                        </td>
-                      </tr>
-                    }
+                              @if (!soloLectura()) {
+                                <!-- Editar -->
+                                <button type="button" title="Editar Sub Fase" (click)="abrirModalCategoria('edit', fase, cat)" class="p-1 rounded text-slate-400 hover:text-slate-700 hover:bg-slate-100 active:scale-95 transition-all cursor-pointer">
+                                  <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
+                                </button>
+                                <!-- Eliminar -->
+                                <button type="button" title="Eliminar" (click)="removeCategoria(fase, cat)" class="p-1 rounded text-slate-500 hover:text-rose-600 hover:bg-rose-50 active:scale-95 transition-all cursor-pointer">
+                                  <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                                </button>
 
-                  </tbody>
-                </table>
-              </div>
+                                <!-- Añadir Categoría (+) -->
+                                <button type="button" title="Añadir Sub Fase" (click)="addCategoria(fase)" class="p-1 rounded text-emerald-600 hover:text-emerald-800 hover:bg-emerald-50 active:scale-95 transition-all cursor-pointer">
+                                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"></path></svg>
+                                </button>
+                              }
+                            </div>
+                          </td>
+                        </tr>
+                      }
+                      @empty {
+                        <tr>
+                          <td colspan="3" class="py-6 text-center text-slate-400 text-xs">
+                            No hay partidas configuradas para esta fase.
+                          </td>
+                        </tr>
+                      }
 
-              <!-- FOOTER DE FASE (SOLO SUBTOTAL) -->
-              <div class="p-3 bg-slate-50/50 border-t border-slate-100 flex items-center justify-end">
-                <span class="text-[11px] font-mono text-slate-400">Subtotal Referencial: <strong class="text-slate-700 font-bold">S/ {{ getSubtotalFase(fase) }}</strong></span>
-              </div>
+                    </tbody>
+                  </table>
+                </div>
+
+                <!-- FOOTER DE FASE (SOLO SUBTOTAL) -->
+                <div class="p-3 bg-slate-50/50 border-t border-slate-100 flex items-center justify-end">
+                  <span class="text-[11px] font-mono text-slate-400">Subtotal Referencial: <strong class="text-slate-700 font-bold">S/ {{ getSubtotalFase(fase) }}</strong></span>
+                </div>
+              }
 
             </section>
           }
@@ -523,5 +671,143 @@
         </div>
       </div>
     </div>
+  }
+
+  <!-- MODAL DE GESTIÓN DE ÍTEMS DE PARTIDA -->
+  @if (showItemsModal() && partidaSeleccionadaParaItems(); as pInfo) {
+    <app-partida-items-dialog
+      [partida]="pInfo"
+      [soloLectura]="soloLectura()"
+      (cerrar)="cerrarModalItems()"
+      (guardado)="onItemsGuardados($event)"
+    />
+  }
+
+  <!-- MODAL EDITAR INFORMACIÓN DE PLANTILLA -->
+  @if (showEditarInfoModal()) {
+    <div class="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/50 backdrop-blur-xs p-4">
+      <div class="bg-white rounded-xl shadow-2xl w-full max-w-lg overflow-hidden flex flex-col border border-slate-200 animate-in fade-in zoom-in-95 duration-150">
+        <!-- Header -->
+        <div class="px-6 py-4 bg-[#f6f8f7] border-b border-[#d1dcd7] flex items-center justify-between">
+          <div class="flex items-center gap-2.5">
+            <div class="w-8 h-8 rounded-lg bg-[#529b7b]/15 text-[#0e5941] flex items-center justify-center">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+              </svg>
+            </div>
+            <div>
+              <h3 class="font-manrope text-base font-bold text-slate-900">Editar Plantilla</h3>
+              <p class="text-[11px] text-slate-500">Actualiza los datos básicos de la plantilla</p>
+            </div>
+          </div>
+          <button type="button" (click)="cerrarEditarInfo()" title="Cerrar" class="w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-slate-800 hover:bg-[#e3e9e6] transition cursor-pointer">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+          </button>
+        </div>
+
+        <!-- Body -->
+        <form (ngSubmit)="guardarEditarInfo()" class="flex flex-col">
+          <div class="p-6 space-y-4 text-xs">
+            <div>
+              <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Nombre <span class="text-rose-500">*</span></label>
+              <input name="Nombre" type="text" [(ngModel)]="editarInfoForm.Nombre" maxlength="255" required
+                     placeholder="Ej. PLANTILLA TAMBO GLD"
+                     class="w-full h-9 px-3 rounded border border-[#d1dcd7] bg-white text-slate-900 placeholder-slate-400 outline-none focus:border-[#529b7b] transition">
+            </div>
+
+            <div>
+              <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Descripción</label>
+              <textarea name="Descripcion" [(ngModel)]="editarInfoForm.Descripcion" maxlength="500" rows="3"
+                        placeholder="Uso previsto, cliente o tipo de obra..."
+                        class="w-full px-3 py-2 rounded border border-[#d1dcd7] bg-white text-slate-900 placeholder-slate-400 outline-none focus:border-[#529b7b] resize-none transition"></textarea>
+              <div class="text-right text-[10px] text-slate-400 font-mono">{{ editarInfoForm.Descripcion.length }}/500</div>
+            </div>
+
+            <label class="flex items-center justify-between gap-3 p-3 rounded border border-[#d1dcd7] bg-[#f6f8f7] cursor-pointer">
+              <span>
+                <span class="block font-bold text-slate-800">Plantilla activa</span>
+                <span class="block text-[11px] text-slate-500">Las inactivas no aparecen al aplicar plantilla en un presupuesto</span>
+              </span>
+              <input name="Activo" type="checkbox" [(ngModel)]="editarInfoForm.Activo" class="w-4 h-4 rounded-sm text-[#529b7b] focus:ring-[#529b7b] border-slate-300">
+            </label>
+
+            @if (errorEditarInfo()) {
+              <div class="p-2.5 rounded border border-rose-200 bg-rose-50 text-rose-700 text-[11px]">{{ errorEditarInfo() }}</div>
+            }
+          </div>
+
+          <!-- Footer -->
+          <div class="px-6 py-4 bg-[#f6f8f7] border-t border-[#d1dcd7] flex justify-end gap-2.5">
+            <button type="button" (click)="cerrarEditarInfo()" [disabled]="guardandoInfo()" class="px-4 py-2 rounded-lg bg-white hover:bg-[#edf2f0] text-slate-700 font-semibold text-xs border border-[#d1dcd7] transition cursor-pointer disabled:opacity-50">Cancelar</button>
+            <button type="submit" [disabled]="!editarInfoForm.Nombre.trim() || guardandoInfo()" class="px-4 py-2 rounded-lg bg-[#529b7b] hover:bg-[#3d7e63] text-white font-semibold text-xs shadow-xs transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5">
+              @if (guardandoInfo()) {
+                <svg class="w-3.5 h-3.5 animate-spin" fill="none" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="3" class="opacity-25"/><path fill="currentColor" class="opacity-75" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"/></svg>
+                <span>Guardando...</span>
+              } @else {
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
+                <span>Guardar Cambios</span>
+              }
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  }
+
+  <!-- MODAL FUSIONAR PLANTILLAS -->
+  @if (showFusionarModal() && plantillaDestinoFusion(); as destino) {
+    <div class="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/50 backdrop-blur-xs p-4">
+      <div class="bg-white rounded-xl shadow-2xl w-full max-w-lg overflow-hidden flex flex-col border border-slate-200">
+        <div class="px-6 py-4 bg-[#f6f8f7] border-b border-[#d1dcd7] flex items-center justify-between">
+          <div>
+            <h3 class="font-manrope text-base font-bold text-slate-900">Fusionar plantillas</h3>
+            <p class="text-[11px] text-slate-500">Se agregará el contenido de otra plantilla dentro de <strong>{{ destino.Nombre }}</strong></p>
+          </div>
+          <button type="button" (click)="cerrarFusionar()" title="Cerrar" class="w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-slate-800 hover:bg-[#e3e9e6] transition cursor-pointer">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+          </button>
+        </div>
+
+        <div class="p-6 space-y-4 text-xs">
+          <div>
+            <label for="fu-origen" class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Plantilla a unir <span class="text-rose-500">*</span></label>
+            <select id="fu-origen" [(ngModel)]="fusionOrigenId" class="w-full h-9 px-3 rounded border border-[#d1dcd7] bg-white text-slate-800 outline-none focus:border-[#529b7b] cursor-pointer">
+              <option value="" disabled>Seleccione la plantilla...</option>
+              @for (o of otrasPlantillas(); track o.IdPlantilla) {
+                <option [value]="o.IdPlantilla">{{ o.Nombre }}{{ o.Activo ? '' : ' (inactiva)' }}</option>
+              }
+            </select>
+            <p class="mt-1.5 text-[11px] text-slate-500">Las fases y partidas que ya existan en la plantilla destino no se duplican. Los ítems de las partidas nuevas también se copian.</p>
+          </div>
+
+          <label class="flex items-center justify-between gap-3 p-3 rounded border border-[#d1dcd7] bg-[#f6f8f7] cursor-pointer">
+            <span>
+              <span class="block font-bold text-slate-800">Eliminar la plantilla unida al terminar</span>
+              <span class="block text-[11px] text-slate-500">Queda una sola plantilla con todo el contenido</span>
+            </span>
+            <input type="checkbox" [(ngModel)]="fusionEliminarOrigen" class="w-4 h-4 rounded-sm text-[#529b7b] focus:ring-[#529b7b] border-slate-300">
+          </label>
+
+          @if (errorFusionar()) {
+            <div class="p-2.5 rounded border border-rose-200 bg-rose-50 text-rose-700 text-[11px]">{{ errorFusionar() }}</div>
+          }
+        </div>
+
+        <div class="px-6 py-4 bg-[#f6f8f7] border-t border-[#d1dcd7] flex justify-end gap-2.5">
+          <button type="button" (click)="cerrarFusionar()" [disabled]="fusionando()" class="px-4 py-2 rounded-lg bg-white hover:bg-[#edf2f0] text-slate-700 font-semibold text-xs border border-[#d1dcd7] transition cursor-pointer disabled:opacity-50">Cancelar</button>
+          <button type="button" (click)="confirmarFusionar()" [disabled]="!fusionOrigenId || fusionando()" class="px-4 py-2 rounded-lg bg-[#529b7b] hover:bg-[#3d7e63] text-white font-semibold text-xs shadow-xs transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed">
+            {{ fusionando() ? 'Fusionando...' : 'Fusionar' }}
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- MODAL DE IMPRESIÓN DE PLANTILLA (3 NIVELES) -->
+  @if (showImprimirModal() && selectedPlantilla(); as pCompleta) {
+    <app-plantilla-imprimir-dialog
+      [plantilla]="pCompleta"
+      (closed)="cerrarModalImprimir()"
+    />
   }
 </div>

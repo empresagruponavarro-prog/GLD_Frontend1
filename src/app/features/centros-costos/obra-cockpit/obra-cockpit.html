@@ -1,4 +1,4 @@
-<div class="w-full min-h-screen bg-surface px-5 py-3 max-w-[1920px] mx-auto font-sans antialiased text-on-surface">
+<div class="w-full min-h-screen bg-surface px-3 sm:px-4 lg:px-5 2xl:px-8 py-3 max-w-[1920px] mx-auto font-sans antialiased text-on-surface">
   <div class="flex flex-col w-full gap-3">
 
     <!-- ==================== 1. TOP COMPACT PANORAMIC COCKPIT HEADER ==================== -->
@@ -15,7 +15,7 @@
           <span class="material-symbols-outlined text-xs text-outline-variant">chevron_right</span>
           <span class="px-2 py-0.5 rounded bg-primary-fixed/40 text-on-primary-fixed font-semibold text-[11px] tracking-wide">DATOS DE OBRA &amp; GESTIÓN TÉCNICA</span>
         </div>
-        <div class="flex items-center gap-2">
+        <div class="flex flex-wrap items-center gap-2">
           <button class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-surface-container-lowest text-on-surface text-xs font-semibold shadow-sm hover:bg-surface-container transition-colors border border-surface-container" (click)="volver()">
             <span class="material-symbols-outlined text-sm">arrow_back</span>
             <span>Volver a Centros de Costos</span>
@@ -45,30 +45,29 @@
       </div>
 
       <!-- Line 2: Panoramic Project Headline + Inline Badges + Integrated KPI Strip -->
-      <div class="flex flex-col xl:flex-row xl:items-center justify-between gap-3 pt-2.5">
-        <div class="flex flex-col lg:flex-row lg:items-center gap-3">
+      <div class="flex flex-col 2xl:flex-row 2xl:items-center justify-between gap-3 pt-2.5">
+        <div class="flex flex-col xl:flex-row xl:items-center gap-3 min-w-0">
           <div class="flex items-center gap-2">
             <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-primary-fixed text-on-primary-fixed-variant text-[11px] font-bold tracking-tight">
               <span class="w-2 h-2 rounded-full bg-primary animate-pulse"></span>
-              ABIERTO EN EJECUCIÓN
+              {{ (cabecera()?.estado || '—') | uppercase }}
             </span>
-            <h1 class="font-headline-xl text-xl font-bold tracking-tight text-on-surface">
+            <h1 class="font-headline-xl text-lg 2xl:text-xl font-bold break-words tracking-tight text-on-surface">
               Datos Operativos de Obra: <span class="text-primary">{{ cockpit()?.nombre_obra || ('CC-' + idCentroCosto()) | uppercase }}</span>
             </h1>
           </div>
           <!-- Inline Badge Pills -->
           <div class="flex flex-wrap items-center gap-1.5 text-[11px]">
             <span class="px-2 py-0.5 rounded bg-surface-container text-on-surface-variant font-mono font-semibold">COD CC: #{{ idCentroCosto() }}</span>
-            <span class="px-2 py-0.5 rounded bg-surface-container-high text-on-surface-variant">ID EXPEDIENTE: EXP-2026-TMB-048</span>
-            <span class="px-2 py-0.5 rounded bg-surface-container-low text-on-surface"><span class="text-on-surface-variant/70 uppercase text-[9px] font-bold">Empresa:</span> <strong class="font-semibold">{{ cabecera()?.empresa || 'GLD SERVICIOS GENERALES EIRL' }}</strong></span>
-            <span class="px-2 py-0.5 rounded bg-surface-container-low text-on-surface"><span class="text-on-surface-variant/70 uppercase text-[9px] font-bold">Cliente:</span> <strong class="font-semibold">{{ cabecera()?.cliente || 'TIENDAS TAMBO S.A.C.' }}</strong></span>
-            <span class="px-2 py-0.5 rounded bg-surface-container-low text-on-surface"><span class="text-on-surface-variant/70 uppercase text-[9px] font-bold">Inicio:</span> <strong class="font-semibold">{{ (cabecera()?.fecha_inicio | date:'dd/MM/yyyy') || '18/09/2026' }}</strong></span>
-            <span class="px-2 py-0.5 rounded bg-surface-container-low text-on-surface flex items-center gap-0.5"><span class="material-symbols-outlined text-xs text-primary">pin_drop</span><span class="font-semibold">{{ cockpit()?.generales?.direccion || 'VES - Av. Central 450' }}</span></span>
+            <span class="px-2 py-0.5 rounded bg-surface-container-low text-on-surface"><span class="text-on-surface-variant/70 uppercase text-[9px] font-bold">Empresa:</span> <strong class="font-semibold">{{ cabecera()?.empresa || '—' }}</strong></span>
+            <span class="px-2 py-0.5 rounded bg-surface-container-low text-on-surface"><span class="text-on-surface-variant/70 uppercase text-[9px] font-bold">Cliente:</span> <strong class="font-semibold">{{ cabecera()?.cliente || cabecera()?.cod_cliente || '—' }}</strong></span>
+            <span class="px-2 py-0.5 rounded bg-surface-container-low text-on-surface"><span class="text-on-surface-variant/70 uppercase text-[9px] font-bold">Inicio:</span> <strong class="font-semibold">{{ (cabecera()?.fecha_inicio | date:'dd/MM/yyyy') || '—' }}</strong></span>
+            <span class="px-2 py-0.5 rounded bg-surface-container-low text-on-surface flex items-center gap-0.5"><span class="material-symbols-outlined text-xs text-primary">pin_drop</span><span class="font-semibold">{{ cockpit()?.generales?.direccion || '—' }}</span></span>
           </div>
         </div>
 
         <!-- Horizontal KPI Metric Strip -->
-        <div class="flex items-center gap-2 bg-surface-container-low px-3 py-1.5 rounded-xl self-start xl:self-auto shrink-0 border border-surface-container">
+        <div class="flex items-center gap-2 bg-surface-container-low px-3 py-1.5 rounded-xl self-start 2xl:self-auto shrink-0 flex-wrap border border-surface-container">
           <div class="text-center px-2.5">
             <span class="text-[9px] uppercase font-bold text-on-surface-variant block tracking-wider leading-tight">Avance Real</span>
             <span class="text-lg font-headline-xl font-extrabold text-primary leading-tight">{{ kpis()?.avance_real_global || '—' }}%</span>
@@ -84,7 +83,7 @@
           <div class="text-center px-2.5">
             <span class="text-[9px] uppercase font-bold text-on-surface-variant block tracking-wider leading-tight">Personal Activo</span>
             <span class="text-lg font-headline-xl font-extrabold text-secondary leading-tight">{{ kpis()?.personal_activo || '—' }} Op.</span>
-            <span class="text-[9px] text-on-surface-variant block leading-tight">Turno Diurno</span>
+            <span class="text-[9px] text-on-surface-variant block leading-tight">{{ cockpit()?.generales?.turno_trabajo || '—' }}</span>
           </div>
         </div>
       </div>
@@ -94,30 +93,30 @@
     <!-- ==================== 2. MAIN BODY 2-COLUMN MODULAR GRID ==================== -->
     <div class="grid grid-cols-1 xl:grid-cols-12 gap-3 items-start">
       <!-- ==================== LEFT MAIN SECTION (65% width / 8 cols) ==================== -->
-      <div class="xl:col-span-8 flex flex-col gap-3">
+      <div class="xl:col-span-8 min-w-0 flex flex-col gap-3">
         <!-- Operational Navigation Tabs -->
         <div class="flex items-center gap-1 overflow-x-auto pb-0.5 scrollbar-none" id="tabContainer">
-          <button type="button" (click)="setTab('tab-cronograma')" class="tab-button flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all shadow-sm cursor-pointer" [ngClass]="activeTab() === 'tab-cronograma' ? 'bg-primary text-on-primary' : 'bg-surface-container-lowest text-on-surface-variant hover:bg-surface-container hover:text-on-surface'">
+          <button type="button" (click)="setTab('tab-cronograma')" class="tab-button shrink-0 whitespace-nowrap flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all shadow-sm cursor-pointer" [ngClass]="activeTab() === 'tab-cronograma' ? 'bg-primary text-on-primary' : 'bg-surface-container-lowest text-on-surface-variant hover:bg-surface-container hover:text-on-surface'">
             <span class="material-symbols-outlined text-sm">calendar_month</span>
             <span>Cronograma Semanal</span>
             <span class="px-1.5 py-0.2 rounded-full text-[10px]" [ngClass]="activeTab() === 'tab-cronograma' ? 'bg-on-primary/20 text-on-primary' : 'bg-surface-container-high text-on-surface-variant'">{{ kpis()?.semanas_totales || '0' }} sem</span>
           </button>
-          <button type="button" (click)="setTab('tab-directorio')" class="tab-button flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all shadow-sm cursor-pointer" [ngClass]="activeTab() === 'tab-directorio' ? 'bg-primary text-on-primary' : 'bg-surface-container-lowest text-on-surface-variant hover:bg-surface-container hover:text-on-surface'">
+          <button type="button" (click)="setTab('tab-directorio')" class="tab-button shrink-0 whitespace-nowrap flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all shadow-sm cursor-pointer" [ngClass]="activeTab() === 'tab-directorio' ? 'bg-primary text-on-primary' : 'bg-surface-container-lowest text-on-surface-variant hover:bg-surface-container hover:text-on-surface'">
             <span class="material-symbols-outlined text-sm">engineering</span>
             <span>Directorio de Residentes</span>
             <span class="px-1.5 py-0.2 rounded-full text-[10px]" [ngClass]="activeTab() === 'tab-directorio' ? 'bg-on-primary/20 text-on-primary' : 'bg-surface-container-high text-on-surface-variant'">{{ residentes().length }}</span>
           </button>
-          <button type="button" (click)="setTab('tab-planos')" class="tab-button flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all shadow-sm cursor-pointer" [ngClass]="activeTab() === 'tab-planos' ? 'bg-primary text-on-primary' : 'bg-surface-container-lowest text-on-surface-variant hover:bg-surface-container hover:text-on-surface'">
+          <button type="button" (click)="setTab('tab-planos')" class="tab-button shrink-0 whitespace-nowrap flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all shadow-sm cursor-pointer" [ngClass]="activeTab() === 'tab-planos' ? 'bg-primary text-on-primary' : 'bg-surface-container-lowest text-on-surface-variant hover:bg-surface-container hover:text-on-surface'">
             <span class="material-symbols-outlined text-sm">architecture</span>
             <span>Planos de Obra</span>
             <span class="px-1.5 py-0.2 rounded-full text-[10px]" [ngClass]="activeTab() === 'tab-planos' ? 'bg-on-primary/20 text-on-primary' : 'bg-surface-container-high text-on-surface-variant'">{{ planos().length }}</span>
           </button>
-          <button type="button" (click)="setTab('tab-documentos')" class="tab-button flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all shadow-sm cursor-pointer" [ngClass]="activeTab() === 'tab-documentos' ? 'bg-primary text-on-primary' : 'bg-surface-container-lowest text-on-surface-variant hover:bg-surface-container hover:text-on-surface'">
+          <button type="button" (click)="setTab('tab-documentos')" class="tab-button shrink-0 whitespace-nowrap flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all shadow-sm cursor-pointer" [ngClass]="activeTab() === 'tab-documentos' ? 'bg-primary text-on-primary' : 'bg-surface-container-lowest text-on-surface-variant hover:bg-surface-container hover:text-on-surface'">
             <span class="material-symbols-outlined text-sm">folder_managed</span>
             <span>Documentos Técnicos</span>
             <span class="px-1.5 py-0.2 rounded-full text-[10px]" [ngClass]="activeTab() === 'tab-documentos' ? 'bg-on-primary/20 text-on-primary' : 'bg-surface-container-high text-on-surface-variant'">{{ documentos().length }}</span>
           </button>
-          <button type="button" (click)="setTab('tab-incidencias')" class="tab-button flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all shadow-sm cursor-pointer" [ngClass]="activeTab() === 'tab-incidencias' ? 'bg-primary text-on-primary' : 'bg-surface-container-lowest text-on-surface-variant hover:bg-surface-container hover:text-on-surface'">
+          <button type="button" (click)="setTab('tab-incidencias')" class="tab-button shrink-0 whitespace-nowrap flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all shadow-sm cursor-pointer" [ngClass]="activeTab() === 'tab-incidencias' ? 'bg-primary text-on-primary' : 'bg-surface-container-lowest text-on-surface-variant hover:bg-surface-container hover:text-on-surface'">
             <span class="material-symbols-outlined text-sm">assignment_late</span>
             <span>Bitácora &amp; Incidencias</span>
             <span class="px-1.5 py-0.2 rounded-full text-[10px] font-bold" [ngClass]="activeTab() === 'tab-incidencias' ? 'bg-on-primary/20 text-on-primary' : 'bg-error-container text-on-error-container'">{{ kpis()?.incidencias_pendientes ?? 0 }} Pend</span>
@@ -190,7 +189,7 @@
       </div>
 
       <!-- ==================== RIGHT AUXILIARY PANEL (35% width / 4 cols) ==================== -->
-      <div class="xl:col-span-4 flex flex-col gap-3">
+      <div class="xl:col-span-4 min-w-0 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-1 gap-3 items-start">
         <!-- Card A: Residentes & Supervisores de Contacto Rápido -->
         <div class="bg-surface-container-lowest rounded-xl shadow-sm border border-surface-container p-3 flex flex-col">
           <div class="flex items-center justify-between mb-2.5 pb-2 border-b border-surface-container">
@@ -238,7 +237,7 @@
               <span class="material-symbols-outlined text-primary text-base">folder_open</span>
               <h2 class="font-bold text-xs text-on-surface">Acceso Rápido</h2>
             </div>
-            <button class="text-[10px] text-primary font-semibold hover:underline" (click)="setTab('tab-documentos')">Ver todos</button>
+            <button class="text-[10px] text-primary font-semibold hover:underline" (click)="setTab('tab-planos')">Ver todos</button>
           </div>
           <div class="space-y-1.5">
             @for (plano of planos() | slice:0:2; track plano.id) {

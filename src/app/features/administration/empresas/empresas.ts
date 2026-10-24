@@ -1,5 +1,4 @@
 import { Component, computed, inject, signal } from '@angular/core';
-import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { permisosDePantalla } from '@app/core/auth/permisos-pantalla';
 import { mensajeError } from '@shared/utils/errores-http';
@@ -13,7 +12,7 @@ import { DataTable } from '../../../shared/interfaces';
 @Component({
   selector: 'app-empresas',
   standalone: true,
-  imports: [CommonModule, FormsModule, DataTableComponent, ExportarBotonesComponent],
+  imports: [FormsModule, DataTableComponent, ExportarBotonesComponent],
   templateUrl: './empresas.html'
 })
 export class EmpresasComponent {

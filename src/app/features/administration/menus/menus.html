@@ -21,8 +21,8 @@
 <div class="content-body">
   <div class="menu-tree-container">
     <!-- Loop Root Menus -->
-    <div class="menu-root-card"
-      *ngFor="let root of treeData(); let idx = index"
+    @for (root of treeData(); track $index; let idx = $index) {
+      <div class="menu-root-card"
       [class.dragging]="draggedRootIdx() === idx"
       draggable="true"
       (dragstart)="onRootDragStart(idx, $event)"
@@ -58,9 +58,10 @@
       </div>
 
       <!-- Nested Submenus List -->
-      <div class="submenu-list" *ngIf="root.submenus && root.submenus.length > 0">
-        <div class="submenu-card"
-          *ngFor="let sub of root.submenus; let sIdx = index"
+      @if (root.submenus && root.submenus.length > 0) {
+        <div class="submenu-list">
+        @for (sub of root.submenus; track $index; let sIdx = $index) {
+          <div class="submenu-card"
           [class.dragging]="draggedSub()?.rootIdx === idx && draggedSub()?.subIdx === sIdx"
           draggable="true"
           (dragstart)="onSubDragStart(idx, sIdx, $event)"
@@ -89,13 +90,18 @@
             </button>
           </div>
         </div>
+        }
       </div>
+      }
     </div>
+    }
 
-    <div *ngIf="treeData().length === 0 && !loading" style="text-align: center; padding: 3rem; background: white; border-radius: var(--radius-md); border: 1px solid var(--border-color);">
+    @if (treeData().length === 0 && !loading) {
+      <div style="text-align: center; padding: 3rem; background: white; border-radius: var(--radius-md); border: 1px solid var(--border-color);">
       <i class="fa-solid fa-folder-open" style="font-size: 2.5rem; color: var(--text-muted); margin-bottom: 0.5rem; display: block;"></i>
       No hay menús registrados. Haz clic en <strong>+ Menú raíz</strong> para empezar.
     </div>
+    }
   </div>
 </div>
 

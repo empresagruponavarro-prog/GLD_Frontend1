@@ -18,10 +18,43 @@ export interface CategoriaAsignadaPayload {
   [key: string]: unknown;
 }
 
+/** Ítem (producto/servicio del catálogo) de una partida; viaja en las filas locales del wizard. */
+export interface ItemLocalFila {
+  id?: number;
+  Item: string;
+  id_producto: number;
+  codigo_producto: string;
+  descripcion_producto: string;
+  tipo_producto: 'PRODUCTO' | 'SERVICIO';
+  categoria_producto?: string | null;
+  id_categoria?: number;
+  id_unidad_medida: number;
+  simbolo_unidad?: string | null;
+  Cantidad: number;
+  CostoUnitario: number;
+  PrecioVenta: number;
+  CostoTotal: number;
+  VentaTotal: number;
+}
+
+export interface SyncItemsPayload {
+  items: {
+    id_producto: number;
+    id_unidad_medida: number;
+    id_categoria?: number;
+    Item?: string;
+    Cantidad: number;
+    CostoUnitario: number;
+    PrecioVenta: number;
+  }[];
+}
+
 /** Subconjunto de PresupuestosService que usa la orquestación (facilita simularlo en tests). */
 export interface FasesCategoriasWriter {
   createFaseAsignada(data: FaseAsignadaPayload): Observable<unknown>;
   createCategoriaAsignada(data: CategoriaAsignadaPayload): Observable<unknown>;
+  /** Opcional: si existe, las partidas con ítems los guardan tras crearse. */
+  syncItemsCategoriaAsignada?(idCat: number, dto: SyncItemsPayload): Observable<unknown>;
 }
 
 export interface FaseCategoriaAGuardar {
@@ -33,6 +66,8 @@ export interface FaseCategoriaAGuardar {
   subtotal: number;
   id_categoria?: number;
   categoriaRealDescripcion?: string;
+  /** Ítems de la partida (presupuesto nuevo cargado desde plantilla o editado en el wizard). */
+  items?: ItemLocalFila[];
 }
 
 export interface FaseFallida {
@@ -58,6 +93,10 @@ export interface FilaFormFase {
   idCategoriaDetalle?: number;
   id_categoria?: number;
   categoriaRealDescripcion?: string;
+  /** Cantidad de ítems de la partida (guardada o local). */
+  totalItems?: number;
+  /** Ítems de la partida cuando el presupuesto aún no existe en el servidor; se guardan al emitirlo. */
+  items?: ItemLocalFila[];
 }
 
 export type ModoPlantilla = 'agregar' | 'reemplazar';
@@ -121,8 +160,9 @@ export function crearFasesConCategorias(
       return true;
     });
 
-    const crearCategorias = categorias.map((cat, j) =>
-      defer(() =>
+    const crearCategorias = categorias.map((cat, j) => {
+      const nombreCat = `${nombreFase} / ${cat.categoria || cat.idCategoria}`;
+      return defer(() =>
         api.createCategoriaAsignada({
           ...contextoBase,
           IdpptoFase: primera.idFase,
@@ -133,15 +173,31 @@ export function crearFasesConCategorias(
           SubTotalCategoria: Number(cat.subtotal) || 0,
         }),
       ).pipe(
+        // Partida con ítems (p. ej. cargada desde una plantilla): se guardan con el id recién creado.
+        concatMap((creada): Observable<unknown> => {
+          const idCreada = Number((creada as { id?: unknown } | null)?.id);
+          if (!cat.items?.length || !api.syncItemsCategoriaAsignada || !idCreada) return of(null);
+          return api.syncItemsCategoriaAsignada(idCreada, {
+            items: cat.items.map((it) => ({
+              id_producto: it.id_producto,
+              id_unidad_medida: it.id_unidad_medida,
+              id_categoria: it.id_categoria,
+              Item: it.Item?.trim() || undefined,
+              Cantidad: it.Cantidad,
+              CostoUnitario: it.CostoUnitario,
+              PrecioVenta: it.PrecioVenta,
+            })),
+          });
+        }),
         map((): FaseFallida | null => null),
         catchError((error) =>
           of<FaseFallida | null>({
-            nombre: `${nombreFase} / ${cat.categoria || cat.idCategoria}`,
+            nombre: nombreCat,
             motivo: mensajeDeError(error),
           }),
         ),
-      ),
-    );
+      );
+    });
 
     return defer(() => api.createFaseAsignada(faseData)).pipe(
       concatMap(() => (crearCategorias.length ? concat(...crearCategorias) : of(null))),
@@ -165,12 +221,26 @@ interface PlantillaParaFilas {
   fases: {
     IdpptoFase: string;
     NombreFase?: string;
-    categorias?: { IdpptoFaseCategoria: string; NombreCategoria?: string; CostoReferencial?: number }[];
+    categorias?: {
+      id?: number;
+      IdpptoFaseCategoria: string;
+      NombreCategoria?: string;
+      CostoReferencial?: number;
+      id_categoria?: number;
+      categoria?: { id?: number; descripcion?: string } | null;
+    }[];
   }[];
 }
 
-/** Convierte una plantilla en filas del wizard (una por categoria; una sin categoria si la fase no tiene). */
-export function plantillaAFilas(plantilla: PlantillaParaFilas): FilaFormFase[] {
+/**
+ * Convierte una plantilla en filas del wizard (una por categoria; una sin categoria si la fase no tiene).
+ * `itemsPorPartida` (id de la partida de plantilla → ítems) lleva los ítems a las filas; con ítems el
+ * subtotal de la fila es la suma de sus costos totales.
+ */
+export function plantillaAFilas(
+  plantilla: PlantillaParaFilas,
+  itemsPorPartida: ReadonlyMap<number, ItemLocalFila[]> = new Map(),
+): FilaFormFase[] {
   const filas: FilaFormFase[] = [];
   for (const fase of plantilla.fases ?? []) {
     const nombre = fase.NombreFase || fase.IdpptoFase;
@@ -180,12 +250,19 @@ export function plantillaAFilas(plantilla: PlantillaParaFilas): FilaFormFase[] {
       continue;
     }
     for (const cat of categorias) {
+      const items = cat.id ? itemsPorPartida.get(cat.id) ?? [] : [];
+      const subtotal = items.length
+        ? Math.round((items.reduce((acc, it) => acc + (Number(it.CostoTotal) || 0), 0) + Number.EPSILON) * 100) / 100
+        : Number(cat.CostoReferencial) || 0;
       filas.push({
         idFase: fase.IdpptoFase,
         nombre,
         idCategoria: cat.IdpptoFaseCategoria,
         categoria: cat.NombreCategoria || cat.IdpptoFaseCategoria,
-        subtotal: Number(cat.CostoReferencial) || 0,
+        subtotal,
+        id_categoria: cat.id_categoria ?? undefined,
+        categoriaRealDescripcion: cat.categoria?.descripcion || undefined,
+        ...(items.length ? { items, totalItems: items.length } : {}),
       });
     }
   }
@@ -227,6 +304,7 @@ export function fusionarFilasPlantilla(
 }
 
 export interface CategoriaCompletoInput {
+  totalItems?: number;
   id?: number;
   IdpptoFaseCategoria?: string;
   CategoriaInsumo?: string;
@@ -283,6 +361,7 @@ export function completoAFilas(completo: PresupuestoCompletoInput | null | undef
         idCategoriaDetalle: c.id,
         id_categoria: c.id_categoria ?? undefined,
         categoriaRealDescripcion: c.categoriaRealDescripcion || c.categoria?.descripcion || c.categoria?.nombre || '',
+        totalItems: c.totalItems ?? 0,
       });
     }
   }

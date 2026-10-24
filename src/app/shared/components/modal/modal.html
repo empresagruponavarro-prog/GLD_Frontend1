@@ -4,13 +4,17 @@
       @if (showHeader()) {
         <div class="modal-header">
           <div class="modal-header-content">
-            <span class="modal-header-icon">
-              <i class="fa-solid fa-building-flag"></i>
-            </span>
+            @if (icon()) {
+              <span class="modal-header-icon">
+                <i [class]="icon()"></i>
+              </span>
+            }
             <h3>{{ title() }}</h3>
           </div>
-          <button class="modal-close-btn" (click)="onClose()" type="button" aria-label="Cerrar modal">
-            ✕
+          <button class="modal-close-btn" (click)="onClose()" type="button" aria-label="Cerrar modal" title="Cerrar">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="width: 16px; height: 16px;">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+            </svg>
           </button>
         </div>
       }

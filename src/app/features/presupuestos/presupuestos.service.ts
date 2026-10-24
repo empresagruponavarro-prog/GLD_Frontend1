@@ -36,8 +36,62 @@ export interface PlantillaCategoriaDto {
   IdpptoFaseCategoria: string;
   NombreCategoria?: string;
   CostoReferencial?: number;
+  VentaReferencial?: number;
   id_categoria?: number;
   categoria?: { id: number; descripcion: string };
+  totalItems?: number;
+}
+
+export interface PartidaItemProducto {
+  id: number;
+  codigo: string;
+  descripcion: string;
+  tipo_producto: 'PRODUCTO' | 'SERVICIO';
+  id_categoria: number;
+  categoria?: string;
+}
+
+export interface PartidaItemUnidad {
+  id: number;
+  codigo: string;
+  descripcion: string;
+  simbolo?: string;
+}
+
+export interface PartidaItem {
+  id?: number;
+  id_plantilla_categoria?: number;
+  Item?: string;
+  Orden?: number;
+  id_producto: number;
+  producto?: PartidaItemProducto;
+  id_unidad_medida: number;
+  unidad?: PartidaItemUnidad;
+  Cantidad: number;
+  CostoUnitario: number;
+  PrecioVenta: number;
+  CostoTotal?: number;
+  VentaTotal?: number;
+}
+
+export interface PartidaItemsResponse {
+  id_plantilla_categoria: number;
+  items: PartidaItem[];
+  costoTotal: number;
+  ventaTotal: number;
+}
+
+export interface SyncPartidaItemsDto {
+  items: {
+    id?: number;
+    id_producto: number;
+    id_unidad_medida: number;
+    id_categoria?: number;
+    Item?: string;
+    Cantidad: number;
+    CostoUnitario: number;
+    PrecioVenta: number;
+  }[];
 }
 
 export interface Plantilla {
@@ -91,9 +145,23 @@ export class PresupuestosService {
   updatePlantillaFases(id: string, fases: PlantillaFaseDto[]): Observable<{ success: boolean }> {
     return this.http.put<{ success: boolean }>(`${this.apiUrl}/plantillas/${id}/fases`, fases);
   }
+  deletePlantilla(id: string): Observable<{ success: boolean }> {
+    return this.http.delete<{ success: boolean }>(`${this.apiUrl}/plantillas/${id}`);
+  }
+  fusionarPlantilla(idDestino: string, dto: { IdPlantillaOrigen: string; EliminarOrigen?: boolean }): Observable<{ success: boolean; fasesAgregadas: number; categoriasAgregadas: number; categoriasOmitidas: number; origenEliminado: boolean }> {
+    return this.http.post<{ success: boolean; fasesAgregadas: number; categoriasAgregadas: number; categoriasOmitidas: number; origenEliminado: boolean }>(`${this.apiUrl}/plantillas/${idDestino}/fusionar`, dto);
+  }
 
   getPlantillasActivas(): Observable<Plantilla[]> {
     return this.http.get<Plantilla[]>(`${this.apiUrl}/plantillas/activas`);
+  }
+
+  getPartidaItems(idCat: number): Observable<PartidaItemsResponse> {
+    return this.http.get<PartidaItemsResponse>(`${this.apiUrl}/plantillas/categorias/${idCat}/items`);
+  }
+
+  syncPartidaItems(idCat: number, dto: SyncPartidaItemsDto): Observable<PartidaItemsResponse> {
+    return this.http.put<PartidaItemsResponse>(`${this.apiUrl}/plantillas/categorias/${idCat}/items`, dto);
   }
 
   aplicarPlantilla(idPresupuesto: string, dto: AplicarPlantillaDto): Observable<AplicarPlantillaResult> {
@@ -240,6 +308,15 @@ export class PresupuestosService {
     return this.http.delete<void>(`${this.apiUrl}/categorias-asignadas/${id}`);
   }
 
+  /** Ítems (productos/servicios) de una partida del presupuesto guardado. */
+  getItemsCategoriaAsignada(idCat: number): Observable<PartidaItemsResponse> {
+    return this.http.get<PartidaItemsResponse>(`${this.apiUrl}/categorias-asignadas/${idCat}/items`);
+  }
+
+  syncItemsCategoriaAsignada(idCat: number, dto: SyncPartidaItemsDto): Observable<PartidaItemsResponse> {
+    return this.http.put<PartidaItemsResponse>(`${this.apiUrl}/categorias-asignadas/${idCat}/items`, dto);
+  }
+
   // Historial Versiones
   getHistorial(): Observable<Historial[]> {
     return this.http.get<Historial[]>(`${this.apiUrl}/historial-versiones`);
@@ -248,4 +325,63 @@ export class PresupuestosService {
   createHistorial(data: Partial<Historial>): Observable<Historial> {
     return this.http.post<Historial>(`${this.apiUrl}/historial-versiones`, data);
   }
+
+  // Generación de FURs por Fase (Requerimientos de Obra)
+  getPreviewFurs(idOrCode: string | number): Observable<PreviewFursPresupuestoResponse> {
+    return this.http.get<PreviewFursPresupuestoResponse>(`${this.apiUrl}/${idOrCode}/furs-preview`);
+  }
+
+  generarFurs(idOrCode: string | number, dto: GenerarFursPresupuestoDto = {}): Observable<GenerarFursPresupuestoResponse> {
+    return this.http.post<GenerarFursPresupuestoResponse>(`${this.apiUrl}/${idOrCode}/generar-furs`, dto);
+  }
 }
+
+export interface FurGeneradoItem {
+  id_producto: number;
+  codigo: string;
+  descripcion: string;
+  unidad: string;
+  cantidad: string;
+  precio_referencial: string;
+}
+
+export interface FaseFurPreview {
+  id_fase: number;
+  nombre_fase: string;
+  total_productos: number;
+  total_cantidad: number;
+  total_estimado: number;
+  fur_existente?: { id: number; numero: string; estado: string } | null;
+  items: FurGeneradoItem[];
+}
+
+export interface PreviewFursPresupuestoResponse {
+  id_presupuesto: string;
+  proyecto: string | null;
+  id_centro_costo: number;
+  centro_costo: string | null;
+  fases: FaseFurPreview[];
+}
+
+export interface GenerarFursPresupuestoDto {
+  id_solicitante?: number;
+  fecha_requerida?: string;
+  forzar?: boolean;
+}
+
+export interface GenerarFursPresupuestoResponse {
+  id_presupuesto: string;
+  furs_generados: {
+    id: number;
+    numero: string;
+    id_fase: number;
+    nombre_fase: string;
+    total_lineas: number;
+  }[];
+  fases_omitidas: {
+    id_fase: number;
+    nombre_fase: string;
+    motivo: string;
+  }[];
+}
+

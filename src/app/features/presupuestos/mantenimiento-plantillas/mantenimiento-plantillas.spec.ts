@@ -93,7 +93,8 @@ describe('MantenimientoPlantillasComponent — permisos (presupuestos.plantillas
     expect(deshabilitado(p.el.querySelector('section textarea'))).toBe(true);
     expect(deshabilitado(p.el.querySelector('section input[type="checkbox"]'))).toBe(true);
     expect(deshabilitado(p.el.querySelector('section input[type="number"]'))).toBe(true);
-    expect(deshabilitado(p.el.querySelector('section tbody select'))).toBe(true);
+    // La categoría real ya no se elige en la tabla: se edita en el diálogo de ítems (que recibe soloLectura).
+    expect(p.el.querySelector('section tbody select')).toBeNull();
     expect(botonesVisibles(p.el, BOTONES_EDITOR)).toEqual({
       guardar: false, anadirFase: false, insertarFase: false, eliminarFase: false,
       anadirSubFase: false, editarSubFase: false, descartar: true,
@@ -152,5 +153,35 @@ describe('MantenimientoPlantillasComponent — permisos (presupuestos.plantillas
     const p = await montar({ editar: true });
     p.cmp.nuevaPlantilla();
     expect(p.cmp.showNuevaPlantillaModal()).toBe(false);
+  });
+
+  it('permite colapsar y expandir fases como un acordeón en el editor', async () => {
+    const p = await montar({});
+    await abrirEditor(p);
+
+    const fase = COMPLETA.fases[0];
+    // Por defecto inicia expandida
+    expect(p.cmp.isFaseColapsada(fase, 0)).toBe(false);
+    expect(p.el.querySelector('.partida-row, tbody tr')).not.toBeNull();
+
+    // Colapsar fase
+    p.cmp.toggleFase(fase, 0);
+    expect(p.cmp.isFaseColapsada(fase, 0)).toBe(true);
+    await p.render();
+    expect(p.el.querySelector('tbody')).toBeNull();
+
+    // Expandir nuevamente
+    p.cmp.toggleFase(fase, 0);
+    expect(p.cmp.isFaseColapsada(fase, 0)).toBe(false);
+    await p.render();
+    expect(p.el.querySelector('tbody')).not.toBeNull();
+
+    // Colapsar todas
+    p.cmp.colapsarTodasFases();
+    expect(p.cmp.isFaseColapsada(fase, 0)).toBe(true);
+
+    // Expandir todas
+    p.cmp.expandirTodasFases();
+    expect(p.cmp.isFaseColapsada(fase, 0)).toBe(false);
   });
 });

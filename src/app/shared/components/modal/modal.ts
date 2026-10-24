@@ -6,10 +6,12 @@ import { CommonModule } from '@angular/common';
   standalone: true,
   imports: [CommonModule],
   templateUrl: './modal.html',
+  styleUrl: './modal.css',
 })
 export class ModalComponent {
   isOpen = input<boolean>(false);
   title = input<string>('');
+  icon = input<string>('fa-solid fa-pen-to-square');
   showHeader = input<boolean>(true);
   maxWidth = input<string>('600px');
   height = input<string>('auto');

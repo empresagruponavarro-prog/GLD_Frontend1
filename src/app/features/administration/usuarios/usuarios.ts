@@ -16,7 +16,8 @@ import { AuthService } from '@app/core/auth/auth.service';
 import { permisosDePantalla } from '@app/core/auth/permisos-pantalla';
 import { mensajeError } from '@shared/utils/errores-http';
 import { UsuariosService } from './usuarios.service';
-import { Usuario, UsuarioUpdateDto } from './interfaces';
+import { AreaItem, Usuario, UsuarioUpdateDto } from './interfaces';
+import { UsuarioPermisosDialogComponent } from './permisos-dialog/usuario-permisos-dialog';
 import { CLAVE_MAX, CLAVE_MIN, validarClaveNueva } from './usuarios.validators';
 import { DataTableComponent } from '../../../shared/components/data-table/data-table';
 import { DataTable } from '../../../shared/interfaces';
@@ -38,6 +39,7 @@ interface UsuarioForm {
   Nombres: FormControl<string>;
   Usuario: FormControl<string>;
   Rol: FormControl<string>;
+  id_area: FormControl<number | null>;
   cambiarClave: FormControl<boolean>;
   Clave: FormControl<string>;
   ConfirmarClave: FormControl<string>;
@@ -45,7 +47,7 @@ interface UsuarioForm {
 
 @Component({
   selector: 'app-usuarios',
-  imports: [ReactiveFormsModule, RouterLink, DataTableComponent],
+  imports: [ReactiveFormsModule, RouterLink, DataTableComponent, UsuarioPermisosDialogComponent],
   templateUrl: './usuarios.html',
   styleUrl: './usuarios.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -68,6 +70,7 @@ export class UsuariosComponent {
     { label: 'Nombres Completos' },
     { label: 'Usuario / Login' },
     { label: 'Rol Asignado' },
+    { label: 'Área' },
     { label: 'Estado' },
     { label: 'Acciones' }
   ];
@@ -106,6 +109,14 @@ export class UsuariosComponent {
   roles = signal<string[]>([]);
   /** Aviso si el catálogo de roles no se pudo cargar o está vacío. */
   rolesError = signal<string | null>(null);
+
+  /** Catálogo de áreas de la empresa para asignación directa al usuario (`id_area`). */
+  areas = signal<AreaItem[]>([]);
+  areasError = signal<string | null>(null);
+
+  /** Usuario cuyos permisos se están viendo (diálogo rol → área → excepción). */
+  usuarioPermisos = signal<Usuario | null>(null);
+
   showModal = signal<boolean>(false);
   editingId = signal<string | null>(null);
   loading = signal<boolean>(false);
@@ -121,6 +132,7 @@ export class UsuariosComponent {
     Nombres: new FormControl('', { nonNullable: true }),
     Usuario: new FormControl('', { nonNullable: true }),
     Rol: new FormControl('', { nonNullable: true }),
+    id_area: new FormControl<number | null>(null),
     cambiarClave: new FormControl(false, { nonNullable: true }),
     Clave: new FormControl('', { nonNullable: true }),
     ConfirmarClave: new FormControl('', { nonNullable: true }),
@@ -148,7 +160,21 @@ export class UsuariosComponent {
       if (!v) this.form.patchValue({ Clave: '', ConfirmarClave: '' });
     });
     this.loadRoles();
+    this.loadAreas();
     this.loadUsuarios();
+  }
+
+  loadAreas() {
+    this.usuariosService.getAreas().subscribe({
+      next: (areas) => {
+        const lista = Array.isArray(areas) ? areas : [];
+        this.areas.set(lista);
+        this.areasError.set(null);
+      },
+      error: (err: unknown) => {
+        this.areasError.set('No se pudieron cargar las áreas: ' + mensajeError(err));
+      },
+    });
   }
 
   loadRoles() {
@@ -165,9 +191,10 @@ export class UsuariosComponent {
     });
   }
 
-  /** Botón "Actualizar": recarga usuarios y el catálogo de roles (puede cambiar en Administración de Roles). */
+  /** Botón "Actualizar": recarga usuarios, áreas y el catálogo de roles (puede cambiar en Administración de Roles). */
   actualizar() {
     this.loadRoles();
+    this.loadAreas();
     this.loadUsuarios();
   }
 
@@ -194,6 +221,7 @@ export class UsuariosComponent {
     this.mostrarConfirmarClave.set(false);
     this.form.reset({
       IdUsuario: '', Nombres: '', Usuario: '', Rol: this.rolPorDefecto(),
+      id_area: null,
       cambiarClave: true, Clave: '', ConfirmarClave: '',
     });
     this.showModal.set(true);
@@ -209,14 +237,34 @@ export class UsuariosComponent {
     const rol = item.Rol && this.roles().includes(item.Rol) ? item.Rol : '';
     this.form.reset({
       IdUsuario: item.IdUsuario, Nombres: item.Nombres ?? '', Usuario: item.Usuario ?? '', Rol: rol,
+      id_area: item.id_area ?? item.area?.id ?? null,
       cambiarClave: false, Clave: '', ConfirmarClave: '',
     });
     this.showModal.set(true);
   }
 
+  /** Abre el diálogo de permisos del usuario (rol → área → excepción). */
+  abrirPermisos(item: Usuario) {
+    this.usuarioPermisos.set(item);
+  }
+
+  cerrarPermisos() {
+    this.usuarioPermisos.set(null);
+  }
+
   /** Escape cierra el formulario, salvo mientras se guarda (igual que en "Roles y permisos"). */
   protected cerrarConEscape(): void {
     if (!this.saving()) this.closeModal();
+  }
+
+  /** Teclado sobre el fondo del formulario: Escape lo cierra. Va como (keydown) para que el clic del fondo sea accesible. */
+  protected teclaEnFormulario(event: KeyboardEvent): void {
+    if (event.key === 'Escape') this.cerrarConEscape();
+  }
+
+  /** Teclado sobre el fondo de la confirmación: Escape la cancela. */
+  protected teclaEnConfirmacion(event: KeyboardEvent): void {
+    if (event.key === 'Escape') this.cancelarConfirmacion();
   }
 
   closeModal() {
@@ -252,9 +300,20 @@ export class UsuariosComponent {
 
     this.formError.set(null);
     this.saving.set(true);
+    const idAreaRaw = v.id_area;
+    const tieneArea = idAreaRaw !== null && idAreaRaw !== undefined && idAreaRaw !== ('' as unknown);
+    const idAreaVal = tieneArea ? Number(idAreaRaw) : null;
     const peticion = editId
-      ? this.usuariosService.update(editId, { ...datos, ...(enviarClave ? { Clave: v.Clave } : {}) } satisfies UsuarioUpdateDto)
-      : this.usuariosService.create({ ...datos, Clave: v.Clave });
+      ? this.usuariosService.update(editId, {
+          ...datos,
+          ...(tieneArea ? { id_area: idAreaVal } : {}),
+          ...(enviarClave ? { Clave: v.Clave } : {}),
+        } satisfies UsuarioUpdateDto)
+      : this.usuariosService.create({
+          ...datos,
+          ...(tieneArea ? { id_area: idAreaVal } : {}),
+          Clave: v.Clave,
+        });
 
     peticion.subscribe({
       next: () => {
@@ -329,6 +388,11 @@ export class UsuariosComponent {
       error: (err: unknown) =>
         this.fallarConfirmacion(accion === 'reactivar' ? 'Error al reactivar: ' : 'Error al desactivar: ', err),
     });
+  }
+
+  /** Clic en el fondo del formulario (no en su contenido): lo cierra. */
+  onFormOverlayClick(event: MouseEvent) {
+    if (event.target === event.currentTarget) this.closeModal();
   }
 
   /** Clic en el fondo de la confirmación (no en su contenido). */

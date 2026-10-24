@@ -122,6 +122,8 @@ export interface DetalleFaseCate {
   CategoriaInsumo?: string;
   SubTotalCategoria?: string | number;
   CostoDirecto?: string | number;
+  /** Cantidad de ítems (productos/servicios) de la partida. */
+  totalItems?: number;
 }
 
 export interface DetalleFase {

@@ -1,5 +1,5 @@
 import { Component, inject, signal, AfterViewChecked } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import type { Observable } from 'rxjs';
 import { permisosDePantalla } from '@app/core/auth/permisos-pantalla';
@@ -15,7 +15,7 @@ declare const L: LeafletGlobal | undefined;
 @Component({
   selector: 'app-incidencias',
   standalone: true,
-  imports: [CommonModule, FormsModule, DataTableComponent],
+  imports: [DatePipe, FormsModule, DataTableComponent],
   templateUrl: './incidencias.html'
 })
 export class IncidenciasComponent implements AfterViewChecked {

@@ -7,7 +7,8 @@
 
 <div class="content-body">
   <div class="modules-grid">
-    <div class="module-card" *ngFor="let mod of subModules" [routerLink]="mod.route">
+    @for (mod of subModules; track $index) {
+      <div class="module-card" [routerLink]="mod.route">
       <div class="module-icon">
         <i [class]="mod.icon"></i>
       </div>
@@ -16,5 +17,6 @@
         {{ mod.description }}
       </small>
     </div>
+    }
   </div>
 </div>

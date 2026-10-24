@@ -24,6 +24,7 @@ import { mensajeError } from '@shared/utils/errores-http';
 import { RolActualizar, RolAdmin, RolCrear, RolesService } from './roles.service';
 import { PermisosAdminService } from './permisos-admin.service';
 import { PantallaConCambiosPendientes } from './roles.guard';
+import { PestanasPermisosComponent } from './pestanas-permisos/pestanas-permisos';
 import { AuthService } from '@app/core/auth/auth.service';
 import { PermisosService } from '@app/core/auth/permisos.service';
 import { permisosDePantalla } from '@app/core/auth/permisos-pantalla';
@@ -95,7 +96,7 @@ const MAPA_VACIO: MapaPermisos = new Map();
  */
 @Component({
   selector: 'app-roles',
-  imports: [ReactiveFormsModule],
+  imports: [ReactiveFormsModule, PestanasPermisosComponent],
   templateUrl: './roles.html',
   // Reutiliza los estilos del modal rediseñado de usuarios para mantener la misma familia visual.
   styleUrls: ['../usuarios/usuarios.css', './roles.css'],

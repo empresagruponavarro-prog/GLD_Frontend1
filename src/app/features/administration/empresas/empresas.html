@@ -52,7 +52,8 @@
 </div>
 
 <!-- Modal Formulario -->
-<div class="modal-overlay" *ngIf="showModal()">
+@if (showModal()) {
+  <div class="modal-overlay">
   <div class="modal-content" style="max-width: 600px;">
     <div class="modal-header">
       <h3 style="display: flex; align-items: center; gap: 0.5rem;">
@@ -102,3 +103,4 @@
     </div>
   </div>
 </div>
+}

@@ -29,6 +29,8 @@ export async function montarPantalla<T>(
   permisos: MisPermisos,
   responder: Responder,
   providers: (Provider | EnvironmentProviders)[] = [],
+  /** Valores de los `input()` del componente (los que no son opcionales deben ir aquí). */
+  entradas: Readonly<Record<string, unknown>> = {},
 ): Promise<Pantalla<T>> {
   const storage = new MemoryStorage();
   guardarSesion(storage, permisos.rol);
@@ -37,6 +39,7 @@ export async function montarPantalla<T>(
     providers: [...providersPantalla(storage), ...providers],
   });
   const fixture = TestBed.createComponent(componente);
+  for (const [nombre, valor] of Object.entries(entradas)) fixture.componentRef.setInput(nombre, valor);
   await cargarPermisos(permisos);
   const http = TestBed.inject(HttpTestingController);
   const render = () => fixture.whenStable();

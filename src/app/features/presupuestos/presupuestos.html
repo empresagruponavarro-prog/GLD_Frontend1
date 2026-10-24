@@ -285,10 +285,18 @@
               </p>
             </div>
           </div>
-          <button id="btn-inspeccionar-fases" (click)="abrirFasesModal()" [disabled]="!selectedPresupuestoId()" type="button" class="px-4 py-2 rounded-lg bg-[#529b7b] hover:bg-[#3d7e63] disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold text-xs shadow-xs whitespace-nowrap transition cursor-pointer flex items-center gap-1.5">
-            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
-            <span>Inspeccionar Fases y APU</span>
-          </button>
+          <div class="flex items-center gap-2">
+            @if (permisos.crear()) {
+              <button id="btn-generar-furs-banner" (click)="abrirGenerarFursModal()" [disabled]="!selectedPresupuestoId()" type="button" title="Generar Formatos Únicos de Requerimiento (FURs) de compra para cada fase" class="px-3.5 py-2 rounded-lg bg-[#24543d] hover:bg-[#1a3d2c] disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold text-xs shadow-xs whitespace-nowrap transition cursor-pointer flex items-center gap-1.5">
+                <svg class="w-3.5 h-3.5 text-amber-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                <span>Generar FURs</span>
+              </button>
+            }
+            <button id="btn-inspeccionar-fases" (click)="abrirFasesModal()" [disabled]="!selectedPresupuestoId()" type="button" class="px-4 py-2 rounded-lg bg-[#529b7b] hover:bg-[#3d7e63] disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold text-xs shadow-xs whitespace-nowrap transition cursor-pointer flex items-center gap-1.5">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+              <span>Inspeccionar Fases y APU</span>
+            </button>
+          </div>
         </div>
       </div>
     </main>
@@ -326,6 +334,12 @@
           </div>
         </div>
         <div class="flex items-center gap-2 shrink-0">
+          @if (permisos.crear()) {
+            <button id="fm-generar-furs" (click)="abrirGenerarFursModal()" type="button" title="Generar Formatos Únicos de Requerimiento (FURs) de compra para cada fase" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#24543d] hover:bg-[#1a3d2c] text-white text-xs font-semibold shadow-2xs transition cursor-pointer">
+              <svg class="w-3.5 h-3.5 text-amber-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+              <span>Generar FURs</span>
+            </button>
+          }
           @if (permisos.editar()) {
             <button id="fm-aplicar-plantilla" (click)="abrirModalPlantillas()" type="button" title="Cargar fases y categorías desde una plantilla" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white hover:bg-[#f6f8f7] hover:border-[#529b7b] text-slate-700 text-xs font-semibold border border-[#d1dcd7] shadow-2xs transition cursor-pointer">
               <svg class="w-3.5 h-3.5 text-[#529b7b]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h11M4 12h11M4 18h7m9-3v6m-3-3h6"/></svg>
@@ -905,11 +919,10 @@
               <tr>
                 <th class="py-2 px-3 w-8">#</th>
                 <th class="py-2 px-3">Fase / Partida</th>
-                <th class="py-2 px-3 w-64">Categoría</th>
                 <th class="py-2 px-3 w-44">Sub Fase / Partida</th>
                 <th class="py-2 px-3 text-right w-36">Subtotal CD (S/)</th>
                 <th class="py-2 px-3 text-right w-16">% Inc.</th>
-                <th class="py-2 px-3 text-center w-20">Acciones</th>
+                <th class="py-2 px-3 text-center w-36">Acciones</th>
               </tr>
             </thead>
             <tbody class="divide-y divide-slate-100 text-[13px]">
@@ -917,19 +930,6 @@
                 <tr class="hover:bg-slate-50 transition" [class.bg-emerald-50]="editingFilaIndex === i">
                   <td class="py-2 px-3 font-mono text-[#2d634d] font-bold text-[12px]">{{ (i+1) < 10 ? '0'+(i+1) : (i+1) }}</td>
                   <td class="py-2 px-3 font-medium text-slate-800">{{ fase.nombre }}</td>
-                  <td class="py-2 px-3">
-                    <div class="relative flex items-center group">
-                      <input type="text"
-                             list="lista-categorias-real"
-                             [ngModel]="fase.categoriaRealDescripcion || ''"
-                             (ngModelChange)="onCategoriaRealChange(i, $event)"
-                             placeholder="Escribir o seleccionar..."
-                             class="w-full bg-white hover:bg-slate-50 focus:bg-white text-[12px] font-medium text-slate-800 border border-slate-200 hover:border-slate-300 focus:border-[#529b7b] focus:ring-1 focus:ring-[#529b7b] rounded px-2.5 py-1.5 transition outline-none shadow-2xs pr-6">
-                      <svg class="w-3.5 h-3.5 text-slate-400 absolute right-2 pointer-events-none group-focus-within:text-[#529b7b]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
-                      </svg>
-                    </div>
-                  </td>
                   <td class="py-2 px-3">
                     <span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium bg-[#529b7b]/10 text-[#2d634d] border border-[#529b7b]/25">
                       {{ fase.categoria }}
@@ -942,7 +942,9 @@
                                [ngModel]="fase.subtotal" 
                                (ngModelChange)="updateFormFaseSubtotal(i, $event)"
                                (change)="persistirSubtotalFila(i)"
-                               class="w-[110px] text-right font-mono font-bold text-slate-900 text-[12px] border border-transparent hover:border-slate-300 focus:border-[#529b7b] focus:ring-1 focus:ring-[#529b7b] rounded bg-transparent focus:bg-white pl-6 pr-2 py-1 transition-all outline-none"
+                               [readonly]="!!(fase.totalItems || fase.items?.length)"
+                               [title]="(fase.totalItems || fase.items?.length) ? 'Calculado desde los ítems de la partida' : ''"
+                               class="w-[110px] text-right font-mono font-bold text-slate-900 text-[12px] border border-transparent hover:border-slate-300 focus:border-[#529b7b] focus:ring-1 focus:ring-[#529b7b] rounded bg-transparent focus:bg-white pl-6 pr-2 py-1 transition-all outline-none read-only:cursor-not-allowed read-only:text-slate-600 read-only:hover:border-transparent read-only:focus:ring-0"
                                placeholder="0.00"
                                step="0.01">
                       </div>
@@ -952,6 +954,13 @@
                   </td>
                   <td class="py-2 px-3 text-center">
                     <div class="flex items-center justify-center gap-1">
+                    @if (fase.idCategoria) {
+                    <button type="button" (click)="abrirItemsFila(i)" title="Ver / editar ítems de la partida"
+                            class="inline-flex items-center gap-1 px-2 h-6 rounded-full text-[11px] font-semibold border transition cursor-pointer"
+                            [class]="(fase.totalItems || fase.items?.length) ? 'bg-emerald-50 text-emerald-700 border-emerald-300 hover:bg-emerald-100' : 'bg-white text-slate-500 border-slate-300 hover:bg-slate-50'">
+                      {{ (fase.totalItems || fase.items?.length) ? ((fase.totalItems || fase.items?.length) + ' ítems') : '+ Ítems' }}
+                    </button>
+                    }
                     @if (!soloLectura()) {
                     <button type="button" (click)="editarFilaFormFase(i)" title="Editar categoría / monto"
                             class="w-6 h-6 rounded-full flex items-center justify-center text-slate-400 hover:bg-emerald-50 hover:text-emerald-700 transition cursor-pointer">
@@ -985,7 +994,7 @@
             </tbody>
             <tfoot class="bg-[#1e4838]/5 border-t-2 border-[#529b7b]/30">
               <tr>
-                <td colspan="4" class="py-2.5 px-3 font-bold text-[#1e4838] text-[13px] uppercase tracking-wide">
+                <td colspan="3" class="py-2.5 px-3 font-bold text-[#1e4838] text-[13px] uppercase tracking-wide">
                   Total Costo Directo
                 </td>
                 <td class="py-2.5 px-3 text-right font-mono font-extrabold text-[#1e4838] text-[15px] tabular-nums">
@@ -995,11 +1004,6 @@
               </tr>
             </tfoot>
           </table>
-          <datalist id="lista-categorias-real">
-            @for (cat of categoriasReal(); track cat.id) {
-              <option [value]="cat.nombre">{{ cat.nombre }}</option>
-            }
-          </datalist>
         </div>
         </fieldset>
 
@@ -1119,7 +1123,7 @@
           } @else {
             <!-- MODO AGREGAR NORMAL -->
             <div class="grid grid-cols-1 sm:grid-cols-12 gap-2.5 items-end">
-              <div class="sm:col-span-3">
+              <div class="sm:col-span-5">
                 <label for="fase-partida-add" class="block text-[11px] font-bold text-slate-600 uppercase mb-1">Fase/partida</label>
                 <select id="fase-partida-add" [(ngModel)]="newFaseId" (ngModelChange)="onFaseMaestraChange()"
                         class="w-full border border-slate-300 rounded-lg px-3 py-2 text-[13px] focus:outline-none focus:ring-2 focus:ring-[#529b7b]/40 focus:border-[#529b7b] bg-white">
@@ -1129,7 +1133,7 @@
                   }
                 </select>
               </div>
-              <div class="sm:col-span-3">
+              <div class="sm:col-span-4">
                 <label for="subfase-partida-add" class="block text-[11px] font-bold text-slate-600 uppercase mb-1">Sub Fase/partida</label>
                 <select id="subfase-partida-add" [(ngModel)]="newFaseCategoriaId" [disabled]="!newFaseId"
                         class="w-full border border-slate-300 rounded-lg px-3 py-2 text-[13px] focus:outline-none focus:ring-2 focus:ring-[#529b7b]/40 focus:border-[#529b7b] bg-white disabled:bg-slate-100 disabled:text-slate-400">
@@ -1137,13 +1141,6 @@
                   @for (categoria of categoriasFaseMaestra(); track categoria.id || categoria.IdpptoFaseCategoria) {
                     <option [value]="categoria.IdpptoFaseCategoria">{{ categoria.Descripcion || categoria.IdpptoFaseCategoria }}</option>
                   }
-                </select>
-              </div>
-              <div class="sm:col-span-3">
-                <label for="cat-real-add" class="block text-[11px] font-bold text-slate-600 uppercase mb-1">Categoría</label>
-                <select id="cat-real-add" [(ngModel)]="newFaseCategoriaRealId" [disabled]="!newFaseId" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-[13px] focus:outline-none focus:ring-2 focus:ring-[#529b7b]/40 focus:border-[#529b7b] bg-white disabled:bg-slate-100 disabled:text-slate-400">
-                  <option value="">{{ newFaseId ? 'Seleccione Categoría *' : 'Seleccione primero una Fase' }}</option>
-                  @for (cat of categoriasReal(); track cat.id) {<option [value]="cat.id">{{ cat.nombre }}</option>}
                 </select>
               </div>
               <div class="sm:col-span-3">
@@ -1345,16 +1342,35 @@
             </div>
           </div>
 
-          <!-- Especialista Responsable -->
+          <!-- Especialista Responsable (Capturado automáticamente de la sesión) -->
           <div>
-            <label for="especialista-input" class="block text-[12px] font-bold text-slate-500 mb-2 uppercase tracking-wide">Especialista Responsable</label>
+            <div class="flex items-center justify-between mb-2">
+              <label class="block text-[12px] font-bold text-slate-500 uppercase tracking-wide">
+                Especialista Responsable
+              </label>
+              <span class="inline-flex items-center gap-1.5 text-[11px] font-semibold text-emerald-800 bg-emerald-50 border border-emerald-200 px-2.5 py-0.5 rounded-full select-none" title="El especialista es asignado automáticamente según el usuario que inició sesión y no se puede modificar">
+                <i class="fa-solid fa-lock text-emerald-600 text-[10px]"></i>
+                Capturado de la sesión activa
+              </span>
+            </div>
             <div class="flex items-center gap-3 bg-slate-50 border border-slate-200 rounded-lg px-4 py-3">
-              <div class="w-8 h-8 rounded-full bg-[#1e4838] text-white flex items-center justify-center text-[12px] font-bold shrink-0">
-                {{ especialista() ? especialista().charAt(0).toUpperCase() : '-' }}
+              <div class="w-9 h-9 rounded-full bg-[#1e4838] text-white flex items-center justify-center text-[13px] font-bold shrink-0 shadow-xs">
+                {{ especialista() ? especialista().charAt(0).toUpperCase() : (usuarioConectado()?.usuario?.charAt(0)?.toUpperCase() || '-') }}
               </div>
-              <input id="especialista-input" [ngModel]="especialista()" (ngModelChange)="especialista.set($event)" type="text"
-                     placeholder="Nombre del especialista responsable..."
-                     class="flex-1 bg-transparent text-[13px] font-semibold text-slate-700 focus:outline-none">
+              <div class="flex-1 flex flex-col justify-center">
+                <div class="text-[13px] font-bold text-slate-800 flex items-center gap-2">
+                  <span>{{ especialista() || usuarioConectado()?.usuario || 'Sin asignar' }}</span>
+                  @if (usuarioConectado()?.nombres && (!especialista() || especialista() === usuarioConectado()?.usuario)) {
+                    <span class="text-slate-500 font-normal text-[12px]">({{ usuarioConectado()?.nombres }})</span>
+                  }
+                </div>
+                <div class="text-[11px] text-slate-400 font-medium">
+                  Usuario autenticado: <strong class="text-slate-600">{{ usuarioConectado()?.usuario || 'Sesión' }}</strong>
+                  @if (usuarioConectado()?.rol) {
+                    <span> • Rol: {{ usuarioConectado()?.rol }}</span>
+                  }
+                </div>
+              </div>
             </div>
           </div>
 
@@ -1932,3 +1948,193 @@
       </div>
     </div>
   }
+
+  @if (itemsDialog(); as d) {
+    <app-partida-items-dialog
+      [partida]="d.partida"
+      [modo]="d.modo"
+      [itemsIniciales]="d.items"
+      [soloLectura]="!puedeEditarItems"
+      (cerrar)="cerrarItemsDialog()"
+      (guardado)="onItemsGuardados()"
+      (guardadoLocal)="onItemsLocalesGuardados($event)" />
+  }
+
+  @if (showGenerarFursModal()) {
+    <div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-150">
+      <div class="relative w-full max-w-3xl bg-white rounded-xl shadow-2xl border border-slate-200 overflow-hidden flex flex-col max-h-[90vh]" style="font-family: 'Inter', system-ui, sans-serif;">
+        <!-- Header -->
+        <div class="px-6 py-4 bg-[#24543d] text-white flex items-center justify-between shrink-0">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-lg bg-white/10 flex items-center justify-center text-amber-300 shrink-0">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+            </div>
+            <div>
+              <h3 class="font-manrope text-base font-bold">Generación de FURs por Fase</h3>
+              <p class="text-xs text-white/80 mt-0.5">
+                Presupuesto <span class="font-mono font-bold text-amber-200">{{ selectedPresupuestoId() }}</span>
+                @if (selectedCC()) { • {{ selectedCC()?.CodCentroCto || selectedCC()?.CentroCosto }} }
+              </p>
+            </div>
+          </div>
+          <button (click)="cerrarGenerarFursModal()" type="button" class="w-8 h-8 rounded-lg flex items-center justify-center text-white/70 hover:text-white hover:bg-white/10 transition cursor-pointer">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+          </button>
+        </div>
+
+        <!-- Body -->
+        <div class="p-6 overflow-y-auto flex-1 space-y-5 text-xs text-slate-700">
+          @if (loadingFursPreview()) {
+            <div class="py-12 flex flex-col items-center justify-center text-center gap-3">
+              <svg class="animate-spin h-8 w-8 text-[#529b7b]" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+              <p class="font-medium text-slate-600">Analizando partidas, materiales y fases del presupuesto...</p>
+            </div>
+          } @else if (fursResultado(); as res) {
+            <!-- Pantalla de Éxito -->
+            <div class="py-4 space-y-4">
+              <div class="p-4 rounded-xl bg-emerald-50 border border-emerald-200 flex items-start gap-3.5">
+                <div class="w-8 h-8 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0 text-base font-bold">✓</div>
+                <div>
+                  <h4 class="font-bold text-sm text-emerald-900">¡Requerimientos (FURs) generados con éxito!</h4>
+                  <p class="text-emerald-700 mt-0.5">Se crearon en estado <strong>BORRADOR</strong> listos para su revisión en el módulo de Requerimientos.</p>
+                </div>
+              </div>
+
+              <div class="space-y-2">
+                <h5 class="font-bold text-slate-800 uppercase tracking-wider text-[11px]">FURs Generados ({{ res.furs_generados.length }}):</h5>
+                <div class="divide-y divide-slate-100 border border-slate-200 rounded-lg overflow-hidden bg-white shadow-2xs">
+                  @for (fur of res.furs_generados; track fur.id) {
+                    <div class="p-3 flex items-center justify-between gap-3 hover:bg-slate-50 transition">
+                      <div class="flex items-center gap-3">
+                        <span class="px-2 py-0.5 rounded font-mono font-bold text-xs bg-[#529b7b]/15 text-[#24543d] border border-[#529b7b]/30">
+                          {{ fur.numero }}
+                        </span>
+                        <div>
+                          <strong class="text-slate-800 text-xs">{{ fur.nombre_fase }}</strong>
+                          <span class="text-slate-500 text-[11px] block">{{ fur.total_lineas }} ítems de materiales consolidados</span>
+                        </div>
+                      </div>
+                      <span class="px-2 py-0.5 text-[10px] font-semibold rounded bg-amber-50 text-amber-700 border border-amber-200">BORRADOR</span>
+                    </div>
+                  }
+                </div>
+              </div>
+
+              @if (res.fases_omitidas && res.fases_omitidas.length > 0) {
+                <div class="p-3.5 rounded-lg bg-amber-50 border border-amber-200 text-amber-800 space-y-1">
+                  <strong class="font-semibold text-xs block">Fases no procesadas ({{ res.fases_omitidas.length }}):</strong>
+                  <ul class="list-disc list-inside space-y-0.5 text-[11px]">
+                    @for (om of res.fases_omitidas; track om.id_fase) {
+                      <li><strong>{{ om.nombre_fase }}:</strong> {{ om.motivo }}</li>
+                    }
+                  </ul>
+                </div>
+              }
+            </div>
+          } @else if (fursPreviewData(); as preview) {
+            <!-- Vista previa y configuración -->
+            <div class="space-y-4">
+              <div class="p-3.5 rounded-lg bg-[#529b7b]/10 border border-[#529b7b]/30 flex items-start gap-3">
+                <svg class="w-5 h-5 text-[#3d7e63] shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                <div class="leading-relaxed">
+                  <span class="font-bold text-slate-800">Modo de prueba reversible:</span>
+                  <p class="text-slate-600 mt-0.5">Se creará un Formato Único de Requerimiento (FUR) en estado <strong>BORRADOR</strong> por cada fase que contenga partidas con materiales presupuestados. Los materiales idénticos se consolidarán sumando sus cantidades.</p>
+                </div>
+              </div>
+
+              <!-- Parámetros opcionales -->
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 p-3.5 bg-slate-50 border border-slate-200 rounded-lg">
+                <div>
+                  <label class="block font-semibold text-slate-700 mb-1">Fecha requerida en obra (opcional):</label>
+                  <input type="date" [ngModel]="fechaRequeridaFur()" (ngModelChange)="fechaRequeridaFur.set($event)" class="w-full px-3 py-1.5 rounded border border-slate-300 bg-white text-xs text-slate-800 focus:outline-none focus:border-[#529b7b]" />
+                </div>
+                <div class="flex items-center pt-5">
+                  <label class="inline-flex items-center gap-2 cursor-pointer">
+                    <input type="checkbox" [ngModel]="forzarGeneracionFur()" (ngModelChange)="forzarGeneracionFur.set($event)" class="rounded border-slate-300 text-[#529b7b] focus:ring-0" />
+                    <span class="text-slate-700">Regenerar aunque la fase ya tenga FUR previo</span>
+                  </label>
+                </div>
+              </div>
+
+              <!-- Fases encontradas -->
+              <div>
+                <h5 class="font-bold text-slate-800 uppercase tracking-wider text-[11px] mb-2">Fases con Materiales Detectadas ({{ preview.fases.length }}):</h5>
+                @if (preview.fases.length === 0) {
+                  <div class="p-6 rounded-lg bg-amber-50 border border-amber-200 text-center text-amber-800">
+                    No se encontraron fases con ítems de productos asignados en este presupuesto. Verifique que las partidas tengan ítems cargados en el modal de APU.
+                  </div>
+                } @else {
+                  <div class="space-y-2.5">
+                    @for (f of preview.fases; track f.id_fase) {
+                      <div class="p-3.5 border rounded-lg bg-white shadow-2xs transition" [ngClass]="f.fur_existente ? 'border-amber-300 bg-amber-50/30' : 'border-slate-200'">
+                        <div class="flex items-center justify-between gap-3 flex-wrap">
+                          <div class="flex items-center gap-2.5">
+                            <span class="w-6 h-6 rounded-md bg-slate-100 text-slate-700 flex items-center justify-center font-bold text-[11px]">#{{ f.id_fase }}</span>
+                            <strong class="text-slate-900 text-xs">{{ f.nombre_fase }}</strong>
+                          </div>
+                          <div class="flex items-center gap-2">
+                            <span class="text-slate-500 font-mono font-medium">{{ f.total_productos }} productos • Estimado: S/ {{ f.total_estimado | number:'1.2-2' }}</span>
+                            @if (f.fur_existente) {
+                              <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-800 border border-amber-300">
+                                Ya existe: {{ f.fur_existente.numero }}
+                              </span>
+                            } @else {
+                              <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">
+                                Listo
+                              </span>
+                            }
+                          </div>
+                        </div>
+
+                        <!-- Lista resumida de ítems -->
+                        <div class="mt-2.5 pt-2 border-t border-slate-100">
+                          <div class="grid grid-cols-2 sm:grid-cols-3 gap-1.5 text-[11px] text-slate-600">
+                            @for (it of f.items.slice(0, 4); track it.id_producto) {
+                              <div class="truncate">
+                                • <span class="font-medium text-slate-800">{{ it.descripcion }}</span>: {{ it.cantidad }} {{ it.unidad }}
+                              </div>
+                            }
+                            @if (f.items.length > 4) {
+                              <div class="text-[#3d7e63] font-semibold italic">
+                                ... y {{ f.items.length - 4 }} productos más
+                              </div>
+                            }
+                          </div>
+                        </div>
+                      </div>
+                    }
+                  </div>
+                }
+              </div>
+            </div>
+          }
+        </div>
+
+        <!-- Footer -->
+        <div class="px-6 py-3.5 bg-slate-50 border-t border-slate-200 flex items-center justify-between shrink-0">
+          <button (click)="cerrarGenerarFursModal()" type="button" class="px-4 py-2 text-xs font-semibold text-slate-600 hover:text-slate-900 bg-white border border-slate-300 rounded-lg hover:bg-slate-100 transition cursor-pointer">
+            {{ fursResultado() ? 'Cerrar' : 'Cancelar' }}
+          </button>
+
+          @if (!fursResultado() && fursPreviewData() && (fursPreviewData()?.fases?.length || 0) > 0) {
+            <button (click)="ejecutarGeneracionFurs()" [disabled]="generandoFurs()" type="button" class="px-4 py-2 text-xs font-bold text-white rounded-lg bg-[#24543d] hover:bg-[#1a3d2c] disabled:opacity-60 disabled:cursor-not-allowed shadow-sm transition flex items-center gap-2 cursor-pointer">
+              @if (generandoFurs()) {
+                <svg class="animate-spin h-3.5 w-3.5 text-white" fill="none" viewBox="0 0 24 24">
+                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                  <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                <span>Generando FURs...</span>
+              } @else {
+                <svg class="w-3.5 h-3.5 text-amber-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                <span>Confirmar y Generar FURs</span>
+              }
+            </button>
+          }
+        </div>
+      </div>
+    </div>
+  }
+

@@ -4,9 +4,16 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 
 import { Router } from '@angular/router';
-import { Observable, concatMap, debounceTime, distinctUntilChanged, finalize, map, of, switchMap, tap } from 'rxjs';
+import { Observable, concatMap, debounceTime, distinctUntilChanged, finalize, forkJoin, map, of, switchMap, tap } from 'rxjs';
+import {
+  ItemFila,
+  ModoItemsDialog,
+  PartidaInfo,
+  PartidaItemsDialogComponent,
+} from './mantenimiento-plantillas/dialogs/partida-items-dialog/partida-items-dialog';
 import {
   FilaFormFase,
+  ItemLocalFila,
   ModoPlantilla,
   completoAFilas,
   crearFasesConCategorias,
@@ -37,7 +44,13 @@ import {
 } from './presupuestos.calc';
 import { EmpresasService } from '../administration/empresas/empresas.service';
 import { Empresa } from '../administration/empresas/interfaces';
-import { PresupuestosService, Plantilla } from './presupuestos.service';
+import {
+  PresupuestosService,
+  Plantilla,
+  PartidaItemsResponse,
+  PreviewFursPresupuestoResponse,
+  GenerarFursPresupuestoResponse,
+} from './presupuestos.service';
 import { PresupuestoPrincipal, DetalleFase, DetalleFaseCate, PresupuestoCompleto, FaseMaestra, FaseCategoriaMaestra } from './interfaces';
 import { DocumentosOrigenService } from '../documentos/documentos-origen/documentos-origen.service';
 import { DocumentoOrigenDetalleLinea } from '../documentos/documentos-origen/interfaces/documentos-origen.interface';
@@ -57,6 +70,7 @@ import { MSG_SIN_PERMISO } from '@app/core/auth/auth.interceptor';
 import { permisosDePantalla } from '@app/core/auth/permisos-pantalla';
 import { PermisosService } from '@app/core/auth/permisos.service';
 import { AvisosService } from '@app/core/avisos/avisos.service';
+import { AuthService } from '@app/core/auth/auth.service';
 
 /** Datos del modal rápido "Nueva / Editar fase asignada". */
 interface ModalFaseForm {
@@ -112,7 +126,7 @@ function centroCostoDeEstado(estado: unknown): CentroCosto | null {
 @Component({
   selector: 'app-presupuestos',
   standalone: true,
-  imports: [CommonModule, FormsModule, ExportarBotonesComponent],
+  imports: [CommonModule, FormsModule, ExportarBotonesComponent, PartidaItemsDialogComponent],
   templateUrl: './presupuestos.html',
   styleUrls: ['./presupuestos.css']
   
@@ -125,6 +139,7 @@ export class PresupuestosComponent implements OnInit {
   private documentosOrigenService = inject(DocumentosOrigenService);
   private readonly permisosSesion = inject(PermisosService);
   private readonly avisos = inject(AvisosService);
+  private readonly authService = inject(AuthService);
 
   // ==========================================
   // PERMISOS (plan 05, etapa D3; acciones del anexo §7.3)
@@ -423,7 +438,8 @@ export class PresupuestosComponent implements OnInit {
   viaticos = signal<number>(0.00);
   descuento = signal<number>(0.00);
 
-  // Especialista y Control para Paso 5
+  // Especialista y Control para Paso 5 (Capturado automáticamente de la sesión)
+  readonly usuarioConectado = this.authService.usuario;
   especialista = signal<string>('');
   comentarios = signal<string>('');
 
@@ -1418,6 +1434,11 @@ export class PresupuestosComponent implements OnInit {
 
     this.formData.Estado = 'PENDIENTE';
 
+    // Capturar automáticamente el usuario que inició sesión
+    const usuarioActual = this.usuarioConectado()?.usuario || '';
+    this.especialista.set(usuarioActual);
+    this.formData.Usuario = usuarioActual;
+
     // Reset completo de todas las signals (formulario en blanco para crear)
     this.formFases.set([]);
     this.pctGG.set(0);
@@ -1536,7 +1557,7 @@ export class PresupuestosComponent implements OnInit {
       this.formData.FechaEntrega = this.formData.FechaEntrega.slice(0, 10);
     }
     this.comentarios.set(p.Comentarios || '');
-    this.especialista.set(p.Usuario || '');
+    this.especialista.set(p.Usuario || this.usuarioConectado()?.usuario || '');
     this.selectedPresupuestoId.set(pptoId);
 
     if (p.id_centro_costo || p.CodCentroCto) {
@@ -1792,7 +1813,7 @@ export class PresupuestosComponent implements OnInit {
       IGV: this.formIGV,
       Total: this.formTotalGeneral,
       Comentarios: this.comentarios(),
-      Usuario: this.especialista() || this.formData.Usuario
+      Usuario: this.especialista() || this.authService.usuario()?.usuario || this.formData.Usuario || undefined
     };
     if (!this.editingId() && !String(payload.IdPresupuesto ?? '').trim()) {
       delete payload.IdPresupuesto;
@@ -2008,9 +2029,20 @@ export class PresupuestosComponent implements OnInit {
   /** Presupuesto nuevo: rellena las filas del paso 2 sin duplicar (se guardan al emitir). */
   private aplicarPlantillaLocal(id: string, modo: ModoPlantilla) {
     this.loading.set(true);
-    this.presupuestosService.getPlantillaCompleta(id).pipe(finalize(() => this.loading.set(false))).subscribe({
-      next: (plantilla) => {
-        const r = fusionarFilasPlantilla(this.formFases(), plantillaAFilas(plantilla), modo);
+    this.presupuestosService.getPlantillaCompleta(id).pipe(
+      switchMap((plantilla) => {
+        // Trae los ítems de cada partida de la plantilla para mostrarlos/editarlos en pantalla.
+        const cats = (plantilla.fases ?? []).flatMap((f) => f.categorias ?? [])
+          .filter((c) => !!c.id && ((c as { totalItems?: number }).totalItems ?? 1) > 0);
+        if (!cats.length) return of({ plantilla, mapa: new Map<number, ItemLocalFila[]>() });
+        return forkJoin(cats.map((c) => this.presupuestosService.getPartidaItems(c.id as number).pipe(
+          map((res) => [c.id as number, this.itemsAFilasLocales(res.items)] as const),
+        ))).pipe(map((pares) => ({ plantilla, mapa: new Map<number, ItemLocalFila[]>(pares) })));
+      }),
+      finalize(() => this.loading.set(false)),
+    ).subscribe({
+      next: ({ plantilla, mapa }) => {
+        const r = fusionarFilasPlantilla(this.formFases(), plantillaAFilas(plantilla, mapa), modo);
         this.formFases.set(r.filas);
         this.cerrarModalPlantillas();
         if (r.omitidas > 0) {
@@ -2019,6 +2051,71 @@ export class PresupuestosComponent implements OnInit {
       },
       error: (err) => alert('Error al cargar detalle de plantilla: ' + mensajeDeError(err)),
     });
+  }
+
+  private itemsAFilasLocales(items: PartidaItemsResponse['items']): ItemLocalFila[] {
+    const red = (n: number) => Math.round(((Number(n) || 0) + Number.EPSILON) * 100) / 100;
+    return (items ?? []).map((it) => ({
+      Item: it.Item || '',
+      id_producto: it.id_producto,
+      codigo_producto: it.producto?.codigo || '',
+      descripcion_producto: it.producto?.descripcion || '',
+      tipo_producto: it.producto?.tipo_producto || 'PRODUCTO',
+      categoria_producto: it.producto?.categoria,
+      id_categoria: it.producto?.id_categoria,
+      id_unidad_medida: it.id_unidad_medida,
+      simbolo_unidad: it.unidad?.simbolo || it.unidad?.codigo,
+      Cantidad: red(it.Cantidad),
+      CostoUnitario: red(it.CostoUnitario),
+      PrecioVenta: red(it.PrecioVenta),
+      CostoTotal: red(it.Cantidad * it.CostoUnitario),
+      VentaTotal: red(it.Cantidad * it.PrecioVenta),
+    }));
+  }
+
+  // Ítems por partida (pop-up reutilizado de plantillas)
+  readonly itemsDialog = signal<{ index: number; modo: ModoItemsDialog; partida: PartidaInfo; items: ItemFila[] } | null>(null);
+
+  get puedeEditarItems(): boolean {
+    const d = this.itemsDialog();
+    if (this.soloLectura()) return false;
+    return d?.modo === 'presupuesto' ? this.permisos.editar() : true;
+  }
+
+  abrirItemsFila(i: number) {
+    const fila = this.formFases()[i];
+    if (!fila || !fila.idCategoria) {
+      alert('Esta fila no tiene partida/categoría para asignarle ítems.');
+      return;
+    }
+    const partidaBase = { IdpptoFaseCategoria: fila.idCategoria, NombreCategoria: fila.categoria, NombreFase: fila.nombre };
+    if (this.fasesPersistidas && fila.idCategoriaDetalle) {
+      this.itemsDialog.set({ index: i, modo: 'presupuesto', partida: { id: fila.idCategoriaDetalle, ...partidaBase }, items: [] });
+    } else {
+      this.itemsDialog.set({ index: i, modo: 'local', partida: { id: 0, ...partidaBase }, items: (fila.items ?? []) as ItemFila[] });
+    }
+  }
+
+  cerrarItemsDialog() {
+    this.itemsDialog.set(null);
+  }
+
+  onItemsGuardados() {
+    this.itemsDialog.set(null);
+    this.recargarPresupuestoActivo();
+  }
+
+  onItemsLocalesGuardados(items: ItemFila[]) {
+    const d = this.itemsDialog();
+    if (!d) return;
+    const suma = Math.round((items.reduce((a, it) => a + (Number(it.CostoTotal) || 0), 0) + Number.EPSILON) * 100) / 100;
+    this.formFases.update((fs) => fs.map((f, idx) => idx !== d.index ? f : {
+      ...f,
+      items: items.map((it) => ({ ...it })),
+      totalItems: items.length,
+      subtotal: items.length ? suma : f.subtotal,
+    }));
+    this.itemsDialog.set(null);
   }
 
   /** Presupuesto ya guardado: el backend copia la plantilla en una transacción y sin duplicar. */
@@ -2093,7 +2190,8 @@ export class PresupuestosComponent implements OnInit {
       Viaticos: 0,
       DsctoComercial: 0,
       Estado: 'PENDIENTE',
-      Comentarios: ''
+      Comentarios: '',
+      Usuario: this.authService.usuario()?.usuario || '',
     };
   }
 
@@ -2296,6 +2394,68 @@ export class PresupuestosComponent implements OnInit {
 
   cerrarFasesModal() {
     this.showFasesModal.set(false);
+  }
+
+  // MODAL GENERAR FURs (Requerimientos) DESDE PRESUPUESTO
+  showGenerarFursModal = signal(false);
+  fursPreviewData = signal<PreviewFursPresupuestoResponse | null>(null);
+  loadingFursPreview = signal(false);
+  generandoFurs = signal(false);
+  fursResultado = signal<GenerarFursPresupuestoResponse | null>(null);
+  fechaRequeridaFur = signal('');
+  forzarGeneracionFur = signal(false);
+
+  abrirGenerarFursModal(ppto?: PresupuestoPrincipal) {
+    if (ppto) {
+      if (!this.isPptoSelected(ppto)) this.onSelectPresupuesto(ppto);
+    }
+    const id = this.selectedPresupuestoId();
+    if (!id) {
+      alert('Seleccione primero un presupuesto.');
+      return;
+    }
+
+    this.showGenerarFursModal.set(true);
+    this.loadingFursPreview.set(true);
+    this.fursResultado.set(null);
+    this.fursPreviewData.set(null);
+
+    this.presupuestosService.getPreviewFurs(id).subscribe({
+      next: (preview) => {
+        this.fursPreviewData.set(preview);
+        this.loadingFursPreview.set(false);
+      },
+      error: (err) => {
+        this.loadingFursPreview.set(false);
+        alert(mensajeDeError(err) || 'No se pudo cargar la vista previa de FURs');
+      }
+    });
+  }
+
+  cerrarGenerarFursModal() {
+    this.showGenerarFursModal.set(false);
+    this.fursResultado.set(null);
+    this.fursPreviewData.set(null);
+  }
+
+  ejecutarGeneracionFurs() {
+    const id = this.selectedPresupuestoId();
+    if (!id) return;
+
+    this.generandoFurs.set(true);
+    this.presupuestosService.generarFurs(id, {
+      fecha_requerida: this.fechaRequeridaFur() || undefined,
+      forzar: this.forzarGeneracionFur(),
+    }).subscribe({
+      next: (res) => {
+        this.generandoFurs.set(false);
+        this.fursResultado.set(res);
+      },
+      error: (err) => {
+        this.generandoFurs.set(false);
+        alert(mensajeDeError(err) || 'Error al generar los requerimientos (FURs)');
+      }
+    });
   }
 
   /** Acción de la tabla: abre "Fases y Costos" del presupuesto y el selector de plantillas encima. */

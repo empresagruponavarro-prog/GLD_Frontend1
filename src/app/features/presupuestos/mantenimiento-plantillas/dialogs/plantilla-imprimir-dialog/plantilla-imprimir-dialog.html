@@ -1,0 +1,265 @@
+<div class="fixed inset-0 z-50 flex items-center justify-center p-2 lg:p-4 bg-slate-900/70 backdrop-blur-xs animate-in fade-in duration-150">
+  <div class="relative w-full max-w-5xl max-h-[96vh] flex flex-col bg-slate-100 rounded-2xl shadow-2xl border border-slate-300 overflow-hidden">
+
+    <!-- BARRA SUPERIOR DE ACCIONES Y CONTROLES -->
+    <header class="px-5 py-3.5 bg-slate-900 text-white flex flex-wrap items-center justify-between gap-3 shrink-0 shadow-sm border-b border-slate-800">
+      <div class="flex items-center space-x-3">
+        <div class="w-9 h-9 rounded-xl bg-emerald-500/20 border border-emerald-400/30 flex items-center justify-center text-emerald-400">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+          </svg>
+        </div>
+        <div>
+          <h2 class="text-sm font-bold tracking-tight text-white flex items-center gap-2">
+            <span>Vista Previa de Impresión</span>
+            <span class="text-xs font-mono font-normal text-slate-400 bg-slate-800 px-2 py-0.5 rounded border border-slate-700">
+              #{{ plantilla().IdPlantilla }}
+            </span>
+          </h2>
+          <p class="text-xs text-slate-400">Estructura jerárquica de 3 niveles: Plantilla &gt; Fases &gt; Partidas</p>
+        </div>
+      </div>
+
+      <!-- OPCIONES DE VISTA Y BOTONES -->
+      <div class="flex items-center gap-3">
+        <!-- CONTROLES DE ACORDEÓN -->
+        <div class="flex items-center bg-slate-800/90 rounded-lg p-0.5 border border-slate-700 text-xs">
+          <button type="button" 
+                  (click)="expandirTodas()" 
+                  class="px-2.5 py-1 text-slate-300 hover:text-white hover:bg-slate-700/60 rounded-md transition-colors cursor-pointer"
+                  title="Desplegar todas las fases">
+            Expandir todo
+          </button>
+          <span class="text-slate-600 px-0.5">|</span>
+          <button type="button" 
+                  (click)="colapsarTodas()" 
+                  class="px-2.5 py-1 text-slate-300 hover:text-white hover:bg-slate-700/60 rounded-md transition-colors cursor-pointer"
+                  title="Plegar todas las fases">
+            Colapsar todo
+          </button>
+        </div>
+
+        <label class="flex items-center space-x-2 text-xs text-slate-300 font-medium cursor-pointer bg-slate-800/80 px-3 py-1.5 rounded-lg border border-slate-700 hover:bg-slate-800">
+          <input type="checkbox" [ngModel]="incluirItems()" (ngModelChange)="toggleIncluirItems($event)" class="rounded text-emerald-500 focus:ring-emerald-400 border-slate-600">
+          <span>Incluir desglose de ítems</span>
+          @if (cargandoItems()) {
+            <span class="inline-block w-3.5 h-3.5 border-2 border-emerald-400 border-t-transparent rounded-full animate-spin ml-1"></span>
+          }
+        </label>
+
+        <button type="button" (click)="imprimir()" class="px-4 py-2 rounded-xl bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-700 hover:to-emerald-800 text-xs font-bold text-white transition-all shadow-sm flex items-center space-x-2 cursor-pointer">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+          </svg>
+          <span>Imprimir / Guardar PDF</span>
+        </button>
+
+        <button type="button" (click)="closed.emit()" class="p-2 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition-colors cursor-pointer" title="Cerrar">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
+    </header>
+
+    <!-- ÁREA DE VISUALIZACIÓN DEL DOCUMENTO A4 -->
+    <div class="flex-1 overflow-y-auto p-4 lg:p-8 flex justify-center bg-slate-200/80">
+      
+      <!-- CONTENEDOR DE IMPRESIÓN (HOJA A4) -->
+      <div #printArea class="a4-sheet">
+
+        <!-- 1. MEMBRETE OFICIAL -->
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; padding-bottom: 12px; border-bottom: 2px solid #0f172a; margin-bottom: 16px;">
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <div style="width: 38px; height: 38px; border-radius: 8px; background: #0f172a; color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 16px; letter-spacing: -0.5px;">
+              GLD
+            </div>
+            <div>
+              <div style="font-size: 13px; font-weight: 800; color: #0f172a; letter-spacing: -0.02em;">GLD SERVICIOS GENERALES E.I.R.L.</div>
+              <div style="font-size: 10px; color: #64748b; font-weight: 500;">Área de Presupuestos &amp; Control de Costos</div>
+            </div>
+          </div>
+          <div style="text-align: right;">
+            <div style="font-size: 14px; font-weight: 900; color: #0f172a; text-transform: uppercase; letter-spacing: 0.04em;">FICHA TÉCNICA DE PLANTILLA</div>
+            <div style="font-size: 10px; color: #475569; margin-top: 2px;">
+              <strong>ID:</strong> <span class="font-mono">{{ plantilla().IdPlantilla }}</span> &nbsp;|&nbsp; 
+              <strong>Emisión:</strong> {{ fechaEmision | date:'dd/MM/yyyy HH:mm' }}
+            </div>
+          </div>
+        </div>
+
+        <!-- 2. NIVEL 1: CABECERA Y METADATOS DE PLANTILLA -->
+        <div class="resumen-box" style="margin-bottom: 16px;">
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; margin-bottom: 8px;">
+            <div>
+              <div style="font-size: 9px; text-transform: uppercase; font-weight: 700; color: #64748b; letter-spacing: 0.05em;">Plantilla Maestra (Nivel 1)</div>
+              <div style="font-size: 14px; font-weight: 800; color: #0f172a; line-height: 1.2;">{{ plantilla().Nombre }}</div>
+              @if (plantilla().Descripcion) {
+                <div style="font-size: 10.5px; color: #475569; margin-top: 3px;">{{ plantilla().Descripcion }}</div>
+              }
+            </div>
+            <div>
+              @if (plantilla().Activo) {
+                <span class="badge badge-activa">Plantilla Activa</span>
+              } @else {
+                <span class="badge badge-inactiva">Inactiva</span>
+              }
+            </div>
+          </div>
+
+          <!-- MÉTRICAS CLAVE RESUMEN -->
+          <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; padding-top: 8px; border-top: 1px solid #e2e8f0; font-size: 10px;">
+            <div>
+              <span class="text-muted" style="display: block; font-size: 9px; text-transform: uppercase; font-weight: 600;">Total Fases:</span>
+              <strong style="font-size: 12px; color: #0f172a;">{{ totalFases() }} Fases</strong>
+            </div>
+            <div>
+              <span class="text-muted" style="display: block; font-size: 9px; text-transform: uppercase; font-weight: 600;">Total Partidas:</span>
+              <strong style="font-size: 12px; color: #0f172a;">{{ totalPartidas() }} Partidas</strong>
+            </div>
+            <div>
+              <span class="text-muted" style="display: block; font-size: 9px; text-transform: uppercase; font-weight: 600;">Costo Meta (Ref):</span>
+              <strong style="font-size: 12px; color: #0f172a;" class="font-mono">S/ {{ costoTotalEstimado() | number:'1.2-2' }}</strong>
+            </div>
+          </div>
+        </div>
+
+        <!-- 3. NIVELES 2 Y 3: TABLA JERÁRQUICA CON ACORDEÓN POR FASE -->
+        <div style="margin-bottom: 20px;">
+          @for (fase of plantilla().fases; track fase.id; let fIndex = $index) {
+            <div class="fase-container" style="margin-bottom: 14px;">
+              <table class="w-full border-collapse" style="font-size: 10.5px;">
+                <thead>
+                  @if (fIndex === 0) {
+                    <tr style="background: #0f172a; color: #ffffff; text-align: left; font-size: 9.5px; text-transform: uppercase; letter-spacing: 0.05em;">
+                      <th style="padding: 6px 8px; width: 12%;">Código</th>
+                      <th style="padding: 6px 8px; width: 58%;">Descripción / Fase / Partida</th>
+                      <th style="padding: 6px 8px; width: 12%; text-align: center;">Ítems</th>
+                      <th style="padding: 6px 8px; width: 18%; text-align: right;">Costo Ref. (S/)</th>
+                    </tr>
+                  }
+                </thead>
+                <tbody>
+                  <!-- FILA DE FASE (NIVEL 2) CON FUNCIÓN DE ACORDEÓN -->
+                  <tr class="table-header-fase cursor-pointer hover:bg-slate-200/90 transition-colors select-none"
+                      (click)="toggleFase(fase.id)"
+                      (keydown.enter)="toggleFase(fase.id)"
+                      tabindex="0"
+                      role="button"
+                      [attr.aria-expanded]="isFaseExpandida(fase.id)"
+                      title="Clic para expandir/colapsar esta fase">
+                    <td class="font-mono font-bold" style="color: #0f172a;">
+                      <span class="no-print mr-1 inline-block text-[9px] text-slate-500 transition-transform duration-150"
+                            [style.transform]="isFaseExpandida(fase.id) ? 'rotate(90deg)' : 'rotate(0deg)'">
+                        ▶
+                      </span>
+                      {{ (fIndex + 1 | number:'2.0-0') }}.00
+                    </td>
+                    <td colspan="2" class="font-bold" style="color: #0f172a; text-transform: uppercase;">
+                      {{ fase.NombreFase || fase.IdpptoFase }}
+                      <span style="font-size: 9.5px; font-weight: 500; color: #64748b; text-transform: none; margin-left: 6px;">
+                        ({{ fase.categorias.length }} partida{{ fase.categorias.length === 1 ? '' : 's' }})
+                      </span>
+                      @if (!isFaseExpandida(fase.id)) {
+                        <span class="no-print ml-2 text-[9.5px] font-normal text-slate-500 bg-slate-200 px-1.5 py-0.5 rounded">
+                          (colapsado)
+                        </span>
+                      }
+                    </td>
+                    <td class="text-right font-mono font-bold" style="color: #0f172a;">
+                      <!-- Subtotal de costo de la fase -->
+                      {{ calcularSubtotalFase(fase) | number:'1.2-2' }}
+                    </td>
+                  </tr>
+
+                  <!-- FILAS DE PARTIDAS / CATEGORÍAS (NIVEL 3) - VISIBLES SOLO SI LA FASE ESTÁ EXPANDIDA -->
+                  @if (isFaseExpandida(fase.id)) {
+                    @for (cat of fase.categorias; track cat.id; let cIndex = $index) {
+                      <tr class="partida-row">
+                        <td class="font-mono text-muted" style="padding-left: 18px;">
+                          {{ (fIndex + 1 | number:'2.0-0') }}.{{ (cIndex + 1 | number:'2.0-0') }}
+                        </td>
+                        <td>
+                          <div style="font-weight: 600; color: #1e293b; padding-left: 6px;">
+                            {{ cat.NombreCategoria || cat.IdpptoFaseCategoria }}
+                          </div>
+                          @if (cat.categoria?.descripcion) {
+                            <div style="font-size: 9.5px; color: #64748b; padding-left: 6px;">
+                              Cat: {{ cat.categoria.descripcion }}
+                            </div>
+                          }
+                        </td>
+                        <td class="text-center font-mono" style="color: #64748b;">
+                          {{ cat.totalItems ?? 0 }}
+                        </td>
+                        <td class="text-right font-mono" style="color: #1e293b;">
+                          {{ (cat.CostoReferencial ?? 0) | number:'1.2-2' }}
+                        </td>
+                      </tr>
+
+                      <!-- DESGLOSE DE ÍTEMS DE LA PARTIDA (NIVEL 4, OPCIONAL) -->
+                      @if (incluirItems() && obtenerItemsPartida(cat.id).length > 0) {
+                        @for (it of obtenerItemsPartida(cat.id); track it.id || it.Item; let itIndex = $index) {
+                          <tr class="item-subrow">
+                            <td class="font-mono text-muted" style="padding-left: 28px; font-size: 9px;">
+                              • {{ it.Item || (itIndex + 1) }}
+                            </td>
+                            <td colspan="2" style="padding-left: 18px;">
+                              <span style="font-weight: 500; color: #334155;">{{ it.producto?.descripcion || 'Insumo' }}</span>
+                              <span class="font-mono text-muted" style="font-size: 8.5px; margin-left: 4px;">({{ it.producto?.codigo }})</span>
+                              <span style="color: #64748b; margin-left: 8px;">Cant: <strong>{{ it.Cantidad }}</strong> {{ it.unidad?.simbolo || it.unidad?.codigo }}</span>
+                            </td>
+                            <td class="text-right font-mono text-muted" style="font-size: 9.5px;">
+                              {{ (it.CostoTotal ?? 0) | number:'1.2-2' }}
+                            </td>
+                          </tr>
+                        }
+                      }
+                    }
+                  }
+                </tbody>
+              </table>
+            </div>
+          }
+        </div>
+
+        <!-- 4. TOTALES GENERALES Y PIE DE PÁGINA -->
+        <div style="display: flex; justify-content: flex-end; margin-bottom: 24px;">
+          <table style="width: 280px; border-collapse: collapse; font-size: 11px;">
+            <tr style="border-top: 1px solid #cbd5e1; border-bottom: 2px solid #0f172a; background: #f8fafc;">
+              <td style="padding: 6px 8px; color: #0f172a; font-weight: 800; font-size: 11.5px;">Total Costo Directo (Ref):</td>
+              <td class="text-right font-mono font-bold" style="padding: 6px 8px; color: #0f172a; font-size: 12px;">
+                S/ {{ costoTotalEstimado() | number:'1.2-2' }}
+              </td>
+            </tr>
+          </table>
+        </div>
+
+        <!-- 5. FIRMAS DE RESPONSABILIDAD TÉCNICA -->
+        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; padding-top: 36px; margin-top: 20px; border-top: 1px dashed #cbd5e1; text-align: center; font-size: 9.5px; color: #475569;">
+          <div>
+            <div style="border-top: 1px solid #94a3b8; width: 75%; margin: 0 auto 6px;"></div>
+            <strong>Elaborado por</strong><br>
+            Área de Presupuestos
+          </div>
+          <div>
+            <div style="border-top: 1px solid #94a3b8; width: 75%; margin: 0 auto 6px;"></div>
+            <strong>Revisado por</strong><br>
+            Jefatura de Operaciones
+          </div>
+          <div>
+            <div style="border-top: 1px solid #94a3b8; width: 75%; margin: 0 auto 6px;"></div>
+            <strong>Aprobado por</strong><br>
+            Gerencia General
+          </div>
+        </div>
+
+        <!-- NOTA AL PIE -->
+        <div style="margin-top: 20px; font-size: 8.5px; color: #94a3b8; text-align: center;">
+          Documento generado automáticamente por Sistema GLD • Documento para uso interno de planificación y presupuestación
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>

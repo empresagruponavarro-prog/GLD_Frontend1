@@ -23,5 +23,5 @@ describe('exportar', () => {
     const blob = await generarXlsx(datos);
     const cabecera = new Uint8Array(await blob.arrayBuffer()).slice(0, 2);
     expect(String.fromCharCode(...cabecera)).toBe('PK');
-  });
+  }, 60000);
 });

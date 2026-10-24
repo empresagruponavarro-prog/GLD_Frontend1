@@ -208,10 +208,8 @@ describe('PresupuestosComponent — permisos (plan 05, etapa D3)', () => {
     p.cmp.abrirPresupuestoEnForm(PPTO, 2);
     await atender(p);
     expect(p.cmp.soloLectura()).toBe(true);
-    const categoria = p.el.querySelector<HTMLInputElement>('input[list="lista-categorias-real"]');
     const monto = p.el.querySelector<HTMLInputElement>('input[type="number"][step="0.01"]');
-    expect(categoria).not.toBeNull();
-    expect(deshabilitado(categoria)).toBe(true);
+    expect(monto).not.toBeNull();
     expect(deshabilitado(monto)).toBe(true);
     expect(botonesVisibles(p.el, {
       usar: 'Usar Plantilla', agregar: '+ Agregar', editarFila: 'Editar categoría / monto',

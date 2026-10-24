@@ -242,12 +242,17 @@ export interface PrestamoQuery {
 
 // ------------------------------------------------------------------ Stock
 export type Alerta = 'OK' | 'SIN_STOCK' | 'BAJO_MINIMO' | 'EQUIPO_NO_OPERATIVO';
-export type ClaseInventario = 'CONSUMIBLE' | 'EQUIPO_RETORNABLE' | 'MERCADERIA_CLIENTE';
+export type ClaseInventario =
+  | 'CONSUMIBLE'
+  | 'EQUIPO_RETORNABLE'
+  | 'MERCADERIA_CLIENTE'
+  | 'ACTIVO_FIJO';
 
 export const CLASE_LABEL: Record<ClaseInventario, string> = {
   CONSUMIBLE: 'Consumible',
   EQUIPO_RETORNABLE: 'Equipo retornable',
   MERCADERIA_CLIENTE: 'Mercadería de cliente',
+  ACTIVO_FIJO: 'Activo fijo',
 };
 
 export const ALERTA_LABEL: Record<Alerta, string> = {

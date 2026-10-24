@@ -1,4 +1,4 @@
-import { Component, ElementRef, Injector, OnInit, afterNextRender, signal, inject, computed, viewChild } from '@angular/core';
+import { Component, ElementRef, Injector, OnInit, afterNextRender, signal, inject, computed, viewChild, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { DragDropModule, CdkDragDrop, moveItemInArray } from '@angular/cdk/drag-drop';
 import { FormsModule } from '@angular/forms';
@@ -10,6 +10,12 @@ import { permisosDePantalla } from '@app/core/auth/permisos-pantalla';
 import { valorDeEvento } from '@shared/utils/eventos';
 import { ExportarBotonesComponent } from '../../../shared/components/exportar-botones/exportar-botones';
 import type { DatosExportacion } from '../../../shared/utils/exportar';
+import {
+  PartidaItemsDialogComponent,
+  type PartidaInfo,
+  type GuardadoEvent,
+} from './dialogs/partida-items-dialog/partida-items-dialog';
+import { PlantillaImprimirDialogComponent } from './dialogs/plantilla-imprimir-dialog/plantilla-imprimir-dialog';
 
 /** Formulario del pop-up "Nueva plantilla". */
 interface NuevaPlantillaForm {
@@ -20,10 +26,25 @@ interface NuevaPlantillaForm {
   IdPlantillaOrigen: string;
 }
 
+/** Formulario del pop-up "Editar información de plantilla". */
+interface EditarPlantillaForm {
+  IdPlantilla: string;
+  Nombre: string;
+  Descripcion: string;
+  Activo: boolean;
+}
+
 @Component({
   selector: 'app-mantenimiento-plantillas',
   standalone: true,
-  imports: [CommonModule, FormsModule, DragDropModule, ExportarBotonesComponent],
+  imports: [
+    CommonModule,
+    FormsModule,
+    DragDropModule,
+    ExportarBotonesComponent,
+    PartidaItemsDialogComponent,
+    PlantillaImprimirDialogComponent,
+  ],
   templateUrl: './mantenimiento-plantillas.html'
 })
 export class MantenimientoPlantillasComponent implements OnInit {
@@ -104,6 +125,13 @@ export class MantenimientoPlantillasComponent implements OnInit {
   selectedFaseMaestra = signal<string>('');
   selectedCategoriaMaestra = signal<string>('');
 
+  // Modal de gestión de ítems por partida
+  showItemsModal = signal(false);
+  partidaSeleccionadaParaItems = signal<PartidaInfo | null>(null);
+
+  // Modal de impresión y ficha técnica en 3 niveles
+  showImprimirModal = signal(false);
+
 
   ngOnInit() {
     this.loadPlantillas();
@@ -129,10 +157,244 @@ export class MantenimientoPlantillasComponent implements OnInit {
     });
   }
 
+  // Estado de acordeón para las fases de la plantilla seleccionada
+  readonly fasesColapsadas = signal<Set<string>>(new Set());
+
+  getFaseKey(fase: PlantillaFaseDto, index: number): string {
+    return fase.IdpptoFase ? String(fase.IdpptoFase) : (fase.id != null ? String(fase.id) : String(index));
+  }
+
+  isFaseColapsada(fase: PlantillaFaseDto, index: number): boolean {
+    return this.fasesColapsadas().has(this.getFaseKey(fase, index));
+  }
+
+  toggleFase(fase: PlantillaFaseDto, index: number, event?: Event): void {
+    if (event) event.stopPropagation();
+    const key = this.getFaseKey(fase, index);
+    const colapsadas = new Set(this.fasesColapsadas());
+    if (colapsadas.has(key)) {
+      colapsadas.delete(key);
+    } else {
+      colapsadas.add(key);
+    }
+    this.fasesColapsadas.set(colapsadas);
+  }
+
+  expandirTodasFases(): void {
+    this.fasesColapsadas.set(new Set());
+  }
+
+  colapsarTodasFases(): void {
+    const p = this.selectedPlantilla();
+    if (!p?.fases) return;
+    const todas = new Set<string>();
+    p.fases.forEach((f, idx) => {
+      todas.add(this.getFaseKey(f, idx));
+    });
+    this.fasesColapsadas.set(todas);
+  }
+
   selectPlantilla(p: Plantilla) {
+    this.fasesColapsadas.set(new Set());
     this.service.getPlantillaCompleta(p.IdPlantilla).subscribe({
       next: (res) => this.selectedPlantilla.set(res),
       error: () => alert('Error cargando detalle de plantilla')
+    });
+  }
+
+  abrirImprimirPlantilla(): void {
+    if (this.selectedPlantilla()) {
+      this.showImprimirModal.set(true);
+    }
+  }
+
+  cerrarModalImprimir(): void {
+    this.showImprimirModal.set(false);
+  }
+
+  abrirImprimirDesdeLista(p: Plantilla, event?: MouseEvent): void {
+    if (event) event.stopPropagation();
+    this.menuAbiertoId.set(null);
+    if (this.selectedPlantilla()?.IdPlantilla === p.IdPlantilla) {
+      this.showImprimirModal.set(true);
+      return;
+    }
+    this.service.getPlantillaCompleta(p.IdPlantilla).subscribe({
+      next: (res) => {
+        this.selectedPlantilla.set(res);
+        this.showImprimirModal.set(true);
+      },
+      error: () => alert('Error cargando detalle de plantilla para impresión')
+    });
+  }
+
+  // ==========================================
+  // MENÚ DE TRES PUNTITOS Y ACCIONES DE PLANTILLA
+  // ==========================================
+  menuAbiertoId = signal<string | null>(null);
+
+  @HostListener('document:click')
+  onDocumentClick() {
+    this.menuAbiertoId.set(null);
+  }
+
+  toggleMenuPlantilla(event: MouseEvent, id: string) {
+    event.stopPropagation();
+    if (this.menuAbiertoId() === id) {
+      this.menuAbiertoId.set(null);
+    } else {
+      this.menuAbiertoId.set(id);
+    }
+  }
+
+  // Modal Editar Información de Plantilla
+  showEditarInfoModal = signal(false);
+  guardandoInfo = signal(false);
+  errorEditarInfo = signal('');
+  editarInfoForm: EditarPlantillaForm = {
+    IdPlantilla: '',
+    Nombre: '',
+    Descripcion: '',
+    Activo: true,
+  };
+
+  abrirEditarInfo(p: Plantilla, event?: MouseEvent) {
+    if (event) event.stopPropagation();
+    this.menuAbiertoId.set(null);
+    this.errorEditarInfo.set('');
+    this.editarInfoForm = {
+      IdPlantilla: p.IdPlantilla,
+      Nombre: p.Nombre,
+      Descripcion: p.Descripcion || '',
+      Activo: p.Activo,
+    };
+    this.showEditarInfoModal.set(true);
+  }
+
+  cerrarEditarInfo() {
+    if (this.guardandoInfo()) return;
+    this.showEditarInfoModal.set(false);
+  }
+
+  guardarEditarInfo() {
+    if (!this.editarInfoForm.Nombre.trim()) {
+      this.errorEditarInfo.set('El nombre de la plantilla es obligatorio.');
+      return;
+    }
+    this.guardandoInfo.set(true);
+    this.errorEditarInfo.set('');
+
+    const dto = {
+      Nombre: this.editarInfoForm.Nombre.trim(),
+      Descripcion: this.editarInfoForm.Descripcion.trim(),
+      Activo: this.editarInfoForm.Activo,
+    };
+
+    this.service.updatePlantilla(this.editarInfoForm.IdPlantilla, dto).subscribe({
+      next: (res) => {
+        this.guardandoInfo.set(false);
+        this.showEditarInfoModal.set(false);
+        const sel = this.selectedPlantilla();
+        if (sel && sel.IdPlantilla === this.editarInfoForm.IdPlantilla) {
+          sel.Nombre = res.Nombre;
+          sel.Descripcion = res.Descripcion;
+          sel.Activo = res.Activo;
+          this.selectedPlantilla.set({ ...sel });
+        }
+        this.loadPlantillas();
+      },
+      error: (err) => {
+        this.guardandoInfo.set(false);
+        this.errorEditarInfo.set(err?.error?.message || 'Error al actualizar la plantilla.');
+      }
+    });
+  }
+
+  toggleActivarPlantilla(p: Plantilla, event?: MouseEvent) {
+    if (event) event.stopPropagation();
+    this.menuAbiertoId.set(null);
+    const nuevoEstado = !p.Activo;
+    this.service.updatePlantilla(p.IdPlantilla, { Activo: nuevoEstado }).subscribe({
+      next: (res) => {
+        const sel = this.selectedPlantilla();
+        if (sel && sel.IdPlantilla === p.IdPlantilla) {
+          sel.Activo = res.Activo;
+          this.selectedPlantilla.set({ ...sel });
+        }
+        this.loadPlantillas();
+      },
+      error: () => alert('Error al cambiar el estado de la plantilla.')
+    });
+  }
+
+  eliminarPlantilla(p: Plantilla, event?: MouseEvent) {
+    if (event) event.stopPropagation();
+    this.menuAbiertoId.set(null);
+    const seguro = confirm(`¿Estás seguro de que deseas eliminar la plantilla "${p.Nombre}"?\nEsta acción no se puede deshacer.`);
+    if (!seguro) return;
+
+    this.service.deletePlantilla(p.IdPlantilla).subscribe({
+      next: () => {
+        if (this.selectedPlantilla()?.IdPlantilla === p.IdPlantilla) {
+          this.selectedPlantilla.set(null);
+        }
+        this.loadPlantillas();
+      },
+      error: (err) => {
+        alert(err?.error?.message || 'No se pudo eliminar la plantilla. Puede que esté asociada a presupuestos existentes.');
+      }
+    });
+  }
+
+  // ==========================================
+  // FUSIONAR PLANTILLAS
+  // ==========================================
+  showFusionarModal = signal(false);
+  fusionando = signal(false);
+  errorFusionar = signal('');
+  plantillaDestinoFusion = signal<Plantilla | null>(null);
+  fusionOrigenId = '';
+  fusionEliminarOrigen = true;
+
+  otrasPlantillas = computed(() => {
+    const d = this.plantillaDestinoFusion();
+    return this.plantillas().filter(p => p.IdPlantilla !== d?.IdPlantilla);
+  });
+
+  abrirFusionar(p: Plantilla, event?: MouseEvent) {
+    if (event) event.stopPropagation();
+    this.menuAbiertoId.set(null);
+    this.plantillaDestinoFusion.set(p);
+    this.fusionOrigenId = '';
+    this.fusionEliminarOrigen = true;
+    this.errorFusionar.set('');
+    this.showFusionarModal.set(true);
+  }
+
+  cerrarFusionar() {
+    if (this.fusionando()) return;
+    this.showFusionarModal.set(false);
+  }
+
+  confirmarFusionar() {
+    const destino = this.plantillaDestinoFusion();
+    if (!destino || !this.fusionOrigenId) return;
+    this.fusionando.set(true);
+    this.errorFusionar.set('');
+    this.service.fusionarPlantilla(destino.IdPlantilla, {
+      IdPlantillaOrigen: this.fusionOrigenId,
+      EliminarOrigen: this.fusionEliminarOrigen,
+    }).subscribe({
+      next: () => {
+        this.fusionando.set(false);
+        this.showFusionarModal.set(false);
+        this.loadPlantillas();
+        this.selectPlantilla(destino);
+      },
+      error: (err) => {
+        this.fusionando.set(false);
+        this.errorFusionar.set(err?.error?.message || 'No se pudo fusionar las plantillas.');
+      }
     });
   }
 
@@ -416,5 +678,42 @@ export class MantenimientoPlantillasComponent implements OnInit {
     if (this.soloLectura()) return;
     fase.categorias = fase.categorias.filter(c => c !== cat);
     this.selectedPlantilla.set(JSON.parse(JSON.stringify(this.selectedPlantilla())));
+  }
+
+  // ==========================================
+  // MODAL DE ÍTEMS DE PARTIDA
+  // ==========================================
+  abrirModalItems(fase: PlantillaFaseDto, cat: PlantillaCategoriaDto) {
+    if (!cat.id) {
+      alert('Esta partida aún no ha sido guardada en la base de datos. Por favor pulsa "Guardar Cambios" antes de configurar sus ítems.');
+      return;
+    }
+    this.partidaSeleccionadaParaItems.set({
+      id: cat.id,
+      IdpptoFaseCategoria: cat.IdpptoFaseCategoria,
+      NombreCategoria: cat.NombreCategoria,
+      NombreFase: fase.NombreFase,
+    });
+    this.showItemsModal.set(true);
+  }
+
+  cerrarModalItems() {
+    this.showItemsModal.set(false);
+    this.partidaSeleccionadaParaItems.set(null);
+  }
+
+  onItemsGuardados(evt: GuardadoEvent) {
+    const p = this.selectedPlantilla();
+    if (!p) return;
+    for (const f of p.fases || []) {
+      const cat = (f.categorias || []).find(c => c.id === evt.idPartida);
+      if (cat) {
+        cat.CostoReferencial = evt.costoTotal;
+        cat.VentaReferencial = evt.ventaTotal;
+        cat.totalItems = evt.totalItems;
+        break;
+      }
+    }
+    this.selectedPlantilla.set(JSON.parse(JSON.stringify(p)));
   }
 }

@@ -1,5 +1,5 @@
 import { Component, inject, signal, computed } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { DatePipe, NgClass } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { permisosDePantalla } from '@app/core/auth/permisos-pantalla';
@@ -22,7 +22,7 @@ import { Empresa } from '../administration/empresas/interfaces';
 @Component({
   selector: 'app-centros-costos',
   standalone: true,
-  imports: [CommonModule, FormsModule, DataTableComponent, ModalComponent, LucideAngularModule, ExportarBotonesComponent],
+  imports: [DatePipe, NgClass, FormsModule, DataTableComponent, ModalComponent, LucideAngularModule, ExportarBotonesComponent],
   templateUrl: './centros-costos.html',
   styleUrl: './centros-costos.css'
 })

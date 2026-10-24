@@ -51,7 +51,7 @@ describe('SidebarComponent', () => {
     const { enlaces, textos } = await setup('Administrador', misPermisos('Administrador', {}, true));
     const lista = enlaces();
     expect(lista.map((e) => e.href)).toEqual(TODAS);
-    expect(lista).toHaveLength(31);
+    expect(lista).toHaveLength(32);
     expect(textos('.menu-category')).toEqual(['Navegación', 'Operaciones', 'Módulos del Sistema', 'Administración']);
     expect(textos('.sidebar-item.has-sub > span')).toEqual(['Documentos', 'Tesorería', 'Control de Almacén', 'Maestros Generales']);
     expect(lista[0]).toEqual({

@@ -146,7 +146,8 @@
 </div>
 
 <!-- Modal Formulario Ficha -->
-<div class="modal-overlay" *ngIf="showFormModal()">
+@if (showFormModal()) {
+  <div class="modal-overlay">
   <div class="modal-content" style="max-width: 780px; max-height: 90vh; overflow-y: auto;">
     <div class="modal-header" style="background: linear-gradient(135deg, #0284c7 0%, #059669 100%); color: white;">
       <h3 style="display: flex; align-items: center; gap: 0.5rem; margin: 0; font-size: 1.1rem; color: white;">
@@ -344,6 +345,7 @@
     </div>
   </div>
 </div>
+}
 
 <!-- Modal Detalle Ficha (Solo Lectura) -->
 @if (showDetailModal() && selectedItem(); as item) {

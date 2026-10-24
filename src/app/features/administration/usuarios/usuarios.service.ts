@@ -1,7 +1,15 @@
 import { Service, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { Usuario, UsuarioCreateDto, UsuarioEstadoDto, UsuarioUpdateDto } from './interfaces';
+import {
+  AreaItem,
+  GuardarExcepcionesUsuario,
+  PermisosUsuario,
+  Usuario,
+  UsuarioCreateDto,
+  UsuarioEstadoDto,
+  UsuarioUpdateDto,
+} from './interfaces';
 import { environment } from '@env';
 
 export * from './interfaces';
@@ -20,6 +28,11 @@ export class UsuariosService {
     return this.http.get<string[]>(`${this.apiUrl}/roles`);
   }
 
+  /** Lista de áreas activas de la empresa para asignación a usuarios. */
+  getAreas(): Observable<AreaItem[]> {
+    return this.http.get<AreaItem[]>(`${environment.apiUrl}/maestros/area?activas=true`);
+  }
+
   create(data: UsuarioCreateDto): Observable<Usuario> {
     return this.http.post<Usuario>(this.apiUrl, data);
   }
@@ -36,5 +49,23 @@ export class UsuariosService {
 
   delete(id: string): Observable<void> {
     return this.http.delete<void>(`${this.apiUrl}/${encodeURIComponent(id)}`);
+  }
+
+  /** Permisos del usuario módulo por módulo con su origen (rol → área → excepción). */
+  getPermisos(id: string): Observable<PermisosUsuario> {
+    return this.http.get<PermisosUsuario>(`${this.apiUrl}/${encodeURIComponent(id)}/permisos`);
+  }
+
+  /**
+   * Reemplaza todas las excepciones del usuario (solo el Administrador). 400 si hay un módulo de Administración,
+   * desconocido o repetido, o una acción sin Ver; 409 si es uno mismo o el usuario es Administrador.
+   */
+  guardarExcepciones(id: string, data: GuardarExcepcionesUsuario): Observable<PermisosUsuario> {
+    return this.http.put<PermisosUsuario>(`${this.apiUrl}/${encodeURIComponent(id)}/permisos`, data);
+  }
+
+  /** Quita todas las excepciones: el usuario vuelve a lo que dan su rol y su área. */
+  restablecerPermisos(id: string): Observable<PermisosUsuario> {
+    return this.http.delete<PermisosUsuario>(`${this.apiUrl}/${encodeURIComponent(id)}/permisos`);
   }
 }

@@ -24,7 +24,9 @@
       <label class="filter-title">Empresa</label>
       <select class="filter-select" [value]="filtroEmpresa" (change)="onFilterSelect('empresa', $event)">
         <option value="TODOS">Todas las Empresas</option>
-        <option *ngFor="let emp of catalogos.empresas" [value]="emp">{{ emp }}</option>
+        @for (emp of catalogos.empresas; track $index) {
+          <option [value]="emp">{{ emp }}</option>
+        }
       </select>
     </div>
 
@@ -33,7 +35,9 @@
       <label class="filter-title">Periodo (Año)</label>
       <select class="filter-select" [value]="filtroPeriodo" (change)="onFilterSelect('periodo', $event)">
         <option value="TODOS">Todos</option>
-        <option *ngFor="let per of catalogos.periodos" [value]="per">{{ per }}</option>
+        @for (per of catalogos.periodos; track $index) {
+          <option [value]="per">{{ per }}</option>
+        }
       </select>
     </div>
 
@@ -42,7 +46,9 @@
       <label class="filter-title">Cliente</label>
       <select class="filter-select" [value]="filtroCliente" (change)="onFilterSelect('cliente', $event)">
         <option value="TODOS">Todos los Clientes</option>
-        <option *ngFor="let cli of catalogos.clientes" [value]="cli">{{ cli }}</option>
+        @for (cli of catalogos.clientes; track $index) {
+          <option [value]="cli">{{ cli }}</option>
+        }
       </select>
     </div>
 
@@ -65,9 +71,11 @@
         <option value="TODOS">Todos ({{ stats.total }})</option>
         <option value="ABIERTO">ABIERTO ({{ stats.abiertos }})</option>
         <option value="CERRADO">CERRADO ({{ stats.cerrados }})</option>
-        <ng-container *ngFor="let est of catalogos.estados">
-          <option *ngIf="est !== 'ABIERTO' && est !== 'CERRADO'" [value]="est">{{ est }}</option>
-        </ng-container>
+        @for (est of catalogos.estados; track $index) {
+          @if (est !== 'ABIERTO' && est !== 'CERRADO') {
+            <option [value]="est">{{ est }}</option>
+          }
+        }
       </select>
     </div>
 
@@ -76,7 +84,9 @@
       <label class="filter-title">Presupuesto Estado</label>
       <select class="filter-select" [value]="filtroPptoEstado" (change)="onFilterSelect('pptoEstado', $event)">
         <option value="TODOS">Todos</option>
-        <option *ngFor="let p of catalogos.pptoEstados" [value]="p">{{ p }}</option>
+        @for (p of catalogos.pptoEstados; track $index) {
+          <option [value]="p">{{ p }}</option>
+        }
       </select>
     </div>
 
@@ -144,14 +154,17 @@
         </span>
       </td>
       <td class="col-ppto-estado">
-        <span 
-          *ngIf="item.PresupuestoEstado" 
+        @if (item.PresupuestoEstado) {
+          <span 
           class="badge badge-ppto"
           [class.badge-aprobado]="item.PresupuestoEstado === 'Aprobado'"
         >
           {{ item.PresupuestoEstado }}
         </span>
-        <span *ngIf="!item.PresupuestoEstado" class="text-muted">-</span>
+        }
+        @if (!item.PresupuestoEstado) {
+          <span class="text-muted">-</span>
+        }
       </td>
       <td class="col-accion text-center">
         <button class="btn-icon-view" title="Ver análisis financiero" (click)="openDetail(item); $event.stopPropagation()">
@@ -162,7 +175,8 @@
   </ng-template>
 
   <!-- MODAL DETALLE FINANCIERO (Imagen 3: ppto.Sub Total en adelante) -->
-  <div class="modal-backdrop" *ngIf="isDetailOpen && selectedCentro" (click)="closeDetail()">
+  @if (isDetailOpen && selectedCentro) {
+    <div class="modal-backdrop" (click)="closeDetail()">
     <div class="modal-card" (click)="$event.stopPropagation()">
       
       <!-- Encabezado Oscuro (Imagen 3) -->
@@ -171,15 +185,25 @@
           <div class="header-tags">
             <span class="tag-hash">{{ selectedCentro.CodCentroCto || selectedCentro.id }}</span>
             <span class="tag-client">Cliente: {{ selectedCentro.Cliente || selectedCentro.CodCliente || 'CLI-001' }}</span>
-            <span class="tag-company" *ngIf="selectedCentro.Empresa">{{ selectedCentro.Empresa }}</span>
+            @if (selectedCentro.Empresa) {
+              <span class="tag-company">{{ selectedCentro.Empresa }}</span>
+            }
           </div>
           <h2 class="detail-title">{{ selectedCentro.CentroCosto }}</h2>
           <div class="detail-substatus">
             Estado Operativo: <strong>{{ selectedCentro.Estado || 'ABIERTO' }}</strong>
-            <span *ngIf="selectedCentro.PresupuestoEstado" class="substatus-sep">|</span>
-            <span *ngIf="selectedCentro.PresupuestoEstado">Presupuesto: <strong>{{ selectedCentro.PresupuestoEstado }}</strong></span>
-            <span *ngIf="selectedCentro.periodo || selectedCentro.IdPeriodo" class="substatus-sep">|</span>
-            <span *ngIf="selectedCentro.periodo || selectedCentro.IdPeriodo">Periodo: <strong>{{ selectedCentro.periodo || selectedCentro.IdPeriodo }}</strong></span>
+            @if (selectedCentro.PresupuestoEstado) {
+              <span class="substatus-sep">|</span>
+            }
+            @if (selectedCentro.PresupuestoEstado) {
+              <span>Presupuesto: <strong>{{ selectedCentro.PresupuestoEstado }}</strong></span>
+            }
+            @if (selectedCentro.periodo || selectedCentro.IdPeriodo) {
+              <span class="substatus-sep">|</span>
+            }
+            @if (selectedCentro.periodo || selectedCentro.IdPeriodo) {
+              <span>Periodo: <strong>{{ selectedCentro.periodo || selectedCentro.IdPeriodo }}</strong></span>
+            }
           </div>
         </div>
         <div class="detail-header-right">
@@ -196,12 +220,14 @@
       <div class="detail-body">
         
         <!-- Loading Resumen -->
-        <div *ngIf="loadingResumen" class="loading-resumen">
+        @if (loadingResumen) {
+          <div class="loading-resumen">
           <div class="spinner"></div>
           <span>Calculando consolidado financiero en tiempo real...</span>
         </div>
+        }
 
-        <ng-container *ngIf="!loadingResumen && resumen">
+        @if (!loadingResumen && resumen) {
           
           <!-- 5 Tarjetas KPIs Financieras (Imagen 3) -->
           <div class="kpi-grid">
@@ -331,7 +357,7 @@
             </div>
           </div>
 
-        </ng-container>
+        }
 
       </div>
 
@@ -343,5 +369,6 @@
 
     </div>
   </div>
+  }
 
 </div>
