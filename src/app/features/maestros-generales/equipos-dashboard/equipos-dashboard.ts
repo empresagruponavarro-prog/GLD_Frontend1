@@ -34,6 +34,8 @@ interface Distribucion {
   standalone: true,
   imports: [FormsModule, DatePipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
+  // El tablero es largo: el scroll va dentro de .content-body (ver .page-scroll en styles.css).
+  host: { class: 'page-scroll' },
   templateUrl: './equipos-dashboard.html',
   styleUrl: './equipos-dashboard.css',
 })
