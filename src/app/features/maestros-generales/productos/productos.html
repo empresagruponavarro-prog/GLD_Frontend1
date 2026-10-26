@@ -289,9 +289,9 @@
       </div>
 
       <div class="form-group">
-        <label>Ubicación habitual (almacén)</label>
+        <label>Ubicación habitual (almacén) <span class="required">*</span></label>
         <select class="form-control" [(ngModel)]="formData.id_almacen_default">
-          <option [ngValue]="null">— Sin definir —</option>
+          <option [ngValue]="null">— Seleccione —</option>
           @for (a of almacenes(); track a.id) {
           <option [ngValue]="a.id">{{ a.nombre }}</option>
           }

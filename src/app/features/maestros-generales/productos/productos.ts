@@ -362,6 +362,10 @@ export class ProductosComponent {
       alert('Debe seleccionar una Unidad de Medida.');
       return;
     }
+    if (!this.formData.id_almacen_default) {
+      alert('Debe seleccionar la Ubicación habitual (almacén).');
+      return;
+    }
 
     for (const [campo, valor] of [
       ['Stock mínimo', this.formData.stock_minimo],
