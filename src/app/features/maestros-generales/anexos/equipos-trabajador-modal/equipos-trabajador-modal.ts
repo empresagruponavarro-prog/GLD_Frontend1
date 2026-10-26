@@ -15,36 +15,20 @@ import { AbstractControl, FormBuilder, FormControl, FormRecord, ReactiveFormsMod
 import { mensajeError } from '@shared/utils/errores-http';
 import { Observable } from 'rxjs';
 import { ModalComponent } from '../../../../shared/components/modal/modal';
+import { claseDeEstado, iconoDeTipo } from '../equipo-presentacion';
 import { EquipoQrDialogComponent } from '../equipo-qr-dialog/equipo-qr-dialog';
 import { AnexosService } from '../anexos.service';
 import { EquiposTrabajadorService } from '../equipos-trabajador.service';
 import { AnexoSelect } from '../interfaces/anexos.interface';
 import {
+  AreaOpcion,
   BienCatalogo,
   EquipoAsignado,
   EstadoEquipo,
   LocalOpcion,
+  MovimientoEquipo,
   TrabajadorResumen,
 } from '../interfaces/equipo-asignado.interface';
-
-const ICONOS_POR_TIPO: readonly (readonly [string, string])[] = [
-  ['laptop', 'fa-laptop'],
-  ['notebook', 'fa-laptop'],
-  ['celular', 'fa-mobile-screen'],
-  ['telefono', 'fa-mobile-screen'],
-  ['tablet', 'fa-tablet-screen-button'],
-  ['monitor', 'fa-desktop'],
-  ['impresora', 'fa-print'],
-  ['tv', 'fa-tv'],
-  ['pc', 'fa-computer'],
-  ['computad', 'fa-computer'],
-];
-
-const CLASE_ESTADO: Record<EstadoEquipo, string> = {
-  Operativo: 'badge-completed',
-  'En reparación': 'badge-pending',
-  'De baja': 'badge-danger',
-};
 
 function hoyISO(): string {
   const d = new Date();
@@ -78,6 +62,7 @@ export class EquiposTrabajadorModalComponent implements OnInit {
 
   readonly catalogo = signal<BienCatalogo[]>([]);
   readonly locales = signal<LocalOpcion[]>([]);
+  readonly areas = signal<AreaOpcion[]>([]);
   readonly mostrarForm = signal(false);
   readonly guardando = signal(false);
   readonly errorForm = signal<string | null>(null);
@@ -91,7 +76,25 @@ export class EquiposTrabajadorModalComponent implements OnInit {
   readonly formReasignar = this.fb.nonNullable.group({
     destinoId: [0, Validators.min(1)],
     fechaAsignacion: [hoyISO(), Validators.required],
+    cambiarUbicacion: [false],
+    localId: [0],
+    nivelId: [{ value: 0, disabled: true }],
+    ambienteId: [{ value: 0, disabled: true }],
+    areaId: [0],
   });
+
+  // Historial de movimientos de un equipo
+  readonly historialDe = signal<EquipoAsignado | null>(null);
+  readonly historial = signal<MovimientoEquipo[]>([]);
+  readonly cargandoHistorial = signal(false);
+  private readonly reLocalSel = toSignal(this.formReasignar.controls.localId.valueChanges, { initialValue: 0 });
+  private readonly reNivelSel = toSignal(this.formReasignar.controls.nivelId.valueChanges, { initialValue: 0 });
+  private readonly reCambiar = toSignal(this.formReasignar.controls.cambiarUbicacion.valueChanges, {
+    initialValue: false,
+  });
+  readonly cambiaUbicacion = computed(() => this.reCambiar());
+  readonly reNiveles = computed(() => this.locales().find((l) => l.id === this.reLocalSel())?.niveles ?? []);
+  readonly reAmbientes = computed(() => this.reNiveles().find((n) => n.id === this.reNivelSel())?.ambientes ?? []);
   readonly destinos = computed(() => this.trabajadores().filter((t) => t.id !== this.trabajador().id));
 
   readonly caracteristicas = new FormRecord<FormControl<string>>({});
@@ -102,6 +105,7 @@ export class EquiposTrabajadorModalComponent implements OnInit {
     localId: [0, Validators.min(1)],
     nivelId: [{ value: 0, disabled: true }, Validators.min(1)],
     ambienteId: [{ value: 0, disabled: true }, Validators.min(1)],
+    areaId: [0],
     fechaAsignacion: [hoyISO(), Validators.required],
     /** Heredan los valores del catálogo; editar uno solo cambia esa característica en esta unidad. */
     caracteristicas: this.caracteristicas,
@@ -148,6 +152,24 @@ export class EquiposTrabajadorModalComponent implements OnInit {
       c.ambienteId.setValue(0);
       this.habilitar(c.ambienteId, nivel > 0);
     });
+
+    c.ambienteId.valueChanges.pipe(takeUntilDestroyed()).subscribe((ambiente) => {
+      c.areaId.setValue(this.areaDeAmbiente(c.localId.value, c.nivelId.value, ambiente));
+    });
+
+    // Misma cascada Local → Nivel → Ambiente en el panel de reasignación.
+    const r = this.formReasignar.controls;
+    r.localId.valueChanges.pipe(takeUntilDestroyed()).subscribe((local) => {
+      r.nivelId.setValue(0);
+      this.habilitar(r.nivelId, local > 0);
+    });
+    r.nivelId.valueChanges.pipe(takeUntilDestroyed()).subscribe((nivel) => {
+      r.ambienteId.setValue(0);
+      this.habilitar(r.ambienteId, nivel > 0);
+    });
+    r.ambienteId.valueChanges.pipe(takeUntilDestroyed()).subscribe((ambiente) => {
+      if (ambiente > 0) r.areaId.setValue(this.areaDeAmbiente(r.localId.value, r.nivelId.value, ambiente));
+    });
   }
 
   ngOnInit(): void {
@@ -173,15 +195,26 @@ export class EquiposTrabajadorModalComponent implements OnInit {
   protected abrirForm(): void {
     this.errorForm.set(null);
     this.mostrarForm.set(true);
-    if (this.catalogo().length === 0) {
-      this.service.getOpciones().subscribe({
-        next: (opciones) => {
-          this.catalogo.set(opciones.catalogo);
-          this.locales.set(opciones.locales);
-        },
-        error: (err: unknown) => this.errorForm.set(mensajeError(err)),
-      });
-    }
+    this.cargarOpciones((err) => this.errorForm.set(err));
+  }
+
+  /** Área por defecto de la ubicación elegida (0 = sin área). */
+  private areaDeAmbiente(localId: number, nivelId: number, ambienteId: number): number {
+    const local = this.locales().find((l) => l.id === localId);
+    const nivel = local?.niveles.find((n) => n.id === nivelId);
+    return nivel?.ambientes.find((a) => a.id === ambienteId)?.areaId ?? 0;
+  }
+
+  private cargarOpciones(alFallar: (mensaje: string) => void): void {
+    if (this.catalogo().length > 0) return;
+    this.service.getOpciones().subscribe({
+      next: (opciones) => {
+        this.catalogo.set(opciones.catalogo);
+        this.locales.set(opciones.locales);
+        this.areas.set(opciones.areas);
+      },
+      error: (err: unknown) => alFallar(mensajeError(err)),
+    });
   }
 
   protected cancelarForm(): void {
@@ -215,6 +248,7 @@ export class EquiposTrabajadorModalComponent implements OnInit {
         localId: v.localId,
         nivelId: v.nivelId,
         ambienteId: v.ambienteId,
+        ...(v.areaId > 0 ? { areaId: v.areaId } : {}),
         caracteristicas: v.caracteristicas,
       })
       .subscribe({
@@ -223,6 +257,7 @@ export class EquiposTrabajadorModalComponent implements OnInit {
           this.guardando.set(false);
           this.mostrarForm.set(false);
           this.resetForm();
+          this.ofrecerEntrega(this.trabajador().id, this.trabajador().anexo, equipo);
         },
         error: (err: unknown) => {
           this.guardando.set(false);
@@ -233,8 +268,11 @@ export class EquiposTrabajadorModalComponent implements OnInit {
 
   protected abrirReasignar(equipo: EquipoAsignado): void {
     this.errorAccion.set(null);
-    this.formReasignar.reset({ destinoId: 0, fechaAsignacion: hoyISO() });
+    this.formReasignar.reset({ destinoId: 0, fechaAsignacion: hoyISO(), cambiarUbicacion: false, localId: 0, areaId: 0 });
+    this.habilitar(this.formReasignar.controls.nivelId, false);
+    this.habilitar(this.formReasignar.controls.ambienteId, false);
     this.reasignando.set(equipo);
+    this.cargarOpciones((mensaje) => this.errorAccion.set(mensaje));
     if (this.trabajadores().length === 0) {
       this.anexos.getSelect('Trabajador').subscribe({
         next: (lista) => this.trabajadores.set(lista),
@@ -260,12 +298,20 @@ export class EquiposTrabajadorModalComponent implements OnInit {
       this.errorAccion.set('Indica la fecha de asignación.');
       return;
     }
+    if (v.cambiarUbicacion && (v.localId < 1 || v.nivelId < 1 || v.ambienteId < 1)) {
+      this.errorAccion.set('Selecciona local, nivel y ambiente de la nueva ubicación.');
+      return;
+    }
+    const destino = this.trabajadores().find((t) => t.id === v.destinoId);
     this.ejecutarAccion(
       this.service.reasignarEquipo(this.trabajador().id, equipo.id, {
         anexoDestinoId: v.destinoId,
         fechaAsignacion: v.fechaAsignacion,
+        ...(v.cambiarUbicacion ? { localId: v.localId, nivelId: v.nivelId, ambienteId: v.ambienteId } : {}),
+        ...(v.areaId > 0 ? { areaId: v.areaId } : {}),
       }),
       equipo.id,
+      (movido) => this.ofrecerEntrega(v.destinoId, destino?.nombre ?? 'trabajador', movido),
     );
   }
 
@@ -273,17 +319,22 @@ export class EquiposTrabajadorModalComponent implements OnInit {
     const nombre = `${equipo.tipo} ${equipo.marca} ${equipo.modelo}`.trim();
     if (!confirm(`¿Devolver "${nombre}"? Quedará sin responsable.`)) return;
     this.errorAccion.set(null);
-    this.ejecutarAccion(this.service.devolverEquipo(this.trabajador().id, equipo.id), equipo.id);
+    this.ejecutarAccion(this.service.devolverEquipo(this.trabajador().id, equipo.id, hoyISO()), equipo.id);
   }
 
   /** El equipo deja de pertenecer a este trabajador: sale de la tabla sin recargar. */
-  private ejecutarAccion(peticion: Observable<EquipoAsignado>, equipoId: number): void {
+  private ejecutarAccion(
+    peticion: Observable<EquipoAsignado>,
+    equipoId: number,
+    despues?: (equipo: EquipoAsignado) => void,
+  ): void {
     this.procesandoAccion.set(true);
     peticion.subscribe({
-      next: () => {
+      next: (resultado) => {
         this.equipos.update((lista) => lista.filter((e) => e.id !== equipoId));
         this.procesandoAccion.set(false);
         this.reasignando.set(null);
+        despues?.(resultado);
       },
       error: (err: unknown) => {
         this.procesandoAccion.set(false);
@@ -292,13 +343,53 @@ export class EquiposTrabajadorModalComponent implements OnInit {
     });
   }
 
+  /** Descarga la hoja de entrega (.docx) para imprimirla y firmarla. */
+  protected descargarEntrega(anexoId: number, nombre: string, equipo: EquipoAsignado): void {
+    this.errorAccion.set(null);
+    this.service.descargarEntrega(anexoId, [equipo.id], equipo.fechaAsignacion || undefined).subscribe({
+      next: (archivo) => {
+        const url = URL.createObjectURL(archivo);
+        const enlace = document.createElement('a');
+        enlace.href = url;
+        enlace.download = `ENTREGA DE EQUIPOS - ${nombre}.docx`;
+        enlace.click();
+        URL.revokeObjectURL(url);
+      },
+      error: (err: unknown) => this.errorAccion.set(mensajeError(err)),
+    });
+  }
+
+  private ofrecerEntrega(anexoId: number, nombre: string, equipo: EquipoAsignado): void {
+    if (confirm('¿Descargar la hoja de entrega de equipos para imprimir?')) this.descargarEntrega(anexoId, nombre, equipo);
+  }
+
+  protected abrirHistorial(equipo: EquipoAsignado): void {
+    this.errorAccion.set(null);
+    this.historialDe.set(equipo);
+    this.historial.set([]);
+    this.cargandoHistorial.set(true);
+    this.service.getHistorial(equipo.id).subscribe({
+      next: (lista) => {
+        this.historial.set(lista);
+        this.cargandoHistorial.set(false);
+      },
+      error: (err: unknown) => {
+        this.cargandoHistorial.set(false);
+        this.errorAccion.set(mensajeError(err));
+      },
+    });
+  }
+
+  protected cerrarHistorial(): void {
+    this.historialDe.set(null);
+  }
+
   protected icono(tipo: string): string {
-    const t = tipo.toLowerCase();
-    return ICONOS_POR_TIPO.find(([clave]) => t.includes(clave))?.[1] ?? 'fa-microchip';
+    return iconoDeTipo(tipo);
   }
 
   protected claseEstado(estado: EstadoEquipo): string {
-    return CLASE_ESTADO[estado];
+    return claseDeEstado(estado);
   }
 
   protected resumenCaracteristicas(equipo: EquipoAsignado): string {

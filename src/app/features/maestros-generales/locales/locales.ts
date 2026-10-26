@@ -489,21 +489,7 @@ export class LocalesComponent {
   }
 
   protected guardar(): void {
-    const codCtrl = this.form.controls.codigo;
-    const nomCtrl = this.form.controls.nombre;
-
     const tipo = this.tipoAsignacion();
-    const esCc = tipo === 'CENTRO_COSTO';
-
-    if (!esCc && codCtrl.invalid) {
-      codCtrl.markAsTouched();
-      return this.modalError.set('El código es obligatorio y debe tener entre 2 y 20 caracteres (letras, números o guiones).');
-    }
-
-    if (!esCc && nomCtrl.invalid) {
-      nomCtrl.markAsTouched();
-      return this.modalError.set('El nombre del local o sede es obligatorio (máximo 150 caracteres).');
-    }
 
 
     const idEmpresa = this.form.controls.id_empresa.value;
@@ -522,13 +508,9 @@ export class LocalesComponent {
     this.isSaving.set(true);
     const v = this.form.getRawValue();
     const actual = this.editando();
-    const nombreCc = this.centrosCostos().find((c) => c.id === Number(idCc))?.nombre;
-    const nombre = esCc ? nombreCc : v.nombre.trim();
 
     if (actual) {
       const payload: UpdateLocalPayload = {
-        nombre: nombre || undefined,
-        direccion: v.direccion.trim() || undefined,
         id_empresa: tipo === 'EMPRESA' ? Number(idEmpresa) : undefined,
         id_centro_costo: tipo === 'CENTRO_COSTO' ? Number(idCc) : undefined,
         estado: v.estado,
@@ -547,9 +529,6 @@ export class LocalesComponent {
       });
     } else {
       const payload: CreateLocalPayload = {
-        codigo: esCc ? undefined : v.codigo.trim().toUpperCase(),
-        nombre: esCc ? undefined : v.nombre.trim(),
-        direccion: v.direccion.trim() || undefined,
         id_empresa: tipo === 'EMPRESA' ? Number(idEmpresa) : undefined,
         id_centro_costo: tipo === 'CENTRO_COSTO' ? Number(idCc) : undefined,
         estado: v.estado,

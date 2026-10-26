@@ -1,13 +1,24 @@
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { Service, inject } from '@angular/core';
 import { environment } from '@env';
 import { Observable } from 'rxjs';
-import { EquipoAsignado, NuevaAsignacion, OpcionesEquipo } from './interfaces/equipo-asignado.interface';
+import {
+  EquipoAsignado,
+  EquipoInventario,
+  MovimientoEquipo,
+  NuevaAsignacion,
+  OpcionesEquipo,
+} from './interfaces/equipo-asignado.interface';
 
 @Service()
 export class EquiposTrabajadorService {
   private readonly http = inject(HttpClient);
   private readonly baseUrl = `${environment.apiUrl}/maestros/anexo`;
+
+  /** Todos los equipos (asignados o no) para el tablero de equipos tecnológicos. */
+  getInventario(): Observable<EquipoInventario[]> {
+    return this.http.get<EquipoInventario[]>(`${this.baseUrl}/equipos/inventario`);
+  }
 
   getEquiposPorAnexo(anexoId: number): Observable<EquipoAsignado[]> {
     return this.http.get<EquipoAsignado[]>(`${this.baseUrl}/${anexoId}/equipos`);
@@ -25,12 +36,24 @@ export class EquiposTrabajadorService {
   reasignarEquipo(
     anexoId: number,
     equipoId: number,
-    body: { anexoDestinoId: number; fechaAsignacion: string },
+    body: { anexoDestinoId: number; fechaAsignacion: string; localId?: number; nivelId?: number; ambienteId?: number; areaId?: number },
   ): Observable<EquipoAsignado> {
     return this.http.patch<EquipoAsignado>(`${this.baseUrl}/${anexoId}/equipos/${equipoId}/reasignar`, body);
   }
 
-  devolverEquipo(anexoId: number, equipoId: number): Observable<EquipoAsignado> {
-    return this.http.patch<EquipoAsignado>(`${this.baseUrl}/${anexoId}/equipos/${equipoId}/devolver`, {});
+  devolverEquipo(anexoId: number, equipoId: number, fecha: string): Observable<EquipoAsignado> {
+    return this.http.patch<EquipoAsignado>(`${this.baseUrl}/${anexoId}/equipos/${equipoId}/devolver`, { fecha });
+  }
+
+  /** Hoja «Entrega de equipos» (.docx) de quien recibe; sin `ids` incluye todos sus equipos. */
+  descargarEntrega(anexoId: number, ids: number[], fecha?: string): Observable<Blob> {
+    let params = new HttpParams();
+    if (ids.length > 0) params = params.set('ids', ids.join(','));
+    if (fecha) params = params.set('fecha', fecha);
+    return this.http.get(`${this.baseUrl}/${anexoId}/equipos/entrega`, { params, responseType: 'blob' });
+  }
+
+  getHistorial(equipoId: number): Observable<MovimientoEquipo[]> {
+    return this.http.get<MovimientoEquipo[]>(`${this.baseUrl}/equipos/${equipoId}/historial`);
   }
 }

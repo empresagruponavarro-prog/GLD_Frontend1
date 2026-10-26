@@ -115,6 +115,15 @@
               </select>
             </div>
             <div class="form-group">
+              <label for="eq-area">Área</label>
+              <select id="eq-area" class="form-control" formControlName="areaId">
+                <option [ngValue]="0">— Sin área —</option>
+                @for (area of areas(); track area.id) {
+                  <option [ngValue]="area.id">{{ area.nombre }}</option>
+                }
+              </select>
+            </div>
+            <div class="form-group">
               <label for="eq-fecha">Fecha de asignación <span class="required">*</span></label>
               <input id="eq-fecha" class="form-control" type="date" formControlName="fechaAsignacion" />
             </div>
@@ -159,6 +168,50 @@
               <input id="eq-fecha-reasignar" class="form-control" type="date" formControlName="fechaAsignacion" />
             </div>
           </div>
+          <div class="equipos__grid">
+            <label class="equipos__check equipos__span-2">
+              <input type="checkbox" formControlName="cambiarUbicacion" />
+              <span>Cambiar también la ubicación (ambiente)</span>
+            </label>
+            @if (cambiaUbicacion()) {
+              <div class="form-group">
+                <label for="eq-re-local">Local <span class="required">*</span></label>
+                <select id="eq-re-local" class="form-control" formControlName="localId">
+                  <option [ngValue]="0">— Seleccione —</option>
+                  @for (local of locales(); track local.id) {
+                    <option [ngValue]="local.id">{{ local.nombre }}</option>
+                  }
+                </select>
+              </div>
+              <div class="form-group">
+                <label for="eq-re-nivel">Nivel <span class="required">*</span></label>
+                <select id="eq-re-nivel" class="form-control" formControlName="nivelId">
+                  <option [ngValue]="0">— Seleccione —</option>
+                  @for (nivel of reNiveles(); track nivel.id) {
+                    <option [ngValue]="nivel.id">{{ nivel.nombre }}</option>
+                  }
+                </select>
+              </div>
+              <div class="form-group">
+                <label for="eq-re-ambiente">Ambiente <span class="required">*</span></label>
+                <select id="eq-re-ambiente" class="form-control" formControlName="ambienteId">
+                  <option [ngValue]="0">— Seleccione —</option>
+                  @for (ambiente of reAmbientes(); track ambiente.id) {
+                    <option [ngValue]="ambiente.id">{{ ambiente.nombre }}</option>
+                  }
+                </select>
+              </div>
+            }
+            <div class="form-group">
+              <label for="eq-re-area">Área</label>
+              <select id="eq-re-area" class="form-control" formControlName="areaId">
+                <option [ngValue]="0">— Mantener / por defecto —</option>
+                @for (area of areas(); track area.id) {
+                  <option [ngValue]="area.id">{{ area.nombre }}</option>
+                }
+              </select>
+            </div>
+          </div>
           <div class="equipos__actions">
             <button class="btn btn-secondary" type="button" [disabled]="procesandoAccion()" (click)="cancelarReasignar()">
               Cancelar
@@ -168,6 +221,37 @@
             </button>
           </div>
         </form>
+      }
+
+      @if (historialDe(); as equipo) {
+        <div class="equipos__form">
+          <div class="equipos__section-head">
+            <h5 class="equipos__section-title">
+              Historial · {{ equipo.tipo }} {{ equipo.marca }} {{ equipo.modelo }} ({{ equipo.codigoActivo }})
+            </h5>
+            <button class="btn btn-secondary" type="button" (click)="cerrarHistorial()">Cerrar</button>
+          </div>
+          @if (cargandoHistorial()) {
+            <p class="equipos__empty">Cargando historial...</p>
+          } @else if (historial().length === 0) {
+            <p class="equipos__empty">Sin movimientos registrados.</p>
+          } @else {
+            <ul class="equipos__historial">
+              @for (m of historial(); track m.id) {
+                <li>
+                  <strong>{{ m.movimiento }}</strong> · {{ m.fecha | date: 'dd/MM/yyyy' }}
+                  <div class="equipos__small">
+                    Responsable: {{ m.responsableAnterior ?? '—' }} → {{ m.responsableNuevo ?? '—' }}
+                  </div>
+                  <div class="equipos__small">
+                    Ubicación: {{ m.ubicacionAnterior ?? '—' }} → {{ m.ubicacionNueva ?? '—' }}
+                  </div>
+                  <div class="equipos__small">Área: {{ m.areaAnterior ?? '—' }} → {{ m.areaNueva ?? '—' }}</div>
+                </li>
+              }
+            </ul>
+          }
+        </div>
       }
 
       @if (errorAccion(); as mensaje) {
@@ -194,9 +278,7 @@
                 <th>Estado</th>
                 <th>Asignado</th>
                 <th class="equipos__center">QR</th>
-                @if (puedeGestionar()) {
-                  <th class="equipos__center">Acciones</th>
-                }
+                <th class="equipos__center">Acciones</th>
               </tr>
             </thead>
             <tbody>
@@ -220,6 +302,9 @@
                     @if (equipo.local) {
                       <div><i class="fa-solid fa-location-dot" aria-hidden="true"></i> {{ equipo.local }}</div>
                       <div class="equipos__small">{{ equipo.nivel }} · {{ equipo.ambiente }}</div>
+                      @if (equipo.area) {
+                        <div class="equipos__small">Área: {{ equipo.area }}</div>
+                      }
                     } @else {
                       —
                     }
@@ -236,8 +321,24 @@
                       <i class="fa-solid fa-qrcode" aria-hidden="true"></i>
                     </button>
                   </td>
-                  @if (puedeGestionar()) {
-                    <td class="equipos__center equipos__acciones">
+                  <td class="equipos__center equipos__acciones">
+                      <button
+                        class="equipos__pill equipos__pill--neutral"
+                        type="button"
+                        [attr.aria-label]="'Descargar hoja de entrega de ' + equipo.marca + ' ' + equipo.modelo"
+                        (click)="descargarEntrega(trabajador().id, trabajador().anexo, equipo)"
+                      >
+                        <i class="fa-solid fa-file-arrow-down" aria-hidden="true"></i> Entrega
+                      </button>
+                      <button
+                        class="equipos__pill equipos__pill--neutral"
+                        type="button"
+                        [attr.aria-label]="'Ver historial de ' + equipo.marca + ' ' + equipo.modelo"
+                        (click)="abrirHistorial(equipo)"
+                      >
+                        <i class="fa-solid fa-clock-rotate-left" aria-hidden="true"></i> Historial
+                      </button>
+                    @if (puedeGestionar()) {
                       <button
                         class="equipos__pill equipos__pill--info"
                         type="button"
@@ -256,8 +357,8 @@
                       >
                         <i class="fa-solid fa-rotate-left" aria-hidden="true"></i> Devolver
                       </button>
-                    </td>
-                  }
+                    }
+                  </td>
                 </tr>
               }
             </tbody>

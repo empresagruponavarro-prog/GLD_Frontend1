@@ -21,6 +21,7 @@ export function lineasQR(e: EquipoAsignado, t: TrabajadorResumen): string[] {
     ...Object.entries(e.caracteristicas).map(([k, v]) => `${k}: ${v}`),
     `Estado: ${e.estado}`,
     `Ubicacion: ${e.local} / ${e.nivel} / ${e.ambiente}`,
+    ...(e.area ? [`Area: ${e.area}`] : []),
     `Asignado a: ${t.anexo} (${t.tipoDocumento} ${t.numeroDocumento})`,
     `Fecha asignacion: ${formatearFecha(e.fechaAsignacion)}`,
   ];

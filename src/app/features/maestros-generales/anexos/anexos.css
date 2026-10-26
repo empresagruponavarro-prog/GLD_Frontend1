@@ -23,15 +23,16 @@
   border: 0;
   background: none;
   font: inherit;
-  color: #0f766e;
+  color: inherit;
   text-align: left;
+  text-decoration: none;
   cursor: pointer;
-  text-decoration: underline;
-  text-decoration-style: dotted;
 }
 
-.anexo-link:hover {
-  color: #115e59;
+.anexo-link:hover,
+.anexo-link:focus-visible {
+  color: #0f766e;
+  text-decoration: underline;
 }
 
 .anexo-detail-grid {

@@ -102,6 +102,7 @@ export const MENU_LATERAL: readonly SeccionMenu[] = [
         enlaces: [
           { etiqueta: 'Empresas', ruta: '/admin/empresas', icono: 'fa-solid fa-building', modulo: 'admin.empresas' },
           { etiqueta: 'Anexos', ruta: '/anexos', icono: 'fa-solid fa-paperclip', modulo: 'maestros.anexos' },
+          { etiqueta: 'Equipos Tecnológicos', ruta: '/equipos-tecnologicos', icono: 'fa-solid fa-laptop-code', modulo: 'maestros.anexos' },
           { etiqueta: 'Catálogo de Bienes y Servicios', ruta: '/productos', icono: 'fa-solid fa-box', modulo: 'maestros.productos' },
           { etiqueta: 'Áreas', ruta: '/maestros-generales/areas', icono: 'fa-solid fa-sitemap', modulo: 'maestros.areas' },
           { etiqueta: 'Unidades de Medida', ruta: '/maestros-generales/unidades-medida', icono: 'fa-solid fa-ruler-combined', modulo: 'maestros.generales' },

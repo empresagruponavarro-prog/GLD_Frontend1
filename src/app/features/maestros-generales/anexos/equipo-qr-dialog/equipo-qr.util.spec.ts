@@ -20,6 +20,8 @@ const EQUIPO: EquipoAsignado = {
   nivel: 'Piso 1',
   ambienteId: 1,
   ambiente: 'Oficina',
+  areaId: 2,
+  area: 'Sistemas',
 };
 
 const TRABAJADOR: TrabajadorResumen = {
@@ -40,6 +42,7 @@ describe('equipo-qr.util', () => {
     expect(lineas).toContain('Serie: -');
     expect(lineas).toContain('RAM: 16 GB');
     expect(lineas).toContain('Ubicacion: Sede / Piso 1 / Oficina');
+    expect(lineas).toContain('Area: Sistemas');
     expect(lineas).toContain('Asignado a: Ana Pérez (DNI 12345678)');
     expect(lineas).toContain('Fecha asignacion: 26/10/2026');
   });

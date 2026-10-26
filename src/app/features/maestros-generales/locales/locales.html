@@ -692,45 +692,10 @@
       </div>
     }
 
-    <!-- Código y Nombre (solo sedes de empresa; en centro de costo se derivan del CC) -->
-    @if (tipoAsignacion() === 'EMPRESA') {
-      <div style="display: flex; gap: 0.75rem;">
-        <div class="form-group" style="flex: 1;">
-          <label for="local-codigo">Código <span class="required">*</span></label>
-          <input
-            id="local-codigo"
-            class="form-control"
-            formControlName="codigo"
-            maxlength="20"
-            placeholder="Ej: SEDE-LIM"
-            style="text-transform: uppercase;"
-            (input)="onCodigoInput($event)"
-          />
-        </div>
-        <div class="form-group" style="flex: 2;">
-          <label for="local-nombre">Nombre del local / sede <span class="required">*</span></label>
-          <input
-            id="local-nombre"
-            class="form-control"
-            formControlName="nombre"
-            maxlength="150"
-            placeholder="Ej: SEDE CENTRAL LIMA"
-          />
-        </div>
-      </div>
-    }
-
-    <!-- Dirección -->
-    <div class="form-group">
-      <label for="local-direccion">Dirección física</label>
-      <input
-        id="local-direccion"
-        class="form-control"
-        formControlName="direccion"
-        maxlength="255"
-        placeholder="Ej: Av. Javier Prado Este 1234, San Isidro"
-      />
-    </div>
+    <p style="font-size: 0.8rem; color: #64748b; margin: 0 0 0.75rem;">
+      El código, el nombre y la dirección se toman automáticamente de la
+      {{ tipoAsignacion() === 'EMPRESA' ? 'empresa (dirección de entrega)' : 'obra (datos de obra)' }}.
+    </p>
 
     @if (editando()) {
       <div class="form-group">

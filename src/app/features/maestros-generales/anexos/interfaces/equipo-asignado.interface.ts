@@ -22,6 +22,14 @@ export interface EquipoAsignado {
   nivel: string;
   ambienteId: number;
   ambiente: string;
+  areaId: number | null;
+  area: string | null;
+}
+
+/** Un equipo del inventario general, con su responsable (si lo tiene). */
+export interface EquipoInventario extends EquipoAsignado {
+  responsableId: number | null;
+  responsable: string | null;
 }
 
 export interface NuevaAsignacion {
@@ -31,6 +39,8 @@ export interface NuevaAsignacion {
   localId: number;
   nivelId: number;
   ambienteId: number;
+  /** Si se omite, el backend usa el área de la ubicación. */
+  areaId?: number;
   /** Características de esta unidad; el backend guarda solo las que difieren del catálogo. */
   caracteristicas: Record<string, string>;
 }
@@ -45,6 +55,13 @@ export interface BienCatalogo {
 }
 
 export interface AmbienteOpcion {
+  id: number;
+  nombre: string;
+  /** Área por defecto de esa ubicación. */
+  areaId: number | null;
+}
+
+export interface AreaOpcion {
   id: number;
   nombre: string;
 }
@@ -64,6 +81,7 @@ export interface LocalOpcion {
 export interface OpcionesEquipo {
   catalogo: BienCatalogo[];
   locales: LocalOpcion[];
+  areas: AreaOpcion[];
 }
 
 /** Datos del trabajador que se muestran en el encabezado del modal y en el QR. */
@@ -73,4 +91,17 @@ export interface TrabajadorResumen {
   tipoDocumento: string;
   numeroDocumento: string;
   especialidad: string;
+}
+
+export interface MovimientoEquipo {
+  id: number;
+  movimiento: 'Asignación' | 'Reasignación' | 'Devolución';
+  /** ISO yyyy-MM-dd. */
+  fecha: string;
+  responsableAnterior: string | null;
+  responsableNuevo: string | null;
+  ubicacionAnterior: string | null;
+  ubicacionNueva: string | null;
+  areaAnterior: string | null;
+  areaNueva: string | null;
 }

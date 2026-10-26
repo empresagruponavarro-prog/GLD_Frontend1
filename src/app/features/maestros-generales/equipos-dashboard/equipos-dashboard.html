@@ -1,0 +1,175 @@
+<div class="content-header">
+  <div>
+    <h1 class="content-title">Equipos Tecnológicos</h1>
+    <p class="content-subtitle">Inventario de laptops, PC, celulares y demás equipos: dónde están y quién los tiene.</p>
+  </div>
+  <button class="btn btn-secondary" type="button" [disabled]="cargando()" (click)="cargar()">
+    <i class="fa-solid fa-arrows-rotate" [class.fa-spin]="cargando()" aria-hidden="true"></i>
+    {{ cargando() ? 'Cargando...' : 'Actualizar' }}
+  </button>
+</div>
+
+<div class="content-body">
+  @if (error(); as mensaje) {
+    <p class="eqd__error" role="alert">{{ mensaje }}</p>
+  }
+
+  <section class="toolbar-shell" aria-label="Filtros">
+    <div class="toolbar-search-row">
+      <div class="search-field">
+        <span class="search-icon"><i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i></span>
+        <input
+          type="text"
+          class="form-control search-input"
+          placeholder="Buscar por código, marca, modelo, serie, responsable..."
+          aria-label="Buscar equipos"
+          [ngModel]="filtros().busqueda"
+          (ngModelChange)="cambiar('busqueda', $event)"
+        />
+      </div>
+      <div class="toolbar-meta">
+        <span>Mostrando</span>
+        <strong>{{ filtrados().length }}</strong>
+        <span>de {{ equipos().length }} equipos</span>
+      </div>
+    </div>
+    <div class="toolbar-filters-row">
+      <div class="toolbar-filters-left">
+        <select class="toolbar-select" aria-label="Tipo" [ngModel]="filtros().tipo" (ngModelChange)="cambiar('tipo', $event)">
+          <option value="">Todos los tipos</option>
+          @for (t of tipos(); track t) {
+            <option [value]="t">{{ t }}</option>
+          }
+        </select>
+        <select class="toolbar-select" aria-label="Local" [ngModel]="filtros().local" (ngModelChange)="cambiar('local', $event)">
+          <option value="">Todos los locales</option>
+          @for (l of locales(); track l) {
+            <option [value]="l">{{ l }}</option>
+          }
+        </select>
+        <select class="toolbar-select" aria-label="Área" [ngModel]="filtros().area" (ngModelChange)="cambiar('area', $event)">
+          <option value="">Todas las áreas</option>
+          @for (a of areas(); track a) {
+            <option [value]="a">{{ a }}</option>
+          }
+        </select>
+        <select class="toolbar-select" aria-label="Estado" [ngModel]="filtros().estado" (ngModelChange)="cambiar('estado', $event)">
+          <option value="">Todos los estados</option>
+          @for (e of estados; track e) {
+            <option [value]="e">{{ e }}</option>
+          }
+        </select>
+        <select
+          class="toolbar-select"
+          aria-label="Asignación"
+          [ngModel]="filtros().asignacion"
+          (ngModelChange)="cambiarAsignacion($event)"
+        >
+          <option value="">Asignados y disponibles</option>
+          <option value="asignados">Solo asignados</option>
+          <option value="disponibles">Solo disponibles</option>
+        </select>
+        @if (hayFiltros()) {
+          <button class="toolbar-reset" type="button" (click)="restablecer()">
+            <i class="fa-solid fa-rotate-left" aria-hidden="true"></i> Restablecer
+          </button>
+        }
+      </div>
+    </div>
+  </section>
+
+  <section class="eqd__kpis" aria-label="Resumen">
+    <div class="eqd__kpi">
+      <span class="eqd__kpi-label">Total de equipos</span>
+      <strong class="eqd__kpi-value">{{ kpis().total }}</strong>
+    </div>
+    <div class="eqd__kpi">
+      <span class="eqd__kpi-label">Asignados</span>
+      <strong class="eqd__kpi-value">{{ kpis().asignados }}</strong>
+    </div>
+    <div class="eqd__kpi">
+      <span class="eqd__kpi-label">Disponibles</span>
+      <strong class="eqd__kpi-value">{{ kpis().disponibles }}</strong>
+    </div>
+    <div class="eqd__kpi eqd__kpi--alerta">
+      <span class="eqd__kpi-label">En reparación o de baja</span>
+      <strong class="eqd__kpi-value">{{ kpis().fueraDeServicio }}</strong>
+    </div>
+  </section>
+
+  @if (!cargando() && equipos().length === 0 && !error()) {
+    <p class="eqd__vacio">Todavía no hay equipos registrados. Asigna el primero desde Anexos, en un trabajador.</p>
+  } @else {
+    <section class="eqd__grid" aria-label="Distribución de equipos">
+      @for (d of distribuciones(); track d.titulo) {
+        <article class="eqd__card">
+          <h2 class="eqd__card-title"><i class="fa-solid" [class]="d.icono" aria-hidden="true"></i> {{ d.titulo }}</h2>
+          @if (d.conteos.length === 0) {
+            <p class="eqd__sin-datos">Sin datos</p>
+          } @else {
+            <ul class="eqd__lista">
+              @for (c of d.conteos; track c.etiqueta) {
+                <li>
+                  <button
+                    class="eqd__fila"
+                    type="button"
+                    [class.eqd__fila--activa]="activo(d.filtro, c.etiqueta)"
+                    [class.eqd__fila--libre]="!d.filtro"
+                    [disabled]="!d.filtro"
+                    [attr.aria-label]="c.etiqueta + ': ' + c.cantidad"
+                    (click)="filtrarPor(d.filtro, c.etiqueta)"
+                  >
+                    <span class="eqd__etiqueta" [attr.title]="c.etiqueta">{{ c.etiqueta }}</span>
+                    <span class="eqd__barra"><span class="eqd__barra-relleno" [style.width.%]="porcentaje(c, d.conteos)"></span></span>
+                    <strong class="eqd__cantidad">{{ c.cantidad }}</strong>
+                  </button>
+                </li>
+              }
+            </ul>
+          }
+        </article>
+      }
+    </section>
+
+    <section class="eqd__detalle" aria-label="Detalle de equipos">
+      <h2 class="eqd__card-title">Detalle</h2>
+      <div class="eqd__tabla-wrap">
+        <table class="eqd__tabla">
+          <thead>
+            <tr>
+              <th>Equipo</th>
+              <th>Marca / Modelo</th>
+              <th>N° Serie</th>
+              <th>Ubicación</th>
+              <th>Área</th>
+              <th>Responsable</th>
+              <th>Estado</th>
+              <th>Asignado</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (e of filtrados(); track e.id) {
+              <tr>
+                <td>
+                  <div class="eqd__tipo"><i class="fa-solid" [class]="icono(e.tipo)" aria-hidden="true"></i> <strong>{{ e.tipo }}</strong></div>
+                  <div class="eqd__codigo">{{ e.codigo }} · {{ e.codigoActivo }}</div>
+                </td>
+                <td>{{ e.marca }} {{ e.modelo }}</td>
+                <td class="eqd__mono">{{ e.serie ?? '—' }}</td>
+                <td>{{ ubicacion(e) }}</td>
+                <td>{{ e.area ?? '—' }}</td>
+                <td>{{ e.responsable ?? 'Sin asignar' }}</td>
+                <td><span [class]="'badge ' + claseEstado(e.estado)">{{ e.estado }}</span></td>
+                <td>{{ e.fechaAsignacion ? (e.fechaAsignacion | date: 'dd/MM/yyyy') : '—' }}</td>
+              </tr>
+            } @empty {
+              <tr>
+                <td colspan="8" class="eqd__sin-datos">Ningún equipo coincide con los filtros.</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </section>
+  }
+</div>

@@ -236,3 +236,40 @@
 .equipos__pill--danger:hover:not(:disabled) {
   background: #fee2e2;
 }
+
+.equipos__pill--neutral {
+  color: #475569;
+  background: #f8fafc;
+  border-color: #cbd5e1;
+}
+
+.equipos__pill--neutral:hover:not(:disabled) {
+  background: #f1f5f9;
+}
+
+.equipos__check {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.equipos__historial {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.equipos__historial li {
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid var(--border-color, #e2e8f0);
+  font-size: 0.85rem;
+}
+
+.equipos__historial li:last-child {
+  border-bottom: 0;
+}
