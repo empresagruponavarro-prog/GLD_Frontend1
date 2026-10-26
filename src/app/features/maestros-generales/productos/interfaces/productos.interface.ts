@@ -86,3 +86,9 @@ export interface SelectOption {
   id: number;
   nombre: string | null;
 }
+
+/** Característica estándar de un bien del catálogo (tabla hija); los activos fijos la heredan. */
+export interface Caracteristica {
+  nombre: string;
+  valor: string;
+}

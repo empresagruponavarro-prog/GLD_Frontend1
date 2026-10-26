@@ -10,6 +10,7 @@ import { traerTodasLasPaginas, type DatosExportacion } from '../../../shared/uti
 import { DataTable } from '../../../shared/interfaces';
 import {
   Alternativa,
+  Caracteristica,
   CLASES_INVENTARIO,
   CLASE_INVENTARIO_LABEL,
   ESTADOS_OPERATIVOS,
@@ -88,6 +89,22 @@ export class ProductosComponent {
 
   // Alternativas (hasta 3), solo al editar. Índice = prioridad - 1.
   alternativas = signal<(Alternativa | null)[]>([null, null, null]);
+
+  // Características estándar del bien (las heredan los activos fijos).
+  caracteristicas = signal<Caracteristica[]>([]);
+  /** Tipo de equipo (se guarda como la característica «Tipo» y se muestra en el detalle del trabajador). */
+  tipoEquipo = signal('');
+  readonly tiposEquipo = ['Laptop', 'PC', 'Celular', 'Tablet', 'Impresora', 'Monitor', 'TV', 'Otro'];
+  readonly sugerenciasCaracteristicas = [
+    'Marca',
+    'Modelo',
+    'Color',
+    'Procesador',
+    'Almacenamiento',
+    'RAM',
+    'Tarjeta de video',
+    'Sistema operativo',
+  ];
 
   totalPages = computed(() => Math.max(1, Math.ceil(this.totalRecords() / this.pageSize())));
 
@@ -200,6 +217,8 @@ export class ProductosComponent {
     this.editingId.set(null);
     this.formData = this.emptyForm();
     this.alternativas.set([null, null, null]);
+    this.caracteristicas.set([]);
+    this.tipoEquipo.set('');
     this.saving.set(false);
     this.showModal.set(true);
   }
@@ -218,7 +237,59 @@ export class ProductosComponent {
       },
       error: () => this.alternativas.set([null, null, null]),
     });
+    this.caracteristicas.set([]);
+    this.tipoEquipo.set('');
+    this.service.getCaracteristicas(item.id).subscribe({
+      next: (lista) => {
+        this.tipoEquipo.set(lista.find((c) => c.nombre === 'Tipo')?.valor ?? '');
+        this.caracteristicas.set(lista.filter((c) => c.nombre !== 'Tipo'));
+      },
+      error: () => this.caracteristicas.set([]),
+    });
     this.showModal.set(true);
+  }
+
+  /** Las características aplican solo a la categoría de equipos tecnológicos (108. GG - INFORMATICA). */
+  muestraCaracteristicas(): boolean {
+    const id = this.formData.id_categoria;
+    const nombre = this.categorias().find((c) => c.id === id)?.nombre ?? '';
+    return nombre.trimStart().startsWith('108.');
+  }
+
+  valorDe(evento: Event): string {
+    return evento.target instanceof HTMLInputElement ? evento.target.value : '';
+  }
+
+  addCaracteristica() {
+    this.caracteristicas.update((lista) => [...lista, { nombre: '', valor: '' }]);
+  }
+
+  setCaracteristica(index: number, campo: keyof Caracteristica, valor: string) {
+    this.caracteristicas.update((lista) => lista.map((c, i) => (i === index ? { ...c, [campo]: valor } : c)));
+  }
+
+  removeCaracteristica(index: number) {
+    this.caracteristicas.update((lista) => lista.filter((_, i) => i !== index));
+  }
+
+  /** Guarda las características y cierra; las filas incompletas se descartan. */
+  private saveCaracteristicas(productoId: number, editing: boolean) {
+    const filas = this.caracteristicas()
+      .map((c) => ({ nombre: c.nombre.trim(), valor: c.valor.trim() }))
+      .filter((c) => c.nombre && c.valor && c.nombre.toLowerCase() !== 'tipo');
+    const tipo = this.tipoEquipo();
+    const lista = tipo ? [{ nombre: 'Tipo', valor: tipo }, ...filas] : filas;
+    if (!this.muestraCaracteristicas() || (!editing && lista.length === 0)) {
+      this.finishSave();
+      return;
+    }
+    this.service.replaceCaracteristicas(productoId, lista).subscribe({
+      next: () => this.finishSave(),
+      error: (err: unknown) => {
+        this.finishSave();
+        alert('El bien o servicio se guardó, pero no las características: ' + mensajeError(err));
+      },
+    });
   }
 
   onAlternativaPicked(prioridad: number, p: ProductoElegido) {
@@ -335,14 +406,14 @@ export class ProductosComponent {
           .map((a) => ({ id_producto_alternativo: a.id_producto_alternativo, prioridad: a.prioridad }));
         // Solo se tocan las alternativas al editar (o si se eligieron al crear).
         if (id === null && pares.length === 0) {
-          this.finishSave();
+          this.saveCaracteristicas(productoId, false);
           return;
         }
         this.service.replaceAlternativas(productoId, pares).subscribe({
-          next: () => this.finishSave(),
+          next: () => this.saveCaracteristicas(productoId, id !== null),
           error: (err: unknown) => {
-            this.finishSave();
             alert('El bien o servicio se guardó, pero no las alternativas: ' + mensajeError(err));
+            this.saveCaracteristicas(productoId, id !== null);
           },
         });
       },

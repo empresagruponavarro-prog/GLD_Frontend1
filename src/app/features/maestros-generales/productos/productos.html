@@ -359,6 +359,67 @@
         }
       </div>
 
+      @if (muestraCaracteristicas()) {
+        <div class="form-group producto-form-full">
+          <label>Características</label>
+          <p class="producto-carac__hint">
+            Configuración estándar de este bien. Los equipos (activos fijos) la heredan y solo se
+            personaliza lo que cambia en cada uno.
+          </p>
+          <div class="producto-carac__tipo">
+          <label for="producto-tipo-equipo">Tipo de equipo</label>
+          <select
+            id="producto-tipo-equipo"
+            class="form-control"
+            [ngModel]="tipoEquipo()"
+            (ngModelChange)="tipoEquipo.set($event)"
+          >
+            <option value="">— Seleccione —</option>
+            @for (t of tiposEquipo; track t) {
+              <option [value]="t">{{ t }}</option>
+            }
+          </select>
+        </div>
+        @for (c of caracteristicas(); track $index) {
+          <div class="producto-carac">
+            <input
+              type="text"
+              class="form-control"
+              list="producto-carac-sugerencias"
+              placeholder="Nombre (ej. Procesador)"
+              maxlength="60"
+              [value]="c.nombre"
+              (input)="setCaracteristica($index, 'nombre', valorDe($event))"
+            />
+            <input
+              type="text"
+              class="form-control"
+              placeholder="Valor (ej. Intel Core i5)"
+              maxlength="150"
+              [value]="c.valor"
+              (input)="setCaracteristica($index, 'valor', valorDe($event))"
+            />
+            <button
+              class="table-action-btn table-action-btn--danger"
+              type="button"
+              title="Quitar característica"
+              (click)="removeCaracteristica($index)"
+            >
+              <i class="fa-solid fa-xmark"></i>
+            </button>
+          </div>
+          }
+          <datalist id="producto-carac-sugerencias">
+            @for (s of sugerenciasCaracteristicas; track s) {
+            <option [value]="s"></option>
+            }
+          </datalist>
+          <button class="btn btn-secondary producto-carac__add" type="button" (click)="addCaracteristica()">
+            <i class="fa-solid fa-plus"></i> Agregar característica
+          </button>
+        </div>
+      }
+
       <div class="form-group producto-form-full">
         <label>Imagen (URL)</label>
         <input

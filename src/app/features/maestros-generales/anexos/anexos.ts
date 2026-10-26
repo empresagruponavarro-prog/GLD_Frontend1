@@ -9,12 +9,21 @@ import { ModalComponent } from '../../../shared/components/modal/modal';
 import { traerTodasLasPaginas, type DatosExportacion } from '../../../shared/utils/exportar';
 import { DataTable } from '../../../shared/interfaces';
 import { Anexo, AnexoQuery, SelectOption, TipoAnexo } from './interfaces/anexos.interface';
+import { TrabajadorResumen } from './interfaces/equipo-asignado.interface';
+import { EquiposTrabajadorModalComponent } from './equipos-trabajador-modal/equipos-trabajador-modal';
 import { AnexosService } from './anexos.service';
 
 @Component({
   selector: 'app-anexos',
   standalone: true,
-  imports: [CommonModule, FormsModule, DataTableComponent, ModalComponent, ExportarBotonesComponent],
+  imports: [
+    CommonModule,
+    FormsModule,
+    DataTableComponent,
+    ModalComponent,
+    ExportarBotonesComponent,
+    EquiposTrabajadorModalComponent,
+  ],
   templateUrl: './anexos.html',
   styleUrl: './anexos.css',
 })
@@ -59,6 +68,9 @@ export class AnexosComponent {
   // Modal detalle
   showDetail = signal<boolean>(false);
   detail = signal<Anexo | null>(null);
+
+  // Modal equipos tecnológicos (solo Trabajador)
+  trabajadorEquipos = signal<TrabajadorResumen | null>(null);
 
   // Combos
   especialidades = signal<SelectOption[]>([]);
@@ -186,6 +198,21 @@ export class AnexosComponent {
   openDetail(item: Anexo) {
     this.detail.set(item);
     this.showDetail.set(true);
+  }
+
+  openEquipos(item: Anexo) {
+    if (item.tipoAnexo !== 'Trabajador') return;
+    this.trabajadorEquipos.set({
+      id: item.id,
+      anexo: item.Anexo ?? item.NombreComercial ?? `ID ${item.id}`,
+      tipoDocumento: this.nombreTipoDoc(item.AnexoTipoDocIdeId),
+      numeroDocumento: item.NumeroDocIde ?? '—',
+      especialidad: this.nombreEspecialidad(item.AnexoEspecialidadId),
+    });
+  }
+
+  closeEquipos() {
+    this.trabajadorEquipos.set(null);
   }
 
   closeDetail() {

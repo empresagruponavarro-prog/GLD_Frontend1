@@ -28,6 +28,7 @@ import { StockActualComponent } from './features/almacen/stock/stock';
 import { RecepcionesComponent } from './features/almacen/recepciones/recepciones';
 import { DocumentosAdministracionComponent } from './features/documentos/administracion/administracion';
 import { AreasComponent } from './features/maestros-generales/areas/areas';
+import { LocalesComponent } from './features/maestros-generales/locales/locales';
 import { AreasModulosComponent } from './features/administration/roles/areas-modulos/areas-modulos';
 import { UnidadesMedidaComponent } from './features/maestros-generales/unidades-medida/unidades-medida';
 import { ImprimirComponent } from './features/imprimir/imprimir';
@@ -78,6 +79,8 @@ export const routes: Routes = [
       rutaModulo('documentos/origen', DocumentosOrigenComponent, 'documentos.origen'),
       rutaModulo('documentos/administracion', DocumentosAdministracionComponent, 'documentos.administracion'),
       rutaModulo('maestros-generales/areas', AreasComponent, 'maestros.areas'),
+      rutaModulo('maestros-generales/locales', LocalesComponent, 'maestros.generales'),
+      rutaModulo('maestros-generales/ubicaciones', LocalesComponent, 'maestros.generales'),
       rutaModulo('tesoreria/cuentas', CuentasComponent, 'tesoreria.cuentas'),
       rutaModulo('tesoreria/tipo-cambio', TipoCambioComponent, 'tesoreria.tipo-cambio'),
       rutaModulo('tesoreria/programacion', ProgramacionComponent, 'tesoreria.programacion'),

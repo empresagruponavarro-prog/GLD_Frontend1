@@ -4,6 +4,7 @@ import { Observable } from 'rxjs';
 import { environment } from '@env';
 import {
   Alternativa,
+  Caracteristica,
   FamiliaOption,
   Producto,
   ProductoPaginated,
@@ -74,6 +75,14 @@ export class ProductosService {
     alternativas: { id_producto_alternativo: number; prioridad: number }[],
   ): Observable<Alternativa[]> {
     return this.http.put<Alternativa[]>(`${this.apiUrl}/${id}/alternativas`, { alternativas });
+  }
+
+  getCaracteristicas(id: number): Observable<Caracteristica[]> {
+    return this.http.get<Caracteristica[]>(`${this.apiUrl}/${id}/caracteristicas`);
+  }
+
+  replaceCaracteristicas(id: number, caracteristicas: Caracteristica[]): Observable<Caracteristica[]> {
+    return this.http.put<Caracteristica[]>(`${this.apiUrl}/${id}/caracteristicas`, { caracteristicas });
   }
 
   getUnidadesMedidaSelect(): Observable<SelectOption[]> {

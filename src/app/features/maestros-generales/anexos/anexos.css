@@ -18,6 +18,22 @@
   cursor: pointer;
 }
 
+.anexo-link {
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  color: #0f766e;
+  text-align: left;
+  cursor: pointer;
+  text-decoration: underline;
+  text-decoration-style: dotted;
+}
+
+.anexo-link:hover {
+  color: #115e59;
+}
+
 .anexo-detail-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));

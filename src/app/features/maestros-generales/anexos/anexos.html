@@ -101,8 +101,34 @@
       <td>{{ nombreEspecialidad(item.AnexoEspecialidadId) }}</td>
       <td>{{ nombreTipoDoc(item.AnexoTipoDocIdeId) }}</td>
       <td>{{ item.NumeroDocIde ?? '—' }}</td>
-      <td><strong>{{ item.Anexo ?? '—' }}</strong></td>
-      <td>{{ item.NombreComercial ?? '—' }}</td>
+      <td>
+        @if (item.tipoAnexo === 'Trabajador') {
+          <button
+            class="anexo-link"
+            type="button"
+            title="Ver equipos tecnológicos"
+            (click)="openEquipos(item)"
+          >
+            <strong>{{ item.Anexo ?? '—' }}</strong>
+          </button>
+        } @else {
+          <strong>{{ item.Anexo ?? '—' }}</strong>
+        }
+      </td>
+      <td>
+        @if (item.tipoAnexo === 'Trabajador' && item.NombreComercial) {
+          <button
+            class="anexo-link"
+            type="button"
+            title="Ver equipos tecnológicos"
+            (click)="openEquipos(item)"
+          >
+            {{ item.NombreComercial }}
+          </button>
+        } @else {
+          {{ item.NombreComercial ?? '—' }}
+        }
+      </td>
       <td>{{ item.Contacto ?? '—' }}</td>
       <td align="center">
         <span
@@ -289,6 +315,16 @@
     </div>
   </div>
 </app-modal>
+
+<!-- Modal equipos tecnológicos del trabajador -->
+@if (trabajadorEquipos(); as t) {
+  <app-equipos-trabajador-modal
+    [trabajador]="t"
+    [puedeAsignar]="permisos.crear()"
+    [puedeGestionar]="permisos.editar()"
+    (cerrar)="closeEquipos()"
+  />
+}
 
 <!-- Modal detalle (solo lectura) -->
 <app-modal
