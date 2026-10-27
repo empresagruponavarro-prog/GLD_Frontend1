@@ -1,4 +1,4 @@
-import { Component, inject, signal, AfterViewChecked } from '@angular/core';
+import { Component, inject, signal, AfterViewChecked, OnInit } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import type { Observable } from 'rxjs';
@@ -18,7 +18,7 @@ declare const L: LeafletGlobal | undefined;
   imports: [DatePipe, FormsModule, DataTableComponent],
   templateUrl: './incidencias.html'
 })
-export class IncidenciasComponent implements AfterViewChecked {
+export class IncidenciasComponent implements OnInit, AfterViewChecked {
   private service = inject(IncidenciasService);
   /** + Agregar y Duplicar (POST) → crear; Editar → editar; Eliminar → eliminar. */
   protected readonly permisos = permisosDePantalla('incidencias');
