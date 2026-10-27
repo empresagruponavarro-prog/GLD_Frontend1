@@ -45,6 +45,19 @@ export interface NuevaAsignacion {
   caracteristicas: Record<string, string>;
 }
 
+/** Registro de un activo en el inventario; sin `anexoId` queda disponible. */
+export interface NuevoActivo {
+  codigoBien: string;
+  serie: string | null;
+  localId: number;
+  nivelId: number;
+  ambienteId: number;
+  areaId?: number;
+  caracteristicas: Record<string, string>;
+  anexoId?: number;
+  fechaAsignacion?: string;
+}
+
 export interface BienCatalogo {
   id: number;
   codigo: string;

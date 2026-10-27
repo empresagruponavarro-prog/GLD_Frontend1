@@ -1,8 +1,8 @@
 <div class="content-header">
   <div>
-    <h1 class="content-title">Anexos</h1>
+    <h1 class="content-title">{{ modoPersonas ? 'Personas' : 'Anexos' }}</h1>
     <p class="content-subtitle">
-      Maestro de anexos (proveedores, clientes y trabajadores).
+      {{ modoPersonas ? 'Trabajadores que reciben equipos tecnológicos. Haz clic en un nombre para ver sus equipos.' : 'Maestro de anexos (proveedores, clientes y trabajadores).' }}
     </p>
   </div>
   <div style="display: flex; gap: 0.5rem; align-items: center">

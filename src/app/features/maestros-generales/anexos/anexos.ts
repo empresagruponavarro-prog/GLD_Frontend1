@@ -1,4 +1,5 @@
 import { Component, computed, inject, signal } from '@angular/core';
+import { ActivatedRoute } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { permisosDePantalla } from '@app/core/auth/permisos-pantalla';
@@ -32,6 +33,9 @@ export class AnexosComponent {
   /** Botones de escritura según la matriz (maestros.anexos). */
   protected readonly permisos = permisosDePantalla('maestros.anexos');
 
+  /** En `/personas` (módulo Activo Fijo) la pantalla abre filtrada por los trabajadores. */
+  protected readonly modoPersonas = inject(ActivatedRoute).snapshot.routeConfig?.path === 'personas';
+
   readonly tiposAnexo: TipoAnexo[] = ['Proveedor', 'Cliente', 'Trabajador'];
 
   columns: DataTable[] = [
@@ -55,7 +59,7 @@ export class AnexosComponent {
   totalRecords = signal<number>(0);
 
   // Filtros
-  tipoAnexoFilter = signal<TipoAnexo | ''>('');
+  tipoAnexoFilter = signal<TipoAnexo | ''>(this.modoPersonas ? 'Trabajador' : '');
   anexoFilter = signal<string>('');
   estadoFilter = signal<boolean | null>(null);
 
@@ -165,7 +169,7 @@ export class AnexosComponent {
   }
 
   resetFilters() {
-    this.tipoAnexoFilter.set('');
+    this.tipoAnexoFilter.set(this.modoPersonas ? 'Trabajador' : '');
     this.anexoFilter.set('');
     this.estadoFilter.set(null);
     this.currentPage.set(1);

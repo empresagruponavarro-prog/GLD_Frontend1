@@ -10,7 +10,7 @@ export function formatearFecha(iso: string): string {
  * Líneas legibles que codifica el QR (texto plano: se lee sin app ni internet).
  * Para pasar a una URL pública (https://<dominio>/equipos/{id}) basta con cambiar solo esta función.
  */
-export function lineasQR(e: EquipoAsignado, t: TrabajadorResumen): string[] {
+export function lineasQR(e: EquipoAsignado, t: TrabajadorResumen | null): string[] {
   return [
     `EQUIPO ${e.codigo} (${e.codigoActivo})`,
     `Tipo: ${e.tipo}`,
@@ -22,12 +22,12 @@ export function lineasQR(e: EquipoAsignado, t: TrabajadorResumen): string[] {
     `Estado: ${e.estado}`,
     `Ubicacion: ${e.local} / ${e.nivel} / ${e.ambiente}`,
     ...(e.area ? [`Area: ${e.area}`] : []),
-    `Asignado a: ${t.anexo} (${t.tipoDocumento} ${t.numeroDocumento})`,
-    `Fecha asignacion: ${formatearFecha(e.fechaAsignacion)}`,
+    ...(t ? [`Asignado a: ${t.anexo} (${t.tipoDocumento} ${t.numeroDocumento})`] : []),
+    ...(t && e.fechaAsignacion ? [`Fecha asignacion: ${formatearFecha(e.fechaAsignacion)}`] : []),
   ];
 }
 
-export function contenidoQR(e: EquipoAsignado, t: TrabajadorResumen): string {
+export function contenidoQR(e: EquipoAsignado, t: TrabajadorResumen | null): string {
   return lineasQR(e, t).join('\n');
 }
 

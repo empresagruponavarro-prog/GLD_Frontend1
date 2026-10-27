@@ -3,14 +3,21 @@
     <h1 class="content-title">Equipos Tecnológicos</h1>
     <p class="content-subtitle">Inventario de laptops, PC, celulares y demás equipos: dónde están y quién los tiene.</p>
   </div>
-  <button class="btn btn-secondary" type="button" [disabled]="cargando()" (click)="cargar()">
-    <i class="fa-solid fa-arrows-rotate" [class.fa-spin]="cargando()" aria-hidden="true"></i>
-    {{ cargando() ? 'Cargando...' : 'Actualizar' }}
-  </button>
+  <div class="eqd__acciones-cabecera">
+    @if (permisos.crear()) {
+      <button class="btn btn-primary" type="button" (click)="mostrarRegistro.set(true)">
+        <i class="fa-solid fa-plus" aria-hidden="true"></i> Registrar activo
+      </button>
+    }
+    <button class="btn btn-secondary" type="button" [disabled]="cargando()" (click)="cargar()">
+      <i class="fa-solid fa-arrows-rotate" [class.fa-spin]="cargando()" aria-hidden="true"></i>
+      {{ cargando() ? 'Cargando...' : 'Actualizar' }}
+    </button>
+  </div>
 </div>
 
 <div class="content-body">
-  @if (error(); as mensaje) {
+  @if (error() ?? errorAccion(); as mensaje) {
     <p class="eqd__error" role="alert">{{ mensaje }}</p>
   }
 
@@ -145,6 +152,7 @@
               <th>Responsable</th>
               <th>Estado</th>
               <th>Asignado</th>
+              <th>Acciones</th>
             </tr>
           </thead>
           <tbody>
@@ -161,10 +169,36 @@
                 <td>{{ e.responsable ?? 'Sin asignar' }}</td>
                 <td><span [class]="'badge ' + claseEstado(e.estado)">{{ e.estado }}</span></td>
                 <td>{{ e.fechaAsignacion ? (e.fechaAsignacion | date: 'dd/MM/yyyy') : '—' }}</td>
+                <td class="eqd__acciones">
+                  <button
+                    class="table-action-btn"
+                    type="button"
+                    title="Ver código QR"
+                    [attr.aria-label]="'Ver código QR de ' + e.codigoActivo"
+                    (click)="qrEquipo.set(e)"
+                  >
+                    <i class="fa-solid fa-qrcode" aria-hidden="true"></i>
+                  </button>
+                  @if (e.responsableId !== null) {
+                    <button
+                      class="table-action-btn"
+                      type="button"
+                      title="Hoja de entrega (.docx)"
+                      [attr.aria-label]="'Descargar hoja de entrega de ' + e.codigoActivo"
+                      (click)="descargarActa(e)"
+                    >
+                      <i class="fa-solid fa-file-arrow-down" aria-hidden="true"></i>
+                    </button>
+                  } @else if (permisos.editar()) {
+                    <button class="eqd__pill" type="button" (click)="abrirAsignar(e)">
+                      <i class="fa-solid fa-user-check" aria-hidden="true"></i> Asignar
+                    </button>
+                  }
+                </td>
               </tr>
             } @empty {
               <tr>
-                <td colspan="8" class="eqd__sin-datos">Ningún equipo coincide con los filtros.</td>
+                <td colspan="9" class="eqd__sin-datos">Ningún equipo coincide con los filtros.</td>
               </tr>
             }
           </tbody>
@@ -173,3 +207,45 @@
     </section>
   }
 </div>
+
+@if (mostrarRegistro()) {
+  <app-registro-activo-dialog (cerrar)="mostrarRegistro.set(false)" (registrado)="alRegistrar($event)" />
+}
+
+@if (qrEquipo(); as equipo) {
+  <app-equipo-qr-dialog [equipo]="equipo" (cerrar)="qrEquipo.set(null)" />
+}
+
+<app-modal
+  [isOpen]="asignando() !== null"
+  title="Entregar equipo a un trabajador"
+  icon="fa-solid fa-user-check"
+  maxWidth="520px"
+  [loading]="guardandoEntrega()"
+  submitText="Entregar"
+  submitIcon="fa-solid fa-check"
+  (closed)="asignando.set(null)"
+  (saved)="confirmarAsignar()"
+>
+  @if (asignando(); as equipo) {
+    <p class="eqd__entrega-detalle">
+      <strong>{{ equipo.tipo }} {{ equipo.marca }} {{ equipo.modelo }}</strong> · {{ equipo.codigoActivo }}
+    </p>
+  }
+  <div class="form-group">
+    <label for="eqd-trabajador">Trabajador</label>
+    <select id="eqd-trabajador" class="form-control" [ngModel]="destinoId()" (ngModelChange)="destinoId.set($event)">
+      <option [ngValue]="0">— Seleccione —</option>
+      @for (t of trabajadores(); track t.id) {
+        <option [ngValue]="t.id">{{ t.nombre }}</option>
+      }
+    </select>
+  </div>
+  <div class="form-group">
+    <label for="eqd-fecha">Fecha de entrega</label>
+    <input id="eqd-fecha" class="form-control" type="date" [ngModel]="fechaEntrega()" (ngModelChange)="fechaEntrega.set($event)" />
+  </div>
+  @if (errorAccion(); as mensaje) {
+    <p class="eqd__error" role="alert">{{ mensaje }}</p>
+  }
+</app-modal>

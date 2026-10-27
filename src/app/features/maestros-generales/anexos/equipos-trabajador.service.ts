@@ -7,6 +7,7 @@ import {
   EquipoInventario,
   MovimientoEquipo,
   NuevaAsignacion,
+  NuevoActivo,
   OpcionesEquipo,
 } from './interfaces/equipo-asignado.interface';
 
@@ -18,6 +19,16 @@ export class EquiposTrabajadorService {
   /** Todos los equipos (asignados o no) para el tablero de equipos tecnológicos. */
   getInventario(): Observable<EquipoInventario[]> {
     return this.http.get<EquipoInventario[]>(`${this.baseUrl}/equipos/inventario`);
+  }
+
+  /** Registra un activo en el inventario (con o sin trabajador). */
+  registrarActivo(body: NuevoActivo): Observable<EquipoInventario> {
+    return this.http.post<EquipoInventario>(`${this.baseUrl}/equipos`, body);
+  }
+
+  /** Entrega a un trabajador un equipo disponible. */
+  asignarActivo(equipoId: number, body: { anexoId: number; fechaAsignacion: string }): Observable<EquipoInventario> {
+    return this.http.patch<EquipoInventario>(`${this.baseUrl}/equipos/${equipoId}/asignar`, body);
   }
 
   getEquiposPorAnexo(anexoId: number): Observable<EquipoAsignado[]> {

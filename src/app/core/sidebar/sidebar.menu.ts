@@ -102,13 +102,28 @@ export const MENU_LATERAL: readonly SeccionMenu[] = [
         enlaces: [
           { etiqueta: 'Empresas', ruta: '/admin/empresas', icono: 'fa-solid fa-building', modulo: 'admin.empresas' },
           { etiqueta: 'Anexos', ruta: '/anexos', icono: 'fa-solid fa-paperclip', modulo: 'maestros.anexos' },
-          { etiqueta: 'Equipos Tecnológicos', ruta: '/equipos-tecnologicos', icono: 'fa-solid fa-laptop-code', modulo: 'maestros.anexos' },
           { etiqueta: 'Catálogo de Bienes y Servicios', ruta: '/productos', icono: 'fa-solid fa-box', modulo: 'maestros.productos' },
           { etiqueta: 'Áreas', ruta: '/maestros-generales/areas', icono: 'fa-solid fa-sitemap', modulo: 'maestros.areas' },
           { etiqueta: 'Unidades de Medida', ruta: '/maestros-generales/unidades-medida', icono: 'fa-solid fa-ruler-combined', modulo: 'maestros.generales' },
           { etiqueta: 'Centros de Costos', ruta: '/centros-costos', icono: 'fa-solid fa-building-flag', modulo: 'centros-costos' },
           { etiqueta: 'Presupuestos', ruta: '/presupuestos', icono: 'fa-solid fa-file-invoice-dollar', modulo: 'presupuestos', exacto: true },
           { etiqueta: 'Plantillas', ruta: '/presupuestos/plantillas', icono: 'fa-solid fa-copy', modulo: 'presupuestos.plantillas' },
+        ],
+      }),
+    ],
+  },
+  {
+    categoria: 'Inv. Tecnología',
+    entradas: [
+      submenu({
+        id: 'activo-fijo',
+        etiqueta: 'Activo Fijo',
+        icono: 'fa-solid fa-laptop-code',
+        enlaces: [
+          { etiqueta: 'Equipos Tecnológicos', ruta: '/equipos-tecnologicos', icono: 'fa-solid fa-laptop', modulo: 'maestros.anexos' },
+          { etiqueta: 'Personas', ruta: '/personas', icono: 'fa-solid fa-user-group', modulo: 'maestros.anexos' },
+          { etiqueta: 'Ambientes y Ubicaciones', ruta: '/maestros-generales/locales', icono: 'fa-solid fa-door-open', modulo: 'maestros.generales' },
+          { etiqueta: 'Catálogo de Activos Fijos', ruta: '/productos', icono: 'fa-solid fa-boxes-stacked', modulo: 'maestros.productos' },
         ],
       }),
     ],

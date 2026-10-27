@@ -28,3 +28,20 @@ export function iconoDeTipo(tipo: string): string {
 export function claseDeEstado(estado: EstadoEquipo): string {
   return CLASE_ESTADO[estado];
 }
+
+/** Fecha de hoy como yyyy-MM-dd (hora local). */
+export function hoyISO(): string {
+  const d = new Date();
+  const dos = (n: number): string => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${dos(d.getMonth() + 1)}-${dos(d.getDate())}`;
+}
+
+/** Descarga un archivo recibido como Blob con el nombre indicado. */
+export function descargarBlob(archivo: Blob, nombre: string): void {
+  const url = URL.createObjectURL(archivo);
+  const enlace = document.createElement('a');
+  enlace.href = url;
+  enlace.download = nombre;
+  enlace.click();
+  URL.revokeObjectURL(url);
+}

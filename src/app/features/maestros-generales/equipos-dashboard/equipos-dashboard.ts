@@ -1,10 +1,16 @@
 import { DatePipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { permisosDePantalla } from '@app/core/auth/permisos-pantalla';
 import { mensajeError } from '@shared/utils/errores-http';
-import { claseDeEstado, iconoDeTipo } from '../anexos/equipo-presentacion';
+import { ModalComponent } from '../../../shared/components/modal/modal';
+import { AnexosService } from '../anexos/anexos.service';
+import { EquipoQrDialogComponent } from '../anexos/equipo-qr-dialog/equipo-qr-dialog';
+import { claseDeEstado, descargarBlob, hoyISO, iconoDeTipo } from '../anexos/equipo-presentacion';
 import { EquiposTrabajadorService } from '../anexos/equipos-trabajador.service';
+import { AnexoSelect } from '../anexos/interfaces/anexos.interface';
 import { EquipoInventario, EstadoEquipo } from '../anexos/interfaces/equipo-asignado.interface';
+import { RegistroActivoDialogComponent } from './registro-activo-dialog/registro-activo-dialog';
 import {
   Asignacion,
   Conteo,
@@ -32,7 +38,7 @@ interface Distribucion {
 @Component({
   selector: 'app-equipos-dashboard',
   standalone: true,
-  imports: [FormsModule, DatePipe],
+  imports: [FormsModule, DatePipe, ModalComponent, RegistroActivoDialogComponent, EquipoQrDialogComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   // El tablero es largo: el scroll va dentro de .content-body (ver .page-scroll en styles.css).
   host: { class: 'page-scroll' },
@@ -41,6 +47,19 @@ interface Distribucion {
 })
 export class EquiposDashboardComponent {
   private readonly service = inject(EquiposTrabajadorService);
+  private readonly anexos = inject(AnexosService);
+  /** Registrar y entregar equipos exige crear / editar en Anexos (el módulo del que cuelgan los equipos). */
+  protected readonly permisos = permisosDePantalla('maestros.anexos');
+
+  // Registro, QR y entrega desde el tablero
+  readonly mostrarRegistro = signal(false);
+  readonly qrEquipo = signal<EquipoInventario | null>(null);
+  readonly asignando = signal<EquipoInventario | null>(null);
+  readonly trabajadores = signal<AnexoSelect[]>([]);
+  readonly destinoId = signal(0);
+  readonly fechaEntrega = signal(hoyISO());
+  readonly guardandoEntrega = signal(false);
+  readonly errorAccion = signal<string | null>(null);
 
   readonly equipos = signal<EquipoInventario[]>([]);
   readonly cargando = signal(true);
@@ -98,6 +117,61 @@ export class EquiposDashboardComponent {
         this.error.set(mensajeError(err));
         this.cargando.set(false);
       },
+    });
+  }
+
+  protected alRegistrar(equipo: EquipoInventario): void {
+    this.mostrarRegistro.set(false);
+    this.cargar();
+    this.qrEquipo.set(equipo);
+    if (equipo.responsableId !== null && confirm('¿Descargar la hoja de entrega de equipos para imprimir?')) {
+      this.descargarActa(equipo);
+    }
+  }
+
+  protected abrirAsignar(equipo: EquipoInventario): void {
+    this.errorAccion.set(null);
+    this.destinoId.set(0);
+    this.fechaEntrega.set(hoyISO());
+    this.asignando.set(equipo);
+    if (this.trabajadores().length === 0) {
+      this.anexos.getSelect('Trabajador').subscribe({
+        next: (lista) => this.trabajadores.set(lista),
+        error: (err: unknown) => this.errorAccion.set(mensajeError(err)),
+      });
+    }
+  }
+
+  protected confirmarAsignar(): void {
+    const equipo = this.asignando();
+    if (!equipo) return;
+    if (this.destinoId() < 1 || !this.fechaEntrega()) {
+      this.errorAccion.set('Selecciona al trabajador y la fecha de entrega.');
+      return;
+    }
+    this.errorAccion.set(null);
+    this.guardandoEntrega.set(true);
+    this.service.asignarActivo(equipo.id, { anexoId: this.destinoId(), fechaAsignacion: this.fechaEntrega() }).subscribe({
+      next: (asignado) => {
+        this.guardandoEntrega.set(false);
+        this.asignando.set(null);
+        this.cargar();
+        if (confirm('¿Descargar la hoja de entrega de equipos para imprimir?')) this.descargarActa(asignado);
+      },
+      error: (err: unknown) => {
+        this.guardandoEntrega.set(false);
+        this.errorAccion.set(mensajeError(err));
+      },
+    });
+  }
+
+  /** Hoja «Entrega de equipos» (.docx) del equipo a nombre de quien lo tiene; no se guarda nada. */
+  protected descargarActa(equipo: EquipoInventario): void {
+    if (equipo.responsableId === null) return;
+    this.errorAccion.set(null);
+    this.service.descargarEntrega(equipo.responsableId, [equipo.id], equipo.fechaAsignacion || undefined).subscribe({
+      next: (archivo) => descargarBlob(archivo, `ENTREGA DE EQUIPOS - ${equipo.responsable ?? 'trabajador'}.docx`),
+      error: (err: unknown) => this.errorAccion.set(mensajeError(err)),
     });
   }
 

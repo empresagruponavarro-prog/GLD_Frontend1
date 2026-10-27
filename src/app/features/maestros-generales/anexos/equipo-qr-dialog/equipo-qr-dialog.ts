@@ -13,7 +13,8 @@ import { contenidoQR, escaparHtml, formatearFecha, lineasQR } from './equipo-qr.
 })
 export class EquipoQrDialogComponent {
   readonly equipo = input.required<EquipoAsignado>();
-  readonly trabajador = input.required<TrabajadorResumen>();
+  /** Si se omite (equipo disponible o QR del activo), la etiqueta no lleva datos del trabajador. */
+  readonly trabajador = input<TrabajadorResumen | null>(null);
   readonly cerrar = output<void>();
 
   private readonly qr = viewChild(QRCodeComponent);

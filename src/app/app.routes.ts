@@ -74,6 +74,8 @@ export const routes: Routes = [
       rutaModulo('anexos', AnexosComponent, 'maestros.anexos'),
       rutaModulo('productos', ProductosComponent, 'maestros.productos'),
       rutaModulo('equipos-tecnologicos', EquiposDashboardComponent, 'maestros.anexos'),
+      // Maestro de personas del módulo Activo Fijo: los anexos de tipo Trabajador (reutiliza la pantalla de Anexos).
+      rutaModulo('personas', AnexosComponent, 'maestros.anexos'),
       rutaModulo('maestros-generales/especialidades', EspecialidadesComponent, 'maestros.generales'),
       rutaModulo('maestros-generales/tipo-doc-identidad', TipoDocIdentidadComponent, 'maestros.generales'),
       rutaModulo('maestros-generales/unidades-medida', UnidadesMedidaComponent, 'maestros.generales'),

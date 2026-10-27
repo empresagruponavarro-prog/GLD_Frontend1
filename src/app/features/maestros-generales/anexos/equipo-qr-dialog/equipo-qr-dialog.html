@@ -37,8 +37,10 @@
           <dt>Ubicación</dt>
           <dd>{{ equipo().local }} / {{ equipo().nivel }} / {{ equipo().ambiente }}</dd>
         </div>
-        <div><dt>Asignado a</dt><dd>{{ trabajador().anexo }}</dd></div>
-        <div><dt>Fecha</dt><dd>{{ fecha() }}</dd></div>
+        @if (trabajador(); as t) {
+          <div><dt>Asignado a</dt><dd>{{ t.anexo }}</dd></div>
+          <div><dt>Fecha</dt><dd>{{ fecha() }}</dd></div>
+        }
       </dl>
     </div>
 
