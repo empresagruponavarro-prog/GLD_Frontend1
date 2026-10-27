@@ -73,3 +73,62 @@ export function filtrarEquipos(equipos: readonly EquipoInventario[], f: FiltrosE
 export function valoresUnicos(equipos: readonly EquipoInventario[], valor: (e: EquipoInventario) => string): string[] {
   return [...new Set(equipos.map(valor))].sort((a, b) => a.localeCompare(b, 'es'));
 }
+
+export interface MesEntrega {
+  /** Clave `AAAA-MM`. */
+  clave: string;
+  /** Etiqueta corta, p. ej. «oct». */
+  etiqueta: string;
+  cantidad: number;
+}
+
+const MESES = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
+
+/** Equipos entregados por mes en los últimos `meses` meses hasta `hoy` (`AAAA-MM-DD`), también los meses en cero. */
+export function entregasPorMes(equipos: readonly EquipoInventario[], hoy: string, meses = 6): MesEntrega[] {
+  const anio = Number(hoy.slice(0, 4));
+  const mes = Number(hoy.slice(5, 7)) - 1;
+  const lista: MesEntrega[] = [];
+  for (let i = meses - 1; i >= 0; i--) {
+    const indice = anio * 12 + mes - i;
+    const a = Math.floor(indice / 12);
+    const m = indice % 12;
+    lista.push({ clave: `${a}-${String(m + 1).padStart(2, '0')}`, etiqueta: MESES[m] ?? '', cantidad: 0 });
+  }
+  for (const e of equipos) {
+    if (e.responsableId === null) continue;
+    const celda = lista.find((x) => x.clave === e.fechaAsignacion.slice(0, 7));
+    if (celda) celda.cantidad++;
+  }
+  return lista;
+}
+
+export interface Matriz {
+  columnas: string[];
+  filas: { etiqueta: string; celdas: number[]; total: number }[];
+  maximo: number;
+}
+
+/** Cruza dos dimensiones: las `maxFilas` filas más pobladas contra las columnas dadas. */
+export function matriz(
+  equipos: readonly EquipoInventario[],
+  fila: (e: EquipoInventario) => string,
+  columna: (e: EquipoInventario) => string,
+  columnas: readonly string[],
+  maxFilas = 8,
+): Matriz {
+  const filas = new Map<string, number[]>();
+  for (const e of equipos) {
+    const c = columnas.indexOf(columna(e));
+    if (c < 0) continue;
+    const k = fila(e);
+    const celdas = filas.get(k) ?? columnas.map(() => 0);
+    celdas[c] = (celdas[c] ?? 0) + 1;
+    filas.set(k, celdas);
+  }
+  const lista = [...filas.entries()]
+    .map(([etiqueta, celdas]) => ({ etiqueta, celdas, total: celdas.reduce((a, b) => a + b, 0) }))
+    .sort((a, b) => b.total - a.total || a.etiqueta.localeCompare(b.etiqueta, 'es'))
+    .slice(0, maxFilas);
+  return { columnas: [...columnas], filas: lista, maximo: Math.max(0, ...lista.flatMap((f) => f.celdas)) };
+}

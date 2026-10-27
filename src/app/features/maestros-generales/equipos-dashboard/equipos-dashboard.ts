@@ -16,8 +16,10 @@ import {
   Conteo,
   contarPor,
   destinoDe,
+  entregasPorMes,
   filtrarEquipos,
   FiltrosEquipos,
+  matriz,
   ramDe,
   SIN_AREA,
   SIN_FILTROS,
@@ -42,6 +44,10 @@ interface Kpis {
   disponibles: number;
   fueraDeServicio: number;
 }
+
+/** Color por posición del tipo (orden alfabético del inventario completo): no cambia al filtrar. Paleta categórica validada. */
+const COLORES_TIPO = ['#2a78d6', '#eb6834', '#1baf7a', '#eda100', '#e87ba4', '#008300', '#6250d6', '#e34948'];
+const COLOR_OTROS = '#8a8f98';
 
 /** Duración del conteo animado de los KPIs: lo bastante corta para no hacer esperar al filtrar. */
 const DURACION_KPI_MS = 650;
@@ -105,6 +111,35 @@ export class EquiposDashboardComponent {
     const k = this.kpis();
     const sobre = (parte: number) => (k.total > 0 ? Math.round((parte / k.total) * 100) : 0);
     return { asignados: sobre(k.asignados), disponibles: sobre(k.disponibles), fueraDeServicio: sobre(k.fueraDeServicio) };
+  });
+
+  /** Segmentos de la dona asignados / disponibles (circunferencia = 100). */
+  readonly dona = computed(() => ({ asignados: this.proporciones().asignados }));
+
+  /** Composición por tipo con color fijo por tipo; del noveno en adelante comparten el gris de «otros». */
+  readonly composicionTipos = computed(() => {
+    const orden = this.tipos();
+    const lista = contarPor(this.filtrados(), (e) => e.tipo);
+    const total = lista.reduce((a, c) => a + c.cantidad, 0);
+    return lista.map((c) => ({
+      ...c,
+      color: COLORES_TIPO[orden.indexOf(c.etiqueta)] ?? COLOR_OTROS,
+      porcentaje: total > 0 ? Math.round((c.cantidad / total) * 100) : 0,
+      ancho: total > 0 ? (c.cantidad / total) * 100 : 0,
+    }));
+  });
+
+  /** Entregas de los últimos 6 meses, con la altura relativa al mes más alto. */
+  readonly entregas = computed(() => {
+    const meses = entregasPorMes(this.filtrados(), hoyISO());
+    const maximo = Math.max(1, ...meses.map((m) => m.cantidad));
+    return meses.map((m) => ({ ...m, alto: Math.round((m.cantidad / maximo) * 100) }));
+  });
+
+  /** Mapa de calor: los ambientes con más equipos frente a los tipos más frecuentes. */
+  readonly mapa = computed(() => {
+    const columnas = contarPor(this.filtrados(), (e) => e.tipo, 6).map((c) => c.etiqueta);
+    return matriz(this.filtrados(), ubicacionDe, (e) => e.tipo, columnas, 8);
   });
 
   /** Primera carga: todavía no hay datos que mostrar, así que se pintan esqueletos. */
@@ -258,6 +293,12 @@ export class EquiposDashboardComponent {
 
   protected activo(filtro: ClaveFiltro | undefined, etiqueta: string): boolean {
     return filtro !== undefined && this.filtros()[filtro] === etiqueta;
+  }
+
+  /** Intensidad (0-100) de una celda del mapa de calor. */
+  protected intensidad(valor: number): number {
+    const max = this.mapa().maximo;
+    return max > 0 ? Math.round((valor / max) * 100) : 0;
   }
 
   protected porcentaje(conteo: Conteo, conteos: readonly Conteo[]): number {

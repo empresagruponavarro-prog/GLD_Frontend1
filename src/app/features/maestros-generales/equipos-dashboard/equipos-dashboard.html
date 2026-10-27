@@ -21,75 +21,14 @@
     <p class="eqd__error" role="alert"><i class="fa-solid fa-circle-exclamation" aria-hidden="true"></i> {{ mensaje }}</p>
   }
 
-  <section class="toolbar-shell" aria-label="Filtros">
-    <div class="toolbar-search-row">
-      <div class="search-field">
-        <span class="search-icon"><i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i></span>
-        <input
-          type="text"
-          class="form-control search-input"
-          placeholder="Buscar por código, marca, modelo, serie, responsable..."
-          aria-label="Buscar equipos"
-          [ngModel]="filtros().busqueda"
-          (ngModelChange)="cambiar('busqueda', $event)"
-        />
-      </div>
-      <div class="toolbar-meta">
-        <span>Mostrando</span>
-        <strong>{{ filtrados().length }}</strong>
-        <span>de {{ equipos().length }} equipos</span>
-      </div>
-    </div>
-    <div class="toolbar-filters-row">
-      <div class="toolbar-filters-left">
-        <select class="toolbar-select" aria-label="Tipo" [ngModel]="filtros().tipo" (ngModelChange)="cambiar('tipo', $event)">
-          <option value="">Todos los tipos</option>
-          @for (t of tipos(); track t) {
-            <option [value]="t">{{ t }}</option>
-          }
-        </select>
-        <select class="toolbar-select" aria-label="Local" [ngModel]="filtros().local" (ngModelChange)="cambiar('local', $event)">
-          <option value="">Todos los locales</option>
-          @for (l of locales(); track l) {
-            <option [value]="l">{{ l }}</option>
-          }
-        </select>
-        <select class="toolbar-select" aria-label="Empresa o centro de costo" [ngModel]="filtros().destino" (ngModelChange)="cambiar('destino', $event)">
-          <option value="">Todas las empresas y centros de costo</option>
-          @for (d of destinos(); track d) {
-            <option [value]="d">{{ d }}</option>
-          }
-        </select>
-        <select class="toolbar-select" aria-label="Área" [ngModel]="filtros().area" (ngModelChange)="cambiar('area', $event)">
-          <option value="">Todas las áreas</option>
-          @for (a of areas(); track a) {
-            <option [value]="a">{{ a }}</option>
-          }
-        </select>
-        <select class="toolbar-select" aria-label="Estado" [ngModel]="filtros().estado" (ngModelChange)="cambiar('estado', $event)">
-          <option value="">Todos los estados</option>
-          @for (e of estados; track e) {
-            <option [value]="e">{{ e }}</option>
-          }
-        </select>
-        <select
-          class="toolbar-select"
-          aria-label="Asignación"
-          [ngModel]="filtros().asignacion"
-          (ngModelChange)="cambiarAsignacion($event)"
-        >
-          <option value="">Asignados y disponibles</option>
-          <option value="asignados">Solo asignados</option>
-          <option value="disponibles">Solo disponibles</option>
-        </select>
-        @if (hayFiltros()) {
-          <button class="toolbar-reset" type="button" (click)="restablecer()">
-            <i class="fa-solid fa-rotate-left" aria-hidden="true"></i> Restablecer
-          </button>
-        }
-      </div>
-    </div>
-  </section>
+  @if (hayFiltros()) {
+    <p class="eqd__filtro-activo">
+      Mostrando <strong>{{ filtrados().length }}</strong> de {{ equipos().length }} equipos con el filtro aplicado.
+      <button class="toolbar-reset" type="button" (click)="restablecer()">
+        <i class="fa-solid fa-rotate-left" aria-hidden="true"></i> Quitar filtro
+      </button>
+    </p>
+  }
 
   <section class="eqd__kpis" [class.eqd__kpis--cargando]="cargandoInicial()" aria-label="Resumen" [attr.aria-busy]="cargandoInicial()">
     <div class="eqd__kpi eqd__kpi--total">
@@ -162,6 +101,118 @@
       }
     </section>
   } @else {
+    <section class="eqd__panorama" aria-label="Panorama">
+      <article class="eqd__card eqd__card--dona">
+        <h2 class="eqd__card-title">
+          <span class="eqd__icono" aria-hidden="true"><i class="fa-solid fa-chart-pie"></i></span>
+          Asignación
+        </h2>
+        <div class="eqd__dona-cuerpo">
+          <div class="eqd__dona" role="img" [attr.aria-label]="proporciones().asignados + '% de los equipos tiene responsable'">
+            <svg viewBox="0 0 42 42" aria-hidden="true">
+              <circle class="eqd__dona-pista" cx="21" cy="21" r="15.9155"></circle>
+              <circle class="eqd__dona-arco" cx="21" cy="21" r="15.9155" [style.--p]="dona().asignados"></circle>
+            </svg>
+            <div class="eqd__dona-centro">
+              <strong>{{ proporciones().asignados }}%</strong>
+              <span>asignado</span>
+            </div>
+          </div>
+          <ul class="eqd__leyenda">
+            <li><span class="eqd__punto eqd__punto--asignado" aria-hidden="true"></span> Asignados <strong>{{ kpisVista().asignados }}</strong></li>
+            <li><span class="eqd__punto eqd__punto--disponible" aria-hidden="true"></span> Disponibles <strong>{{ kpisVista().disponibles }}</strong></li>
+          </ul>
+        </div>
+      </article>
+
+      <article class="eqd__card eqd__card--entregas">
+        <h2 class="eqd__card-title">
+          <span class="eqd__icono" aria-hidden="true"><i class="fa-solid fa-truck-ramp-box"></i></span>
+          Entregas por mes
+        </h2>
+        <ul class="eqd__columnas">
+          @for (m of entregas(); track m.clave; let i = $index) {
+            <li class="eqd__columna" [attr.title]="m.cantidad + ' entregas en ' + m.clave" [style.--d]="i * 70 + 'ms'">
+              <span class="eqd__columna-valor">{{ m.cantidad }}</span>
+              <span class="eqd__columna-pista"><span class="eqd__columna-barra" [style.--h]="m.alto"></span></span>
+              <span class="eqd__columna-mes">{{ m.etiqueta }}</span>
+            </li>
+          }
+        </ul>
+      </article>
+
+      <article class="eqd__card eqd__card--tipos">
+        <h2 class="eqd__card-title">
+          <span class="eqd__icono" aria-hidden="true"><i class="fa-solid fa-layer-group"></i></span>
+          Composición por tipo
+        </h2>
+        <div class="eqd__apilada" role="img" aria-label="Composición del inventario por tipo de equipo">
+          @for (t of composicionTipos(); track t.etiqueta) {
+            <span class="eqd__tramo" [style.--w]="t.ancho" [style.--c]="t.color" [attr.title]="t.etiqueta + ': ' + t.cantidad"></span>
+          }
+        </div>
+        <ul class="eqd__leyenda eqd__leyenda--tipos">
+          @for (t of composicionTipos(); track t.etiqueta) {
+            <li>
+              <button
+                type="button"
+                class="eqd__leyenda-btn"
+                [class.eqd__leyenda-btn--activo]="activo('tipo', t.etiqueta)"
+                [attr.aria-pressed]="activo('tipo', t.etiqueta)"
+                (click)="filtrarPor('tipo', t.etiqueta)"
+              >
+                <span class="eqd__punto" [style.--c]="t.color" aria-hidden="true"></span>
+                {{ t.etiqueta }} <strong>{{ t.cantidad }}</strong> <span class="eqd__pct">{{ t.porcentaje }}%</span>
+              </button>
+            </li>
+          }
+        </ul>
+      </article>
+
+      <article class="eqd__card eqd__card--mapa">
+        <h2 class="eqd__card-title">
+          <span class="eqd__icono" aria-hidden="true"><i class="fa-solid fa-border-all"></i></span>
+          Ambiente × tipo
+        </h2>
+        @if (mapa().filas.length === 0) {
+          <p class="eqd__sin-datos">Sin datos</p>
+        } @else {
+          <div class="eqd__mapa-wrap">
+            <table class="eqd__mapa">
+              <thead>
+                <tr>
+                  <th scope="col"><span class="eqd__sr">Ambiente</span></th>
+                  @for (c of mapa().columnas; track c) {
+                    <th scope="col">{{ c }}</th>
+                  }
+                </tr>
+              </thead>
+              <tbody>
+                @for (f of mapa().filas; track f.etiqueta; let fi = $index) {
+                  <tr>
+                    <th scope="row" [attr.title]="f.etiqueta">{{ f.etiqueta }}</th>
+                    @for (v of f.celdas; track $index) {
+                      <td>
+                        <span
+                          class="eqd__celda"
+                          [class.eqd__celda--vacia]="v === 0"
+                          [class.eqd__celda--oscura]="intensidad(v) >= 60"
+                          [style.--i]="intensidad(v)"
+                          [style.--d]="fi * 50 + $index * 25 + 'ms'"
+                          [attr.title]="v + ' equipos'"
+                          >{{ v || '' }}</span
+                        >
+                      </td>
+                    }
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        }
+      </article>
+    </section>
+
     <section class="eqd__grid" aria-label="Distribución de equipos">
       @for (d of distribuciones(); track d.titulo; let ci = $index) {
         <article class="eqd__card">

@@ -273,3 +273,52 @@
 .equipos__historial li:last-child {
   border-bottom: 0;
 }
+
+/* Historial en acordeón: cada movimiento muestra solo su título y se despliega al tocarlo. */
+.equipos__historial li {
+  padding-bottom: 0;
+}
+
+.equipos__mov {
+  border-radius: 8px;
+}
+
+.equipos__mov-resumen {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.6rem 0.25rem;
+  list-style: none;
+  cursor: pointer;
+}
+
+.equipos__mov-resumen::-webkit-details-marker {
+  display: none;
+}
+
+.equipos__mov-resumen:hover {
+  background: #f1f5f9;
+}
+
+.equipos__mov-fecha {
+  margin-left: 0.25rem;
+  color: var(--text-muted, #64748b);
+}
+
+.equipos__mov-flecha {
+  color: #94a3b8;
+  font-size: 0.75rem;
+  transition: transform 0.15s;
+}
+
+.equipos__mov[open] .equipos__mov-flecha {
+  transform: rotate(180deg);
+}
+
+.equipos__mov-detalle {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  padding: 0.1rem 0.25rem 0.7rem;
+}

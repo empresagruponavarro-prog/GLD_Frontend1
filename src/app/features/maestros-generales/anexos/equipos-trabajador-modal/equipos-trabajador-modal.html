@@ -187,15 +187,21 @@
             <ul class="equipos__historial">
               @for (m of historial(); track m.id) {
                 <li>
-                  <strong>{{ m.movimiento }}</strong> · {{ m.fecha | date: 'dd/MM/yyyy' }}
-                  <div class="equipos__small">
-                    Responsable: {{ m.responsableAnterior ?? '—' }} → {{ m.responsableNuevo ?? '—' }}
-                  </div>
-                  <div class="equipos__small">
-                    Ubicación: {{ m.ubicacionAnterior ?? '—' }} → {{ m.ubicacionNueva ?? '—' }}
-                  </div>
-                  <div class="equipos__small">Área: {{ m.areaAnterior ?? '—' }} → {{ m.areaNueva ?? '—' }}</div>
-                  <div class="equipos__small">Destino: {{ m.destinoAnterior ?? '—' }} → {{ m.destinoNuevo ?? '—' }}</div>
+                  <details class="equipos__mov">
+                    <summary class="equipos__mov-resumen">
+                      <span class="equipos__mov-titulo">
+                        <strong>{{ m.movimiento }}</strong>
+                        <span class="equipos__mov-fecha">· {{ m.fecha | date: 'dd/MM/yyyy' }}</span>
+                      </span>
+                      <i class="fa-solid fa-chevron-down equipos__mov-flecha" aria-hidden="true"></i>
+                    </summary>
+                    <div class="equipos__mov-detalle">
+                      <div class="equipos__small"><b>Responsable:</b> {{ m.responsableAnterior ?? '—' }} → {{ m.responsableNuevo ?? '—' }}</div>
+                      <div class="equipos__small"><b>Ubicación:</b> {{ m.ubicacionAnterior ?? '—' }} → {{ m.ubicacionNueva ?? '—' }}</div>
+                      <div class="equipos__small"><b>Área:</b> {{ m.areaAnterior ?? '—' }} → {{ m.areaNueva ?? '—' }}</div>
+                      <div class="equipos__small"><b>Destino:</b> {{ m.destinoAnterior ?? '—' }} → {{ m.destinoNuevo ?? '—' }}</div>
+                    </div>
+                  </details>
                 </li>
               }
             </ul>

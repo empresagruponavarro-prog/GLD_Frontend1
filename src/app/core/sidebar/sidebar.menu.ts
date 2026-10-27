@@ -123,7 +123,6 @@ export const MENU_LATERAL: readonly SeccionMenu[] = [
           { etiqueta: 'Equipos Tecnológicos', ruta: '/equipos-tecnologicos', icono: 'fa-solid fa-laptop', modulo: 'maestros.anexos' },
           { etiqueta: 'Personas', ruta: '/personas', icono: 'fa-solid fa-user-group', modulo: 'maestros.anexos' },
           { etiqueta: 'Ambientes y Ubicaciones', ruta: '/maestros-generales/locales', icono: 'fa-solid fa-door-open', modulo: 'maestros.generales' },
-          { etiqueta: 'Catálogo de Activos Fijos', ruta: '/productos', icono: 'fa-solid fa-boxes-stacked', modulo: 'maestros.productos' },
         ],
       }),
     ],

@@ -348,6 +348,306 @@ button.eqd__kpi {
   }
 }
 
+/* ── Panorama (dona, entregas, composición, mapa de calor) ────────────────── */
+
+.eqd__panorama {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.eqd__card--tipos,
+.eqd__card--mapa {
+  grid-column: span 2;
+}
+
+@media (max-width: 720px) {
+  .eqd__card--tipos,
+  .eqd__card--mapa {
+    grid-column: auto;
+  }
+}
+
+.eqd__dona-cuerpo {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+  flex-wrap: wrap;
+}
+
+.eqd__dona {
+  position: relative;
+  width: 140px;
+  height: 140px;
+  flex: none;
+}
+
+.eqd__dona svg {
+  width: 100%;
+  height: 100%;
+  transform: rotate(-90deg);
+}
+
+.eqd__dona circle {
+  fill: none;
+  stroke-width: 5;
+}
+
+.eqd__dona-pista {
+  stroke: #d9e3de;
+}
+
+.eqd__dona-arco {
+  stroke: var(--eqd-verde-oscuro);
+  stroke-linecap: round;
+  stroke-dasharray: var(--p, 0) 100;
+  transition: stroke-dasharray 900ms var(--eqd-ease);
+  animation: eqd-dona 1100ms var(--eqd-ease) 150ms backwards;
+}
+
+@keyframes eqd-dona {
+  from {
+    stroke-dasharray: 0 100;
+  }
+}
+
+.eqd__dona-centro {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-content: center;
+  text-align: center;
+}
+
+.eqd__dona-centro strong {
+  font-size: 1.7rem;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  color: var(--gld-charcoal-dark, #1f2321);
+}
+
+.eqd__dona-centro span {
+  font-size: 0.72rem;
+  color: var(--text-muted, #64748b);
+}
+
+.eqd__leyenda {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: 0.85rem;
+}
+
+.eqd__leyenda strong {
+  margin-left: 0.25rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.eqd__leyenda--tipos {
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: 0.3rem 0.5rem;
+  margin-top: 0.9rem;
+}
+
+.eqd__leyenda-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.25rem 0.6rem;
+  border: 1px solid var(--eqd-linea);
+  border-radius: 999px;
+  background: #fff;
+  font: inherit;
+  font-size: 0.82rem;
+  color: var(--text-main, #1f2321);
+  cursor: pointer;
+  transition: background-color 150ms ease, border-color 150ms ease;
+}
+
+.eqd__leyenda-btn:hover,
+.eqd__leyenda-btn--activo {
+  background: var(--eqd-verde-suave);
+  border-color: var(--eqd-verde);
+}
+
+.eqd__leyenda-btn:focus-visible {
+  outline: 2px solid var(--eqd-verde-oscuro);
+  outline-offset: 2px;
+}
+
+.eqd__pct {
+  color: var(--text-muted, #64748b);
+  font-size: 0.75rem;
+}
+
+.eqd__punto {
+  display: inline-block;
+  width: 0.65rem;
+  height: 0.65rem;
+  border-radius: 3px;
+  background: var(--c, var(--eqd-verde));
+}
+
+.eqd__punto--asignado {
+  background: var(--eqd-verde-oscuro);
+}
+
+.eqd__punto--disponible {
+  background: #d9e3de;
+  box-shadow: inset 0 0 0 1px #b6c7be;
+}
+
+/* Entregas por mes */
+.eqd__columnas {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 0.6rem;
+  height: 160px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.eqd__columna {
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  justify-items: center;
+  gap: 0.3rem;
+  font-size: 0.78rem;
+}
+
+.eqd__columna-valor {
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.eqd__columna-pista {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  width: 100%;
+}
+
+.eqd__columna-barra {
+  width: min(70%, 34px);
+  height: calc(var(--h, 0) * 1%);
+  min-height: 3px;
+  border-radius: 4px 4px 0 0;
+  background: var(--eqd-verde);
+  transform-origin: bottom;
+  transition: height 600ms var(--eqd-ease), background-color 150ms ease;
+  animation: eqd-columna 800ms var(--eqd-ease) var(--d, 0ms) backwards;
+}
+
+.eqd__columna:hover .eqd__columna-barra {
+  background: var(--eqd-verde-oscuro);
+}
+
+@keyframes eqd-columna {
+  from {
+    transform: scaleY(0);
+  }
+}
+
+.eqd__columna-mes {
+  text-transform: uppercase;
+  color: var(--text-muted, #64748b);
+}
+
+/* Composición por tipo */
+.eqd__apilada {
+  display: flex;
+  gap: 2px;
+  height: 22px;
+}
+
+.eqd__tramo {
+  flex: var(--w, 0) 1 0;
+  min-width: 3px;
+  border-radius: 4px;
+  background: var(--c);
+  transform-origin: left;
+  animation: eqd-tramo 800ms var(--eqd-ease) backwards;
+  transition: flex-grow 600ms var(--eqd-ease);
+}
+
+@keyframes eqd-tramo {
+  from {
+    transform: scaleX(0);
+    opacity: 0;
+  }
+}
+
+/* Mapa de calor: un solo tono (verde de marca) de claro a oscuro; el número va siempre visible. */
+.eqd__mapa-wrap {
+  overflow-x: auto;
+}
+
+.eqd__mapa {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 3px;
+  font-size: 0.78rem;
+}
+
+.eqd__mapa thead th {
+  padding: 0 0.2rem 0.3rem;
+  font-weight: 600;
+  color: var(--text-muted, #64748b);
+  text-align: center;
+}
+
+.eqd__mapa tbody th {
+  max-width: 220px;
+  padding-right: 0.5rem;
+  overflow: hidden;
+  font-weight: 500;
+  text-align: left;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.eqd__celda {
+  display: grid;
+  place-items: center;
+  height: 30px;
+  border-radius: 6px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  background: color-mix(in srgb, var(--eqd-verde-oscuro) calc(var(--i, 0) * 1%), #ffffff);
+  color: #1f2321;
+  animation: eqd-celda 500ms var(--eqd-ease) var(--d, 0ms) backwards;
+  transition: background-color 400ms ease;
+}
+
+.eqd__celda--oscura {
+  color: #fff;
+}
+
+.eqd__celda--vacia {
+  background: #f3f6f4;
+}
+
+@keyframes eqd-celda {
+  from {
+    opacity: 0;
+    transform: scale(0.6);
+  }
+}
+
+.eqd__sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+}
+
 /* ── Detalle ──────────────────────────────────────────────────────────────── */
 
 .eqd__tabla-wrap {
@@ -570,7 +870,11 @@ button.eqd__kpi {
 
 @media (prefers-reduced-motion: reduce) {
   .eqd__barra-relleno,
-  .eqd__kpi-meter-fill {
+  .eqd__kpi-meter-fill,
+  .eqd__dona-arco,
+  .eqd__columna-barra,
+  .eqd__tramo,
+  .eqd__celda {
     animation: none;
     transition: none;
   }
@@ -591,4 +895,14 @@ button.eqd__kpi {
   .eqd__tipo-icono {
     transition-property: background-color, border-color, box-shadow;
   }
+}
+
+.eqd__filtro-activo {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.6rem;
+  margin: 0 0 1rem;
+  font-size: 0.85rem;
+  color: var(--text-muted, #64748b);
 }

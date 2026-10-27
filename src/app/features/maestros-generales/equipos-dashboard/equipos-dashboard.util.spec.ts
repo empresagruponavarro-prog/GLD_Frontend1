@@ -1,5 +1,5 @@
 import { EquipoInventario } from '../anexos/interfaces/equipo-asignado.interface';
-import { contarPor, destinoDe, filtrarEquipos, ramDe, SIN_FILTROS, ubicacionDe } from './equipos-dashboard.util';
+import { contarPor, destinoDe, entregasPorMes, filtrarEquipos, matriz, ramDe, SIN_FILTROS, ubicacionDe } from './equipos-dashboard.util';
 
 function equipo(id: number, extra: Partial<EquipoInventario> = {}): EquipoInventario {
   return {
@@ -74,5 +74,37 @@ describe('equipos-dashboard.util', () => {
     expect(filtrarEquipos(EQUIPOS, { ...SIN_FILTROS, area: 'Sin área' }).map((e) => e.id)).toEqual([2]);
     expect(filtrarEquipos(EQUIPOS, { ...SIN_FILTROS, busqueda: 'hp' }).map((e) => e.id)).toEqual([2]);
     expect(filtrarEquipos(EQUIPOS, { ...SIN_FILTROS, local: 'Sin ubicación' }).map((e) => e.id)).toEqual([3]);
+  });
+});
+
+describe('entregasPorMes y matriz', () => {
+  it('cuenta las entregas de los últimos meses, incluidos los que están en cero, cruzando el cambio de año', () => {
+    const lista = [
+      equipo(1, { fechaAsignacion: '2026-01-15' }),
+      equipo(2, { fechaAsignacion: '2026-01-20' }),
+      equipo(3, { fechaAsignacion: '2025-11-02' }),
+      equipo(4, { fechaAsignacion: '2026-01-05', responsableId: null, responsable: null }),
+      equipo(5, { fechaAsignacion: '2024-01-05' }),
+    ];
+    const meses = entregasPorMes(lista, '2026-02-10', 4);
+    expect(meses.map((m) => m.clave)).toEqual(['2025-11', '2025-12', '2026-01', '2026-02']);
+    expect(meses.map((m) => m.cantidad)).toEqual([1, 0, 2, 0]);
+    expect(meses[3]?.etiqueta).toBe('feb');
+  });
+
+  it('cruza ambiente por tipo y calcula el máximo', () => {
+    const lista = [
+      equipo(1, { ambiente: 'A', tipo: 'PC' }),
+      equipo(2, { ambiente: 'A', tipo: 'PC' }),
+      equipo(3, { ambiente: 'A', tipo: 'Laptop' }),
+      equipo(4, { ambiente: 'B', tipo: 'Laptop' }),
+      equipo(5, { ambiente: 'B', tipo: 'Tablet' }),
+    ];
+    const m = matriz(lista, (e) => e.ambiente, (e) => e.tipo, ['PC', 'Laptop']);
+    expect(m.filas).toEqual([
+      { etiqueta: 'A', celdas: [2, 1], total: 3 },
+      { etiqueta: 'B', celdas: [0, 1], total: 1 },
+    ]);
+    expect(m.maximo).toBe(2);
   });
 });
