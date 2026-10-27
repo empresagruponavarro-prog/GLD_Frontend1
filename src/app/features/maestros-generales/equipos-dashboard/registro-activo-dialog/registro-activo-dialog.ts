@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, HostListener, OnInit, computed, inject, output, signal } from '@angular/core';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
-import { AbstractControl, FormBuilder, FormControl, FormRecord, ReactiveFormsModule, Validators } from '@angular/forms';
+import { FormBuilder, FormControl, FormRecord, ReactiveFormsModule, Validators } from '@angular/forms';
 import { mensajeError } from '@shared/utils/errores-http';
 import { ModalComponent } from '../../../../shared/components/modal/modal';
 import { AnexosService } from '../../anexos/anexos.service';
@@ -12,13 +12,21 @@ import {
   BienCatalogo,
   EquipoInventario,
   LocalOpcion,
+  OpcionDestino,
 } from '../../anexos/interfaces/equipo-asignado.interface';
+import { UbicacionDestinoComponent } from '../../anexos/ubicacion-destino/ubicacion-destino';
+import {
+  DESTINO_VACIO,
+  DestinoSeleccionado,
+  cuerpoDestino,
+  errorDestino,
+} from '../../anexos/ubicacion-destino/ubicacion-destino.util';
 
-/** Registro de un activo fijo en el inventario: bien del catálogo, serie, ubicación y, si se desea, quien lo recibe. */
+/** Registro de un activo fijo en el inventario: bien del catálogo, serie, destino y, si se desea, quien lo recibe. */
 @Component({
   selector: 'app-registro-activo-dialog',
   standalone: true,
-  imports: [ReactiveFormsModule, ModalComponent],
+  imports: [ReactiveFormsModule, ModalComponent, UbicacionDestinoComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './registro-activo-dialog.html',
   styleUrl: './registro-activo-dialog.css',
@@ -34,10 +42,14 @@ export class RegistroActivoDialogComponent implements OnInit {
   readonly catalogo = signal<BienCatalogo[]>([]);
   readonly locales = signal<LocalOpcion[]>([]);
   readonly areas = signal<AreaOpcion[]>([]);
+  readonly empresas = signal<OpcionDestino[]>([]);
+  readonly centrosCosto = signal<OpcionDestino[]>([]);
   readonly trabajadores = signal<AnexoSelect[]>([]);
   readonly cargando = signal(true);
   readonly guardando = signal(false);
   readonly error = signal<string | null>(null);
+  /** A dónde va: una empresa (con nivel, ambiente y área) o un centro de costo. */
+  readonly ubicacion = signal<DestinoSeleccionado>(DESTINO_VACIO);
 
   /** Heredan los valores del catálogo; editar uno solo cambia esa característica en este equipo. */
   readonly caracteristicas = new FormRecord<FormControl<string>>({});
@@ -45,10 +57,6 @@ export class RegistroActivoDialogComponent implements OnInit {
   readonly form = this.fb.nonNullable.group({
     codigoBien: ['', Validators.required],
     serie: [''],
-    localId: [0],
-    nivelId: [{ value: 0, disabled: true }],
-    ambienteId: [{ value: 0, disabled: true }],
-    areaId: [0],
     entregar: [false],
     anexoId: [0],
     fechaAsignacion: [hoyISO()],
@@ -56,8 +64,6 @@ export class RegistroActivoDialogComponent implements OnInit {
   });
 
   private readonly codigoSel = toSignal(this.form.controls.codigoBien.valueChanges, { initialValue: '' });
-  private readonly localSel = toSignal(this.form.controls.localId.valueChanges, { initialValue: 0 });
-  private readonly nivelSel = toSignal(this.form.controls.nivelId.valueChanges, { initialValue: 0 });
   private readonly entregarSel = toSignal(this.form.controls.entregar.valueChanges, { initialValue: false });
   private readonly valoresCaracteristicas = toSignal(this.caracteristicas.valueChanges, {
     initialValue: {} as Record<string, string>,
@@ -76,29 +82,15 @@ export class RegistroActivoDialogComponent implements OnInit {
       personalizada: (valores[nombre] ?? base) !== base,
     }));
   });
-  readonly niveles = computed(() => this.locales().find((l) => l.id === this.localSel())?.niveles ?? []);
-  readonly ambientes = computed(() => this.niveles().find((n) => n.id === this.nivelSel())?.ambientes ?? []);
   readonly entregar = computed(() => this.entregarSel());
 
   constructor() {
-    const c = this.form.controls;
-    c.codigoBien.valueChanges.pipe(takeUntilDestroyed()).subscribe((codigo) => {
+    this.form.controls.codigoBien.valueChanges.pipe(takeUntilDestroyed()).subscribe((codigo) => {
       Object.keys(this.caracteristicas.controls).forEach((nombre) => this.caracteristicas.removeControl(nombre));
       const bien = this.catalogo().find((b) => b.codigo === codigo);
       for (const [nombre, valor] of Object.entries(bien?.caracteristicas ?? {})) {
         this.caracteristicas.addControl(nombre, this.fb.nonNullable.control(valor));
       }
-    });
-    c.localId.valueChanges.pipe(takeUntilDestroyed()).subscribe((local) => {
-      c.nivelId.setValue(0);
-      this.habilitar(c.nivelId, local > 0);
-    });
-    c.nivelId.valueChanges.pipe(takeUntilDestroyed()).subscribe((nivel) => {
-      c.ambienteId.setValue(0);
-      this.habilitar(c.ambienteId, nivel > 0);
-    });
-    c.ambienteId.valueChanges.pipe(takeUntilDestroyed()).subscribe((ambiente) => {
-      c.areaId.setValue(this.areaDeAmbiente(c.localId.value, c.nivelId.value, ambiente));
     });
   }
 
@@ -108,6 +100,8 @@ export class RegistroActivoDialogComponent implements OnInit {
         this.catalogo.set(opciones.catalogo);
         this.locales.set(opciones.locales);
         this.areas.set(opciones.areas);
+        this.empresas.set(opciones.empresas);
+        this.centrosCosto.set(opciones.centrosCosto);
         this.cargando.set(false);
       },
       error: (err: unknown) => {
@@ -137,8 +131,9 @@ export class RegistroActivoDialogComponent implements OnInit {
       this.error.set('Selecciona un bien del catálogo.');
       return;
     }
-    if (v.localId < 1 || v.nivelId < 1 || v.ambienteId < 1) {
-      this.error.set('Selecciona local, nivel y ambiente.');
+    const errorUbicacion = errorDestino(this.ubicacion());
+    if (errorUbicacion) {
+      this.error.set(errorUbicacion);
       return;
     }
     if (v.entregar && (v.anexoId < 1 || !v.fechaAsignacion)) {
@@ -152,10 +147,7 @@ export class RegistroActivoDialogComponent implements OnInit {
       .registrarActivo({
         codigoBien: v.codigoBien,
         serie: v.serie.trim() || null,
-        localId: v.localId,
-        nivelId: v.nivelId,
-        ambienteId: v.ambienteId,
-        ...(v.areaId > 0 ? { areaId: v.areaId } : {}),
+        ...cuerpoDestino(this.ubicacion()),
         caracteristicas: v.caracteristicas,
         ...(v.entregar ? { anexoId: v.anexoId, fechaAsignacion: v.fechaAsignacion } : {}),
       })
@@ -169,18 +161,5 @@ export class RegistroActivoDialogComponent implements OnInit {
           this.error.set(mensajeError(err));
         },
       });
-  }
-
-  /** Área por defecto de la ubicación elegida (0 = sin área). */
-  private areaDeAmbiente(localId: number, nivelId: number, ambienteId: number): number {
-    const nivel = this.locales()
-      .find((l) => l.id === localId)
-      ?.niveles.find((n) => n.id === nivelId);
-    return nivel?.ambientes.find((a) => a.id === ambienteId)?.areaId ?? 0;
-  }
-
-  private habilitar(control: AbstractControl, habilitar: boolean): void {
-    if (habilitar) control.enable({ emitEvent: false });
-    else control.disable({ emitEvent: false });
   }
 }

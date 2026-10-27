@@ -1,5 +1,5 @@
 import { DatePipe } from '@angular/common';
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, computed, effect, inject, signal, untracked } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { permisosDePantalla } from '@app/core/auth/permisos-pantalla';
 import { mensajeError } from '@shared/utils/errores-http';
@@ -15,6 +15,7 @@ import {
   Asignacion,
   Conteo,
   contarPor,
+  destinoDe,
   filtrarEquipos,
   FiltrosEquipos,
   ramDe,
@@ -25,7 +26,7 @@ import {
   valoresUnicos,
 } from './equipos-dashboard.util';
 
-type ClaveFiltro = 'tipo' | 'local' | 'area' | 'estado';
+type ClaveFiltro = 'tipo' | 'local' | 'destino' | 'area' | 'estado';
 
 interface Distribucion {
   titulo: string;
@@ -34,6 +35,16 @@ interface Distribucion {
   /** Filtro que se aplica al hacer clic en una fila (si la dimensión lo admite). */
   filtro?: ClaveFiltro;
 }
+
+interface Kpis {
+  total: number;
+  asignados: number;
+  disponibles: number;
+  fueraDeServicio: number;
+}
+
+/** Duración del conteo animado de los KPIs: lo bastante corta para no hacer esperar al filtrar. */
+const DURACION_KPI_MS = 650;
 
 @Component({
   selector: 'app-equipos-dashboard',
@@ -71,10 +82,11 @@ export class EquiposDashboardComponent {
 
   readonly tipos = computed(() => valoresUnicos(this.equipos(), (e) => e.tipo));
   readonly locales = computed(() => valoresUnicos(this.equipos(), (e) => e.local || SIN_UBICACION));
+  readonly destinos = computed(() => valoresUnicos(this.equipos(), destinoDe));
   readonly areas = computed(() => valoresUnicos(this.equipos(), (e) => e.area ?? SIN_AREA));
   readonly estados: readonly EstadoEquipo[] = ['Operativo', 'En reparación', 'De baja'];
 
-  readonly kpis = computed(() => {
+  readonly kpis = computed<Kpis>(() => {
     const lista = this.filtrados();
     const asignados = lista.filter((e) => e.responsableId !== null).length;
     return {
@@ -85,10 +97,25 @@ export class EquiposDashboardComponent {
     };
   });
 
+  /** Valores que se pintan en las tarjetas: viajan hacia `kpis()` con un conteo animado. */
+  readonly kpisVista = signal<Kpis>({ total: 0, asignados: 0, disponibles: 0, fueraDeServicio: 0 });
+
+  /** Porcentaje (entero, 0-100) de cada KPI sobre el total mostrado. */
+  readonly proporciones = computed(() => {
+    const k = this.kpis();
+    const sobre = (parte: number) => (k.total > 0 ? Math.round((parte / k.total) * 100) : 0);
+    return { asignados: sobre(k.asignados), disponibles: sobre(k.disponibles), fueraDeServicio: sobre(k.fueraDeServicio) };
+  });
+
+  /** Primera carga: todavía no hay datos que mostrar, así que se pintan esqueletos. */
+  readonly cargandoInicial = computed(() => this.cargando() && this.equipos().length === 0);
+  protected readonly esqueletos = [0, 1, 2, 3, 4, 5];
+
   readonly distribuciones = computed<Distribucion[]>(() => {
     const l = this.filtrados();
     return [
       { titulo: 'Por tipo', icono: 'fa-layer-group', conteos: contarPor(l, (e) => e.tipo), filtro: 'tipo' },
+      { titulo: 'Por empresa / centro de costo', icono: 'fa-helmet-safety', conteos: contarPor(l, destinoDe), filtro: 'destino' },
       { titulo: 'Por local', icono: 'fa-location-dot', conteos: contarPor(l, (e) => e.local || SIN_UBICACION), filtro: 'local' },
       { titulo: 'Por ambiente', icono: 'fa-door-open', conteos: contarPor(l, ubicacionDe, 10) },
       { titulo: 'Por área', icono: 'fa-sitemap', conteos: contarPor(l, (e) => e.area ?? SIN_AREA), filtro: 'area' },
@@ -101,8 +128,39 @@ export class EquiposDashboardComponent {
     ];
   });
 
+  private readonly destroyRef = inject(DestroyRef);
+  private cuadroKpi = 0;
+  private readonly reducirMovimiento = typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
+
   constructor() {
+    effect(() => this.animarKpis(this.kpis()));
+    this.destroyRef.onDestroy(() => cancelAnimationFrame(this.cuadroKpi));
     this.cargar();
+  }
+
+  /** Lleva los KPIs visibles hasta `meta` con una desaceleración exponencial; si se interrumpe, parte de donde iba. */
+  private animarKpis(meta: Kpis): void {
+    cancelAnimationFrame(this.cuadroKpi);
+    const desde = untracked(() => this.kpisVista());
+    const sinCambio = (Object.keys(meta) as (keyof Kpis)[]).every((k) => desde[k] === meta[k]);
+    if (this.reducirMovimiento || sinCambio) {
+      this.kpisVista.set(meta);
+      return;
+    }
+    const inicio = performance.now();
+    const paso = (ahora: number): void => {
+      const t = Math.min(1, (ahora - inicio) / DURACION_KPI_MS);
+      const avance = t === 1 ? 1 : 1 - Math.pow(2, -10 * t);
+      const tramo = (a: number, b: number) => Math.round(a + (b - a) * avance);
+      this.kpisVista.set({
+        total: tramo(desde.total, meta.total),
+        asignados: tramo(desde.asignados, meta.asignados),
+        disponibles: tramo(desde.disponibles, meta.disponibles),
+        fueraDeServicio: tramo(desde.fueraDeServicio, meta.fueraDeServicio),
+      });
+      if (t < 1) this.cuadroKpi = requestAnimationFrame(paso);
+    };
+    this.cuadroKpi = requestAnimationFrame(paso);
   }
 
   protected cargar(): void {
@@ -183,6 +241,11 @@ export class EquiposDashboardComponent {
     this.cambiar('asignacion', valor);
   }
 
+  /** Clic en un KPI: filtra por esa asignación (otro clic la quita). */
+  protected alternarAsignacion(valor: Exclude<Asignacion, ''>): void {
+    this.cambiar('asignacion', this.filtros().asignacion === valor ? '' : valor);
+  }
+
   protected restablecer(): void {
     this.filtros.set({ ...SIN_FILTROS });
   }
@@ -200,6 +263,10 @@ export class EquiposDashboardComponent {
   protected porcentaje(conteo: Conteo, conteos: readonly Conteo[]): number {
     const maximo = conteos[0]?.cantidad ?? 0;
     return maximo > 0 ? Math.round((conteo.cantidad / maximo) * 100) : 0;
+  }
+
+  protected destinoEtiqueta(e: EquipoInventario): string {
+    return destinoDe(e);
   }
 
   protected ubicacion(e: EquipoInventario): string {

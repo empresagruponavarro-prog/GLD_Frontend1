@@ -5,11 +5,11 @@
   </div>
   <div class="eqd__acciones-cabecera">
     @if (permisos.crear()) {
-      <button class="btn btn-primary" type="button" (click)="mostrarRegistro.set(true)">
+      <button id="eqd-registrar" class="btn btn-primary" type="button" (click)="mostrarRegistro.set(true)">
         <i class="fa-solid fa-plus" aria-hidden="true"></i> Registrar activo
       </button>
     }
-    <button class="btn btn-secondary" type="button" [disabled]="cargando()" (click)="cargar()">
+    <button id="eqd-actualizar" class="btn btn-secondary" type="button" [disabled]="cargando()" (click)="cargar()">
       <i class="fa-solid fa-arrows-rotate" [class.fa-spin]="cargando()" aria-hidden="true"></i>
       {{ cargando() ? 'Cargando...' : 'Actualizar' }}
     </button>
@@ -18,7 +18,7 @@
 
 <div class="content-body">
   @if (error() ?? errorAccion(); as mensaje) {
-    <p class="eqd__error" role="alert">{{ mensaje }}</p>
+    <p class="eqd__error" role="alert"><i class="fa-solid fa-circle-exclamation" aria-hidden="true"></i> {{ mensaje }}</p>
   }
 
   <section class="toolbar-shell" aria-label="Filtros">
@@ -54,6 +54,12 @@
             <option [value]="l">{{ l }}</option>
           }
         </select>
+        <select class="toolbar-select" aria-label="Empresa o centro de costo" [ngModel]="filtros().destino" (ngModelChange)="cambiar('destino', $event)">
+          <option value="">Todas las empresas y centros de costo</option>
+          @for (d of destinos(); track d) {
+            <option [value]="d">{{ d }}</option>
+          }
+        </select>
         <select class="toolbar-select" aria-label="Área" [ngModel]="filtros().area" (ngModelChange)="cambiar('area', $event)">
           <option value="">Todas las áreas</option>
           @for (a of areas(); track a) {
@@ -85,37 +91,89 @@
     </div>
   </section>
 
-  <section class="eqd__kpis" aria-label="Resumen">
-    <div class="eqd__kpi">
+  <section class="eqd__kpis" [class.eqd__kpis--cargando]="cargandoInicial()" aria-label="Resumen" [attr.aria-busy]="cargandoInicial()">
+    <div class="eqd__kpi eqd__kpi--total">
+      <span class="eqd__kpi-icono" aria-hidden="true"><i class="fa-solid fa-laptop"></i></span>
       <span class="eqd__kpi-label">Total de equipos</span>
-      <strong class="eqd__kpi-value">{{ kpis().total }}</strong>
+      <strong class="eqd__kpi-value">{{ kpisVista().total }}</strong>
+      <span class="eqd__kpi-meter" aria-hidden="true"><span class="eqd__kpi-meter-fill" style="--w: 100"></span></span>
+      <span class="eqd__kpi-nota">{{ hayFiltros() ? 'Con los filtros aplicados' : 'Todo el inventario' }}</span>
     </div>
-    <div class="eqd__kpi">
+
+    <button
+      id="eqd-kpi-asignados"
+      class="eqd__kpi eqd__kpi--accion"
+      type="button"
+      [class.eqd__kpi--activo]="filtros().asignacion === 'asignados'"
+      [attr.aria-pressed]="filtros().asignacion === 'asignados'"
+      (click)="alternarAsignacion('asignados')"
+    >
+      <span class="eqd__kpi-icono" aria-hidden="true"><i class="fa-solid fa-user-check"></i></span>
       <span class="eqd__kpi-label">Asignados</span>
-      <strong class="eqd__kpi-value">{{ kpis().asignados }}</strong>
-    </div>
-    <div class="eqd__kpi">
+      <strong class="eqd__kpi-value">{{ kpisVista().asignados }}</strong>
+      <span class="eqd__kpi-meter" aria-hidden="true"><span class="eqd__kpi-meter-fill" [style.--w]="proporciones().asignados"></span></span>
+      <span class="eqd__kpi-nota">{{ proporciones().asignados }}% con responsable</span>
+    </button>
+
+    <button
+      id="eqd-kpi-disponibles"
+      class="eqd__kpi eqd__kpi--accion"
+      type="button"
+      [class.eqd__kpi--activo]="filtros().asignacion === 'disponibles'"
+      [attr.aria-pressed]="filtros().asignacion === 'disponibles'"
+      (click)="alternarAsignacion('disponibles')"
+    >
+      <span class="eqd__kpi-icono" aria-hidden="true"><i class="fa-solid fa-box-open"></i></span>
       <span class="eqd__kpi-label">Disponibles</span>
-      <strong class="eqd__kpi-value">{{ kpis().disponibles }}</strong>
-    </div>
-    <div class="eqd__kpi eqd__kpi--alerta">
+      <strong class="eqd__kpi-value">{{ kpisVista().disponibles }}</strong>
+      <span class="eqd__kpi-meter" aria-hidden="true"><span class="eqd__kpi-meter-fill" [style.--w]="proporciones().disponibles"></span></span>
+      <span class="eqd__kpi-nota">{{ proporciones().disponibles }}% listos para entregar</span>
+    </button>
+
+    <div class="eqd__kpi eqd__kpi--servicio" [class.eqd__kpi--alerta]="kpis().fueraDeServicio > 0">
+      <span class="eqd__kpi-icono" aria-hidden="true"><i class="fa-solid fa-screwdriver-wrench"></i></span>
       <span class="eqd__kpi-label">En reparación o de baja</span>
-      <strong class="eqd__kpi-value">{{ kpis().fueraDeServicio }}</strong>
+      <strong class="eqd__kpi-value">{{ kpisVista().fueraDeServicio }}</strong>
+      <span class="eqd__kpi-meter" aria-hidden="true"><span class="eqd__kpi-meter-fill" [style.--w]="proporciones().fueraDeServicio"></span></span>
+      <span class="eqd__kpi-nota">{{ kpis().fueraDeServicio > 0 ? proporciones().fueraDeServicio + '% fuera de servicio' : 'Todo operativo' }}</span>
     </div>
   </section>
 
   @if (!cargando() && equipos().length === 0 && !error()) {
-    <p class="eqd__vacio">Todavía no hay equipos registrados. Asigna el primero desde Anexos, en un trabajador.</p>
+    <section class="eqd__vacio" aria-label="Sin equipos">
+      <span class="eqd__vacio-icono" aria-hidden="true"><i class="fa-solid fa-laptop-code"></i></span>
+      <h2 class="eqd__vacio-titulo">Todavía no hay equipos registrados</h2>
+      <p class="eqd__vacio-texto">Registra el primer activo y aparecerá aquí con su ubicación y responsable.</p>
+      @if (permisos.crear()) {
+        <button class="btn btn-primary" type="button" (click)="mostrarRegistro.set(true)">
+          <i class="fa-solid fa-plus" aria-hidden="true"></i> Registrar el primer activo
+        </button>
+      }
+    </section>
+  } @else if (cargandoInicial() && !error()) {
+    <section class="eqd__grid" aria-hidden="true">
+      @for (n of esqueletos; track n) {
+        <article class="eqd__card eqd__card--esqueleto">
+          <span class="eqd__skeleton eqd__skeleton--titulo"></span>
+          <span class="eqd__skeleton eqd__skeleton--fila"></span>
+          <span class="eqd__skeleton eqd__skeleton--fila eqd__skeleton--media"></span>
+          <span class="eqd__skeleton eqd__skeleton--fila eqd__skeleton--corta"></span>
+        </article>
+      }
+    </section>
   } @else {
     <section class="eqd__grid" aria-label="Distribución de equipos">
-      @for (d of distribuciones(); track d.titulo) {
+      @for (d of distribuciones(); track d.titulo; let ci = $index) {
         <article class="eqd__card">
-          <h2 class="eqd__card-title"><i class="fa-solid" [class]="d.icono" aria-hidden="true"></i> {{ d.titulo }}</h2>
+          <h2 class="eqd__card-title">
+            <span class="eqd__icono" aria-hidden="true"><i class="fa-solid" [class]="d.icono"></i></span>
+            {{ d.titulo }}
+          </h2>
           @if (d.conteos.length === 0) {
             <p class="eqd__sin-datos">Sin datos</p>
           } @else {
             <ul class="eqd__lista">
-              @for (c of d.conteos; track c.etiqueta) {
+              @for (c of d.conteos; track c.etiqueta; let i = $index) {
                 <li>
                   <button
                     class="eqd__fila"
@@ -124,10 +182,24 @@
                     [class.eqd__fila--libre]="!d.filtro"
                     [disabled]="!d.filtro"
                     [attr.aria-label]="c.etiqueta + ': ' + c.cantidad"
+                    [attr.aria-pressed]="d.filtro ? activo(d.filtro, c.etiqueta) : null"
                     (click)="filtrarPor(d.filtro, c.etiqueta)"
                   >
-                    <span class="eqd__etiqueta" [attr.title]="c.etiqueta">{{ c.etiqueta }}</span>
-                    <span class="eqd__barra"><span class="eqd__barra-relleno" [style.width.%]="porcentaje(c, d.conteos)"></span></span>
+                    <span class="eqd__etiqueta" [attr.title]="c.etiqueta">
+                      @if (activo(d.filtro, c.etiqueta)) {
+                        <i class="fa-solid fa-check eqd__check" aria-hidden="true"></i>
+                      }
+                      {{ c.etiqueta }}
+                    </span>
+                    <span class="eqd__barra">
+                      <span
+                        class="eqd__barra-relleno"
+                        [class.eqd__barra-relleno--reparacion]="d.filtro === 'estado' && c.etiqueta === 'En reparación'"
+                        [class.eqd__barra-relleno--baja]="d.filtro === 'estado' && c.etiqueta === 'De baja'"
+                        [style.--w]="porcentaje(c, d.conteos)"
+                        [style.--d]="ci * 40 + i * 30 + 'ms'"
+                      ></span>
+                    </span>
                     <strong class="eqd__cantidad">{{ c.cantidad }}</strong>
                   </button>
                 </li>
@@ -139,7 +211,11 @@
     </section>
 
     <section class="eqd__detalle" aria-label="Detalle de equipos">
-      <h2 class="eqd__card-title">Detalle</h2>
+      <h2 class="eqd__card-title">
+        <span class="eqd__icono" aria-hidden="true"><i class="fa-solid fa-table-list"></i></span>
+        Detalle
+        <span class="eqd__contador">{{ filtrados().length }}</span>
+      </h2>
       <div class="eqd__tabla-wrap">
         <table class="eqd__tabla">
           <thead>
@@ -159,16 +235,32 @@
             @for (e of filtrados(); track e.id) {
               <tr>
                 <td>
-                  <div class="eqd__tipo"><i class="fa-solid" [class]="icono(e.tipo)" aria-hidden="true"></i> <strong>{{ e.tipo }}</strong></div>
-                  <div class="eqd__codigo">{{ e.codigo }} · {{ e.codigoActivo }}</div>
+                  <div class="eqd__tipo">
+                    <span class="eqd__tipo-icono" aria-hidden="true"><i class="fa-solid" [class]="icono(e.tipo)"></i></span>
+                    <div>
+                      <strong>{{ e.tipo }}</strong>
+                      <div class="eqd__codigo">{{ e.codigo }} · {{ e.codigoActivo }}</div>
+                    </div>
+                  </div>
                 </td>
                 <td>{{ e.marca }} {{ e.modelo }}</td>
                 <td class="eqd__mono">{{ e.serie ?? '—' }}</td>
-                <td>{{ ubicacion(e) }}</td>
+                <td>
+                  {{ ubicacion(e) }}
+                  @if (e.destino) {
+                    <div class="eqd__codigo">{{ destinoEtiqueta(e) }}</div>
+                  }
+                </td>
                 <td>{{ e.area ?? '—' }}</td>
-                <td>{{ e.responsable ?? 'Sin asignar' }}</td>
+                <td>
+                  @if (e.responsable) {
+                    {{ e.responsable }}
+                  } @else {
+                    <span class="eqd__sin-asignar">Sin asignar</span>
+                  }
+                </td>
                 <td><span [class]="'badge ' + claseEstado(e.estado)">{{ e.estado }}</span></td>
-                <td>{{ e.fechaAsignacion ? (e.fechaAsignacion | date: 'dd/MM/yyyy') : '—' }}</td>
+                <td class="eqd__mono">{{ e.fechaAsignacion ? (e.fechaAsignacion | date: 'dd/MM/yyyy') : '—' }}</td>
                 <td class="eqd__acciones">
                   <button
                     class="table-action-btn"
@@ -198,7 +290,7 @@
               </tr>
             } @empty {
               <tr>
-                <td colspan="9" class="eqd__sin-datos">Ningún equipo coincide con los filtros.</td>
+                <td colspan="9" class="eqd__sin-datos eqd__sin-datos--tabla">Ningún equipo coincide con los filtros.</td>
               </tr>
             }
           </tbody>

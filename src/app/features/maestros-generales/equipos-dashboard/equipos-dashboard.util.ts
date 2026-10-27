@@ -1,3 +1,4 @@
+import { etiquetaDestino } from '../anexos/equipo-presentacion';
 import { EquipoInventario } from '../anexos/interfaces/equipo-asignado.interface';
 
 export interface Conteo {
@@ -11,16 +12,23 @@ export type Asignacion = '' | 'asignados' | 'disponibles';
 export interface FiltrosEquipos {
   tipo: string;
   local: string;
+  destino: string;
   area: string;
   estado: string;
   asignacion: Asignacion;
   busqueda: string;
 }
 
-export const SIN_FILTROS: FiltrosEquipos = { tipo: '', local: '', area: '', estado: '', asignacion: '', busqueda: '' };
+export const SIN_FILTROS: FiltrosEquipos = { tipo: '', local: '', destino: '', area: '', estado: '', asignacion: '', busqueda: '' };
 
 export const SIN_AREA = 'Sin área';
 export const SIN_UBICACION = 'Sin ubicación';
+export const SIN_DESTINO = 'Sin destino';
+
+/** Obra / centro de costo o sede a la que pertenece el local del equipo. */
+export function destinoDe(e: EquipoInventario): string {
+  return etiquetaDestino(e.destino, e.destinoTipo) || SIN_DESTINO;
+}
 
 export function ramDe(e: EquipoInventario): string {
   const ram = e.caracteristicas['RAM'] ?? '';
@@ -49,6 +57,7 @@ export function filtrarEquipos(equipos: readonly EquipoInventario[], f: FiltrosE
   return equipos.filter((e) => {
     if (f.tipo && e.tipo !== f.tipo) return false;
     if (f.local && (e.local || SIN_UBICACION) !== f.local) return false;
+    if (f.destino && destinoDe(e) !== f.destino) return false;
     if (f.area && (e.area ?? SIN_AREA) !== f.area) return false;
     if (f.estado && e.estado !== f.estado) return false;
     if (f.asignacion === 'asignados' && e.responsableId === null) return false;

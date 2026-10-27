@@ -59,41 +59,15 @@
         </fieldset>
       }
 
-      <div class="form-group">
-        <label for="reg-local">Local <span class="required">*</span></label>
-        <select id="reg-local" class="form-control" formControlName="localId">
-          <option [ngValue]="0">— Seleccione —</option>
-          @for (local of locales(); track local.id) {
-            <option [ngValue]="local.id">{{ local.nombre }}</option>
-          }
-        </select>
-      </div>
-      <div class="form-group">
-        <label for="reg-nivel">Nivel <span class="required">*</span></label>
-        <select id="reg-nivel" class="form-control" formControlName="nivelId">
-          <option [ngValue]="0">— Seleccione —</option>
-          @for (nivel of niveles(); track nivel.id) {
-            <option [ngValue]="nivel.id">{{ nivel.nombre }}</option>
-          }
-        </select>
-      </div>
-      <div class="form-group">
-        <label for="reg-ambiente">Ambiente <span class="required">*</span></label>
-        <select id="reg-ambiente" class="form-control" formControlName="ambienteId">
-          <option [ngValue]="0">— Seleccione —</option>
-          @for (ambiente of ambientes(); track ambiente.id) {
-            <option [ngValue]="ambiente.id">{{ ambiente.nombre }}</option>
-          }
-        </select>
-      </div>
-      <div class="form-group">
-        <label for="reg-area">Área</label>
-        <select id="reg-area" class="form-control" formControlName="areaId">
-          <option [ngValue]="0">— Sin área —</option>
-          @for (area of areas(); track area.id) {
-            <option [ngValue]="area.id">{{ area.nombre }}</option>
-          }
-        </select>
+      <div class="reg__span-2">
+        <app-ubicacion-destino
+          prefijo="reg"
+          [locales]="locales()"
+          [empresas]="empresas()"
+          [centrosCosto]="centrosCosto()"
+          [areas]="areas()"
+          (cambio)="ubicacion.set($event)"
+        />
       </div>
 
       <label class="reg__check reg__span-2">

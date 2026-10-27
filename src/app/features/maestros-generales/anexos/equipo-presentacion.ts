@@ -45,3 +45,9 @@ export function descargarBlob(archivo: Blob, nombre: string): void {
   enlace.click();
   URL.revokeObjectURL(url);
 }
+
+/** «Centro de costo: X» o «Empresa: X» según el destino del equipo; vacío si no tiene. */
+export function etiquetaDestino(destino: string | null, tipo: 'EMPRESA' | 'CENTRO_COSTO' | null): string {
+  if (!destino || !tipo) return '';
+  return `${tipo === 'CENTRO_COSTO' ? 'Centro de costo' : 'Empresa'}: ${destino}`;
+}

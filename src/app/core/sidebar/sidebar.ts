@@ -25,6 +25,7 @@ export class SidebarComponent {
     tesoreria: true,
     almacen: true,
     maestros: true,
+    'activo-fijo': true,
   });
 
   protected abierto(id: IdSubmenu): boolean {

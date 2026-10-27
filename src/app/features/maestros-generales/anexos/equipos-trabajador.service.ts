@@ -2,6 +2,7 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Service, inject } from '@angular/core';
 import { environment } from '@env';
 import { Observable } from 'rxjs';
+import { CuerpoDestino } from './ubicacion-destino/ubicacion-destino.util';
 import {
   EquipoAsignado,
   EquipoInventario,
@@ -47,7 +48,7 @@ export class EquiposTrabajadorService {
   reasignarEquipo(
     anexoId: number,
     equipoId: number,
-    body: { anexoDestinoId: number; fechaAsignacion: string; localId?: number; nivelId?: number; ambienteId?: number; areaId?: number },
+    body: { anexoDestinoId: number; fechaAsignacion: string } & Partial<CuerpoDestino>,
   ): Observable<EquipoAsignado> {
     return this.http.patch<EquipoAsignado>(`${this.baseUrl}/${anexoId}/equipos/${equipoId}/reasignar`, body);
   }

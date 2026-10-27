@@ -41,6 +41,10 @@ export class UbicacionesService {
     return this.http.patch<UbicacionItem>(`${this.apiUrl}/${id}`, payload);
   }
 
+  eliminar(id: number): Observable<void> {
+    return this.http.delete<void>(`${this.apiUrl}/${id}`);
+  }
+
   toggleEstado(id: number, estado: boolean): Observable<UbicacionItem> {
     return this.http.patch<UbicacionItem>(`${this.apiUrl}/${id}/estado`, { estado });
   }

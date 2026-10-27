@@ -24,6 +24,10 @@ export interface EquipoAsignado {
   ambiente: string;
   areaId: number | null;
   area: string | null;
+  /** A qué pertenece el local: la obra / centro de costo o la empresa (sede). */
+  destino: string | null;
+  destinoTipo: 'EMPRESA' | 'CENTRO_COSTO' | null;
+  destinoId: number | null;
 }
 
 /** Un equipo del inventario general, con su responsable (si lo tiene). */
@@ -36,9 +40,12 @@ export interface NuevaAsignacion {
   codigoBien: string;
   serie: string | null;
   fechaAsignacion: string;
-  localId: number;
-  nivelId: number;
-  ambienteId: number;
+  /** Destino: una empresa (con local, nivel y ambiente) o un centro de costo (sin ubicación). */
+  destinoTipo: 'EMPRESA' | 'CENTRO_COSTO';
+  destinoId: number;
+  localId?: number;
+  nivelId?: number;
+  ambienteId?: number;
   /** Si se omite, el backend usa el área de la ubicación. */
   areaId?: number;
   /** Características de esta unidad; el backend guarda solo las que difieren del catálogo. */
@@ -49,9 +56,11 @@ export interface NuevaAsignacion {
 export interface NuevoActivo {
   codigoBien: string;
   serie: string | null;
-  localId: number;
-  nivelId: number;
-  ambienteId: number;
+  destinoTipo: 'EMPRESA' | 'CENTRO_COSTO';
+  destinoId: number;
+  localId?: number;
+  nivelId?: number;
+  ambienteId?: number;
   areaId?: number;
   caracteristicas: Record<string, string>;
   anexoId?: number;
@@ -88,13 +97,26 @@ export interface NivelOpcion {
 export interface LocalOpcion {
   id: number;
   nombre: string;
+  /** Obra / centro de costo o empresa a la que pertenece el local. */
+  destino: string | null;
+  destinoTipo: 'EMPRESA' | 'CENTRO_COSTO' | null;
+  destinoId: number | null;
   niveles: NivelOpcion[];
+}
+
+export interface OpcionDestino {
+  id: number;
+  nombre: string;
 }
 
 export interface OpcionesEquipo {
   catalogo: BienCatalogo[];
   locales: LocalOpcion[];
   areas: AreaOpcion[];
+  /** Empresas a las que se puede asignar un equipo. */
+  empresas: OpcionDestino[];
+  /** Centros de costo a los que se puede asignar un equipo (sin los cerrados). */
+  centrosCosto: OpcionDestino[];
 }
 
 /** Datos del trabajador que se muestran en el encabezado del modal y en el QR. */
@@ -117,4 +139,6 @@ export interface MovimientoEquipo {
   ubicacionNueva: string | null;
   areaAnterior: string | null;
   areaNueva: string | null;
+  destinoAnterior: string | null;
+  destinoNuevo: string | null;
 }

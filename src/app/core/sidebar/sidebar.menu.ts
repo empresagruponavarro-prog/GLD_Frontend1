@@ -11,7 +11,7 @@ export interface EnlaceMenu {
   exacto?: boolean;
 }
 
-export type IdSubmenu = 'documentos' | 'tesoreria' | 'almacen' | 'maestros';
+export type IdSubmenu = 'documentos' | 'tesoreria' | 'almacen' | 'maestros' | 'activo-fijo';
 
 /** Grupo desplegable del menú (`.sidebar-item.has-sub` + `.sidebar-submenu`). */
 export interface SubmenuMenu {

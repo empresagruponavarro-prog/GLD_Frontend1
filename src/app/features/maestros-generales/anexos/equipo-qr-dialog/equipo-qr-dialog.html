@@ -33,10 +33,15 @@
         @for (c of caracteristicas(); track c[0]) {
           <div><dt>{{ c[0] }}</dt><dd>{{ c[1] }}</dd></div>
         }
-        <div>
-          <dt>Ubicación</dt>
-          <dd>{{ equipo().local }} / {{ equipo().nivel }} / {{ equipo().ambiente }}</dd>
-        </div>
+        @if (equipo().local) {
+          <div>
+            <dt>Ubicación</dt>
+            <dd>{{ equipo().local }} / {{ equipo().nivel }} / {{ equipo().ambiente }}</dd>
+          </div>
+        }
+        @if (equipo().destino) {
+          <div><dt>{{ equipo().destinoTipo === 'CENTRO_COSTO' ? 'Centro de costo' : 'Empresa' }}</dt><dd>{{ equipo().destino }}</dd></div>
+        }
         @if (trabajador(); as t) {
           <div><dt>Asignado a</dt><dd>{{ t.anexo }}</dd></div>
           <div><dt>Fecha</dt><dd>{{ fecha() }}</dd></div>

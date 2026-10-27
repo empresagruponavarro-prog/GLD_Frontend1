@@ -1,0 +1,123 @@
+<div class="ud">
+  <div class="ud__tipo" role="radiogroup" aria-label="Asignar a">
+    <button
+      type="button"
+      role="radio"
+      class="ud__opcion"
+      [class.ud__opcion--activa]="tipo() === 'EMPRESA'"
+      [attr.aria-checked]="tipo() === 'EMPRESA'"
+      (click)="elegirTipo('EMPRESA')"
+    >
+      <i class="fa-solid fa-building" aria-hidden="true"></i> Empresa
+    </button>
+    <button
+      type="button"
+      role="radio"
+      class="ud__opcion"
+      [class.ud__opcion--activa]="tipo() === 'CENTRO_COSTO'"
+      [attr.aria-checked]="tipo() === 'CENTRO_COSTO'"
+      (click)="elegirTipo('CENTRO_COSTO')"
+    >
+      <i class="fa-solid fa-helmet-safety" aria-hidden="true"></i> Centro de costo
+    </button>
+  </div>
+
+  @if (tipo() === 'EMPRESA') {
+    <div class="ud__grid">
+      <div class="form-group ud__ancho">
+        <label [attr.for]="prefijo() + '-empresa'">Empresa <span class="ud__req">*</span></label>
+        <select [id]="prefijo() + '-empresa'" class="form-control" [value]="empresaId() || ''" (change)="elegirEmpresa($event)">
+          <option value="">— Seleccione —</option>
+          @for (e of empresas(); track e.id) {
+            <option [value]="e.id" [selected]="empresaId() === e.id">{{ e.nombre }}</option>
+          }
+        </select>
+      </div>
+
+      @if (empresaId() > 0) {
+        @if (localesEmpresa().length === 0) {
+          <p class="ud__aviso ud__ancho">
+            Esta empresa aún no tiene ubicaciones. Créalas en Ubicaciones físicas › Agregar ubicación.
+          </p>
+        } @else {
+          @if (localesEmpresa().length > 1) {
+            <div class="form-group ud__ancho">
+              <label [attr.for]="prefijo() + '-local'">Local <span class="ud__req">*</span></label>
+              <select [id]="prefijo() + '-local'" class="form-control" [value]="localId() || ''" (change)="elegirLocal($event)">
+                <option value="">— Seleccione —</option>
+                @for (l of localesEmpresa(); track l.id) {
+                  <option [value]="l.id" [selected]="localId() === l.id">{{ l.nombre }}</option>
+                }
+              </select>
+            </div>
+          }
+          <div class="form-group">
+            <label [attr.for]="prefijo() + '-nivel'">Nivel <span class="ud__req">*</span></label>
+            <select
+              [id]="prefijo() + '-nivel'"
+              class="form-control"
+              [value]="nivelId() || ''"
+              [disabled]="localId() === 0"
+              (change)="elegirNivel($event)"
+            >
+              <option value="">— Seleccione —</option>
+              @for (n of niveles(); track n.id) {
+                <option [value]="n.id" [selected]="nivelId() === n.id">{{ n.nombre }}</option>
+              }
+            </select>
+          </div>
+          <div class="form-group">
+            <label [attr.for]="prefijo() + '-ambiente'">Ambiente <span class="ud__req">*</span></label>
+            <select
+              [id]="prefijo() + '-ambiente'"
+              class="form-control"
+              [value]="ambienteId() || ''"
+              [disabled]="nivelId() === 0"
+              (change)="elegirAmbiente($event)"
+            >
+              <option value="">— Seleccione —</option>
+              @for (a of ambientes(); track a.id) {
+                <option [value]="a.id" [selected]="ambienteId() === a.id">{{ a.nombre }}</option>
+              }
+            </select>
+          </div>
+          <div class="form-group ud__ancho">
+            <label [attr.for]="prefijo() + '-area'">Área</label>
+            <select [id]="prefijo() + '-area'" class="form-control" [value]="areaId() || ''" (change)="elegirArea($event)">
+              <option value="">— Sin área —</option>
+              @for (a of areas(); track a.id) {
+                <option [value]="a.id" [selected]="areaId() === a.id">{{ a.nombre }}</option>
+              }
+            </select>
+          </div>
+        }
+      }
+    </div>
+  } @else if (tipo() === 'CENTRO_COSTO') {
+    <div class="form-group">
+      <label [attr.for]="prefijo() + '-centro'">Centro de costo <span class="ud__req">*</span></label>
+      <input
+        [id]="prefijo() + '-centro'"
+        class="form-control"
+        type="text"
+        autocomplete="off"
+        placeholder="Escribe para buscar y selecciona de la lista..."
+        [attr.list]="prefijo() + '-centros'"
+        [value]="centroTexto()"
+        (input)="escribirCentro($event)"
+      />
+      <datalist [id]="prefijo() + '-centros'">
+        @for (c of centrosCosto(); track c.id) {
+          <option [value]="c.nombre"></option>
+        }
+      </datalist>
+      @if (centroId() > 0) {
+        <p class="ud__ok"><i class="fa-solid fa-circle-check" aria-hidden="true"></i> Centro de costo seleccionado</p>
+      } @else if (centroTexto().trim()) {
+        <p class="ud__aviso">Elige uno de la lista para continuar.</p>
+      }
+    </div>
+  } @else {
+    <p class="ud__aviso">Elige si el equipo va a una empresa o a un centro de costo.</p>
+  }
+</div>

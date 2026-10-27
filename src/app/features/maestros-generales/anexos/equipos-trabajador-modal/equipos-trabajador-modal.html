@@ -87,41 +87,15 @@
               </fieldset>
             }
 
-            <div class="form-group">
-              <label for="eq-local">Local <span class="required">*</span></label>
-              <select id="eq-local" class="form-control" formControlName="localId">
-                <option [ngValue]="0">— Seleccione —</option>
-                @for (local of locales(); track local.id) {
-                  <option [ngValue]="local.id">{{ local.nombre }}</option>
-                }
-              </select>
-            </div>
-            <div class="form-group">
-              <label for="eq-nivel">Nivel <span class="required">*</span></label>
-              <select id="eq-nivel" class="form-control" formControlName="nivelId">
-                <option [ngValue]="0">— Seleccione —</option>
-                @for (nivel of niveles(); track nivel.id) {
-                  <option [ngValue]="nivel.id">{{ nivel.nombre }}</option>
-                }
-              </select>
-            </div>
-            <div class="form-group">
-              <label for="eq-ambiente">Ambiente <span class="required">*</span></label>
-              <select id="eq-ambiente" class="form-control" formControlName="ambienteId">
-                <option [ngValue]="0">— Seleccione —</option>
-                @for (ambiente of ambientes(); track ambiente.id) {
-                  <option [ngValue]="ambiente.id">{{ ambiente.nombre }}</option>
-                }
-              </select>
-            </div>
-            <div class="form-group">
-              <label for="eq-area">Área</label>
-              <select id="eq-area" class="form-control" formControlName="areaId">
-                <option [ngValue]="0">— Sin área —</option>
-                @for (area of areas(); track area.id) {
-                  <option [ngValue]="area.id">{{ area.nombre }}</option>
-                }
-              </select>
+            <div class="equipos__span-2">
+              <app-ubicacion-destino
+                prefijo="eq-asignar"
+                [locales]="locales()"
+                [empresas]="empresas()"
+                [centrosCosto]="centrosCosto()"
+                [areas]="areas()"
+                (cambio)="ubicacionAsignar.set($event)"
+              />
             </div>
             <div class="form-group">
               <label for="eq-fecha">Fecha de asignación <span class="required">*</span></label>
@@ -171,46 +145,20 @@
           <div class="equipos__grid">
             <label class="equipos__check equipos__span-2">
               <input type="checkbox" formControlName="cambiarUbicacion" />
-              <span>Cambiar también la ubicación (ambiente)</span>
+              <span>Cambiar también el destino (empresa o centro de costo)</span>
             </label>
             @if (cambiaUbicacion()) {
-              <div class="form-group">
-                <label for="eq-re-local">Local <span class="required">*</span></label>
-                <select id="eq-re-local" class="form-control" formControlName="localId">
-                  <option [ngValue]="0">— Seleccione —</option>
-                  @for (local of locales(); track local.id) {
-                    <option [ngValue]="local.id">{{ local.nombre }}</option>
-                  }
-                </select>
-              </div>
-              <div class="form-group">
-                <label for="eq-re-nivel">Nivel <span class="required">*</span></label>
-                <select id="eq-re-nivel" class="form-control" formControlName="nivelId">
-                  <option [ngValue]="0">— Seleccione —</option>
-                  @for (nivel of reNiveles(); track nivel.id) {
-                    <option [ngValue]="nivel.id">{{ nivel.nombre }}</option>
-                  }
-                </select>
-              </div>
-              <div class="form-group">
-                <label for="eq-re-ambiente">Ambiente <span class="required">*</span></label>
-                <select id="eq-re-ambiente" class="form-control" formControlName="ambienteId">
-                  <option [ngValue]="0">— Seleccione —</option>
-                  @for (ambiente of reAmbientes(); track ambiente.id) {
-                    <option [ngValue]="ambiente.id">{{ ambiente.nombre }}</option>
-                  }
-                </select>
+              <div class="equipos__span-2">
+                <app-ubicacion-destino
+                  prefijo="eq-reasignar"
+                  [locales]="locales()"
+                  [empresas]="empresas()"
+                  [centrosCosto]="centrosCosto()"
+                  [areas]="areas()"
+                  (cambio)="ubicacionReasignar.set($event)"
+                />
               </div>
             }
-            <div class="form-group">
-              <label for="eq-re-area">Área</label>
-              <select id="eq-re-area" class="form-control" formControlName="areaId">
-                <option [ngValue]="0">— Mantener / por defecto —</option>
-                @for (area of areas(); track area.id) {
-                  <option [ngValue]="area.id">{{ area.nombre }}</option>
-                }
-              </select>
-            </div>
           </div>
           <div class="equipos__actions">
             <button class="btn btn-secondary" type="button" [disabled]="procesandoAccion()" (click)="cancelarReasignar()">
@@ -247,6 +195,7 @@
                     Ubicación: {{ m.ubicacionAnterior ?? '—' }} → {{ m.ubicacionNueva ?? '—' }}
                   </div>
                   <div class="equipos__small">Área: {{ m.areaAnterior ?? '—' }} → {{ m.areaNueva ?? '—' }}</div>
+                  <div class="equipos__small">Destino: {{ m.destinoAnterior ?? '—' }} → {{ m.destinoNuevo ?? '—' }}</div>
                 </li>
               }
             </ul>
@@ -307,6 +256,9 @@
                       }
                     } @else {
                       —
+                    }
+                    @if (equipo.destino) {
+                      <div class="equipos__small">{{ destino(equipo.destino, equipo.destinoTipo) }}</div>
                     }
                   </td>
                   <td><span [class]="'badge ' + claseEstado(equipo.estado)">{{ equipo.estado }}</span></td>

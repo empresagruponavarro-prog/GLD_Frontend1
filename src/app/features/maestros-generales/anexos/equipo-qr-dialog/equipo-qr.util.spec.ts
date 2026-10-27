@@ -22,6 +22,9 @@ const EQUIPO: EquipoAsignado = {
   ambiente: 'Oficina',
   areaId: 2,
   area: 'Sistemas',
+  destino: 'TAMBO PRUEBA',
+  destinoTipo: 'CENTRO_COSTO',
+  destinoId: 951,
 };
 
 const TRABAJADOR: TrabajadorResumen = {
@@ -42,9 +45,19 @@ describe('equipo-qr.util', () => {
     expect(lineas).toContain('Serie: -');
     expect(lineas).toContain('RAM: 16 GB');
     expect(lineas).toContain('Ubicacion: Sede / Piso 1 / Oficina');
+    expect(lineas).toContain('Destino: Centro de costo TAMBO PRUEBA');
     expect(lineas).toContain('Area: Sistemas');
     expect(lineas).toContain('Asignado a: Ana Pérez (DNI 12345678)');
     expect(lineas).toContain('Fecha asignacion: 26/10/2026');
+  });
+
+  it('sin trabajador (equipo disponible) no incluye a quién está asignado', () => {
+    const texto = contenidoQR({ ...EQUIPO, fechaAsignacion: '' }, null);
+    expect(texto).not.toContain('Asignado a');
+    expect(texto).not.toContain('Fecha asignacion');
+    expect(texto).toContain('Ubicacion: Sede / Piso 1 / Oficina');
+    // Un equipo en un centro de costo no tiene ubicación física.
+    expect(contenidoQR({ ...EQUIPO, local: '', nivel: '', ambiente: '' }, null)).not.toContain('Ubicacion');
   });
 
   it('escapa HTML', () => {

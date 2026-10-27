@@ -11,15 +11,17 @@ import {
   signal,
 } from '@angular/core';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
-import { AbstractControl, FormBuilder, FormControl, FormRecord, ReactiveFormsModule, Validators } from '@angular/forms';
+import { FormBuilder, FormControl, FormRecord, ReactiveFormsModule, Validators } from '@angular/forms';
 import { mensajeError } from '@shared/utils/errores-http';
 import { Observable } from 'rxjs';
 import { ModalComponent } from '../../../../shared/components/modal/modal';
-import { claseDeEstado, iconoDeTipo } from '../equipo-presentacion';
+import { claseDeEstado, etiquetaDestino, iconoDeTipo } from '../equipo-presentacion';
 import { EquipoQrDialogComponent } from '../equipo-qr-dialog/equipo-qr-dialog';
 import { AnexosService } from '../anexos.service';
 import { EquiposTrabajadorService } from '../equipos-trabajador.service';
 import { AnexoSelect } from '../interfaces/anexos.interface';
+import { UbicacionDestinoComponent } from '../ubicacion-destino/ubicacion-destino';
+import { DESTINO_VACIO, DestinoSeleccionado, cuerpoDestino, errorDestino } from '../ubicacion-destino/ubicacion-destino.util';
 import {
   AreaOpcion,
   BienCatalogo,
@@ -27,6 +29,7 @@ import {
   EstadoEquipo,
   LocalOpcion,
   MovimientoEquipo,
+  OpcionDestino,
   TrabajadorResumen,
 } from '../interfaces/equipo-asignado.interface';
 
@@ -39,7 +42,7 @@ function hoyISO(): string {
 @Component({
   selector: 'app-equipos-trabajador-modal',
   standalone: true,
-  imports: [ReactiveFormsModule, DatePipe, ModalComponent, EquipoQrDialogComponent],
+  imports: [ReactiveFormsModule, DatePipe, ModalComponent, EquipoQrDialogComponent, UbicacionDestinoComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './equipos-trabajador-modal.html',
   styleUrl: './equipos-trabajador-modal.css',
@@ -63,6 +66,11 @@ export class EquiposTrabajadorModalComponent implements OnInit {
   readonly catalogo = signal<BienCatalogo[]>([]);
   readonly locales = signal<LocalOpcion[]>([]);
   readonly areas = signal<AreaOpcion[]>([]);
+  readonly empresas = signal<OpcionDestino[]>([]);
+  readonly centrosCosto = signal<OpcionDestino[]>([]);
+  /** A dónde va el equipo que se está asignando / reasignando (empresa con ubicación, o centro de costo). */
+  readonly ubicacionAsignar = signal<DestinoSeleccionado>(DESTINO_VACIO);
+  readonly ubicacionReasignar = signal<DestinoSeleccionado>(DESTINO_VACIO);
   readonly mostrarForm = signal(false);
   readonly guardando = signal(false);
   readonly errorForm = signal<string | null>(null);
@@ -77,24 +85,16 @@ export class EquiposTrabajadorModalComponent implements OnInit {
     destinoId: [0, Validators.min(1)],
     fechaAsignacion: [hoyISO(), Validators.required],
     cambiarUbicacion: [false],
-    localId: [0],
-    nivelId: [{ value: 0, disabled: true }],
-    ambienteId: [{ value: 0, disabled: true }],
-    areaId: [0],
   });
 
   // Historial de movimientos de un equipo
   readonly historialDe = signal<EquipoAsignado | null>(null);
   readonly historial = signal<MovimientoEquipo[]>([]);
   readonly cargandoHistorial = signal(false);
-  private readonly reLocalSel = toSignal(this.formReasignar.controls.localId.valueChanges, { initialValue: 0 });
-  private readonly reNivelSel = toSignal(this.formReasignar.controls.nivelId.valueChanges, { initialValue: 0 });
   private readonly reCambiar = toSignal(this.formReasignar.controls.cambiarUbicacion.valueChanges, {
     initialValue: false,
   });
   readonly cambiaUbicacion = computed(() => this.reCambiar());
-  readonly reNiveles = computed(() => this.locales().find((l) => l.id === this.reLocalSel())?.niveles ?? []);
-  readonly reAmbientes = computed(() => this.reNiveles().find((n) => n.id === this.reNivelSel())?.ambientes ?? []);
   readonly destinos = computed(() => this.trabajadores().filter((t) => t.id !== this.trabajador().id));
 
   readonly caracteristicas = new FormRecord<FormControl<string>>({});
@@ -102,10 +102,6 @@ export class EquiposTrabajadorModalComponent implements OnInit {
   readonly form = this.fb.nonNullable.group({
     codigoBien: ['', Validators.required],
     serie: [''],
-    localId: [0, Validators.min(1)],
-    nivelId: [{ value: 0, disabled: true }, Validators.min(1)],
-    ambienteId: [{ value: 0, disabled: true }, Validators.min(1)],
-    areaId: [0],
     fechaAsignacion: [hoyISO(), Validators.required],
     /** Heredan los valores del catálogo; editar uno solo cambia esa característica en esta unidad. */
     caracteristicas: this.caracteristicas,
@@ -115,8 +111,6 @@ export class EquiposTrabajadorModalComponent implements OnInit {
   private readonly valoresCaracteristicas = toSignal(this.caracteristicas.valueChanges, {
     initialValue: {} as Record<string, string>,
   });
-  private readonly localSel = toSignal(this.form.controls.localId.valueChanges, { initialValue: 0 });
-  private readonly nivelSel = toSignal(this.form.controls.nivelId.valueChanges, { initialValue: 0 });
 
   readonly equiposPorTipo = computed(() => {
     const porTipo = new Map<string, BienCatalogo[]>();
@@ -131,8 +125,6 @@ export class EquiposTrabajadorModalComponent implements OnInit {
       personalizada: (valores[nombre] ?? base) !== base,
     }));
   });
-  readonly niveles = computed(() => this.locales().find((l) => l.id === this.localSel())?.niveles ?? []);
-  readonly ambientes = computed(() => this.niveles().find((n) => n.id === this.nivelSel())?.ambientes ?? []);
 
   constructor() {
     const c = this.form.controls;
@@ -143,32 +135,6 @@ export class EquiposTrabajadorModalComponent implements OnInit {
       for (const [nombre, valor] of Object.entries(bien?.caracteristicas ?? {})) {
         record.addControl(nombre, this.fb.nonNullable.control(valor));
       }
-    });
-    c.localId.valueChanges.pipe(takeUntilDestroyed()).subscribe((local) => {
-      c.nivelId.setValue(0);
-      this.habilitar(c.nivelId, local > 0);
-    });
-    c.nivelId.valueChanges.pipe(takeUntilDestroyed()).subscribe((nivel) => {
-      c.ambienteId.setValue(0);
-      this.habilitar(c.ambienteId, nivel > 0);
-    });
-
-    c.ambienteId.valueChanges.pipe(takeUntilDestroyed()).subscribe((ambiente) => {
-      c.areaId.setValue(this.areaDeAmbiente(c.localId.value, c.nivelId.value, ambiente));
-    });
-
-    // Misma cascada Local → Nivel → Ambiente en el panel de reasignación.
-    const r = this.formReasignar.controls;
-    r.localId.valueChanges.pipe(takeUntilDestroyed()).subscribe((local) => {
-      r.nivelId.setValue(0);
-      this.habilitar(r.nivelId, local > 0);
-    });
-    r.nivelId.valueChanges.pipe(takeUntilDestroyed()).subscribe((nivel) => {
-      r.ambienteId.setValue(0);
-      this.habilitar(r.ambienteId, nivel > 0);
-    });
-    r.ambienteId.valueChanges.pipe(takeUntilDestroyed()).subscribe((ambiente) => {
-      if (ambiente > 0) r.areaId.setValue(this.areaDeAmbiente(r.localId.value, r.nivelId.value, ambiente));
     });
   }
 
@@ -198,13 +164,6 @@ export class EquiposTrabajadorModalComponent implements OnInit {
     this.cargarOpciones((err) => this.errorForm.set(err));
   }
 
-  /** Área por defecto de la ubicación elegida (0 = sin área). */
-  private areaDeAmbiente(localId: number, nivelId: number, ambienteId: number): number {
-    const local = this.locales().find((l) => l.id === localId);
-    const nivel = local?.niveles.find((n) => n.id === nivelId);
-    return nivel?.ambientes.find((a) => a.id === ambienteId)?.areaId ?? 0;
-  }
-
   private cargarOpciones(alFallar: (mensaje: string) => void): void {
     if (this.catalogo().length > 0) return;
     this.service.getOpciones().subscribe({
@@ -212,6 +171,8 @@ export class EquiposTrabajadorModalComponent implements OnInit {
         this.catalogo.set(opciones.catalogo);
         this.locales.set(opciones.locales);
         this.areas.set(opciones.areas);
+        this.empresas.set(opciones.empresas);
+        this.centrosCosto.set(opciones.centrosCosto);
       },
       error: (err: unknown) => alFallar(mensajeError(err)),
     });
@@ -229,8 +190,9 @@ export class EquiposTrabajadorModalComponent implements OnInit {
       this.errorForm.set('Selecciona un equipo del catálogo.');
       return;
     }
-    if (v.localId < 1 || v.nivelId < 1 || v.ambienteId < 1) {
-      this.errorForm.set('Selecciona local, nivel y ambiente.');
+    const errorUbicacion = errorDestino(this.ubicacionAsignar());
+    if (errorUbicacion) {
+      this.errorForm.set(errorUbicacion);
       return;
     }
     if (!v.fechaAsignacion) {
@@ -245,10 +207,7 @@ export class EquiposTrabajadorModalComponent implements OnInit {
         codigoBien: v.codigoBien,
         serie: v.serie.trim() || null,
         fechaAsignacion: v.fechaAsignacion,
-        localId: v.localId,
-        nivelId: v.nivelId,
-        ambienteId: v.ambienteId,
-        ...(v.areaId > 0 ? { areaId: v.areaId } : {}),
+        ...cuerpoDestino(this.ubicacionAsignar()),
         caracteristicas: v.caracteristicas,
       })
       .subscribe({
@@ -268,9 +227,8 @@ export class EquiposTrabajadorModalComponent implements OnInit {
 
   protected abrirReasignar(equipo: EquipoAsignado): void {
     this.errorAccion.set(null);
-    this.formReasignar.reset({ destinoId: 0, fechaAsignacion: hoyISO(), cambiarUbicacion: false, localId: 0, areaId: 0 });
-    this.habilitar(this.formReasignar.controls.nivelId, false);
-    this.habilitar(this.formReasignar.controls.ambienteId, false);
+    this.formReasignar.reset({ destinoId: 0, fechaAsignacion: hoyISO(), cambiarUbicacion: false });
+    this.ubicacionReasignar.set(DESTINO_VACIO);
     this.reasignando.set(equipo);
     this.cargarOpciones((mensaje) => this.errorAccion.set(mensaje));
     if (this.trabajadores().length === 0) {
@@ -298,8 +256,9 @@ export class EquiposTrabajadorModalComponent implements OnInit {
       this.errorAccion.set('Indica la fecha de asignación.');
       return;
     }
-    if (v.cambiarUbicacion && (v.localId < 1 || v.nivelId < 1 || v.ambienteId < 1)) {
-      this.errorAccion.set('Selecciona local, nivel y ambiente de la nueva ubicación.');
+    const errorUbicacion = v.cambiarUbicacion ? errorDestino(this.ubicacionReasignar()) : null;
+    if (errorUbicacion) {
+      this.errorAccion.set(errorUbicacion);
       return;
     }
     const destino = this.trabajadores().find((t) => t.id === v.destinoId);
@@ -307,8 +266,7 @@ export class EquiposTrabajadorModalComponent implements OnInit {
       this.service.reasignarEquipo(this.trabajador().id, equipo.id, {
         anexoDestinoId: v.destinoId,
         fechaAsignacion: v.fechaAsignacion,
-        ...(v.cambiarUbicacion ? { localId: v.localId, nivelId: v.nivelId, ambienteId: v.ambienteId } : {}),
-        ...(v.areaId > 0 ? { areaId: v.areaId } : {}),
+        ...(v.cambiarUbicacion ? cuerpoDestino(this.ubicacionReasignar()) : {}),
       }),
       equipo.id,
       (movido) => this.ofrecerEntrega(v.destinoId, destino?.nombre ?? 'trabajador', movido),
@@ -384,6 +342,10 @@ export class EquiposTrabajadorModalComponent implements OnInit {
     this.historialDe.set(null);
   }
 
+  protected destino(destino: string | null, tipo: 'EMPRESA' | 'CENTRO_COSTO' | null): string {
+    return etiquetaDestino(destino, tipo);
+  }
+
   protected icono(tipo: string): string {
     return iconoDeTipo(tipo);
   }
@@ -403,12 +365,7 @@ export class EquiposTrabajadorModalComponent implements OnInit {
 
   private resetForm(): void {
     this.form.reset({ fechaAsignacion: hoyISO() });
-    this.habilitar(this.form.controls.nivelId, false);
-    this.habilitar(this.form.controls.ambienteId, false);
+    this.ubicacionAsignar.set(DESTINO_VACIO);
   }
 
-  private habilitar(control: AbstractControl, habilitar: boolean): void {
-    if (habilitar) control.enable({ emitEvent: false });
-    else control.disable({ emitEvent: false });
-  }
 }

@@ -1,5 +1,5 @@
 import { EquipoInventario } from '../anexos/interfaces/equipo-asignado.interface';
-import { contarPor, filtrarEquipos, ramDe, SIN_FILTROS, ubicacionDe } from './equipos-dashboard.util';
+import { contarPor, destinoDe, filtrarEquipos, ramDe, SIN_FILTROS, ubicacionDe } from './equipos-dashboard.util';
 
 function equipo(id: number, extra: Partial<EquipoInventario> = {}): EquipoInventario {
   return {
@@ -23,6 +23,9 @@ function equipo(id: number, extra: Partial<EquipoInventario> = {}): EquipoInvent
     ambiente: 'Sistemas',
     areaId: 1,
     area: 'Sistemas',
+    destino: 'Chorrillos',
+    destinoTipo: 'EMPRESA',
+    destinoId: 1,
     responsableId: 7,
     responsable: 'Ana',
     ...extra,
@@ -30,8 +33,8 @@ function equipo(id: number, extra: Partial<EquipoInventario> = {}): EquipoInvent
 }
 
 const PC = equipo(1);
-const LAPTOP = equipo(2, { tipo: 'Laptop', marca: 'HP', ambiente: 'Logística', area: null, areaId: null });
-const DISPONIBLE = equipo(3, { responsableId: null, responsable: null, estado: 'En reparación', local: '', nivel: '', ambiente: '' });
+const LAPTOP = equipo(2, { tipo: 'Laptop', marca: 'HP', ambiente: 'Logística', area: null, areaId: null, destino: 'TAMBO PRUEBA', destinoTipo: 'CENTRO_COSTO', destinoId: 951 });
+const DISPONIBLE = equipo(3, { responsableId: null, responsable: null, estado: 'En reparación', local: '', nivel: '', ambiente: '', destino: null, destinoTipo: null, destinoId: null });
 const EQUIPOS = [PC, LAPTOP, DISPONIBLE, equipo(4)];
 
 describe('equipos-dashboard.util', () => {
@@ -51,6 +54,18 @@ describe('equipos-dashboard.util', () => {
     expect(ramDe(equipo(9, { caracteristicas: {} }))).toBe('Sin dato');
     expect(ubicacionDe(PC)).toBe('Chorrillos · Piso 1 · Sistemas');
     expect(ubicacionDe(DISPONIBLE)).toBe('Sin ubicación');
+  });
+
+  it('indica la obra o sede a la que pertenece el equipo y filtra por ella', () => {
+    expect(destinoDe(PC)).toBe('Empresa: Chorrillos');
+    expect(destinoDe(LAPTOP)).toBe('Centro de costo: TAMBO PRUEBA');
+    expect(destinoDe(DISPONIBLE)).toBe('Sin destino');
+    expect(filtrarEquipos(EQUIPOS, { ...SIN_FILTROS, destino: 'Centro de costo: TAMBO PRUEBA' }).map((e) => e.id)).toEqual([2]);
+    expect(contarPor(EQUIPOS, destinoDe)).toEqual([
+      { etiqueta: 'Empresa: Chorrillos', cantidad: 2 },
+      { etiqueta: 'Centro de costo: TAMBO PRUEBA', cantidad: 1 },
+      { etiqueta: 'Sin destino', cantidad: 1 },
+    ]);
   });
 
   it('filtra por tipo, asignación y texto', () => {

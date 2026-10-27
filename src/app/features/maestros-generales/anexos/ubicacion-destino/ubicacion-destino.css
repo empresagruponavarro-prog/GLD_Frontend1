@@ -1,0 +1,72 @@
+.ud {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.ud__tipo {
+  display: inline-flex;
+  align-self: flex-start;
+  padding: 3px;
+  border: 1px solid var(--border-color, #e2e8f0);
+  border-radius: 10px;
+  background: #f1f5f9;
+}
+
+.ud__opcion {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.4rem 0.9rem;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: #475569;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.ud__opcion--activa {
+  background: #0f766e;
+  color: #fff;
+}
+
+.ud__grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem 1rem;
+}
+
+.ud__ancho {
+  grid-column: 1 / -1;
+}
+
+.ud__req {
+  color: #dc2626;
+}
+
+.ud__aviso,
+.ud__ok {
+  margin: 0;
+  font-size: 0.8rem;
+}
+
+.ud__aviso {
+  color: #92400e;
+}
+
+.ud__ok {
+  margin-top: 0.3rem;
+  color: #0f766e;
+}
+
+.ud .form-control:disabled {
+  background: #f1f5f9;
+}
+
+@media (max-width: 640px) {
+  .ud__grid {
+    grid-template-columns: 1fr;
+  }
+}

@@ -39,6 +39,7 @@ import type { Area } from '../../requerimientos/requerimientos.models';
   standalone: true,
   imports: [ReactiveFormsModule, ModalComponent, ExportarBotonesComponent],
   templateUrl: './locales.html',
+  styleUrl: './locales.css',
   host: { class: 'page-scroll' },
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -59,13 +60,17 @@ export class LocalesComponent {
   // ==================== 1. UBICACIONES CONSOLIDADAS (Solo lectura) ====================
   protected readonly ubicaciones = signal<UbicacionItem[]>([]);
   protected readonly busquedaUbicaciones = signal('');
+  protected readonly filtroEstadoUbicaciones = signal<'todas' | 'activas' | 'inactivas'>('todas');
   protected readonly isUbicacionesLoading = signal(false);
 
   protected readonly areas = signal<Area[]>([]);
 
   protected readonly ubicacionesFiltradas = computed(() => {
     const q = this.busquedaUbicaciones().trim().toLowerCase();
+    const estado = this.filtroEstadoUbicaciones();
     return this.ubicaciones().filter((u) => {
+      if (estado === 'activas' && !u.estado) return false;
+      if (estado === 'inactivas' && u.estado) return false;
       if (!q) return true;
       const enCodigo = u.codigo.toLowerCase().includes(q);
       const enLocal = (u.local_nombre ?? '').toLowerCase().includes(q) || (u.local_codigo ?? '').toLowerCase().includes(q);
@@ -78,6 +83,17 @@ export class LocalesComponent {
   });
 
   protected readonly totalUbicaciones = computed(() => this.ubicacionesFiltradas().length);
+  protected readonly ubicacionesActivas = computed(() => this.ubicaciones().filter((u) => u.estado).length);
+
+  // Edición de una ubicación (área, observaciones y estado; local, nivel y ambiente no cambian)
+  protected readonly ubicacionEditando = signal<UbicacionItem | null>(null);
+  protected readonly ubicacionGuardando = signal(false);
+  protected readonly ubicacionError = signal('');
+  protected readonly ubicacionForm = new FormGroup({
+    id_area: new FormControl<number | null>(null),
+    observaciones: new FormControl('', { nonNullable: true, validators: [Validators.maxLength(255)] }),
+    estado: new FormControl(true, { nonNullable: true }),
+  });
 
   // ==================== 2. LOCALES (SEDES) ====================
   protected readonly items = signal<LocalItem[]>([]);
@@ -189,15 +205,42 @@ export class LocalesComponent {
     estado: new FormControl(true, { nonNullable: true }),
   });
 
-  // ==================== 5. SELECTOR REUSABLE EN CASCADA ====================
+  // ==================== 5. AGREGAR UBICACIÓN (selector en cascada) ====================
   protected readonly selectorLocal = signal<number | null>(null);
   protected readonly selectorNivel = signal<number | null>(null);
   protected readonly selectorAmbiente = signal<number | null>(null);
-  protected readonly selectorResultado = signal<UbicacionItem | null>(null);
-  protected readonly selectorBuscando = signal(false);
-  protected readonly selectorNoEncontrado = signal(false);
-  protected readonly selectorAreaGuardando = signal(false);
-  protected readonly copiadoExito = signal(false);
+  protected readonly selectorArea = signal<number | null>(null);
+  protected readonly selectorAgregando = signal(false);
+  protected readonly selectorError = signal('');
+  /** Ubicación recién agregada desde el selector (muestra el aviso de éxito). */
+  protected readonly selectorAgregada = signal<UbicacionItem | null>(null);
+
+  protected readonly selectorLocalItem = computed(() => this.items().find((l) => l.id === this.selectorLocal()) ?? null);
+  protected readonly selectorNivelItem = computed(() => this.niveles().find((n) => n.id === this.selectorNivel()) ?? null);
+  protected readonly selectorAmbienteItem = computed(() => this.ambientes().find((a) => a.id === this.selectorAmbiente()) ?? null);
+  protected readonly selectorAreaItem = computed(() => this.areas().find((ar) => ar.id === this.selectorArea()) ?? null);
+  protected readonly selectorCompleto = computed(
+    () => this.selectorLocal() !== null && this.selectorNivel() !== null && this.selectorAmbiente() !== null,
+  );
+
+  /** Ubicación ya registrada con esa combinación; se busca en la lista cargada (no se crea nada al elegir). */
+  protected readonly selectorExistente = computed(() => {
+    const [local, nivel, ambiente] = [this.selectorLocal(), this.selectorNivel(), this.selectorAmbiente()];
+    if (local === null || nivel === null || ambiente === null) return null;
+    return this.ubicaciones().find((u) => u.id_local === local && u.id_nivel === nivel && u.id_ambiente === ambiente) ?? null;
+  });
+
+  /** Código que tendrá la ubicación nueva (el servidor la genera como LOCAL-NIVEL-AMBIENTE). */
+  protected readonly selectorCodigoPrevio = computed(() => {
+    const [l, n, a] = [this.selectorLocalItem(), this.selectorNivelItem(), this.selectorAmbienteItem()];
+    return l && n && a ? `${l.codigo}-${n.codigo}-${a.codigo}`.toUpperCase() : '';
+  });
+
+  /** Hay una ubicación registrada cuya área es distinta de la elegida (se puede actualizar). */
+  protected readonly selectorAreaDistinta = computed(() => {
+    const existente = this.selectorExistente();
+    return existente !== null && (existente.id_area ?? null) !== this.selectorArea();
+  });
 
   // Exportación
   protected readonly datosExportacion = computed<DatosExportacion>(() => {
@@ -343,101 +386,144 @@ export class LocalesComponent {
     input.value = valor;
   }
 
-  // ==================== 2. MÉTODOS SELECTOR EN CASCADA ====================
-  protected onSelectorLocalChange(event: Event): void {
+  // ==================== 2. MÉTODOS DEL SELECTOR (AGREGAR UBICACIÓN) ====================
+  private valorNumerico(event: Event): number | null {
     const val = (event.target as HTMLSelectElement).value;
-    this.selectorLocal.set(val ? Number(val) : null);
-    this.resolverSelector();
+    return val ? Number(val) : null;
+  }
+
+  private reiniciarAviso(): void {
+    this.selectorAgregada.set(null);
+    this.selectorError.set('');
+  }
+
+  protected onSelectorLocalChange(event: Event): void {
+    this.reiniciarAviso();
+    this.selectorLocal.set(this.valorNumerico(event));
   }
 
   protected onSelectorNivelChange(event: Event): void {
-    const val = (event.target as HTMLSelectElement).value;
-    this.selectorNivel.set(val ? Number(val) : null);
-    this.resolverSelector();
+    this.reiniciarAviso();
+    this.selectorNivel.set(this.valorNumerico(event));
   }
 
   protected onSelectorAmbienteChange(event: Event): void {
-    const val = (event.target as HTMLSelectElement).value;
-    this.selectorAmbiente.set(val ? Number(val) : null);
-    this.resolverSelector();
-  }
-
-  protected resolverSelector(): void {
-    const locId = this.selectorLocal();
-    const nivId = this.selectorNivel();
-    const ambId = this.selectorAmbiente();
-
-    if (!locId || !nivId || !ambId) {
-      this.selectorResultado.set(null);
-      this.selectorNoEncontrado.set(false);
-      return;
-    }
-
-    this.selectorBuscando.set(true);
-    this.ubicacionesService.resolver(locId, nivId, ambId).subscribe({
-      next: (item) => {
-        if (item) return this.mostrarResultadoSelector(item);
-
-        // No existe: se registra solo si el usuario tiene permiso de crear; si no, solo se informa.
-        if (!this.permisos.crear()) {
-          this.selectorBuscando.set(false);
-          this.selectorResultado.set(null);
-          this.selectorNoEncontrado.set(true);
-          return;
-        }
-        this.ubicacionesService.create({ id_local: locId, id_nivel: nivId, id_ambiente: ambId }).subscribe({
-          next: (creada) => this.mostrarResultadoSelector(creada),
-          error: () => {
-            this.selectorBuscando.set(false);
-            this.selectorResultado.set(null);
-            this.selectorNoEncontrado.set(true);
-          },
-        });
-      },
-      error: () => {
-        this.selectorBuscando.set(false);
-        this.selectorResultado.set(null);
-        this.selectorNoEncontrado.set(true);
-      },
-    });
-  }
-
-  private mostrarResultadoSelector(item: UbicacionItem): void {
-    this.selectorBuscando.set(false);
-    this.selectorResultado.set(item);
-    this.selectorNoEncontrado.set(false);
-    // Si no estaba en la lista local, recargar catálogo para mantenerlo sincronizado
-    if (!this.ubicaciones().some((u) => u.id === item.id)) {
-      this.loadUbicaciones();
-    }
+    this.reiniciarAviso();
+    this.selectorAmbiente.set(this.valorNumerico(event));
   }
 
   protected onSelectorAreaChange(event: Event): void {
-    const actual = this.selectorResultado();
-    if (!actual || !this.permisos.editar()) return;
+    this.reiniciarAviso();
+    this.selectorArea.set(this.valorNumerico(event));
+  }
 
-    const select = event.target as HTMLSelectElement;
-    const idArea = select.value ? Number(select.value) : null;
+  protected limpiarSelector(): void {
+    this.reiniciarAviso();
+    this.selectorLocal.set(null);
+    this.selectorNivel.set(null);
+    this.selectorAmbiente.set(null);
+    this.selectorArea.set(null);
+  }
 
-    this.selectorAreaGuardando.set(true);
-    this.ubicacionesService.update(actual.id, { id_area: idArea }).subscribe({
-      next: (item) => {
-        this.selectorAreaGuardando.set(false);
-        this.selectorResultado.set(item);
+  /** Registra la combinación elegida como ubicación nueva; aparece en la pestaña Ubicaciones. */
+  protected agregarUbicacion(): void {
+    const [local, nivel, ambiente] = [this.selectorLocal(), this.selectorNivel(), this.selectorAmbiente()];
+    if (!this.permisos.crear() || local === null || nivel === null || ambiente === null || this.selectorExistente()) return;
+    this.selectorError.set('');
+    this.selectorAgregando.set(true);
+    this.ubicacionesService
+      .create({ id_local: local, id_nivel: nivel, id_ambiente: ambiente, id_area: this.selectorArea() })
+      .subscribe({
+        next: (creada) => {
+          this.selectorAgregando.set(false);
+          this.selectorAgregada.set(creada);
+          this.loadUbicaciones();
+        },
+        error: (err: unknown) => {
+          this.selectorAgregando.set(false);
+          this.selectorError.set(errorMessage(err));
+        },
+      });
+  }
+
+  /** La ubicación ya existe pero con otra área: se actualiza a la elegida. */
+  protected actualizarAreaExistente(): void {
+    const existente = this.selectorExistente();
+    if (!existente || !this.permisos.editar()) return;
+    this.selectorError.set('');
+    this.selectorAgregando.set(true);
+    this.ubicacionesService.update(existente.id, { id_area: this.selectorArea() }).subscribe({
+      next: () => {
+        this.selectorAgregando.set(false);
         this.loadUbicaciones();
       },
       error: (err: unknown) => {
-        this.selectorAreaGuardando.set(false);
-        select.value = String(actual.id_area ?? '');
-        alert(errorMessage(err));
+        this.selectorAgregando.set(false);
+        this.selectorError.set(errorMessage(err));
       },
     });
   }
 
-  protected copiarCodigo(codigo: string): void {
-    navigator.clipboard.writeText(codigo);
-    this.copiadoExito.set(true);
-    setTimeout(() => this.copiadoExito.set(false), 2000);
+  /** Pasa a la pestaña Ubicaciones filtrada por el código de la ubicación indicada. */
+  protected verEnUbicaciones(codigo: string): void {
+    this.busquedaUbicaciones.set(codigo);
+    this.activeTab.set('ubicaciones');
+  }
+
+  // ==================== 2b. EDITAR / BORRAR UBICACIONES ====================
+  protected onBusquedaUbicaciones(event: Event): void {
+    this.busquedaUbicaciones.set((event.target as HTMLInputElement).value);
+  }
+
+  protected editarUbicacion(u: UbicacionItem): void {
+    if (!this.permisos.editar()) return;
+    this.ubicacionError.set('');
+    this.ubicacionForm.reset({ id_area: u.id_area, observaciones: u.observaciones ?? '', estado: u.estado });
+    this.ubicacionEditando.set(u);
+  }
+
+  protected cerrarUbicacionModal(): void {
+    this.ubicacionEditando.set(null);
+    this.ubicacionError.set('');
+  }
+
+  protected onUbicacionAreaChange(event: Event): void {
+    const valor = (event.target as HTMLSelectElement).value;
+    this.ubicacionForm.controls.id_area.setValue(valor ? Number(valor) : null);
+  }
+
+  protected guardarUbicacion(): void {
+    const actual = this.ubicacionEditando();
+    if (!actual) return;
+    if (this.ubicacionForm.invalid) {
+      this.ubicacionError.set('Las observaciones no pueden pasar de 255 caracteres.');
+      return;
+    }
+    const v = this.ubicacionForm.getRawValue();
+    this.ubicacionError.set('');
+    this.ubicacionGuardando.set(true);
+    this.ubicacionesService
+      .update(actual.id, { id_area: v.id_area, observaciones: v.observaciones.trim() || null, estado: v.estado })
+      .subscribe({
+        next: () => {
+          this.ubicacionGuardando.set(false);
+          this.cerrarUbicacionModal();
+          this.loadUbicaciones();
+        },
+        error: (err: unknown) => {
+          this.ubicacionGuardando.set(false);
+          this.ubicacionError.set(errorMessage(err));
+        },
+      });
+  }
+
+  protected eliminarUbicacion(u: UbicacionItem): void {
+    if (!this.permisos.eliminar()) return;
+    if (!confirm(`¿Eliminar la ubicación "${u.codigo}"? Esta acción no se puede deshacer.`)) return;
+    this.ubicacionesService.eliminar(u.id).subscribe({
+      next: () => this.loadUbicaciones(),
+      error: (err: unknown) => alert(errorMessage(err)),
+    });
   }
 
   // ==================== 3. MÉTODOS LOCALES ====================
