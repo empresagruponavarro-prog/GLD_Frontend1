@@ -1,4 +1,6 @@
-export type EstadoEquipo = 'Operativo' | 'En reparación' | 'De baja';
+export type EstadoEquipo = 'Operativo' | 'No operativo' | 'En reparación';
+/** Código con el que el servidor guarda el estado. */
+export type CodigoEstadoEquipo = 'OPERATIVO' | 'NO_OPERATIVO' | 'EN_REPARACION';
 
 export interface EquipoAsignado {
   id: number;
@@ -56,6 +58,7 @@ export interface NuevaAsignacion {
 export interface NuevoActivo {
   codigoBien: string;
   serie: string | null;
+  estado?: CodigoEstadoEquipo;
   destinoTipo: 'EMPRESA' | 'CENTRO_COSTO';
   destinoId: number;
   localId?: number;
@@ -130,7 +133,7 @@ export interface TrabajadorResumen {
 
 export interface MovimientoEquipo {
   id: number;
-  movimiento: 'Asignación' | 'Reasignación' | 'Devolución';
+  movimiento: 'Asignación' | 'Reasignación' | 'Devolución' | 'Traslado';
   /** ISO yyyy-MM-dd. */
   fecha: string;
   responsableAnterior: string | null;

@@ -1,0 +1,42 @@
+<app-modal
+  [isOpen]="true"
+  title="Mover equipo"
+  icon="fa-solid fa-arrows-up-down-left-right"
+  maxWidth="720px"
+  [showDefaultFooter]="false"
+  (closed)="cerrar.emit()"
+>
+  <div class="mov">
+    <p class="mov__equipo">
+      <strong>{{ equipo().tipo }} · {{ equipo().codigoActivo }}</strong>
+      @if (equipo().responsable) {
+        <span>a cargo de {{ equipo().responsable }}</span>
+      }
+    </p>
+    <p class="mov__actual"><span>Ahora está en</span> {{ actual() || 'Sin ubicación' }}</p>
+
+    @if (cargando()) {
+      <p class="mov__small">Cargando opciones...</p>
+    } @else {
+      <app-ubicacion-destino
+        prefijo="mov"
+        [locales]="locales()"
+        [empresas]="empresas()"
+        [centrosCosto]="centrosCosto()"
+        [areas]="areas()"
+        (cambio)="destino.set($event)"
+      />
+    }
+
+    @if (error(); as mensaje) {
+      <p class="mov__error" role="alert">{{ mensaje }}</p>
+    }
+
+    <div class="mov__actions">
+      <button class="btn btn-secondary" type="button" [disabled]="guardando()" (click)="cerrar.emit()">Cancelar</button>
+      <button class="btn btn-primary" type="button" [disabled]="guardando() || cargando()" (click)="guardar()">
+        <i class="fa-solid fa-check" aria-hidden="true"></i> {{ guardando() ? 'Moviendo...' : 'Mover equipo' }}
+      </button>
+    </div>
+  </div>
+</app-modal>

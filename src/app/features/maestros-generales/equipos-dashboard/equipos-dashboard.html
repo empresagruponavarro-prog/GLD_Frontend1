@@ -71,7 +71,7 @@
 
     <div class="eqd__kpi eqd__kpi--servicio" [class.eqd__kpi--alerta]="kpis().fueraDeServicio > 0">
       <span class="eqd__kpi-icono" aria-hidden="true"><i class="fa-solid fa-screwdriver-wrench"></i></span>
-      <span class="eqd__kpi-label">En reparación o de baja</span>
+      <span class="eqd__kpi-label">No operativos o en reparación</span>
       <strong class="eqd__kpi-value">{{ kpisVista().fueraDeServicio }}</strong>
       <span class="eqd__kpi-meter" aria-hidden="true"><span class="eqd__kpi-meter-fill" [style.--w]="proporciones().fueraDeServicio"></span></span>
       <span class="eqd__kpi-nota">{{ kpis().fueraDeServicio > 0 ? proporciones().fueraDeServicio + '% fuera de servicio' : 'Todo operativo' }}</span>
@@ -246,7 +246,7 @@
                       <span
                         class="eqd__barra-relleno"
                         [class.eqd__barra-relleno--reparacion]="d.filtro === 'estado' && c.etiqueta === 'En reparación'"
-                        [class.eqd__barra-relleno--baja]="d.filtro === 'estado' && c.etiqueta === 'De baja'"
+                        [class.eqd__barra-relleno--baja]="d.filtro === 'estado' && c.etiqueta === 'No operativo'"
                         [style.--w]="porcentaje(c, d.conteos)"
                         [style.--d]="ci * 40 + i * 30 + 'ms'"
                       ></span>
@@ -310,7 +310,17 @@
                     <span class="eqd__sin-asignar">Sin asignar</span>
                   }
                 </td>
-                <td><span [class]="'badge ' + claseEstado(e.estado)">{{ e.estado }}</span></td>
+                <td>
+                  @if (permisos.editar()) {
+                    <select class="eqd__estado" [class]="'eqd__estado ' + claseEstado(e.estado)" [attr.aria-label]="'Estado de ' + e.codigoActivo" [value]="e.estado" (change)="cambiarEstadoEquipo(e, $event)">
+                      @for (s of estados; track s) {
+                        <option [value]="s" [selected]="s === e.estado">{{ s }}</option>
+                      }
+                    </select>
+                  } @else {
+                    <span [class]="'badge ' + claseEstado(e.estado)">{{ e.estado }}</span>
+                  }
+                </td>
                 <td class="eqd__mono">{{ e.fechaAsignacion ? (e.fechaAsignacion | date: 'dd/MM/yyyy') : '—' }}</td>
                 <td class="eqd__acciones">
                   <button
@@ -322,6 +332,17 @@
                   >
                     <i class="fa-solid fa-qrcode" aria-hidden="true"></i>
                   </button>
+                  @if (permisos.editar()) {
+                    <button
+                      class="table-action-btn"
+                      type="button"
+                      title="Mover de empresa, ambiente o área"
+                      [attr.aria-label]="'Mover ' + e.codigoActivo"
+                      (click)="moviendo.set(e)"
+                    >
+                      <i class="fa-solid fa-arrows-up-down-left-right" aria-hidden="true"></i>
+                    </button>
+                  }
                   @if (e.responsableId !== null) {
                     <button
                       class="table-action-btn"
@@ -357,6 +378,10 @@
 
 @if (qrEquipo(); as equipo) {
   <app-equipo-qr-dialog [equipo]="equipo" (cerrar)="qrEquipo.set(null)" />
+}
+
+@if (moviendo(); as equipo) {
+  <app-mover-equipo-dialog [equipo]="equipo" (cerrar)="moviendo.set(null)" (movido)="alMover($event)" />
 }
 
 <app-modal

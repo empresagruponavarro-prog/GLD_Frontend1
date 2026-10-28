@@ -4,12 +4,13 @@ import { FormBuilder, FormControl, FormRecord, ReactiveFormsModule, Validators }
 import { mensajeError } from '@shared/utils/errores-http';
 import { ModalComponent } from '../../../../shared/components/modal/modal';
 import { AnexosService } from '../../anexos/anexos.service';
-import { hoyISO } from '../../anexos/equipo-presentacion';
+import { ESTADOS_EQUIPO, hoyISO } from '../../anexos/equipo-presentacion';
 import { EquiposTrabajadorService } from '../../anexos/equipos-trabajador.service';
 import { AnexoSelect } from '../../anexos/interfaces/anexos.interface';
 import {
   AreaOpcion,
   BienCatalogo,
+  CodigoEstadoEquipo,
   EquipoInventario,
   LocalOpcion,
   OpcionDestino,
@@ -57,6 +58,7 @@ export class RegistroActivoDialogComponent implements OnInit {
   readonly form = this.fb.nonNullable.group({
     codigoBien: ['', Validators.required],
     serie: [''],
+    estado: ['OPERATIVO' as CodigoEstadoEquipo],
     entregar: [false],
     anexoId: [0],
     fechaAsignacion: [hoyISO()],
@@ -83,6 +85,7 @@ export class RegistroActivoDialogComponent implements OnInit {
     }));
   });
   readonly entregar = computed(() => this.entregarSel());
+  protected readonly estadosEquipo = ESTADOS_EQUIPO;
 
   constructor() {
     this.form.controls.codigoBien.valueChanges.pipe(takeUntilDestroyed()).subscribe((codigo) => {
@@ -147,6 +150,7 @@ export class RegistroActivoDialogComponent implements OnInit {
       .registrarActivo({
         codigoBien: v.codigoBien,
         serie: v.serie.trim() || null,
+        estado: v.estado,
         ...cuerpoDestino(this.ubicacion()),
         caracteristicas: v.caracteristicas,
         ...(v.entregar ? { anexoId: v.anexoId, fechaAsignacion: v.fechaAsignacion } : {}),

@@ -6,10 +6,11 @@ import { mensajeError } from '@shared/utils/errores-http';
 import { ModalComponent } from '../../../shared/components/modal/modal';
 import { AnexosService } from '../anexos/anexos.service';
 import { EquipoQrDialogComponent } from '../anexos/equipo-qr-dialog/equipo-qr-dialog';
-import { claseDeEstado, descargarBlob, hoyISO, iconoDeTipo } from '../anexos/equipo-presentacion';
+import { claseDeEstado, descargarBlob, ESTADOS_EQUIPO, hoyISO, iconoDeTipo } from '../anexos/equipo-presentacion';
 import { EquiposTrabajadorService } from '../anexos/equipos-trabajador.service';
 import { AnexoSelect } from '../anexos/interfaces/anexos.interface';
 import { EquipoInventario, EstadoEquipo } from '../anexos/interfaces/equipo-asignado.interface';
+import { MoverEquipoDialogComponent } from './mover-equipo-dialog/mover-equipo-dialog';
 import { RegistroActivoDialogComponent } from './registro-activo-dialog/registro-activo-dialog';
 import {
   Asignacion,
@@ -55,7 +56,7 @@ const DURACION_KPI_MS = 650;
 @Component({
   selector: 'app-equipos-dashboard',
   standalone: true,
-  imports: [FormsModule, DatePipe, ModalComponent, RegistroActivoDialogComponent, EquipoQrDialogComponent],
+  imports: [FormsModule, DatePipe, ModalComponent, RegistroActivoDialogComponent, EquipoQrDialogComponent, MoverEquipoDialogComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   // El tablero es largo: el scroll va dentro de .content-body (ver .page-scroll en styles.css).
   host: { class: 'page-scroll' },
@@ -71,6 +72,7 @@ export class EquiposDashboardComponent {
   // Registro, QR y entrega desde el tablero
   readonly mostrarRegistro = signal(false);
   readonly qrEquipo = signal<EquipoInventario | null>(null);
+  readonly moviendo = signal<EquipoInventario | null>(null);
   readonly asignando = signal<EquipoInventario | null>(null);
   readonly trabajadores = signal<AnexoSelect[]>([]);
   readonly destinoId = signal(0);
@@ -90,7 +92,7 @@ export class EquiposDashboardComponent {
   readonly locales = computed(() => valoresUnicos(this.equipos(), (e) => e.local || SIN_UBICACION));
   readonly destinos = computed(() => valoresUnicos(this.equipos(), destinoDe));
   readonly areas = computed(() => valoresUnicos(this.equipos(), (e) => e.area ?? SIN_AREA));
-  readonly estados: readonly EstadoEquipo[] = ['Operativo', 'En reparación', 'De baja'];
+  readonly estados: readonly EstadoEquipo[] = ESTADOS_EQUIPO.map((e) => e.valor);
 
   readonly kpis = computed<Kpis>(() => {
     const lista = this.filtrados();
@@ -222,6 +224,12 @@ export class EquiposDashboardComponent {
     }
   }
 
+  /** El equipo ya cambió de lugar: la fila toma lo que devolvió el servidor. */
+  protected alMover(movido: EquipoInventario): void {
+    this.moviendo.set(null);
+    this.equipos.update((lista) => lista.map((e) => (e.id === movido.id ? movido : e)));
+  }
+
   protected abrirAsignar(equipo: EquipoInventario): void {
     this.errorAccion.set(null);
     this.destinoId.set(0);
@@ -265,6 +273,22 @@ export class EquiposDashboardComponent {
     this.service.descargarEntrega(equipo.responsableId, [equipo.id], equipo.fechaAsignacion || undefined).subscribe({
       next: (archivo) => descargarBlob(archivo, `ENTREGA DE EQUIPOS - ${equipo.responsable ?? 'trabajador'}.docx`),
       error: (err: unknown) => this.errorAccion.set(mensajeError(err)),
+    });
+  }
+
+  /** Cambia el estado de un equipo desde la tabla y deja la fila con lo que devuelve el servidor. */
+  protected cambiarEstadoEquipo(equipo: EquipoInventario, evento: Event): void {
+    const select = evento.target;
+    if (!(select instanceof HTMLSelectElement)) return;
+    const elegido = ESTADOS_EQUIPO.find((e) => e.valor === select.value);
+    if (!elegido || elegido.valor === equipo.estado) return;
+    this.errorAccion.set(null);
+    this.service.cambiarEstado(equipo.id, elegido.codigo).subscribe({
+      next: (actualizado) => this.equipos.update((lista) => lista.map((e) => (e.id === actualizado.id ? actualizado : e))),
+      error: (err: unknown) => {
+        select.value = equipo.estado;
+        this.errorAccion.set(mensajeError(err));
+      },
     });
   }
 

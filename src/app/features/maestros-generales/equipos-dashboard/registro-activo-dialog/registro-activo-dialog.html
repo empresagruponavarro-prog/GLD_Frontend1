@@ -27,6 +27,15 @@
         <input id="reg-serie" class="form-control reg__mono" type="text" maxlength="100" placeholder="Opcional" formControlName="serie" />
       </div>
 
+      <div class="form-group reg__span-2">
+        <label for="reg-estado">Estado</label>
+        <select id="reg-estado" class="form-control" formControlName="estado">
+          @for (e of estadosEquipo; track e.codigo) {
+            <option [value]="e.codigo">{{ e.valor }}</option>
+          }
+        </select>
+      </div>
+
       @if (bienSeleccionado(); as bien) {
         <fieldset class="reg__caract reg__span-2" formGroupName="caracteristicas">
           <legend>Características del equipo</legend>

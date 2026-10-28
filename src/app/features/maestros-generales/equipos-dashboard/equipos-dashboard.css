@@ -906,3 +906,19 @@ button.eqd__kpi {
   font-size: 0.85rem;
   color: var(--text-muted, #64748b);
 }
+
+/* Estado editable en la tabla: parece la insignia, pero se puede cambiar. */
+.eqd__estado {
+  padding: 0.2rem 1.4rem 0.2rem 0.6rem;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  font: inherit;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.eqd__estado:focus-visible {
+  outline: 2px solid var(--eqd-verde-oscuro);
+  outline-offset: 2px;
+}

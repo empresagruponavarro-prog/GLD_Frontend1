@@ -1,4 +1,4 @@
-import { EstadoEquipo } from './interfaces/equipo-asignado.interface';
+import { CodigoEstadoEquipo, EstadoEquipo } from './interfaces/equipo-asignado.interface';
 
 const ICONOS_POR_TIPO: readonly (readonly [string, string])[] = [
   ['laptop', 'fa-laptop'],
@@ -15,9 +15,16 @@ const ICONOS_POR_TIPO: readonly (readonly [string, string])[] = [
 
 const CLASE_ESTADO: Record<EstadoEquipo, string> = {
   Operativo: 'badge-completed',
+  'No operativo': 'badge-danger',
   'En reparación': 'badge-pending',
-  'De baja': 'badge-danger',
 };
+
+/** Estados que se pueden elegir, con el código que guarda el servidor. */
+export const ESTADOS_EQUIPO: readonly { valor: EstadoEquipo; codigo: CodigoEstadoEquipo }[] = [
+  { valor: 'Operativo', codigo: 'OPERATIVO' },
+  { valor: 'No operativo', codigo: 'NO_OPERATIVO' },
+  { valor: 'En reparación', codigo: 'EN_REPARACION' },
+];
 
 /** Icono Font Awesome según el tipo de equipo (Laptop, PC, Celular...). */
 export function iconoDeTipo(tipo: string): string {

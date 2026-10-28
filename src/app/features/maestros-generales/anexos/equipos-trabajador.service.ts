@@ -4,6 +4,7 @@ import { environment } from '@env';
 import { Observable } from 'rxjs';
 import { CuerpoDestino } from './ubicacion-destino/ubicacion-destino.util';
 import {
+  CodigoEstadoEquipo,
   EquipoAsignado,
   EquipoInventario,
   MovimientoEquipo,
@@ -25,6 +26,16 @@ export class EquiposTrabajadorService {
   /** Registra un activo en el inventario (con o sin trabajador). */
   registrarActivo(body: NuevoActivo): Observable<EquipoInventario> {
     return this.http.post<EquipoInventario>(`${this.baseUrl}/equipos`, body);
+  }
+
+  /** Cambia al equipo de empresa / centro de costo, ambiente o área, con o sin responsable. */
+  moverEquipo(equipoId: number, body: CuerpoDestino & { fecha: string }): Observable<EquipoInventario> {
+    return this.http.patch<EquipoInventario>(`${this.baseUrl}/equipos/${equipoId}/mover`, body);
+  }
+
+  /** Cambia el estado de un equipo (operativo, no operativo, en reparación). */
+  cambiarEstado(equipoId: number, estado: CodigoEstadoEquipo): Observable<EquipoInventario> {
+    return this.http.patch<EquipoInventario>(`${this.baseUrl}/equipos/${equipoId}/estado`, { estado });
   }
 
   /** Entrega a un trabajador un equipo disponible. */
