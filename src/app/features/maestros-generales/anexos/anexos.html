@@ -1,8 +1,8 @@
 <div class="content-header">
   <div>
-    <h1 class="content-title">Anexos</h1>
+    <h1 class="content-title">{{ modoPersonas ? 'Personas' : 'Anexos' }}</h1>
     <p class="content-subtitle">
-      Maestro de anexos (proveedores, clientes y trabajadores).
+      {{ modoPersonas ? 'Trabajadores que reciben equipos tecnológicos. Haz clic en un nombre para ver sus equipos.' : 'Maestro de anexos (proveedores, clientes y trabajadores).' }}
     </p>
   </div>
   <div style="display: flex; gap: 0.5rem; align-items: center">
@@ -101,8 +101,34 @@
       <td>{{ nombreEspecialidad(item.AnexoEspecialidadId) }}</td>
       <td>{{ nombreTipoDoc(item.AnexoTipoDocIdeId) }}</td>
       <td>{{ item.NumeroDocIde ?? '—' }}</td>
-      <td><strong>{{ item.Anexo ?? '—' }}</strong></td>
-      <td>{{ item.NombreComercial ?? '—' }}</td>
+      <td>
+        @if (item.tipoAnexo === 'Trabajador') {
+          <button
+            class="anexo-link"
+            type="button"
+            title="Ver equipos tecnológicos"
+            (click)="openEquipos(item)"
+          >
+            <strong>{{ item.Anexo ?? '—' }}</strong>
+          </button>
+        } @else {
+          <strong>{{ item.Anexo ?? '—' }}</strong>
+        }
+      </td>
+      <td>
+        @if (item.tipoAnexo === 'Trabajador' && item.NombreComercial) {
+          <button
+            class="anexo-link"
+            type="button"
+            title="Ver equipos tecnológicos"
+            (click)="openEquipos(item)"
+          >
+            {{ item.NombreComercial }}
+          </button>
+        } @else {
+          {{ item.NombreComercial ?? '—' }}
+        }
+      </td>
       <td>{{ item.Contacto ?? '—' }}</td>
       <td align="center">
         <span
@@ -289,6 +315,16 @@
     </div>
   </div>
 </app-modal>
+
+<!-- Modal equipos tecnológicos del trabajador -->
+@if (trabajadorEquipos(); as t) {
+  <app-equipos-trabajador-modal
+    [trabajador]="t"
+    [puedeAsignar]="permisos.crear()"
+    [puedeGestionar]="permisos.editar()"
+    (cerrar)="closeEquipos()"
+  />
+}
 
 <!-- Modal detalle (solo lectura) -->
 <app-modal

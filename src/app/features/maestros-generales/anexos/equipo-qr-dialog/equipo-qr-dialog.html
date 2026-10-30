@@ -1,0 +1,63 @@
+<div class="qr-overlay" role="presentation" (click)="cerrar.emit()" (keydown.escape)="cerrar.emit()">
+  <div
+    class="qr-dialog"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="qr-dialog-titulo"
+    tabindex="-1"
+    (click)="$event.stopPropagation()"
+    (keydown.escape)="cerrar.emit()"
+  >
+    <header class="qr-dialog__header">
+      <div>
+        <h3 id="qr-dialog-titulo" class="qr-dialog__title">
+          {{ equipo().tipo }} · {{ equipo().marca }} {{ equipo().modelo }}
+        </h3>
+        <p class="qr-dialog__code">{{ equipo().codigo }} · {{ equipo().codigoActivo }}</p>
+      </div>
+      <button class="qr-dialog__close" type="button" aria-label="Cerrar código QR" (click)="cerrar.emit()">
+        <i class="fa-solid fa-xmark" aria-hidden="true"></i>
+      </button>
+    </header>
+
+    <div class="qr-dialog__body">
+      <div class="qr-dialog__code-box">
+        <qrcode [qrdata]="contenido()" [width]="200" errorCorrectionLevel="M" elementType="canvas" />
+      </div>
+
+      <dl class="qr-dialog__data">
+        <div><dt>N° Serie</dt><dd class="qr-dialog__mono">{{ equipo().serie ?? '—' }}</dd></div>
+        @if (equipo().color) {
+          <div><dt>Color</dt><dd>{{ equipo().color }}</dd></div>
+        }
+        @for (c of caracteristicas(); track c[0]) {
+          <div><dt>{{ c[0] }}</dt><dd>{{ c[1] }}</dd></div>
+        }
+        @if (equipo().local) {
+          <div>
+            <dt>Ubicación</dt>
+            <dd>{{ equipo().local }} / {{ equipo().nivel }} / {{ equipo().ambiente }}</dd>
+          </div>
+        }
+        @if (equipo().destino) {
+          <div><dt>{{ equipo().destinoTipo === 'CENTRO_COSTO' ? 'Centro de costo' : 'Empresa' }}</dt><dd>{{ equipo().destino }}</dd></div>
+        }
+        @if (trabajador(); as t) {
+          <div><dt>Asignado a</dt><dd>{{ t.anexo }}</dd></div>
+          <div><dt>Fecha</dt><dd>{{ fecha() }}</dd></div>
+        }
+      </dl>
+    </div>
+
+    <p class="qr-dialog__hint">Al escanearlo con cualquier celular se muestran las características del equipo.</p>
+
+    <footer class="qr-dialog__footer">
+      <button class="btn btn-secondary" type="button" (click)="descargarPng()">
+        <i class="fa-solid fa-download" aria-hidden="true"></i> Descargar PNG
+      </button>
+      <button class="btn btn-primary" type="button" (click)="imprimirEtiqueta()">
+        <i class="fa-solid fa-print" aria-hidden="true"></i> Imprimir etiqueta
+      </button>
+    </footer>
+  </div>
+</div>

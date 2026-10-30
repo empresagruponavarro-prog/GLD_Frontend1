@@ -1,0 +1,419 @@
+<div class="content-header">
+  <div>
+    <h1 class="content-title">Equipos Tecnológicos</h1>
+    <p class="content-subtitle">Inventario de laptops, PC, celulares y demás equipos: dónde están y quién los tiene.</p>
+  </div>
+  <div class="eqd__acciones-cabecera">
+    @if (permisos.crear()) {
+      <button id="eqd-registrar" class="btn btn-primary" type="button" (click)="mostrarRegistro.set(true)">
+        <i class="fa-solid fa-plus" aria-hidden="true"></i> Registrar activo
+      </button>
+    }
+    <button id="eqd-actualizar" class="btn btn-secondary" type="button" [disabled]="cargando()" (click)="cargar()">
+      <i class="fa-solid fa-arrows-rotate" [class.fa-spin]="cargando()" aria-hidden="true"></i>
+      {{ cargando() ? 'Cargando...' : 'Actualizar' }}
+    </button>
+  </div>
+</div>
+
+<div class="content-body">
+  @if (error() ?? errorAccion(); as mensaje) {
+    <p class="eqd__error" role="alert"><i class="fa-solid fa-circle-exclamation" aria-hidden="true"></i> {{ mensaje }}</p>
+  }
+
+  @if (hayFiltros()) {
+    <p class="eqd__filtro-activo">
+      Mostrando <strong>{{ filtrados().length }}</strong> de {{ equipos().length }} equipos con el filtro aplicado.
+      <button class="toolbar-reset" type="button" (click)="restablecer()">
+        <i class="fa-solid fa-rotate-left" aria-hidden="true"></i> Quitar filtro
+      </button>
+    </p>
+  }
+
+  <section class="eqd__kpis" [class.eqd__kpis--cargando]="cargandoInicial()" aria-label="Resumen" [attr.aria-busy]="cargandoInicial()">
+    <div class="eqd__kpi eqd__kpi--total">
+      <span class="eqd__kpi-icono" aria-hidden="true"><i class="fa-solid fa-laptop"></i></span>
+      <span class="eqd__kpi-label">Total de equipos</span>
+      <strong class="eqd__kpi-value">{{ kpisVista().total }}</strong>
+      <span class="eqd__kpi-meter" aria-hidden="true"><span class="eqd__kpi-meter-fill" style="--w: 100"></span></span>
+      <span class="eqd__kpi-nota">{{ hayFiltros() ? 'Con los filtros aplicados' : 'Todo el inventario' }}</span>
+    </div>
+
+    <button
+      id="eqd-kpi-asignados"
+      class="eqd__kpi eqd__kpi--accion"
+      type="button"
+      [class.eqd__kpi--activo]="filtros().asignacion === 'asignados'"
+      [attr.aria-pressed]="filtros().asignacion === 'asignados'"
+      (click)="alternarAsignacion('asignados')"
+    >
+      <span class="eqd__kpi-icono" aria-hidden="true"><i class="fa-solid fa-user-check"></i></span>
+      <span class="eqd__kpi-label">Asignados</span>
+      <strong class="eqd__kpi-value">{{ kpisVista().asignados }}</strong>
+      <span class="eqd__kpi-meter" aria-hidden="true"><span class="eqd__kpi-meter-fill" [style.--w]="proporciones().asignados"></span></span>
+      <span class="eqd__kpi-nota">{{ proporciones().asignados }}% con responsable</span>
+    </button>
+
+    <button
+      id="eqd-kpi-disponibles"
+      class="eqd__kpi eqd__kpi--accion"
+      type="button"
+      [class.eqd__kpi--activo]="filtros().asignacion === 'disponibles'"
+      [attr.aria-pressed]="filtros().asignacion === 'disponibles'"
+      (click)="alternarAsignacion('disponibles')"
+    >
+      <span class="eqd__kpi-icono" aria-hidden="true"><i class="fa-solid fa-box-open"></i></span>
+      <span class="eqd__kpi-label">Disponibles</span>
+      <strong class="eqd__kpi-value">{{ kpisVista().disponibles }}</strong>
+      <span class="eqd__kpi-meter" aria-hidden="true"><span class="eqd__kpi-meter-fill" [style.--w]="proporciones().disponibles"></span></span>
+      <span class="eqd__kpi-nota">{{ proporciones().disponibles }}% listos para entregar</span>
+    </button>
+
+    <div class="eqd__kpi eqd__kpi--servicio" [class.eqd__kpi--alerta]="kpis().fueraDeServicio > 0">
+      <span class="eqd__kpi-icono" aria-hidden="true"><i class="fa-solid fa-screwdriver-wrench"></i></span>
+      <span class="eqd__kpi-label">No operativos o en reparación</span>
+      <strong class="eqd__kpi-value">{{ kpisVista().fueraDeServicio }}</strong>
+      <span class="eqd__kpi-meter" aria-hidden="true"><span class="eqd__kpi-meter-fill" [style.--w]="proporciones().fueraDeServicio"></span></span>
+      <span class="eqd__kpi-nota">{{ kpis().fueraDeServicio > 0 ? proporciones().fueraDeServicio + '% fuera de servicio' : 'Todo operativo' }}</span>
+    </div>
+  </section>
+
+  @if (!cargando() && equipos().length === 0 && !error()) {
+    <section class="eqd__vacio" aria-label="Sin equipos">
+      <span class="eqd__vacio-icono" aria-hidden="true"><i class="fa-solid fa-laptop-code"></i></span>
+      <h2 class="eqd__vacio-titulo">Todavía no hay equipos registrados</h2>
+      <p class="eqd__vacio-texto">Registra el primer activo y aparecerá aquí con su ubicación y responsable.</p>
+      @if (permisos.crear()) {
+        <button class="btn btn-primary" type="button" (click)="mostrarRegistro.set(true)">
+          <i class="fa-solid fa-plus" aria-hidden="true"></i> Registrar el primer activo
+        </button>
+      }
+    </section>
+  } @else if (cargandoInicial() && !error()) {
+    <section class="eqd__grid" aria-hidden="true">
+      @for (n of esqueletos; track n) {
+        <article class="eqd__card eqd__card--esqueleto">
+          <span class="eqd__skeleton eqd__skeleton--titulo"></span>
+          <span class="eqd__skeleton eqd__skeleton--fila"></span>
+          <span class="eqd__skeleton eqd__skeleton--fila eqd__skeleton--media"></span>
+          <span class="eqd__skeleton eqd__skeleton--fila eqd__skeleton--corta"></span>
+        </article>
+      }
+    </section>
+  } @else {
+    <section class="eqd__panorama" aria-label="Panorama">
+      <article class="eqd__card eqd__card--dona">
+        <h2 class="eqd__card-title">
+          <span class="eqd__icono" aria-hidden="true"><i class="fa-solid fa-chart-pie"></i></span>
+          Asignación
+        </h2>
+        <div class="eqd__dona-cuerpo">
+          <div class="eqd__dona" role="img" [attr.aria-label]="proporciones().asignados + '% de los equipos tiene responsable'">
+            <svg viewBox="0 0 42 42" aria-hidden="true">
+              <circle class="eqd__dona-pista" cx="21" cy="21" r="15.9155"></circle>
+              <circle class="eqd__dona-arco" cx="21" cy="21" r="15.9155" [style.--p]="dona().asignados"></circle>
+            </svg>
+            <div class="eqd__dona-centro">
+              <strong>{{ proporciones().asignados }}%</strong>
+              <span>asignado</span>
+            </div>
+          </div>
+          <ul class="eqd__leyenda">
+            <li><span class="eqd__punto eqd__punto--asignado" aria-hidden="true"></span> Asignados <strong>{{ kpisVista().asignados }}</strong></li>
+            <li><span class="eqd__punto eqd__punto--disponible" aria-hidden="true"></span> Disponibles <strong>{{ kpisVista().disponibles }}</strong></li>
+          </ul>
+        </div>
+      </article>
+
+      <article class="eqd__card eqd__card--entregas">
+        <h2 class="eqd__card-title">
+          <span class="eqd__icono" aria-hidden="true"><i class="fa-solid fa-truck-ramp-box"></i></span>
+          Entregas por mes
+        </h2>
+        <ul class="eqd__columnas">
+          @for (m of entregas(); track m.clave; let i = $index) {
+            <li class="eqd__columna" [attr.title]="m.cantidad + ' entregas en ' + m.clave" [style.--d]="i * 70 + 'ms'">
+              <span class="eqd__columna-valor">{{ m.cantidad }}</span>
+              <span class="eqd__columna-pista"><span class="eqd__columna-barra" [style.--h]="m.alto"></span></span>
+              <span class="eqd__columna-mes">{{ m.etiqueta }}</span>
+            </li>
+          }
+        </ul>
+      </article>
+
+      <article class="eqd__card eqd__card--tipos">
+        <h2 class="eqd__card-title">
+          <span class="eqd__icono" aria-hidden="true"><i class="fa-solid fa-layer-group"></i></span>
+          Composición por tipo
+        </h2>
+        <div class="eqd__apilada" role="img" aria-label="Composición del inventario por tipo de equipo">
+          @for (t of composicionTipos(); track t.etiqueta) {
+            <span class="eqd__tramo" [style.--w]="t.ancho" [style.--c]="t.color" [attr.title]="t.etiqueta + ': ' + t.cantidad"></span>
+          }
+        </div>
+        <ul class="eqd__leyenda eqd__leyenda--tipos">
+          @for (t of composicionTipos(); track t.etiqueta) {
+            <li>
+              <button
+                type="button"
+                class="eqd__leyenda-btn"
+                [class.eqd__leyenda-btn--activo]="activo('tipo', t.etiqueta)"
+                [attr.aria-pressed]="activo('tipo', t.etiqueta)"
+                (click)="filtrarPor('tipo', t.etiqueta)"
+              >
+                <span class="eqd__punto" [style.--c]="t.color" aria-hidden="true"></span>
+                {{ t.etiqueta }} <strong>{{ t.cantidad }}</strong> <span class="eqd__pct">{{ t.porcentaje }}%</span>
+              </button>
+            </li>
+          }
+        </ul>
+      </article>
+
+      <article class="eqd__card eqd__card--mapa">
+        <h2 class="eqd__card-title">
+          <span class="eqd__icono" aria-hidden="true"><i class="fa-solid fa-border-all"></i></span>
+          Ambiente × tipo
+        </h2>
+        @if (mapa().filas.length === 0) {
+          <p class="eqd__sin-datos">Sin datos</p>
+        } @else {
+          <div class="eqd__mapa-wrap">
+            <table class="eqd__mapa">
+              <thead>
+                <tr>
+                  <th scope="col"><span class="eqd__sr">Ambiente</span></th>
+                  @for (c of mapa().columnas; track c) {
+                    <th scope="col">{{ c }}</th>
+                  }
+                </tr>
+              </thead>
+              <tbody>
+                @for (f of mapa().filas; track f.etiqueta; let fi = $index) {
+                  <tr>
+                    <th scope="row" [attr.title]="f.etiqueta">{{ f.etiqueta }}</th>
+                    @for (v of f.celdas; track $index) {
+                      <td>
+                        <span
+                          class="eqd__celda"
+                          [class.eqd__celda--vacia]="v === 0"
+                          [class.eqd__celda--oscura]="intensidad(v) >= 60"
+                          [style.--i]="intensidad(v)"
+                          [style.--d]="fi * 50 + $index * 25 + 'ms'"
+                          [attr.title]="v + ' equipos'"
+                          >{{ v || '' }}</span
+                        >
+                      </td>
+                    }
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        }
+      </article>
+    </section>
+
+    <section class="eqd__grid" aria-label="Distribución de equipos">
+      @for (d of distribuciones(); track d.titulo; let ci = $index) {
+        <article class="eqd__card">
+          <h2 class="eqd__card-title">
+            <span class="eqd__icono" aria-hidden="true"><i class="fa-solid" [class]="d.icono"></i></span>
+            {{ d.titulo }}
+          </h2>
+          @if (d.conteos.length === 0) {
+            <p class="eqd__sin-datos">Sin datos</p>
+          } @else {
+            <ul class="eqd__lista">
+              @for (c of d.conteos; track c.etiqueta; let i = $index) {
+                <li>
+                  <button
+                    class="eqd__fila"
+                    type="button"
+                    [class.eqd__fila--activa]="activo(d.filtro, c.etiqueta)"
+                    [class.eqd__fila--libre]="!d.filtro"
+                    [disabled]="!d.filtro"
+                    [attr.aria-label]="c.etiqueta + ': ' + c.cantidad"
+                    [attr.aria-pressed]="d.filtro ? activo(d.filtro, c.etiqueta) : null"
+                    (click)="filtrarPor(d.filtro, c.etiqueta)"
+                  >
+                    <span class="eqd__etiqueta" [attr.title]="c.etiqueta">
+                      @if (activo(d.filtro, c.etiqueta)) {
+                        <i class="fa-solid fa-check eqd__check" aria-hidden="true"></i>
+                      }
+                      {{ c.etiqueta }}
+                    </span>
+                    <span class="eqd__barra">
+                      <span
+                        class="eqd__barra-relleno"
+                        [class.eqd__barra-relleno--reparacion]="d.filtro === 'estado' && c.etiqueta === 'En reparación'"
+                        [class.eqd__barra-relleno--baja]="d.filtro === 'estado' && c.etiqueta === 'No operativo'"
+                        [style.--w]="porcentaje(c, d.conteos)"
+                        [style.--d]="ci * 40 + i * 30 + 'ms'"
+                      ></span>
+                    </span>
+                    <strong class="eqd__cantidad">{{ c.cantidad }}</strong>
+                  </button>
+                </li>
+              }
+            </ul>
+          }
+        </article>
+      }
+    </section>
+
+    <section class="eqd__detalle" aria-label="Detalle de equipos">
+      <h2 class="eqd__card-title">
+        <span class="eqd__icono" aria-hidden="true"><i class="fa-solid fa-table-list"></i></span>
+        Detalle
+        <span class="eqd__contador">{{ filtrados().length }}</span>
+      </h2>
+      <div class="eqd__tabla-wrap">
+        <table class="eqd__tabla">
+          <thead>
+            <tr>
+              <th>Equipo</th>
+              <th>Marca / Modelo</th>
+              <th>N° Serie</th>
+              <th>Ubicación</th>
+              <th>Área</th>
+              <th>Responsable</th>
+              <th>Estado</th>
+              <th>Asignado</th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (e of filtrados(); track e.id) {
+              <tr>
+                <td>
+                  <div class="eqd__tipo">
+                    <span class="eqd__tipo-icono" aria-hidden="true"><i class="fa-solid" [class]="icono(e.tipo)"></i></span>
+                    <div>
+                      <strong>{{ e.tipo }}</strong>
+                      <div class="eqd__codigo">{{ e.codigo }} · {{ e.codigoActivo }}</div>
+                    </div>
+                  </div>
+                </td>
+                <td>{{ e.marca }} {{ e.modelo }}</td>
+                <td class="eqd__mono">{{ e.serie ?? '—' }}</td>
+                <td>
+                  {{ ubicacion(e) }}
+                  @if (e.destino) {
+                    <div class="eqd__codigo">{{ destinoEtiqueta(e) }}</div>
+                  }
+                </td>
+                <td>{{ e.area ?? '—' }}</td>
+                <td>
+                  @if (e.responsable) {
+                    {{ e.responsable }}
+                  } @else {
+                    <span class="eqd__sin-asignar">Sin asignar</span>
+                  }
+                </td>
+                <td>
+                  @if (permisos.editar()) {
+                    <select class="eqd__estado" [class]="'eqd__estado ' + claseEstado(e.estado)" [attr.aria-label]="'Estado de ' + e.codigoActivo" [value]="e.estado" (change)="cambiarEstadoEquipo(e, $event)">
+                      @for (s of estados; track s) {
+                        <option [value]="s" [selected]="s === e.estado">{{ s }}</option>
+                      }
+                    </select>
+                  } @else {
+                    <span [class]="'badge ' + claseEstado(e.estado)">{{ e.estado }}</span>
+                  }
+                </td>
+                <td class="eqd__mono">{{ e.fechaAsignacion ? (e.fechaAsignacion | date: 'dd/MM/yyyy') : '—' }}</td>
+                <td class="eqd__acciones">
+                  <button
+                    class="table-action-btn"
+                    type="button"
+                    title="Ver código QR"
+                    [attr.aria-label]="'Ver código QR de ' + e.codigoActivo"
+                    (click)="qrEquipo.set(e)"
+                  >
+                    <i class="fa-solid fa-qrcode" aria-hidden="true"></i>
+                  </button>
+                  @if (permisos.editar()) {
+                    <button
+                      class="table-action-btn"
+                      type="button"
+                      title="Mover de empresa, ambiente o área"
+                      [attr.aria-label]="'Mover ' + e.codigoActivo"
+                      (click)="moviendo.set(e)"
+                    >
+                      <i class="fa-solid fa-arrows-up-down-left-right" aria-hidden="true"></i>
+                    </button>
+                  }
+                  @if (e.responsableId !== null) {
+                    <button
+                      class="table-action-btn"
+                      type="button"
+                      title="Hoja de entrega (.docx)"
+                      [attr.aria-label]="'Descargar hoja de entrega de ' + e.codigoActivo"
+                      (click)="descargarActa(e)"
+                    >
+                      <i class="fa-solid fa-file-arrow-down" aria-hidden="true"></i>
+                    </button>
+                  } @else if (permisos.editar()) {
+                    <button class="eqd__pill" type="button" (click)="abrirAsignar(e)">
+                      <i class="fa-solid fa-user-check" aria-hidden="true"></i> Asignar
+                    </button>
+                  }
+                </td>
+              </tr>
+            } @empty {
+              <tr>
+                <td colspan="9" class="eqd__sin-datos eqd__sin-datos--tabla">Ningún equipo coincide con los filtros.</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </section>
+  }
+</div>
+
+@if (mostrarRegistro()) {
+  <app-registro-activo-dialog (cerrar)="mostrarRegistro.set(false)" (registrado)="alRegistrar($event)" />
+}
+
+@if (qrEquipo(); as equipo) {
+  <app-equipo-qr-dialog [equipo]="equipo" (cerrar)="qrEquipo.set(null)" />
+}
+
+@if (moviendo(); as equipo) {
+  <app-mover-equipo-dialog [equipo]="equipo" (cerrar)="moviendo.set(null)" (movido)="alMover($event)" />
+}
+
+<app-modal
+  [isOpen]="asignando() !== null"
+  title="Entregar equipo a un trabajador"
+  icon="fa-solid fa-user-check"
+  maxWidth="520px"
+  [loading]="guardandoEntrega()"
+  submitText="Entregar"
+  submitIcon="fa-solid fa-check"
+  (closed)="asignando.set(null)"
+  (saved)="confirmarAsignar()"
+>
+  @if (asignando(); as equipo) {
+    <p class="eqd__entrega-detalle">
+      <strong>{{ equipo.tipo }} {{ equipo.marca }} {{ equipo.modelo }}</strong> · {{ equipo.codigoActivo }}
+    </p>
+  }
+  <div class="form-group">
+    <label for="eqd-trabajador">Trabajador</label>
+    <select id="eqd-trabajador" class="form-control" [ngModel]="destinoId()" (ngModelChange)="destinoId.set($event)">
+      <option [ngValue]="0">— Seleccione —</option>
+      @for (t of trabajadores(); track t.id) {
+        <option [ngValue]="t.id">{{ t.nombre }}</option>
+      }
+    </select>
+  </div>
+  <div class="form-group">
+    <label for="eqd-fecha">Fecha de entrega</label>
+    <input id="eqd-fecha" class="form-control" type="date" [ngModel]="fechaEntrega()" (ngModelChange)="fechaEntrega.set($event)" />
+  </div>
+  @if (errorAccion(); as mensaje) {
+    <p class="eqd__error" role="alert">{{ mensaje }}</p>
+  }
+</app-modal>

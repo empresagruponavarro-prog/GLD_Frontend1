@@ -51,9 +51,9 @@ describe('SidebarComponent', () => {
     const { enlaces, textos } = await setup('Administrador', misPermisos('Administrador', {}, true));
     const lista = enlaces();
     expect(lista.map((e) => e.href)).toEqual(TODAS);
-    expect(lista).toHaveLength(32);
-    expect(textos('.menu-category')).toEqual(['Navegación', 'Operaciones', 'Módulos del Sistema', 'Administración']);
-    expect(textos('.sidebar-item.has-sub > span')).toEqual(['Documentos', 'Tesorería', 'Control de Almacén', 'Maestros Generales']);
+    expect(lista).toHaveLength(36);
+    expect(textos('.menu-category')).toEqual(['Navegación', 'Operaciones', 'Módulos del Sistema', 'Inv. Tecnología', 'Administración']);
+    expect(textos('.sidebar-item.has-sub > span')).toEqual(['Documentos', 'Tesorería', 'Control de Almacén', 'Maestros Generales', 'Activo Fijo']);
     expect(lista[0]).toEqual({
       href: '/dashboard-situacional',
       texto: 'Dashboard Situacional',
@@ -74,9 +74,9 @@ describe('SidebarComponent', () => {
       'Jefe de Área',
       misPermisos('Jefe de Área', { incidencias: {}, 'tesoreria.pagos': {}, 'tesoreria.cuentas': {}, 'maestros.anexos': {} }),
     );
-    expect(enlaces().map((e) => e.href)).toEqual(['/incidencias', '/tesoreria/pagos', '/tesoreria/cuentas', '/anexos']);
-    expect(textos('.menu-category')).toEqual(['Operaciones', 'Módulos del Sistema']);
-    expect(textos('.sidebar-item.has-sub > span')).toEqual(['Tesorería', 'Maestros Generales']);
+    expect(enlaces().map((e) => e.href)).toEqual(['/incidencias', '/tesoreria/pagos', '/tesoreria/cuentas', '/anexos', '/equipos-tecnologicos', '/personas']);
+    expect(textos('.menu-category')).toEqual(['Operaciones', 'Módulos del Sistema', 'Inv. Tecnología']);
+    expect(textos('.sidebar-item.has-sub > span')).toEqual(['Tesorería', 'Maestros Generales', 'Activo Fijo']);
   });
 
   it('Administración se muestra a cualquier rol con ver (la decide la matriz, no el rol)', async () => {

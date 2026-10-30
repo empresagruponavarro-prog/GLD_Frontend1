@@ -1,0 +1,118 @@
+<app-modal
+  [isOpen]="true"
+  title="Registrar activo fijo"
+  icon="fa-solid fa-laptop-code"
+  maxWidth="820px"
+  [showDefaultFooter]="false"
+  (closed)="cerrar.emit()"
+>
+  <form class="reg" [formGroup]="form" (ngSubmit)="guardar()" novalidate>
+    <div class="reg__grid">
+      <div class="form-group reg__span-2">
+        <label for="reg-bien">Bien del catálogo <span class="required">*</span></label>
+        <select id="reg-bien" class="form-control" formControlName="codigoBien">
+          <option value="">{{ cargando() ? 'Cargando...' : '— Seleccione —' }}</option>
+          @for (grupo of equiposPorTipo(); track grupo[0]) {
+            <optgroup [label]="grupo[0]">
+              @for (bien of grupo[1]; track bien.codigo) {
+                <option [value]="bien.codigo">{{ bien.codigo }} · {{ bien.descripcion }}</option>
+              }
+            </optgroup>
+          }
+        </select>
+      </div>
+
+      <div class="form-group reg__span-2">
+        <label for="reg-serie">N° Serie</label>
+        <input id="reg-serie" class="form-control reg__mono" type="text" maxlength="100" placeholder="Opcional" formControlName="serie" />
+      </div>
+
+      <div class="form-group reg__span-2">
+        <label for="reg-estado">Estado</label>
+        <select id="reg-estado" class="form-control" formControlName="estado">
+          @for (e of estadosEquipo; track e.codigo) {
+            <option [value]="e.codigo">{{ e.valor }}</option>
+          }
+        </select>
+      </div>
+
+      @if (bienSeleccionado(); as bien) {
+        <fieldset class="reg__caract reg__span-2" formGroupName="caracteristicas">
+          <legend>Características del equipo</legend>
+          @if (filasCaracteristicas().length === 0) {
+            <p class="reg__small">Este bien no tiene características registradas en el catálogo.</p>
+          } @else {
+            <p class="reg__small">
+              Vienen del catálogo ({{ bien.codigo }}). Si este equipo tiene otra configuración, edita solo la que cambia.
+            </p>
+            <div class="reg__caract-grid">
+              @for (fila of filasCaracteristicas(); track fila.nombre) {
+                <div class="form-group">
+                  <label [attr.for]="'reg-c-' + fila.nombre">
+                    {{ fila.nombre }}
+                    @if (fila.personalizada) {
+                      <button class="reg__restore" type="button" (click)="restaurar(fila.nombre)">Personalizada · restaurar</button>
+                    }
+                  </label>
+                  <input
+                    [id]="'reg-c-' + fila.nombre"
+                    class="form-control"
+                    type="text"
+                    maxlength="150"
+                    [formControlName]="fila.nombre"
+                  />
+                </div>
+              }
+            </div>
+          }
+        </fieldset>
+      }
+
+      <div class="reg__span-2">
+        <app-ubicacion-destino
+          prefijo="reg"
+          [locales]="locales()"
+          [empresas]="empresas()"
+          [centrosCosto]="centrosCosto()"
+          [areas]="areas()"
+          (cambio)="ubicacion.set($event)"
+        />
+      </div>
+
+      <label class="reg__check reg__span-2">
+        <input type="checkbox" formControlName="entregar" />
+        <span>Entregarlo ahora a un trabajador (si no, queda disponible en el inventario)</span>
+      </label>
+      @if (entregar()) {
+        <div class="form-group">
+          <label for="reg-trabajador">Trabajador <span class="required">*</span></label>
+          <select id="reg-trabajador" class="form-control" formControlName="anexoId">
+            <option [ngValue]="0">— Seleccione —</option>
+            @for (t of trabajadores(); track t.id) {
+              <option [ngValue]="t.id">{{ t.nombre }}</option>
+            }
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="reg-fecha">Fecha de entrega <span class="required">*</span></label>
+          <input id="reg-fecha" class="form-control" type="date" formControlName="fechaAsignacion" />
+        </div>
+      }
+    </div>
+
+    @if (error(); as mensaje) {
+      <p class="reg__error" role="alert">{{ mensaje }}</p>
+    }
+
+    <div class="reg__actions">
+      <button class="btn btn-secondary" type="button" [disabled]="guardando()" (click)="cerrar.emit()">Cancelar</button>
+      <button class="btn btn-primary" type="submit" [disabled]="guardando() || cargando()">
+        @if (guardando()) {
+          <i class="fa-solid fa-spinner fa-spin" aria-hidden="true"></i> Guardando...
+        } @else {
+          <i class="fa-solid fa-floppy-disk" aria-hidden="true"></i> Registrar activo
+        }
+      </button>
+    </div>
+  </form>
+</app-modal>

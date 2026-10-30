@@ -23,6 +23,7 @@
     "@angular/platform-browser-dynamic": "^22.0.0",
     "@angular/router": "^22.0.0",
     "@tailwindcss/postcss": "^4.3.3",
+    "angularx-qrcode": "22.0.1",
     "docx-preview": "^0.4.1",
     "exceljs": "^4.4.0",
     "lucide-angular": "^0.365.0",

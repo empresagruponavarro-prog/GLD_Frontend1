@@ -11,6 +11,7 @@ import { EmpresasComponent } from './features/administration/empresas/empresas';
 import { MaestrosGeneralesComponent } from './features/maestros-generales/maestros-generales';
 import { AnexosComponent } from './features/maestros-generales/anexos/anexos';
 import { ProductosComponent } from './features/maestros-generales/productos/productos';
+import { EquiposDashboardComponent } from './features/maestros-generales/equipos-dashboard/equipos-dashboard';
 import { EspecialidadesComponent } from './features/maestros-generales/especialidades/especialidades';
 import { TipoDocIdentidadComponent } from './features/maestros-generales/tipo-doc-identidad/tipo-doc-identidad';
 import { CentrosCostosDashboardComponent } from './features/centros-costos/centro-costos-dashboard/centros-costos-dashboard';
@@ -28,6 +29,7 @@ import { StockActualComponent } from './features/almacen/stock/stock';
 import { RecepcionesComponent } from './features/almacen/recepciones/recepciones';
 import { DocumentosAdministracionComponent } from './features/documentos/administracion/administracion';
 import { AreasComponent } from './features/maestros-generales/areas/areas';
+import { LocalesComponent } from './features/maestros-generales/locales/locales';
 import { AreasModulosComponent } from './features/administration/roles/areas-modulos/areas-modulos';
 import { UnidadesMedidaComponent } from './features/maestros-generales/unidades-medida/unidades-medida';
 import { ImprimirComponent } from './features/imprimir/imprimir';
@@ -71,6 +73,9 @@ export const routes: Routes = [
       rutaModulo('admin/empresas', EmpresasComponent, 'admin.empresas'),
       rutaModulo('anexos', AnexosComponent, 'maestros.anexos'),
       rutaModulo('productos', ProductosComponent, 'maestros.productos'),
+      rutaModulo('equipos-tecnologicos', EquiposDashboardComponent, 'maestros.anexos'),
+      // Maestro de personas del módulo Activo Fijo: los anexos de tipo Trabajador (reutiliza la pantalla de Anexos).
+      rutaModulo('personas', AnexosComponent, 'maestros.anexos'),
       rutaModulo('maestros-generales/especialidades', EspecialidadesComponent, 'maestros.generales'),
       rutaModulo('maestros-generales/tipo-doc-identidad', TipoDocIdentidadComponent, 'maestros.generales'),
       rutaModulo('maestros-generales/unidades-medida', UnidadesMedidaComponent, 'maestros.generales'),
@@ -78,6 +83,8 @@ export const routes: Routes = [
       rutaModulo('documentos/origen', DocumentosOrigenComponent, 'documentos.origen'),
       rutaModulo('documentos/administracion', DocumentosAdministracionComponent, 'documentos.administracion'),
       rutaModulo('maestros-generales/areas', AreasComponent, 'maestros.areas'),
+      rutaModulo('maestros-generales/locales', LocalesComponent, 'maestros.generales'),
+      rutaModulo('maestros-generales/ubicaciones', LocalesComponent, 'maestros.generales'),
       rutaModulo('tesoreria/cuentas', CuentasComponent, 'tesoreria.cuentas'),
       rutaModulo('tesoreria/tipo-cambio', TipoCambioComponent, 'tesoreria.tipo-cambio'),
       rutaModulo('tesoreria/programacion', ProgramacionComponent, 'tesoreria.programacion'),

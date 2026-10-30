@@ -1,4 +1,4 @@
-import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, OnInit, inject } from '@angular/core';
 import { DecimalPipe } from '@angular/common';
 import { Observable, finalize, forkJoin, map, of, switchMap } from 'rxjs';
 import { CentrosCostosDashboardService } from './centros-costos-dashboard.service';
@@ -29,7 +29,7 @@ export class CentrosCostosDashboardComponent implements OnInit {
   ];
 
   centros: CentroCostoItem[] = [];
-  totalCentros: number = 0;
+  totalCentros = 0;
   selectedCentro: CentroCostoItem | null = null;
   resumen: ResumenFinanciero | null = null;
 
@@ -43,30 +43,28 @@ export class CentrosCostosDashboardComponent implements OnInit {
   };
 
   // Valores de los filtros
-  filtroEstado: string = 'TODOS'; // Por defecto ABIERTO según imagen 1
-  filtroEmpresa: string = 'TODOS';
-  filtroPeriodo: string = 'TODOS';
-  filtroCliente: string = 'TODOS';
-  filtroCentroCosto: string = '';
-  filtroPptoEstado: string = 'TODOS';
-  filtroSearch: string = '';
+  filtroEstado = 'TODOS'; // Por defecto ABIERTO según imagen 1
+  filtroEmpresa = 'TODOS';
+  filtroPeriodo = 'TODOS';
+  filtroCliente = 'TODOS';
+  filtroCentroCosto = '';
+  filtroPptoEstado = 'TODOS';
+  filtroSearch = '';
 
-  loadingCentros: boolean = false;
-  loadingResumen: boolean = false;
-  isDetailOpen: boolean = false;
-  exportingLista: boolean = false;
+  loadingCentros = false;
+  loadingResumen = false;
+  isDetailOpen = false;
+  exportingLista = false;
 
   // Paginación de la tabla
-  currentPage: number = 1;
-  pageSize: number = 20;
+  currentPage = 1;
+  pageSize = 20;
 
-  private searchDebounceTimer: any;
-  private ctoDebounceTimer: any;
+  private searchDebounceTimer: ReturnType<typeof setTimeout> | undefined;
+  private ctoDebounceTimer: ReturnType<typeof setTimeout> | undefined;
 
-  constructor(
-    private dashboardService: CentrosCostosDashboardService,
-    private cdr: ChangeDetectorRef
-  ) {}
+  private readonly dashboardService = inject(CentrosCostosDashboardService);
+  private readonly cdr = inject(ChangeDetectorRef);
 
   ngOnInit(): void {
     this.loadCatalogos();

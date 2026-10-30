@@ -1,4 +1,5 @@
 import { Component, computed, inject, signal } from '@angular/core';
+import { ActivatedRoute } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { permisosDePantalla } from '@app/core/auth/permisos-pantalla';
@@ -9,12 +10,21 @@ import { ModalComponent } from '../../../shared/components/modal/modal';
 import { traerTodasLasPaginas, type DatosExportacion } from '../../../shared/utils/exportar';
 import { DataTable } from '../../../shared/interfaces';
 import { Anexo, AnexoQuery, SelectOption, TipoAnexo } from './interfaces/anexos.interface';
+import { TrabajadorResumen } from './interfaces/equipo-asignado.interface';
+import { EquiposTrabajadorModalComponent } from './equipos-trabajador-modal/equipos-trabajador-modal';
 import { AnexosService } from './anexos.service';
 
 @Component({
   selector: 'app-anexos',
   standalone: true,
-  imports: [CommonModule, FormsModule, DataTableComponent, ModalComponent, ExportarBotonesComponent],
+  imports: [
+    CommonModule,
+    FormsModule,
+    DataTableComponent,
+    ModalComponent,
+    ExportarBotonesComponent,
+    EquiposTrabajadorModalComponent,
+  ],
   templateUrl: './anexos.html',
   styleUrl: './anexos.css',
 })
@@ -22,6 +32,9 @@ export class AnexosComponent {
   private readonly service = inject(AnexosService);
   /** Botones de escritura según la matriz (maestros.anexos). */
   protected readonly permisos = permisosDePantalla('maestros.anexos');
+
+  /** En `/personas` (módulo Activo Fijo) la pantalla abre filtrada por los trabajadores. */
+  protected readonly modoPersonas = inject(ActivatedRoute).snapshot.routeConfig?.path === 'personas';
 
   readonly tiposAnexo: TipoAnexo[] = ['Proveedor', 'Cliente', 'Trabajador'];
 
@@ -46,7 +59,7 @@ export class AnexosComponent {
   totalRecords = signal<number>(0);
 
   // Filtros
-  tipoAnexoFilter = signal<TipoAnexo | ''>('');
+  tipoAnexoFilter = signal<TipoAnexo | ''>(this.modoPersonas ? 'Trabajador' : '');
   anexoFilter = signal<string>('');
   estadoFilter = signal<boolean | null>(null);
 
@@ -59,6 +72,9 @@ export class AnexosComponent {
   // Modal detalle
   showDetail = signal<boolean>(false);
   detail = signal<Anexo | null>(null);
+
+  // Modal equipos tecnológicos (solo Trabajador)
+  trabajadorEquipos = signal<TrabajadorResumen | null>(null);
 
   // Combos
   especialidades = signal<SelectOption[]>([]);
@@ -153,7 +169,7 @@ export class AnexosComponent {
   }
 
   resetFilters() {
-    this.tipoAnexoFilter.set('');
+    this.tipoAnexoFilter.set(this.modoPersonas ? 'Trabajador' : '');
     this.anexoFilter.set('');
     this.estadoFilter.set(null);
     this.currentPage.set(1);
@@ -186,6 +202,21 @@ export class AnexosComponent {
   openDetail(item: Anexo) {
     this.detail.set(item);
     this.showDetail.set(true);
+  }
+
+  openEquipos(item: Anexo) {
+    if (item.tipoAnexo !== 'Trabajador') return;
+    this.trabajadorEquipos.set({
+      id: item.id,
+      anexo: item.Anexo ?? item.NombreComercial ?? `ID ${item.id}`,
+      tipoDocumento: this.nombreTipoDoc(item.AnexoTipoDocIdeId),
+      numeroDocumento: item.NumeroDocIde ?? '—',
+      especialidad: this.nombreEspecialidad(item.AnexoEspecialidadId),
+    });
+  }
+
+  closeEquipos() {
+    this.trabajadorEquipos.set(null);
   }
 
   closeDetail() {

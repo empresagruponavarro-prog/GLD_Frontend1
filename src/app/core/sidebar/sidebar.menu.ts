@@ -11,7 +11,7 @@ export interface EnlaceMenu {
   exacto?: boolean;
 }
 
-export type IdSubmenu = 'documentos' | 'tesoreria' | 'almacen' | 'maestros';
+export type IdSubmenu = 'documentos' | 'tesoreria' | 'almacen' | 'maestros' | 'activo-fijo';
 
 /** Grupo desplegable del menú (`.sidebar-item.has-sub` + `.sidebar-submenu`). */
 export interface SubmenuMenu {
@@ -108,6 +108,21 @@ export const MENU_LATERAL: readonly SeccionMenu[] = [
           { etiqueta: 'Centros de Costos', ruta: '/centros-costos', icono: 'fa-solid fa-building-flag', modulo: 'centros-costos' },
           { etiqueta: 'Presupuestos', ruta: '/presupuestos', icono: 'fa-solid fa-file-invoice-dollar', modulo: 'presupuestos', exacto: true },
           { etiqueta: 'Plantillas', ruta: '/presupuestos/plantillas', icono: 'fa-solid fa-copy', modulo: 'presupuestos.plantillas' },
+        ],
+      }),
+    ],
+  },
+  {
+    categoria: 'Inv. Tecnología',
+    entradas: [
+      submenu({
+        id: 'activo-fijo',
+        etiqueta: 'Activo Fijo',
+        icono: 'fa-solid fa-laptop-code',
+        enlaces: [
+          { etiqueta: 'Equipos Tecnológicos', ruta: '/equipos-tecnologicos', icono: 'fa-solid fa-laptop', modulo: 'maestros.anexos' },
+          { etiqueta: 'Personas', ruta: '/personas', icono: 'fa-solid fa-user-group', modulo: 'maestros.anexos' },
+          { etiqueta: 'Ambientes y Ubicaciones', ruta: '/maestros-generales/locales', icono: 'fa-solid fa-door-open', modulo: 'maestros.generales' },
         ],
       }),
     ],

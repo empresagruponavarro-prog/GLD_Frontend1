@@ -1,0 +1,878 @@
+<div class="content-header">
+  <div>
+    <h1 class="content-title">Ubicaciones físicas</h1>
+    <p class="content-subtitle">Maestros de locales, sedes, niveles, ambientes y asignación física de activos.</p>
+  </div>
+  <div style="display: flex; gap: 0.5rem; align-items: center">
+    <app-exportar-botones [datos]="datosExportacion()" [cargando]="isLoading() || isUbicacionesLoading()" />
+  </div>
+</div>
+
+<!-- Pestañas del subsistema de ubicaciones -->
+<nav class="loc-tabs" aria-label="Secciones de ubicaciones físicas">
+  <button type="button" class="loc-tab" [class.loc-tab--activa]="activeTab() === 'ubicaciones'" [attr.aria-current]="activeTab() === 'ubicaciones' ? 'page' : null" (click)="activeTab.set('ubicaciones')">
+    <i class="fa-solid fa-location-crosshairs" aria-hidden="true"></i> Ubicaciones
+    <span class="loc-tab__n">{{ ubicaciones().length }}</span>
+  </button>
+  <button type="button" class="loc-tab" [class.loc-tab--activa]="activeTab() === 'locales'" [attr.aria-current]="activeTab() === 'locales' ? 'page' : null" (click)="activeTab.set('locales')">
+    <i class="fa-solid fa-building" aria-hidden="true"></i> Locales
+    <span class="loc-tab__n">{{ items().length }}</span>
+  </button>
+  <button type="button" class="loc-tab" [class.loc-tab--activa]="activeTab() === 'niveles'" [attr.aria-current]="activeTab() === 'niveles' ? 'page' : null" (click)="activeTab.set('niveles')">
+    <i class="fa-solid fa-stairs" aria-hidden="true"></i> Niveles
+    <span class="loc-tab__n">{{ niveles().length }}</span>
+  </button>
+  <button type="button" class="loc-tab" [class.loc-tab--activa]="activeTab() === 'ambientes'" [attr.aria-current]="activeTab() === 'ambientes' ? 'page' : null" (click)="activeTab.set('ambientes')">
+    <i class="fa-solid fa-door-open" aria-hidden="true"></i> Ambientes
+    <span class="loc-tab__n">{{ ambientes().length }}</span>
+  </button>
+  <button type="button" class="loc-tab loc-tab--agregar" [class.loc-tab--activa]="activeTab() === 'selector'" [attr.aria-current]="activeTab() === 'selector' ? 'page' : null" (click)="activeTab.set('selector')">
+    <i class="fa-solid fa-plus" aria-hidden="true"></i> Agregar ubicación
+  </button>
+</nav>
+
+<!-- ==================== PESTAÑA: 1. UBICACIONES ==================== -->
+@if (activeTab() === 'ubicaciones') {
+  <div class="content-body">
+    <div class="ub-toolbar">
+      <div class="ub-buscador">
+        <i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i>
+        <input
+          class="form-control"
+          type="search"
+          placeholder="Buscar por código, local, ambiente o área..."
+          aria-label="Buscar ubicaciones"
+          [value]="busquedaUbicaciones()"
+          (input)="onBusquedaUbicaciones($event)"
+        />
+      </div>
+
+      <div class="ub-filtros" role="group" aria-label="Filtrar por estado">
+        <button type="button" class="ub-filtro" [class.ub-filtro--activo]="filtroEstadoUbicaciones() === 'todas'" (click)="filtroEstadoUbicaciones.set('todas')">
+          Todas <span>{{ ubicaciones().length }}</span>
+        </button>
+        <button type="button" class="ub-filtro" [class.ub-filtro--activo]="filtroEstadoUbicaciones() === 'activas'" (click)="filtroEstadoUbicaciones.set('activas')">
+          Activas <span>{{ ubicacionesActivas() }}</span>
+        </button>
+        <button type="button" class="ub-filtro" [class.ub-filtro--activo]="filtroEstadoUbicaciones() === 'inactivas'" (click)="filtroEstadoUbicaciones.set('inactivas')">
+          Inactivas <span>{{ ubicaciones().length - ubicacionesActivas() }}</span>
+        </button>
+      </div>
+
+      <span class="ub-contador">Mostrando <strong>{{ totalUbicaciones() }}</strong> registros</span>
+    </div>
+
+    <div class="table-card">
+      <table class="table ub-tabla">
+        <thead>
+          <tr>
+            <th>Código</th>
+            <th>Local</th>
+            <th>Nivel · Ambiente</th>
+            <th>Área</th>
+            <th class="ub-centro">Estado</th>
+            <th class="ub-centro ub-col-acciones">Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (u of ubicacionesFiltradas(); track u.id) {
+            <tr [class.ub-fila--inactiva]="!u.estado">
+              <td><span class="ub-codigo">{{ u.codigo }}</span></td>
+              <td>
+                <strong class="ub-local">{{ u.local_nombre }}</strong>
+                @if (u.local_asignado_a) {
+                  <span class="ub-destino" [class.ub-destino--cc]="u.local_tipo_asignacion === 'CENTRO_COSTO'">
+                    <i class="fa-solid" [class]="u.local_tipo_asignacion === 'EMPRESA' ? 'fa-building' : 'fa-helmet-safety'" aria-hidden="true"></i>
+                    {{ u.local_tipo_asignacion === 'EMPRESA' ? 'Empresa' : 'Centro de costo' }}: {{ u.local_asignado_a }}
+                  </span>
+                }
+              </td>
+              <td>
+                <span class="ub-ruta">
+                  <span class="ub-chip"><i class="fa-solid fa-stairs" aria-hidden="true"></i> {{ u.nivel_descripcion }}</span>
+                  <i class="fa-solid fa-angle-right ub-sep" aria-hidden="true"></i>
+                  <span class="ub-chip ub-chip--ambiente"><i class="fa-solid fa-door-open" aria-hidden="true"></i> {{ u.ambiente_descripcion }}</span>
+                </span>
+              </td>
+              <td>
+                @if (u.area_nombre) {
+                  <span class="ub-chip ub-chip--area"><i class="fa-solid fa-sitemap" aria-hidden="true"></i> {{ u.area_nombre }}</span>
+                } @else {
+                  <span class="ub-vacio">—</span>
+                }
+              </td>
+              <td class="ub-centro">
+                <span class="badge" [class.badge-completed]="u.estado" [class.badge-danger]="!u.estado">
+                  {{ u.estado ? 'Activo' : 'Inactivo' }}
+                </span>
+              </td>
+              <td class="ub-centro ub-col-acciones">
+                @if (permisos.editar()) {
+                  <button
+                    class="table-action-btn table-action-btn--primary"
+                    type="button"
+                    title="Editar ubicación"
+                    [attr.aria-label]="'Editar la ubicación ' + u.codigo"
+                    (click)="editarUbicacion(u)"
+                  >
+                    <i class="fa-solid fa-pen-to-square" aria-hidden="true"></i>
+                  </button>
+                }
+                @if (permisos.eliminar()) {
+                  <button
+                    class="table-action-btn table-action-btn--danger"
+                    type="button"
+                    title="Eliminar ubicación"
+                    [attr.aria-label]="'Eliminar la ubicación ' + u.codigo"
+                    (click)="eliminarUbicacion(u)"
+                  >
+                    <i class="fa-solid fa-trash" aria-hidden="true"></i>
+                  </button>
+                }
+              </td>
+            </tr>
+          } @empty {
+            <tr>
+              <td colspan="6" class="ub-vacio-tabla">
+                @if (isUbicacionesLoading()) {
+                  <i class="fa-solid fa-spinner fa-spin" aria-hidden="true"></i> Cargando ubicaciones...
+                } @else {
+                  <i class="fa-solid fa-location-dot" aria-hidden="true"></i>
+                  No hay ubicaciones que mostrar. Agrégalas en la pestaña «Agregar ubicación».
+                }
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  </div>
+}
+
+<!-- ==================== PESTAÑA: 2. LOCALES ==================== -->
+@if (activeTab() === 'locales') {
+  <div class="content-body">
+    <!-- Barra con buscador y botón + a la derecha de Mostrando registros -->
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; gap: 0.75rem;">
+      <div style="display: flex; gap: 0.5rem; align-items: center; flex: 1; min-width: 280px; max-width: 600px;">
+        <input
+          class="form-control"
+          type="search"
+          placeholder="Buscar local o sede..."
+          [value]="busqueda()"
+          (input)="busqueda.set($any($event.target).value)"
+        />
+        <select
+          class="form-control"
+          style="max-width: 175px;"
+          [value]="filtroTipo()"
+          (change)="filtroTipo.set($any($event.target).value)"
+        >
+          <option value="TODOS">Todas las asignaciones</option>
+          <option value="EMPRESA">🏢 Solo Empresas</option>
+          <option value="CENTRO_COSTO">🏗️ Solo Centros de Costo</option>
+        </select>
+      </div>
+
+      <div style="display: flex; align-items: center; gap: 1rem;">
+        <span style="font-size: 0.875rem; color: #64748b; font-weight: 500;">
+          Mostrando <strong style="color: #0f172a;">{{ totalRegistros() }}</strong> de {{ items().length }} locales
+        </span>
+        @if (permisos.crear()) {
+          <button class="btn btn-primary" type="button" (click)="nuevo()" style="display: flex; align-items: center; gap: 0.4rem; white-space: nowrap;">
+            <i class="fa-solid fa-plus"></i> Nuevo local
+          </button>
+        }
+      </div>
+    </div>
+
+    <!-- Tabla de Locales -->
+    <div class="table-card">
+      <table class="table">
+        <thead>
+          <tr>
+            <th style="width: 140px;">Código</th>
+            <th>Local / Sede</th>
+            <th>Dirección</th>
+            <th style="width: 180px;">Tipo de Asignación</th>
+            <th>Asignado a</th>
+            <th style="width: 100px; text-align: center;">Estado</th>
+            <th style="width: 110px; text-align: center;">Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (item of itemsFiltrados(); track item.id) {
+            <tr>
+              <td><strong style="color: #0f172a;">{{ item.codigo }}</strong></td>
+              <td><strong>{{ item.nombre }}</strong></td>
+              <td>{{ item.direccion ?? '—' }}</td>
+              <td>
+                @if (item.tipo_asignacion === 'EMPRESA') {
+                  <span class="badge" style="background-color: #e0f2fe; color: #0369a1; border: 1px solid #bae6fd;">
+                    <i class="fa-solid fa-building"></i> Empresa
+                  </span>
+                } @else {
+                  <span class="badge" style="background-color: #fef3c7; color: #b45309; border: 1px solid #fde68a;">
+                    <i class="fa-solid fa-helmet-safety"></i> Obra / C. Costo
+                  </span>
+                }
+              </td>
+              <td>
+                @if (item.tipo_asignacion === 'EMPRESA') {
+                  <span style="font-weight: 500; color: #0284c7;">{{ item.empresa_nombre ?? '—' }}</span>
+                } @else {
+                  <span style="font-weight: 500; color: #d97706;">
+                    {{ item.centro_costo_codigo ? item.centro_costo_codigo + ' - ' : '' }}{{ item.centro_costo_nombre ?? '—' }}
+                  </span>
+                }
+              </td>
+              <td align="center">
+                <span class="badge" [class.badge-completed]="item.estado" [class.badge-danger]="!item.estado">
+                  {{ item.estado ? 'Activo' : 'Inactivo' }}
+                </span>
+              </td>
+              <td align="center">
+                <div style="display: flex; gap: 0.25rem; justify-content: center;">
+                  @if (permisos.editar()) {
+                    <button class="table-action-btn" type="button" title="Editar local" (click)="editar(item)">
+                      <i class="fa-solid fa-pen-to-square"></i>
+                    </button>
+                    <button
+                      class="table-action-btn"
+                      type="button"
+                      [title]="item.estado ? 'Desactivar local' : 'Activar local'"
+                      (click)="toggleEstado(item)"
+                    >
+                      <i class="fa-solid" [class.fa-toggle-on]="item.estado" [class.fa-toggle-off]="!item.estado" [style.color]="item.estado ? '#10b981' : '#94a3b8'"></i>
+                    </button>
+                  }
+                </div>
+              </td>
+            </tr>
+          } @empty {
+            <tr>
+              <td colspan="7" align="center" style="padding: 2rem; color: #64748b;">
+                @if (isLoading()) {
+                  Cargando locales...
+                } @else {
+                  No se encontraron locales que coincidan con la búsqueda.
+                }
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  </div>
+}
+
+<!-- ==================== PESTAÑA: 3. NIVELES ==================== -->
+@if (activeTab() === 'niveles') {
+  <div class="content-body">
+    <!-- Barra con buscador y botón + a la derecha de Mostrando registros -->
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; gap: 0.75rem;">
+      <div style="flex: 1; min-width: 260px; max-width: 500px;">
+        <input
+          class="form-control"
+          type="search"
+          placeholder="Buscar nivel, piso o sótano..."
+          [value]="busquedaNiveles()"
+          (input)="busquedaNiveles.set($any($event.target).value)"
+        />
+      </div>
+
+      <div style="display: flex; align-items: center; gap: 1rem;">
+        <span style="font-size: 0.875rem; color: #64748b; font-weight: 500;">
+          Mostrando <strong style="color: #0f172a;">{{ totalNiveles() }}</strong> de {{ niveles().length }} niveles
+        </span>
+        @if (permisos.crear()) {
+          <button class="btn btn-primary" type="button" (click)="nuevoNivel()" style="display: flex; align-items: center; gap: 0.4rem; white-space: nowrap;">
+            <i class="fa-solid fa-plus"></i> Nuevo nivel
+          </button>
+        }
+      </div>
+    </div>
+
+    <!-- Tabla de Niveles -->
+    <div class="table-card">
+      <table class="table">
+        <thead>
+          <tr>
+            <th style="width: 140px;">Código</th>
+            <th>Descripción / Nivel</th>
+            <th style="width: 110px; text-align: center;">Estado</th>
+            <th style="width: 110px; text-align: center;">Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (n of nivelesFiltrados(); track n.id) {
+            <tr>
+              <td><strong style="color: #0f172a;">{{ n.codigo }}</strong></td>
+              <td><strong>{{ n.descripcion }}</strong></td>
+              <td align="center">
+                <span class="badge" [class.badge-completed]="n.estado" [class.badge-danger]="!n.estado">
+                  {{ n.estado ? 'Activo' : 'Inactivo' }}
+                </span>
+              </td>
+              <td align="center">
+                <div style="display: flex; gap: 0.25rem; justify-content: center;">
+                  @if (permisos.editar()) {
+                    <button class="table-action-btn" type="button" title="Editar nivel" (click)="editarNivel(n)">
+                      <i class="fa-solid fa-pen-to-square"></i>
+                    </button>
+                    <button
+                      class="table-action-btn"
+                      type="button"
+                      [title]="n.estado ? 'Desactivar nivel' : 'Activar nivel'"
+                      (click)="toggleEstadoNivel(n)"
+                    >
+                      <i class="fa-solid" [class.fa-toggle-on]="n.estado" [class.fa-toggle-off]="!n.estado" [style.color]="n.estado ? '#10b981' : '#94a3b8'"></i>
+                    </button>
+                  }
+                </div>
+              </td>
+            </tr>
+          } @empty {
+            <tr>
+              <td colspan="4" align="center" style="padding: 2rem; color: #64748b;">
+                No hay niveles registrados.
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  </div>
+}
+
+<!-- ==================== PESTAÑA: 4. AMBIENTES ==================== -->
+@if (activeTab() === 'ambientes') {
+  <div class="content-body">
+    <!-- Barra con buscador y botón + a la derecha de Mostrando registros -->
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; gap: 0.75rem;">
+      <div style="flex: 1; min-width: 260px; max-width: 500px;">
+        <input
+          class="form-control"
+          type="search"
+          placeholder="Buscar ambiente, oficina o depósito..."
+          [value]="busquedaAmbientes()"
+          (input)="busquedaAmbientes.set($any($event.target).value)"
+        />
+      </div>
+
+      <div style="display: flex; align-items: center; gap: 1rem;">
+        <span style="font-size: 0.875rem; color: #64748b; font-weight: 500;">
+          Mostrando <strong style="color: #0f172a;">{{ totalAmbientes() }}</strong> de {{ ambientes().length }} ambientes
+        </span>
+        @if (permisos.crear()) {
+          <button class="btn btn-primary" type="button" (click)="nuevoAmbiente()" style="display: flex; align-items: center; gap: 0.4rem; white-space: nowrap;">
+            <i class="fa-solid fa-plus"></i> Nuevo ambiente
+          </button>
+        }
+      </div>
+    </div>
+
+    <!-- Tabla de Ambientes -->
+    <div class="table-card">
+      <table class="table">
+        <thead>
+          <tr>
+            <th style="width: 140px;">Código</th>
+            <th>Descripción / Ambiente</th>
+            <th style="width: 110px; text-align: center;">Estado</th>
+            <th style="width: 110px; text-align: center;">Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (a of ambientesFiltrados(); track a.id) {
+            <tr>
+              <td><strong style="color: #0f172a;">{{ a.codigo }}</strong></td>
+              <td><strong>{{ a.descripcion }}</strong></td>
+              <td align="center">
+                <span class="badge" [class.badge-completed]="a.estado" [class.badge-danger]="!a.estado">
+                  {{ a.estado ? 'Activo' : 'Inactivo' }}
+                </span>
+              </td>
+              <td align="center">
+                <div style="display: flex; gap: 0.25rem; justify-content: center;">
+                  @if (permisos.editar()) {
+                    <button class="table-action-btn" type="button" title="Editar ambiente" (click)="editarAmbiente(a)">
+                      <i class="fa-solid fa-pen-to-square"></i>
+                    </button>
+                    <button
+                      class="table-action-btn"
+                      type="button"
+                      [title]="a.estado ? 'Desactivar ambiente' : 'Activar ambiente'"
+                      (click)="toggleEstadoAmbiente(a)"
+                    >
+                      <i class="fa-solid" [class.fa-toggle-on]="a.estado" [class.fa-toggle-off]="!a.estado" [style.color]="a.estado ? '#10b981' : '#94a3b8'"></i>
+                    </button>
+                  }
+                </div>
+              </td>
+            </tr>
+          } @empty {
+            <tr>
+              <td colspan="4" align="center" style="padding: 2rem; color: #64748b;">
+                No hay ambientes registrados.
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  </div>
+}
+
+<!-- ==================== PESTAÑA: AGREGAR UBICACIÓN (selector en cascada) ==================== -->
+@if (activeTab() === 'selector') {
+  <div class="content-body">
+    <section class="loc-sel" aria-labelledby="loc-sel-titulo">
+      <header class="loc-sel__head">
+        <span class="loc-sel__head-icon" aria-hidden="true"><i class="fa-solid fa-location-crosshairs"></i></span>
+        <div>
+          <h2 id="loc-sel-titulo" class="loc-sel__title">Agregar ubicación física</h2>
+          <p class="loc-sel__subtitle">
+            Combina un local, un nivel y un ambiente (y, si quieres, un área). Al agregarla aparece en la pestaña
+            <strong>Ubicaciones</strong> y queda lista para ubicar activos.
+          </p>
+        </div>
+      </header>
+
+      <ol class="loc-sel__steps">
+        <li class="loc-sel__step" [class.loc-sel__step--ok]="selectorLocal() !== null">
+          <div class="loc-sel__step-head">
+            <span class="loc-sel__num">1</span>
+            <label class="loc-sel__label" for="selector-local">Local</label>
+            @if (permisos.crear()) {
+              <button type="button" class="loc-sel__nuevo" aria-label="Crear un local nuevo" (click)="nuevo()">
+                <i class="fa-solid fa-plus" aria-hidden="true"></i> Nuevo
+              </button>
+            }
+          </div>
+          <select id="selector-local" class="form-control" [value]="selectorLocal() ?? ''" (change)="onSelectorLocalChange($event)">
+            <option value="">Seleccione...</option>
+            @for (loc of items(); track loc.id) {
+              @if (loc.estado) {
+                <option [value]="loc.id" [selected]="selectorLocal() === loc.id">{{ loc.nombre }} ({{ loc.codigo }})</option>
+              }
+            }
+          </select>
+          @if (selectorLocalItem(); as l) {
+            <p class="loc-sel__hint">
+              <i class="fa-solid" [class]="l.tipo_asignacion === 'EMPRESA' ? 'fa-building' : 'fa-helmet-safety'" aria-hidden="true"></i>
+              {{ l.tipo_asignacion === 'EMPRESA' ? 'Empresa' : 'Obra / C. Costo' }}:
+              {{ (l.tipo_asignacion === 'EMPRESA' ? l.empresa_nombre : l.centro_costo_nombre) ?? '—' }}
+            </p>
+          }
+        </li>
+
+        <li class="loc-sel__step" [class.loc-sel__step--ok]="selectorNivel() !== null" [class.loc-sel__step--off]="selectorLocal() === null">
+          <div class="loc-sel__step-head">
+            <span class="loc-sel__num">2</span>
+            <label class="loc-sel__label" for="selector-nivel">Nivel</label>
+            @if (permisos.crear()) {
+              <button type="button" class="loc-sel__nuevo" aria-label="Crear un nivel nuevo" (click)="nuevoNivel()">
+                <i class="fa-solid fa-plus" aria-hidden="true"></i> Nuevo
+              </button>
+            }
+          </div>
+          <select
+            id="selector-nivel"
+            class="form-control"
+            [value]="selectorNivel() ?? ''"
+            [disabled]="selectorLocal() === null"
+            (change)="onSelectorNivelChange($event)"
+          >
+            <option value="">Seleccione...</option>
+            @for (n of niveles(); track n.id) {
+              @if (n.estado) {
+                <option [value]="n.id" [selected]="selectorNivel() === n.id">{{ n.descripcion }} ({{ n.codigo }})</option>
+              }
+            }
+          </select>
+        </li>
+
+        <li class="loc-sel__step" [class.loc-sel__step--ok]="selectorAmbiente() !== null" [class.loc-sel__step--off]="selectorNivel() === null">
+          <div class="loc-sel__step-head">
+            <span class="loc-sel__num">3</span>
+            <label class="loc-sel__label" for="selector-ambiente">Ambiente</label>
+            @if (permisos.crear()) {
+              <button type="button" class="loc-sel__nuevo" aria-label="Crear un ambiente nuevo" (click)="nuevoAmbiente()">
+                <i class="fa-solid fa-plus" aria-hidden="true"></i> Nuevo
+              </button>
+            }
+          </div>
+          <select
+            id="selector-ambiente"
+            class="form-control"
+            [value]="selectorAmbiente() ?? ''"
+            [disabled]="selectorNivel() === null"
+            (change)="onSelectorAmbienteChange($event)"
+          >
+            <option value="">Seleccione...</option>
+            @for (a of ambientes(); track a.id) {
+              @if (a.estado) {
+                <option [value]="a.id" [selected]="selectorAmbiente() === a.id">{{ a.descripcion }} ({{ a.codigo }})</option>
+              }
+            }
+          </select>
+        </li>
+
+        <li class="loc-sel__step" [class.loc-sel__step--ok]="selectorArea() !== null">
+          <div class="loc-sel__step-head">
+            <span class="loc-sel__num">4</span>
+            <label class="loc-sel__label" for="selector-area">Área <small>(opcional)</small></label>
+          </div>
+          <select id="selector-area" class="form-control" [value]="selectorArea() ?? ''" (change)="onSelectorAreaChange($event)">
+            <option value="">Sin área</option>
+            @for (ar of areas(); track ar.id) {
+              <option [value]="ar.id" [selected]="selectorArea() === ar.id">{{ ar.nombre }}</option>
+            }
+          </select>
+        </li>
+      </ol>
+
+      <div class="loc-sel__preview" [class.loc-sel__preview--lista]="selectorCompleto() && !selectorExistente()" aria-live="polite">
+        <p class="loc-sel__preview-title">Vista previa</p>
+        <div class="loc-sel__crumbs">
+          <span class="loc-sel__chip" [class.loc-sel__chip--vacio]="!selectorLocalItem()">
+            <i class="fa-solid fa-building" aria-hidden="true"></i> {{ selectorLocalItem()?.nombre ?? 'Local' }}
+          </span>
+          <i class="fa-solid fa-angle-right loc-sel__sep" aria-hidden="true"></i>
+          <span class="loc-sel__chip" [class.loc-sel__chip--vacio]="!selectorNivelItem()">
+            <i class="fa-solid fa-stairs" aria-hidden="true"></i> {{ selectorNivelItem()?.descripcion ?? 'Nivel' }}
+          </span>
+          <i class="fa-solid fa-angle-right loc-sel__sep" aria-hidden="true"></i>
+          <span class="loc-sel__chip" [class.loc-sel__chip--vacio]="!selectorAmbienteItem()">
+            <i class="fa-solid fa-door-open" aria-hidden="true"></i> {{ selectorAmbienteItem()?.descripcion ?? 'Ambiente' }}
+          </span>
+          @if (selectorAreaItem(); as ar) {
+            <span class="loc-sel__chip loc-sel__chip--area"><i class="fa-solid fa-sitemap" aria-hidden="true"></i> {{ ar.nombre }}</span>
+          }
+        </div>
+
+        @if (!selectorCompleto()) {
+          <p class="loc-sel__estado">Elige local, nivel y ambiente para continuar.</p>
+        } @else if (selectorExistente(); as existente) {
+          <p class="loc-sel__estado loc-sel__estado--aviso">
+            <i class="fa-solid fa-circle-info" aria-hidden="true"></i>
+            Esta ubicación ya está registrada: <code>{{ existente.codigo }}</code>
+            · Área: <strong>{{ existente.area_nombre ?? 'sin área' }}</strong>
+          </p>
+        } @else {
+          <p class="loc-sel__estado">
+            Se registrará como ubicación nueva con el código <code>{{ selectorCodigoPrevio() }}</code>.
+          </p>
+        }
+      </div>
+
+      @if (selectorError(); as mensaje) {
+        <p class="loc-sel__error" role="alert">{{ mensaje }}</p>
+      }
+
+      @if (selectorAgregada(); as agregada) {
+        <div class="loc-sel__exito" role="status">
+          <span><i class="fa-solid fa-circle-check" aria-hidden="true"></i> Ubicación agregada: <code>{{ agregada.codigo }}</code></span>
+          <span class="loc-sel__exito-acciones">
+            <button type="button" class="btn btn-secondary" (click)="verEnUbicaciones(agregada.codigo)">
+              <i class="fa-solid fa-table-list" aria-hidden="true"></i> Ver en Ubicaciones
+            </button>
+            <button type="button" class="btn btn-primary" (click)="limpiarSelector()">
+              <i class="fa-solid fa-plus" aria-hidden="true"></i> Agregar otra
+            </button>
+          </span>
+        </div>
+      } @else {
+        <footer class="loc-sel__acciones">
+          <button type="button" class="btn btn-secondary" (click)="limpiarSelector()">Limpiar</button>
+          @if (selectorExistente(); as existente) {
+            <button type="button" class="btn btn-secondary" (click)="verEnUbicaciones(existente.codigo)">
+              <i class="fa-solid fa-table-list" aria-hidden="true"></i> Ver en Ubicaciones
+            </button>
+            @if (selectorAreaDistinta() && permisos.editar()) {
+              <button type="button" class="btn btn-primary" [disabled]="selectorAgregando()" (click)="actualizarAreaExistente()">
+                <i class="fa-solid fa-arrows-rotate" aria-hidden="true"></i> Actualizar área
+              </button>
+            }
+          } @else if (permisos.crear()) {
+            <button
+              type="button"
+              class="btn btn-primary"
+              [disabled]="!selectorCompleto() || selectorAgregando()"
+              (click)="agregarUbicacion()"
+            >
+              @if (selectorAgregando()) {
+                <i class="fa-solid fa-spinner fa-spin" aria-hidden="true"></i> Agregando...
+              } @else {
+                <i class="fa-solid fa-plus" aria-hidden="true"></i> Agregar ubicación
+              }
+            </button>
+          }
+        </footer>
+      }
+    </section>
+  </div>
+}
+
+<!-- ==================== MODAL: LOCAL ==================== -->
+<app-modal
+  [isOpen]="isModalOpen()"
+  [title]="editando() ? 'Editar local físico' : 'Nuevo local / sede'"
+  maxWidth="540px"
+  [showDefaultFooter]="false"
+  (closed)="closeModal()"
+>
+  <form [formGroup]="form" (ngSubmit)="guardar()">
+    <!-- Selector Exclusivo (XOR): Empresa O Centro de Costo -->
+    <div class="form-group" style="margin-bottom: 1.25rem;">
+      <span class="form-label" style="display: block; font-weight: 600; margin-bottom: 0.5rem; color: #1e293b;">
+        Tipo de Pertenencia <span class="required">*</span>
+        <small style="font-weight: normal; color: #64748b;">(Debe asignarse a Empresa O a Centro de Costo, no a ambos)</small>
+      </span>
+      <div style="display: flex; gap: 0.5rem;">
+        <button
+          type="button"
+          class="btn"
+          [style.flex]="1"
+          [style.background-color]="tipoAsignacion() === 'EMPRESA' ? '#0284c7' : '#f1f5f9'"
+          [style.color]="tipoAsignacion() === 'EMPRESA' ? '#ffffff' : '#475569'"
+          [style.border]="tipoAsignacion() === 'EMPRESA' ? '1px solid #0284c7' : '1px solid #cbd5e1'"
+          (click)="setTipoAsignacion('EMPRESA')"
+        >
+          <i class="fa-solid fa-building"></i> Sede de Empresa
+        </button>
+        <button
+          type="button"
+          class="btn"
+          [style.flex]="1"
+          [style.background-color]="tipoAsignacion() === 'CENTRO_COSTO' ? '#d97706' : '#f1f5f9'"
+          [style.color]="tipoAsignacion() === 'CENTRO_COSTO' ? '#ffffff' : '#475569'"
+          [style.border]="tipoAsignacion() === 'CENTRO_COSTO' ? '1px solid #d97706' : '1px solid #cbd5e1'"
+          (click)="setTipoAsignacion('CENTRO_COSTO')"
+        >
+          <i class="fa-solid fa-helmet-safety"></i> Obra / Centro Costo
+        </button>
+      </div>
+    </div>
+
+    <!-- Desplegable condicional según tipo -->
+    @if (tipoAsignacion() === 'EMPRESA') {
+      <div class="form-group">
+        <label for="local-empresa">Empresa <span class="required">*</span></label>
+        <select id="local-empresa" class="form-control" formControlName="id_empresa">
+          <option [ngValue]="null">-- Seleccionar Empresa --</option>
+          @for (emp of empresas(); track emp.id_empresa) {
+            <option [ngValue]="emp.id_empresa">{{ emp.razon_social }} (RUC: {{ emp.ruc }})</option>
+          }
+        </select>
+      </div>
+    } @else {
+      <div class="form-group">
+        <label for="local-cc">Centro de Costo / Obra <span class="required">*</span></label>
+        <select id="local-cc" class="form-control" formControlName="id_centro_costo">
+          <option [ngValue]="null">-- Seleccionar Centro de Costo --</option>
+          @for (cc of centrosCostos(); track cc.id) {
+            <option [ngValue]="cc.id">{{ cc.nombre }}</option>
+          }
+        </select>
+      </div>
+    }
+
+    <p style="font-size: 0.8rem; color: #64748b; margin: 0 0 0.75rem;">
+      El código, el nombre y la dirección se toman automáticamente de la
+      {{ tipoAsignacion() === 'EMPRESA' ? 'empresa (dirección de entrega)' : 'obra (datos de obra)' }}.
+    </p>
+
+    @if (editando()) {
+      <div class="form-group">
+        <label for="local-estado" style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+          <input id="local-estado" type="checkbox" formControlName="estado" /> Local activo
+        </label>
+      </div>
+    }
+  </form>
+
+  @if (modalError()) {
+    <p class="badge badge-danger" role="alert" style="white-space: pre-line; display: block; margin-top: 0.75rem;">
+      {{ modalError() }}
+    </p>
+  }
+
+  <div modal-footer class="modal-footer">
+    <button class="btn btn-secondary" type="button" (click)="closeModal()" [disabled]="isSaving()">
+      Cancelar
+    </button>
+    <button class="btn btn-primary" type="button" (click)="guardar()" [disabled]="isSaving()">
+      <i class="fa-solid fa-floppy-disk"></i> {{ isSaving() ? 'Guardando...' : 'Guardar local' }}
+    </button>
+  </div>
+</app-modal>
+
+<!-- ==================== MODAL: NIVEL ==================== -->
+<app-modal
+  [isOpen]="isNivelModalOpen()"
+  [title]="editandoNivel() ? 'Editar nivel' : 'Nuevo nivel / piso'"
+  maxWidth="480px"
+  [showDefaultFooter]="false"
+  (closed)="closeNivelModal()"
+>
+  <form [formGroup]="nivelForm" (ngSubmit)="guardarNivel()">
+    <div class="form-group">
+      <label for="nivel-codigo">Código <span class="required">*</span></label>
+      <input
+        id="nivel-codigo"
+        class="form-control"
+        formControlName="codigo"
+        maxlength="20"
+        placeholder="Ej: PISO-01"
+        style="text-transform: uppercase;"
+        (input)="onNivelCodigoInput($event)"
+      />
+    </div>
+    <div class="form-group">
+      <label for="nivel-descripcion">Descripción / Nombre del nivel <span class="required">*</span></label>
+      <input
+        id="nivel-descripcion"
+        class="form-control"
+        formControlName="descripcion"
+        maxlength="150"
+        placeholder="Ej: PRIMER PISO"
+      />
+    </div>
+    @if (editandoNivel()) {
+      <div class="form-group">
+        <label for="nivel-estado" style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+          <input id="nivel-estado" type="checkbox" formControlName="estado" /> Nivel activo
+        </label>
+      </div>
+    }
+  </form>
+
+  @if (nivelModalError()) {
+    <p class="badge badge-danger" role="alert" style="white-space: pre-line; display: block; margin-top: 0.75rem;">
+      {{ nivelModalError() }}
+    </p>
+  }
+
+  <div modal-footer class="modal-footer">
+    <button class="btn btn-secondary" type="button" (click)="closeNivelModal()" [disabled]="isNivelSaving()">
+      Cancelar
+    </button>
+    <button class="btn btn-primary" type="button" (click)="guardarNivel()" [disabled]="isNivelSaving()">
+      <i class="fa-solid fa-floppy-disk"></i> {{ isNivelSaving() ? 'Guardando...' : 'Guardar nivel' }}
+    </button>
+  </div>
+</app-modal>
+
+<!-- ==================== MODAL: AMBIENTE ==================== -->
+<app-modal
+  [isOpen]="isAmbienteModalOpen()"
+  [title]="editandoAmbiente() ? 'Editar ambiente' : 'Nuevo ambiente / espacio'"
+  maxWidth="480px"
+  [showDefaultFooter]="false"
+  (closed)="closeAmbienteModal()"
+>
+  <form [formGroup]="ambienteForm" (ngSubmit)="guardarAmbiente()">
+    <div class="form-group">
+      <label for="ambiente-codigo">Código <span class="required">*</span></label>
+      <input
+        id="ambiente-codigo"
+        class="form-control"
+        formControlName="codigo"
+        maxlength="20"
+        placeholder="Ej: OFIC-01"
+        style="text-transform: uppercase;"
+        (input)="onAmbienteCodigoInput($event)"
+      />
+    </div>
+    <div class="form-group">
+      <label for="ambiente-descripcion">Descripción / Nombre del ambiente <span class="required">*</span></label>
+      <input
+        id="ambiente-descripcion"
+        class="form-control"
+        formControlName="descripcion"
+        maxlength="150"
+        placeholder="Ej: OFICINA DE GERENCIA"
+      />
+    </div>
+    @if (editandoAmbiente()) {
+      <div class="form-group">
+        <label for="ambiente-estado" style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+          <input id="ambiente-estado" type="checkbox" formControlName="estado" /> Ambiente activo
+        </label>
+      </div>
+    }
+  </form>
+
+  @if (ambienteModalError()) {
+    <p class="badge badge-danger" role="alert" style="white-space: pre-line; display: block; margin-top: 0.75rem;">
+      {{ ambienteModalError() }}
+    </p>
+  }
+
+  <div modal-footer class="modal-footer">
+    <button class="btn btn-secondary" type="button" (click)="closeAmbienteModal()" [disabled]="isAmbienteSaving()">
+      Cancelar
+    </button>
+    <button class="btn btn-primary" type="button" (click)="guardarAmbiente()" [disabled]="isAmbienteSaving()">
+      <i class="fa-solid fa-floppy-disk"></i> {{ isAmbienteSaving() ? 'Guardando...' : 'Guardar ambiente' }}
+    </button>
+  </div>
+</app-modal>
+
+<!-- ==================== MODAL: EDITAR UBICACIÓN ==================== -->
+<app-modal
+  [isOpen]="ubicacionEditando() !== null"
+  title="Editar ubicación"
+  icon="fa-solid fa-location-dot"
+  maxWidth="520px"
+  [showDefaultFooter]="false"
+  (closed)="cerrarUbicacionModal()"
+>
+  @if (ubicacionEditando(); as u) {
+    <div class="ub-resumen">
+      <span class="ub-codigo">{{ u.codigo }}</span>
+      <span class="ub-ruta">
+        <span class="ub-chip">{{ u.local_nombre }}</span>
+        <i class="fa-solid fa-angle-right ub-sep" aria-hidden="true"></i>
+        <span class="ub-chip">{{ u.nivel_descripcion }}</span>
+        <i class="fa-solid fa-angle-right ub-sep" aria-hidden="true"></i>
+        <span class="ub-chip ub-chip--ambiente">{{ u.ambiente_descripcion }}</span>
+      </span>
+      <small class="ub-nota">El local, el nivel y el ambiente no se cambian aquí: para otra combinación agrega una ubicación nueva.</small>
+    </div>
+
+    <form [formGroup]="ubicacionForm" (ngSubmit)="guardarUbicacion()">
+      <div class="form-group">
+        <label for="ub-area">Área</label>
+        <select id="ub-area" class="form-control" [value]="ubicacionForm.controls.id_area.value ?? ''" (change)="onUbicacionAreaChange($event)">
+          <option value="">Sin área</option>
+          @for (ar of areas(); track ar.id) {
+            <option [value]="ar.id" [selected]="ubicacionForm.controls.id_area.value === ar.id">{{ ar.nombre }}</option>
+          }
+        </select>
+      </div>
+      <div class="form-group">
+        <label for="ub-obs">Observaciones</label>
+        <input id="ub-obs" class="form-control" formControlName="observaciones" maxlength="255" placeholder="Opcional" />
+      </div>
+      <div class="form-group">
+        <label for="ub-estado" class="ub-check">
+          <input id="ub-estado" type="checkbox" formControlName="estado" /> Ubicación activa
+        </label>
+      </div>
+    </form>
+
+    @if (ubicacionError()) {
+      <p class="badge badge-danger ub-error" role="alert">{{ ubicacionError() }}</p>
+    }
+  }
+
+  <div modal-footer class="modal-footer">
+    <button class="btn btn-secondary" type="button" (click)="cerrarUbicacionModal()" [disabled]="ubicacionGuardando()">Cancelar</button>
+    <button class="btn btn-primary" type="button" (click)="guardarUbicacion()" [disabled]="ubicacionGuardando()">
+      <i class="fa-solid fa-floppy-disk" aria-hidden="true"></i> {{ ubicacionGuardando() ? 'Guardando...' : 'Guardar cambios' }}
+    </button>
+  </div>
+</app-modal>

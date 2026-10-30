@@ -1,0 +1,332 @@
+<app-modal
+  [isOpen]="true"
+  title="Equipos tecnológicos"
+  icon="fa-solid fa-laptop"
+  maxWidth="900px"
+  [showDefaultFooter]="false"
+  (closed)="cerrar.emit()"
+>
+  <div class="equipos" role="dialog" aria-modal="true" aria-labelledby="equipos-titulo">
+    <header class="equipos__header">
+      <h4 id="equipos-titulo" class="equipos__name">{{ trabajador().anexo }}</h4>
+      <p class="equipos__meta">
+        {{ trabajador().tipoDocumento }} {{ trabajador().numeroDocumento }} · {{ trabajador().especialidad }}
+      </p>
+    </header>
+
+    <section class="equipos__section">
+      <div class="equipos__section-head">
+        <h5 class="equipos__section-title">Detalle</h5>
+        @if (puedeAsignar() && !mostrarForm()) {
+          <button class="btn btn-primary" type="button" (click)="abrirForm()">
+            <i class="fa-solid fa-plus" aria-hidden="true"></i> Asignar equipo
+          </button>
+        }
+      </div>
+
+      @if (mostrarForm()) {
+        <form class="equipos__form" [formGroup]="form" (ngSubmit)="guardar()" novalidate>
+          <div class="equipos__grid">
+            <div class="form-group equipos__span-2">
+              <label for="eq-bien">Equipo electrónico <span class="required">*</span></label>
+              <select id="eq-bien" class="form-control" formControlName="codigoBien">
+                <option value="">— Seleccione —</option>
+                @for (grupo of equiposPorTipo(); track grupo[0]) {
+                  <optgroup [label]="grupo[0]">
+                    @for (bien of grupo[1]; track bien.codigo) {
+                      <option [value]="bien.codigo">{{ bien.codigo }} · {{ bien.descripcion }}</option>
+                    }
+                  </optgroup>
+                }
+              </select>
+            </div>
+
+            <div class="form-group equipos__span-2">
+              <label for="eq-serie">N° Serie</label>
+              <input
+                id="eq-serie"
+                class="form-control equipos__mono"
+                type="text"
+                maxlength="100"
+                placeholder="Opcional"
+                formControlName="serie"
+              />
+            </div>
+
+            @if (bienSeleccionado(); as bien) {
+              <fieldset class="equipos__caract equipos__span-2" formGroupName="caracteristicas">
+                <legend>Características del equipo</legend>
+                @if (filasCaracteristicas().length === 0) {
+                  <p class="equipos__small">Este bien no tiene características registradas en el catálogo.</p>
+                } @else {
+                  <p class="equipos__small">
+                    Vienen del catálogo ({{ bien.codigo }}). Si este equipo tiene otra configuración, edita solo la que cambia.
+                  </p>
+                  <div class="equipos__caract-grid">
+                    @for (fila of filasCaracteristicas(); track fila.nombre) {
+                      <div class="form-group">
+                        <label [attr.for]="'eq-c-' + fila.nombre">
+                          {{ fila.nombre }}
+                          @if (fila.personalizada) {
+                            <button class="equipos__restore" type="button" (click)="restaurar(fila.nombre)">
+                              Personalizada · restaurar
+                            </button>
+                          }
+                        </label>
+                        <input
+                          [id]="'eq-c-' + fila.nombre"
+                          class="form-control"
+                          type="text"
+                          maxlength="150"
+                          [formControlName]="fila.nombre"
+                        />
+                      </div>
+                    }
+                  </div>
+                }
+              </fieldset>
+            }
+
+            <div class="equipos__span-2">
+              <app-ubicacion-destino
+                prefijo="eq-asignar"
+                [locales]="locales()"
+                [empresas]="empresas()"
+                [centrosCosto]="centrosCosto()"
+                [areas]="areas()"
+                (cambio)="ubicacionAsignar.set($event)"
+              />
+            </div>
+            <div class="form-group">
+              <label for="eq-fecha">Fecha de asignación <span class="required">*</span></label>
+              <input id="eq-fecha" class="form-control" type="date" formControlName="fechaAsignacion" />
+            </div>
+          </div>
+
+          @if (errorForm(); as mensaje) {
+            <p class="equipos__error" role="alert">{{ mensaje }}</p>
+          }
+
+          <div class="equipos__actions">
+            <button class="btn btn-secondary" type="button" [disabled]="guardando()" (click)="cancelarForm()">
+              Cancelar
+            </button>
+            <button class="btn btn-primary" type="submit" [disabled]="guardando()">
+              @if (guardando()) {
+                <i class="fa-solid fa-spinner fa-spin" aria-hidden="true"></i> Guardando...
+              } @else {
+                <i class="fa-solid fa-floppy-disk" aria-hidden="true"></i> Guardar asignación
+              }
+            </button>
+          </div>
+        </form>
+      }
+
+      @if (reasignando(); as equipo) {
+        <form class="equipos__form" [formGroup]="formReasignar" (ngSubmit)="confirmarReasignar()" novalidate>
+          <h5 class="equipos__section-title">
+            Reasignar {{ equipo.tipo }} {{ equipo.marca }} {{ equipo.modelo }}
+          </h5>
+          <div class="equipos__grid">
+            <div class="form-group">
+              <label for="eq-destino">Nuevo responsable <span class="required">*</span></label>
+              <select id="eq-destino" class="form-control" formControlName="destinoId">
+                <option [ngValue]="0">— Seleccione —</option>
+                @for (t of destinos(); track t.id) {
+                  <option [ngValue]="t.id">{{ t.nombre }}</option>
+                }
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="eq-fecha-reasignar">Fecha de asignación <span class="required">*</span></label>
+              <input id="eq-fecha-reasignar" class="form-control" type="date" formControlName="fechaAsignacion" />
+            </div>
+          </div>
+          <div class="equipos__grid">
+            <label class="equipos__check equipos__span-2">
+              <input type="checkbox" formControlName="cambiarUbicacion" />
+              <span>Cambiar también el destino (empresa o centro de costo)</span>
+            </label>
+            @if (cambiaUbicacion()) {
+              <div class="equipos__span-2">
+                <app-ubicacion-destino
+                  prefijo="eq-reasignar"
+                  [locales]="locales()"
+                  [empresas]="empresas()"
+                  [centrosCosto]="centrosCosto()"
+                  [areas]="areas()"
+                  (cambio)="ubicacionReasignar.set($event)"
+                />
+              </div>
+            }
+          </div>
+          <div class="equipos__actions">
+            <button class="btn btn-secondary" type="button" [disabled]="procesandoAccion()" (click)="cancelarReasignar()">
+              Cancelar
+            </button>
+            <button class="btn btn-primary" type="submit" [disabled]="procesandoAccion()">
+              <i class="fa-solid fa-right-left" aria-hidden="true"></i> Confirmar reasignación
+            </button>
+          </div>
+        </form>
+      }
+
+      @if (historialDe(); as equipo) {
+        <div class="equipos__form">
+          <div class="equipos__section-head">
+            <h5 class="equipos__section-title">
+              Historial · {{ equipo.tipo }} {{ equipo.marca }} {{ equipo.modelo }} ({{ equipo.codigoActivo }})
+            </h5>
+            <button class="btn btn-secondary" type="button" (click)="cerrarHistorial()">Cerrar</button>
+          </div>
+          @if (cargandoHistorial()) {
+            <p class="equipos__empty">Cargando historial...</p>
+          } @else if (historial().length === 0) {
+            <p class="equipos__empty">Sin movimientos registrados.</p>
+          } @else {
+            <ul class="equipos__historial">
+              @for (m of historial(); track m.id) {
+                <li>
+                  <details class="equipos__mov">
+                    <summary class="equipos__mov-resumen">
+                      <span class="equipos__mov-titulo">
+                        <strong>{{ m.movimiento }}</strong>
+                        <span class="equipos__mov-fecha">· {{ m.fecha | date: 'dd/MM/yyyy' }}</span>
+                      </span>
+                      <i class="fa-solid fa-chevron-down equipos__mov-flecha" aria-hidden="true"></i>
+                    </summary>
+                    <div class="equipos__mov-detalle">
+                      <div class="equipos__small"><b>Responsable:</b> {{ m.responsableAnterior ?? '—' }} → {{ m.responsableNuevo ?? '—' }}</div>
+                      <div class="equipos__small"><b>Ubicación:</b> {{ m.ubicacionAnterior ?? '—' }} → {{ m.ubicacionNueva ?? '—' }}</div>
+                      <div class="equipos__small"><b>Área:</b> {{ m.areaAnterior ?? '—' }} → {{ m.areaNueva ?? '—' }}</div>
+                      <div class="equipos__small"><b>Destino:</b> {{ m.destinoAnterior ?? '—' }} → {{ m.destinoNuevo ?? '—' }}</div>
+                    </div>
+                  </details>
+                </li>
+              }
+            </ul>
+          }
+        </div>
+      }
+
+      @if (errorAccion(); as mensaje) {
+        <p class="equipos__error" role="alert">{{ mensaje }}</p>
+      }
+
+      @if (cargando()) {
+        <p class="equipos__empty">Cargando equipos...</p>
+      } @else if (errorCarga(); as mensaje) {
+        <p class="equipos__error" role="alert">{{ mensaje }}</p>
+      } @else if (equipos().length === 0) {
+        <div class="equipos__empty equipos__empty--box">
+          Sin equipos asignados — Usa «Asignar equipo» para registrar uno.
+        </div>
+      } @else {
+        <div class="equipos__table-wrap">
+          <table class="equipos__table">
+            <thead>
+              <tr>
+                <th>Equipo</th>
+                <th>Marca / Modelo</th>
+                <th>N° Serie</th>
+                <th>Ubicación</th>
+                <th>Estado</th>
+                <th>Asignado</th>
+                <th class="equipos__center">QR</th>
+                <th class="equipos__center">Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (equipo of equipos(); track equipo.id) {
+                <tr>
+                  <td>
+                    <div class="equipos__tipo">
+                      <i class="fa-solid" [class]="icono(equipo.tipo)" aria-hidden="true"></i>
+                      <strong>{{ equipo.tipo }}</strong>
+                    </div>
+                    <div class="equipos__code">{{ equipo.codigo }}</div>
+                  </td>
+                  <td>
+                    {{ equipo.marca }} {{ equipo.modelo }}
+                    @if (resumenCaracteristicas(equipo); as detalle) {
+                      <div class="equipos__small">{{ detalle }}</div>
+                    }
+                  </td>
+                  <td class="equipos__mono">{{ equipo.serie ?? '—' }}</td>
+                  <td>
+                    @if (equipo.local) {
+                      <div><i class="fa-solid fa-location-dot" aria-hidden="true"></i> {{ equipo.local }}</div>
+                      <div class="equipos__small">{{ equipo.nivel }} · {{ equipo.ambiente }}</div>
+                      @if (equipo.area) {
+                        <div class="equipos__small">Área: {{ equipo.area }}</div>
+                      }
+                    } @else {
+                      —
+                    }
+                    @if (equipo.destino) {
+                      <div class="equipos__small">{{ destino(equipo.destino, equipo.destinoTipo) }}</div>
+                    }
+                  </td>
+                  <td><span [class]="'badge ' + claseEstado(equipo.estado)">{{ equipo.estado }}</span></td>
+                  <td>{{ equipo.fechaAsignacion | date: 'dd/MM/yyyy' }}</td>
+                  <td class="equipos__center">
+                    <button
+                      class="table-action-btn"
+                      type="button"
+                      [attr.aria-label]="'Ver código QR de ' + equipo.marca + ' ' + equipo.modelo"
+                      (click)="qrEquipo.set(equipo)"
+                    >
+                      <i class="fa-solid fa-qrcode" aria-hidden="true"></i>
+                    </button>
+                  </td>
+                  <td class="equipos__center equipos__acciones">
+                      <button
+                        class="equipos__pill equipos__pill--neutral"
+                        type="button"
+                        [attr.aria-label]="'Descargar hoja de entrega de ' + equipo.marca + ' ' + equipo.modelo"
+                        (click)="descargarEntrega(trabajador().id, trabajador().anexo, equipo)"
+                      >
+                        <i class="fa-solid fa-file-arrow-down" aria-hidden="true"></i> Entrega
+                      </button>
+                      <button
+                        class="equipos__pill equipos__pill--neutral"
+                        type="button"
+                        [attr.aria-label]="'Ver historial de ' + equipo.marca + ' ' + equipo.modelo"
+                        (click)="abrirHistorial(equipo)"
+                      >
+                        <i class="fa-solid fa-clock-rotate-left" aria-hidden="true"></i> Historial
+                      </button>
+                    @if (puedeGestionar()) {
+                      <button
+                        class="equipos__pill equipos__pill--info"
+                        type="button"
+                        [disabled]="procesandoAccion()"
+                        [attr.aria-label]="'Reasignar ' + equipo.marca + ' ' + equipo.modelo"
+                        (click)="abrirReasignar(equipo)"
+                      >
+                        <i class="fa-solid fa-right-left" aria-hidden="true"></i> Reasignar
+                      </button>
+                      <button
+                        class="equipos__pill equipos__pill--danger"
+                        type="button"
+                        [disabled]="procesandoAccion()"
+                        [attr.aria-label]="'Devolver ' + equipo.marca + ' ' + equipo.modelo"
+                        (click)="devolver(equipo)"
+                      >
+                        <i class="fa-solid fa-rotate-left" aria-hidden="true"></i> Devolver
+                      </button>
+                    }
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    </section>
+  </div>
+</app-modal>
+
+@if (qrEquipo(); as equipo) {
+  <app-equipo-qr-dialog [equipo]="equipo" [trabajador]="trabajador()" (cerrar)="qrEquipo.set(null)" />
+}

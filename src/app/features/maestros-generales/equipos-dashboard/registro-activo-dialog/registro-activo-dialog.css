@@ -1,0 +1,88 @@
+.reg__grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem 1rem;
+}
+
+.reg__span-2 {
+  grid-column: 1 / -1;
+}
+
+.reg .required {
+  color: #dc2626;
+}
+
+.reg .form-control:disabled {
+  background: #f1f5f9;
+}
+
+.reg__mono {
+  font-family: ui-monospace, monospace;
+}
+
+.reg__small {
+  margin: 0;
+  font-size: 0.8rem;
+  color: var(--text-muted, #64748b);
+}
+
+.reg__caract {
+  margin: 0;
+  padding: 0.75rem;
+  border: 1px solid var(--border-color, #e2e8f0);
+  border-radius: 8px;
+  background: #f8fafc;
+}
+
+.reg__caract legend {
+  padding: 0 0.35rem;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--text-main, #1e293b);
+}
+
+.reg__caract-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.6rem 1rem;
+  margin-top: 0.5rem;
+}
+
+.reg__restore {
+  margin-left: 0.4rem;
+  padding: 0;
+  border: 0;
+  background: none;
+  font-size: 0.7rem;
+  color: #b45309;
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+.reg__check {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.reg__error {
+  margin: 0.75rem 0 0;
+  color: #b91c1c;
+  font-size: 0.85rem;
+}
+
+.reg__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+
+@media (max-width: 640px) {
+  .reg__grid,
+  .reg__caract-grid {
+    grid-template-columns: 1fr;
+  }
+}
