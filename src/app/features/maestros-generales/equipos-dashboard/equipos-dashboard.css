@@ -10,6 +10,9 @@
   --eqd-rojo: #b91c1c;
   --eqd-superficie: #ffffff;
   --eqd-linea: var(--border-color, #e2e8f0);
+  /* Uso compartido: azul pizarra, distinto del verde «con persona» y del gris «disponible». */
+  --eqd-compartido: #3d6fa8;
+  --eqd-compartido-suave: #e7eef7;
 }
 
 :host ::selection {
@@ -921,4 +924,40 @@ button.eqd__kpi {
 .eqd__estado:focus-visible {
   outline: 2px solid var(--eqd-verde-oscuro);
   outline-offset: 2px;
+}
+
+/* ── Uso compartido (sin responsable, instalado en un ambiente) ───────────── */
+
+.eqd__punto--compartido {
+  background: var(--eqd-compartido);
+}
+
+.eqd__dona-arco--compartido {
+  stroke: var(--eqd-compartido);
+  stroke-dashoffset: calc(var(--o, 0) * -1);
+  transition:
+    stroke-dasharray 900ms var(--eqd-ease),
+    stroke-dashoffset 900ms var(--eqd-ease);
+}
+
+.eqd__kpi-icono--compartido {
+  background: var(--eqd-compartido-suave);
+  color: var(--eqd-compartido);
+}
+
+.eqd__kpi-meter-fill--compartido {
+  background: var(--eqd-compartido);
+}
+
+.eqd__compartido {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.1rem 0.55rem;
+  border-radius: 999px;
+  background: var(--eqd-compartido-suave);
+  color: var(--eqd-compartido);
+  font-size: 0.8rem;
+  font-weight: 600;
+  white-space: nowrap;
 }

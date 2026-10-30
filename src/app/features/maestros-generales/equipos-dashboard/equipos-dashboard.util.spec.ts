@@ -1,5 +1,5 @@
 import { EquipoInventario } from '../anexos/interfaces/equipo-asignado.interface';
-import { contarPor, destinoDe, entregasPorMes, filtrarEquipos, matriz, ramDe, SIN_FILTROS, ubicacionDe } from './equipos-dashboard.util';
+import { contarPor, destinoDe, entregasPorMes, filtrarEquipos, matriz, ramDe, SIN_FILTROS, ubicacionDe, usoDe } from './equipos-dashboard.util';
 
 function equipo(id: number, extra: Partial<EquipoInventario> = {}): EquipoInventario {
   return {
@@ -74,6 +74,32 @@ describe('equipos-dashboard.util', () => {
     expect(filtrarEquipos(EQUIPOS, { ...SIN_FILTROS, area: 'Sin área' }).map((e) => e.id)).toEqual([2]);
     expect(filtrarEquipos(EQUIPOS, { ...SIN_FILTROS, busqueda: 'hp' }).map((e) => e.id)).toEqual([2]);
     expect(filtrarEquipos(EQUIPOS, { ...SIN_FILTROS, local: 'Sin ubicación' }).map((e) => e.id)).toEqual([3]);
+  });
+});
+
+describe('usoDe', () => {
+  const sinResponsable = { responsableId: null, responsable: null };
+
+  it('con responsable es de persona', () => {
+    expect(usoDe(PC)).toBe('persona');
+  });
+
+  it('sin responsable e instalado en un ambiente es compartido (TV, impresora, switch...)', () => {
+    expect(usoDe(equipo(10, { ...sinResponsable, tipo: 'TV', ambiente: 'Sala de reuniones' }))).toBe('compartido');
+  });
+
+  it('sin responsable y sin ambiente, en almacén o por definir está disponible', () => {
+    expect(usoDe(DISPONIBLE)).toBe('disponible');
+    expect(usoDe(equipo(11, { ...sinResponsable, ambiente: 'Almacén TI' }))).toBe('disponible');
+    expect(usoDe(equipo(12, { ...sinResponsable, ambiente: 'POR DEFINIR' }))).toBe('disponible');
+    expect(usoDe(equipo(13, { ...sinResponsable, ambiente: 'Depósito' }))).toBe('disponible');
+  });
+
+  it('filtra compartidos aparte de los disponibles', () => {
+    const tv = equipo(14, { ...sinResponsable, tipo: 'TV', ambiente: 'Recepción' });
+    const lista = [...EQUIPOS, tv];
+    expect(filtrarEquipos(lista, { ...SIN_FILTROS, asignacion: 'compartidos' }).map((e) => e.id)).toEqual([14]);
+    expect(filtrarEquipos(lista, { ...SIN_FILTROS, asignacion: 'disponibles' }).map((e) => e.id)).toEqual([3]);
   });
 });
 

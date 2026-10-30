@@ -55,6 +55,22 @@
     </button>
 
     <button
+      id="eqd-kpi-compartidos"
+      class="eqd__kpi eqd__kpi--accion"
+      type="button"
+      title="Sin responsable pero instalados en un ambiente (TV, impresora, UPS, switch...)"
+      [class.eqd__kpi--activo]="filtros().asignacion === 'compartidos'"
+      [attr.aria-pressed]="filtros().asignacion === 'compartidos'"
+      (click)="alternarAsignacion('compartidos')"
+    >
+      <span class="eqd__kpi-icono eqd__kpi-icono--compartido" aria-hidden="true"><i class="fa-solid fa-people-roof"></i></span>
+      <span class="eqd__kpi-label">En uso compartido</span>
+      <strong class="eqd__kpi-value">{{ kpisVista().compartidos }}</strong>
+      <span class="eqd__kpi-meter" aria-hidden="true"><span class="eqd__kpi-meter-fill eqd__kpi-meter-fill--compartido" [style.--w]="proporciones().compartidos"></span></span>
+      <span class="eqd__kpi-nota">{{ proporciones().compartidos }}% instalados en un ambiente</span>
+    </button>
+
+    <button
       id="eqd-kpi-disponibles"
       class="eqd__kpi eqd__kpi--accion"
       type="button"
@@ -66,7 +82,7 @@
       <span class="eqd__kpi-label">Disponibles</span>
       <strong class="eqd__kpi-value">{{ kpisVista().disponibles }}</strong>
       <span class="eqd__kpi-meter" aria-hidden="true"><span class="eqd__kpi-meter-fill" [style.--w]="proporciones().disponibles"></span></span>
-      <span class="eqd__kpi-nota">{{ proporciones().disponibles }}% listos para entregar</span>
+      <span class="eqd__kpi-nota">{{ proporciones().disponibles }}% en almacén, listos para entregar</span>
     </button>
 
     <div class="eqd__kpi eqd__kpi--servicio" [class.eqd__kpi--alerta]="kpis().fueraDeServicio > 0">
@@ -105,21 +121,23 @@
       <article class="eqd__card eqd__card--dona">
         <h2 class="eqd__card-title">
           <span class="eqd__icono" aria-hidden="true"><i class="fa-solid fa-chart-pie"></i></span>
-          Asignación
+          Uso de los equipos
         </h2>
         <div class="eqd__dona-cuerpo">
-          <div class="eqd__dona" role="img" [attr.aria-label]="proporciones().asignados + '% de los equipos tiene responsable'">
+          <div class="eqd__dona" role="img" [attr.aria-label]="proporciones().enUso + '% de los equipos está en uso (persona o compartido)'">
             <svg viewBox="0 0 42 42" aria-hidden="true">
               <circle class="eqd__dona-pista" cx="21" cy="21" r="15.9155"></circle>
               <circle class="eqd__dona-arco" cx="21" cy="21" r="15.9155" [style.--p]="dona().asignados"></circle>
+              <circle class="eqd__dona-arco eqd__dona-arco--compartido" cx="21" cy="21" r="15.9155" [style.--p]="dona().compartidos" [style.--o]="dona().asignados"></circle>
             </svg>
             <div class="eqd__dona-centro">
-              <strong>{{ proporciones().asignados }}%</strong>
-              <span>asignado</span>
+              <strong>{{ proporciones().enUso }}%</strong>
+              <span>en uso</span>
             </div>
           </div>
           <ul class="eqd__leyenda">
-            <li><span class="eqd__punto eqd__punto--asignado" aria-hidden="true"></span> Asignados <strong>{{ kpisVista().asignados }}</strong></li>
+            <li><span class="eqd__punto eqd__punto--asignado" aria-hidden="true"></span> Con responsable <strong>{{ kpisVista().asignados }}</strong></li>
+            <li><span class="eqd__punto eqd__punto--compartido" aria-hidden="true"></span> Compartidos <strong>{{ kpisVista().compartidos }}</strong></li>
             <li><span class="eqd__punto eqd__punto--disponible" aria-hidden="true"></span> Disponibles <strong>{{ kpisVista().disponibles }}</strong></li>
           </ul>
         </div>
@@ -306,6 +324,8 @@
                 <td>
                   @if (e.responsable) {
                     {{ e.responsable }}
+                  } @else if (uso(e) === 'compartido') {
+                    <span class="eqd__compartido"><i class="fa-solid fa-people-roof" aria-hidden="true"></i> Uso compartido</span>
                   } @else {
                     <span class="eqd__sin-asignar">Sin asignar</span>
                   }

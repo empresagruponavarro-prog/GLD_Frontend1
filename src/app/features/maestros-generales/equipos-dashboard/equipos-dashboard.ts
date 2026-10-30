@@ -26,6 +26,8 @@ import {
   SIN_FILTROS,
   SIN_UBICACION,
   ubicacionDe,
+  usoDe,
+  UsoEquipo,
   valoresUnicos,
 } from './equipos-dashboard.util';
 
@@ -41,7 +43,11 @@ interface Distribucion {
 
 interface Kpis {
   total: number;
+  /** Con persona responsable. */
   asignados: number;
+  /** Sin responsable pero instalados en un ambiente: los usan todos (TV, impresora, switch...). */
+  compartidos: number;
+  /** Sin responsable y guardados (almacén / por definir / sin ubicación): listos para entregar. */
   disponibles: number;
   fueraDeServicio: number;
 }
@@ -96,27 +102,38 @@ export class EquiposDashboardComponent {
 
   readonly kpis = computed<Kpis>(() => {
     const lista = this.filtrados();
-    const asignados = lista.filter((e) => e.responsableId !== null).length;
+    const usos = lista.map(usoDe);
     return {
       total: lista.length,
-      asignados,
-      disponibles: lista.length - asignados,
+      asignados: usos.filter((u) => u === 'persona').length,
+      compartidos: usos.filter((u) => u === 'compartido').length,
+      disponibles: usos.filter((u) => u === 'disponible').length,
       fueraDeServicio: lista.filter((e) => e.estado !== 'Operativo').length,
     };
   });
 
   /** Valores que se pintan en las tarjetas: viajan hacia `kpis()` con un conteo animado. */
-  readonly kpisVista = signal<Kpis>({ total: 0, asignados: 0, disponibles: 0, fueraDeServicio: 0 });
+  readonly kpisVista = signal<Kpis>({ total: 0, asignados: 0, compartidos: 0, disponibles: 0, fueraDeServicio: 0 });
 
   /** Porcentaje (entero, 0-100) de cada KPI sobre el total mostrado. */
   readonly proporciones = computed(() => {
     const k = this.kpis();
     const sobre = (parte: number) => (k.total > 0 ? Math.round((parte / k.total) * 100) : 0);
-    return { asignados: sobre(k.asignados), disponibles: sobre(k.disponibles), fueraDeServicio: sobre(k.fueraDeServicio) };
+    return {
+      asignados: sobre(k.asignados),
+      compartidos: sobre(k.compartidos),
+      enUso: sobre(k.asignados + k.compartidos),
+      disponibles: sobre(k.disponibles),
+      fueraDeServicio: sobre(k.fueraDeServicio),
+    };
   });
 
-  /** Segmentos de la dona asignados / disponibles (circunferencia = 100). */
-  readonly dona = computed(() => ({ asignados: this.proporciones().asignados }));
+  /** Segmentos de la dona (circunferencia = 100): persona y, a continuación, compartidos; el resto es disponible. */
+  readonly dona = computed(() => {
+    const k = this.kpis();
+    const sobre = (parte: number) => (k.total > 0 ? (parte / k.total) * 100 : 0);
+    return { asignados: sobre(k.asignados), compartidos: sobre(k.compartidos) };
+  });
 
   /** Composición por tipo con color fijo por tipo; del noveno en adelante comparten el gris de «otros». */
   readonly composicionTipos = computed(() => {
@@ -192,6 +209,7 @@ export class EquiposDashboardComponent {
       this.kpisVista.set({
         total: tramo(desde.total, meta.total),
         asignados: tramo(desde.asignados, meta.asignados),
+        compartidos: tramo(desde.compartidos, meta.compartidos),
         disponibles: tramo(desde.disponibles, meta.disponibles),
         fueraDeServicio: tramo(desde.fueraDeServicio, meta.fueraDeServicio),
       });
@@ -332,6 +350,10 @@ export class EquiposDashboardComponent {
 
   protected destinoEtiqueta(e: EquipoInventario): string {
     return destinoDe(e);
+  }
+
+  protected uso(e: EquipoInventario): UsoEquipo {
+    return usoDe(e);
   }
 
   protected ubicacion(e: EquipoInventario): string {

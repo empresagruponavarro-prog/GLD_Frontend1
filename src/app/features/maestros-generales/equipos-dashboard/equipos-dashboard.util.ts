@@ -7,7 +7,28 @@ export interface Conteo {
   cantidad: number;
 }
 
-export type Asignacion = '' | 'asignados' | 'disponibles';
+export type Asignacion = '' | 'asignados' | 'compartidos' | 'disponibles';
+
+/** Situación de uso de un equipo: con persona, instalado en un ambiente para todos, o libre para entregar. */
+export type UsoEquipo = 'persona' | 'compartido' | 'disponible';
+
+/** Ambientes donde un equipo sin responsable está guardado (no en uso): almacén, depósito o ubicación por definir. */
+const AMBIENTE_DE_RESGUARDO = /almac|dep[oó]sito|por definir/i;
+
+/**
+ * Sin responsable, un equipo instalado en un ambiente real (TV de la sala, impresora del piso, switch del rack)
+ * lo usan todos: es «compartido». Solo está disponible si no tiene ambiente o está en almacén / por definir.
+ */
+export function usoDe(e: EquipoInventario): UsoEquipo {
+  if (e.responsableId !== null) return 'persona';
+  return e.ambiente && !AMBIENTE_DE_RESGUARDO.test(e.ambiente) ? 'compartido' : 'disponible';
+}
+
+const USO_DE_FILTRO: Record<Exclude<Asignacion, ''>, UsoEquipo> = {
+  asignados: 'persona',
+  compartidos: 'compartido',
+  disponibles: 'disponible',
+};
 
 export interface FiltrosEquipos {
   tipo: string;
@@ -60,8 +81,7 @@ export function filtrarEquipos(equipos: readonly EquipoInventario[], f: FiltrosE
     if (f.destino && destinoDe(e) !== f.destino) return false;
     if (f.area && (e.area ?? SIN_AREA) !== f.area) return false;
     if (f.estado && e.estado !== f.estado) return false;
-    if (f.asignacion === 'asignados' && e.responsableId === null) return false;
-    if (f.asignacion === 'disponibles' && e.responsableId !== null) return false;
+    if (f.asignacion && usoDe(e) !== USO_DE_FILTRO[f.asignacion]) return false;
     if (!texto) return true;
     return [e.codigo, e.codigoActivo, e.tipo, e.marca, e.modelo, e.serie ?? '', e.responsable ?? '', e.local, e.nivel, e.ambiente, e.area ?? '']
       .join(' ')
