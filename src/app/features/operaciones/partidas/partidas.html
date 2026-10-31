@@ -1,0 +1,71 @@
+<section class="ops-card" aria-label="Partidas y subpartidas">
+  <div style="display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; justify-content: space-between; margin-bottom: 0.5rem">
+    <h2 class="ops-card__titulo" style="margin: 0">Partidas y subpartidas</h2>
+    <div style="display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center">
+      <label style="display: flex; gap: 0.375rem; align-items: center; font-size: 0.75rem">
+        <input type="checkbox" [checked]="soloRetraso()" (change)="soloRetraso.set(marcadoDe($event))" />
+        Solo con retraso
+      </label>
+      <button type="button" class="ops-btn" (click)="expandirTodo()">Expandir todo</button>
+      <button type="button" class="ops-btn" (click)="contraerTodo()">Contraer todo</button>
+    </div>
+  </div>
+
+  @if (store.cargandoArboles() && filas().length === 0) {
+    <p class="ops-vacio">Cargando partidas…</p>
+  } @else if (filas().length === 0) {
+    <p class="ops-vacio" data-testid="sin-partidas">No hay obras en ejecución o post venta{{ soloRetraso() ? ' con retraso' : '' }} con estos filtros.</p>
+  } @else {
+    <div class="ops-tabla-wrap">
+      <table class="ops-tabla" data-testid="arbol-partidas">
+        <thead>
+          <tr>
+            <th>Obra / partida / subpartida</th>
+            <th>Inicio</th>
+            <th>Fin</th>
+            <th>Avance</th>
+            <th class="ops-tabla__num">Prog.</th>
+            <th class="ops-tabla__num">Real</th>
+            <th class="ops-tabla__num">Desv.</th>
+            <th>Estado</th>
+            <th>Semana</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (f of filas(); track f.id) {
+            <tr [class.ops-arbol__obra]="f.nivel === 0" [class.ops-arbol__nivel1]="f.nivel === 1" [class.ops-arbol__nivel2]="f.nivel === 2">
+              <td>
+                @if (f.expandible) {
+                  <button type="button" class="ops-arbol__alternar" (click)="alternar(f.id)" [attr.aria-expanded]="expandidos().has(f.id)" [attr.aria-label]="(expandidos().has(f.id) ? 'Contraer ' : 'Expandir ') + f.etiqueta">
+                    {{ expandidos().has(f.id) ? '▾' : '▸' }}
+                  </button>
+                }
+                @if (f.nivel === 0) {
+                  <a class="ops-tabla__link" [routerLink]="['/centros-costos', f.idCentroCosto, 'datos']">{{ f.etiqueta }}</a>
+                } @else {
+                  {{ f.etiqueta }}
+                }
+                @if (f.detalle) {
+                  <span class="ops-tabla__sub">{{ f.detalle }}</span>
+                }
+              </td>
+              <td>{{ fecha(f.inicio) }}</td>
+              <td>
+                {{ fecha(f.fin) }}
+                @if (f.finOriginal) {
+                  <span class="ops-tabla__sub">orig. {{ fecha(f.finOriginal) }}</span>
+                }
+              </td>
+              <td><app-ops-barra-avance [valor]="f.real" [meta]="f.programado" [clave]="f.situacion.clave" [conTexto]="false" /></td>
+              <td class="ops-tabla__num">{{ pct(f.programado) }}%</td>
+              <td class="ops-tabla__num">{{ pct(f.real) }}%</td>
+              <td class="ops-tabla__num">{{ desviacion(f.desviacion) }}</td>
+              <td><app-situacion-chip [situacion]="f.situacion" /></td>
+              <td>{{ f.semana ?? '' }}</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+</section>

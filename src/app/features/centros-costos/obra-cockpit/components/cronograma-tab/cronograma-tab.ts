@@ -16,6 +16,8 @@ import { PermisosObra, SIN_PERMISOS_OBRA } from '../../obra-permisos';
 export class CronogramaTabComponent {
   readonly semanas = input<readonly ObraSemana[]>([]);
   readonly kpis = input<ObraKpi | undefined>(undefined);
+  /** La obra tiene estructura de control: el avance global ya sale del control de avance, no de esta bitácora. */
+  readonly desdeControl = input(false);
   readonly cabecera = input<ObraCabecera | undefined>(undefined);
   /** Permisos del módulo `obra`; sin ellos la pestaña queda en solo lectura. */
   readonly permisos = input<PermisosObra>(SIN_PERMISOS_OBRA);

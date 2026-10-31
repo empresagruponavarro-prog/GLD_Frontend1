@@ -1,0 +1,234 @@
+<div class="bg-surface-container-lowest rounded-xl shadow-sm border border-surface-container p-3 space-y-3">
+  <nav class="flex flex-wrap gap-1" aria-label="Secciones del control de avance">
+    @for (s of secciones; track s.clave) {
+      <button type="button" class="obra-ctl-btn" [class.obra-ctl-btn--primario]="seccion() === s.clave" [attr.aria-current]="seccion() === s.clave ? 'page' : null" (click)="ir(s.clave)">
+        {{ s.etiqueta }}
+      </button>
+    }
+  </nav>
+
+  @if (error()) {
+    <p class="obra-ctl-error" role="alert">{{ error() }}</p>
+  }
+
+  @switch (seccion()) {
+    @case ('resumen') {
+      @if (control(); as c) {
+        <div class="flex flex-wrap items-center gap-2">
+          <span class="obra-ctl-chip" data-testid="estado-obra">{{ etiquetaEstado(c.estado_obra) }}</span>
+          @if (resultado(); as r) {
+            <app-situacion-chip [situacion]="r.situacion" />
+            <span class="text-xs text-slate-600">{{ r.semana.texto }}</span>
+          }
+          @if (permisos().editar) {
+            <button type="button" class="obra-ctl-btn ml-auto" (click)="dlgEstado.set(true)">Cambiar estado</button>
+          }
+        </div>
+
+        @if (!c.configurada) {
+          <p class="obra-ctl-aviso" role="status" data-testid="sin-configurar">
+            Esta obra aún no entra al control de avance. Falta:
+            @for (f of c.faltantes; track f; let ultimo = $last) {
+              <strong>{{ f === 'estado_obra' ? 'estado de la obra' : f === 'fecha_inicio' ? 'fecha de inicio' : 'fecha de fin programada' }}</strong>{{ ultimo ? '.' : ', ' }}
+            }
+          </p>
+        }
+
+        @if (resultado(); as r) {
+          <div class="grid grid-cols-2 md:grid-cols-4 gap-2">
+            <div class="rounded-lg bg-slate-50 p-2 text-center">
+              <span class="obra-ctl-label">Avance real</span>
+              <strong class="text-lg">{{ pct(r.real) }}%</strong>
+            </div>
+            <div class="rounded-lg bg-slate-50 p-2 text-center">
+              <span class="obra-ctl-label">Programado</span>
+              <strong class="text-lg">{{ pct(r.programado) }}%</strong>
+            </div>
+            <div class="rounded-lg bg-slate-50 p-2 text-center">
+              <span class="obra-ctl-label">Desviación</span>
+              <strong class="text-lg" [class.text-error]="r.desviacion < -0.5">{{ desviacion(r.desviacion) }}</strong>
+            </div>
+            <div class="rounded-lg bg-slate-50 p-2 text-center">
+              <span class="obra-ctl-label">Fin vigente</span>
+              <strong class="text-lg">{{ fecha(r.plazos.finVigente) }}</strong>
+              @if (r.plazos.diasReprogramados > 0) {
+                <span class="block text-[10px] text-slate-500">+{{ r.plazos.diasReprogramados }} d reprogramados</span>
+              }
+            </div>
+          </div>
+
+          @if (r.plazos.diasFueraDePlazo > 0) {
+            <p class="obra-ctl-aviso" role="status">La obra está {{ r.plazos.diasFueraDePlazo }} día(s) fuera de plazo.</p>
+          }
+          @if (r.postVenta; as pv) {
+            <p class="text-xs text-slate-600">Post venta: {{ pv.texto }}</p>
+          }
+          @if (r.avisos.length > 0) {
+            <ul class="space-y-1" aria-label="Avisos de carga">
+              @for (a of r.avisos; track a.codigo + (a.item ?? '')) {
+                <li class="obra-ctl-aviso" role="status">{{ a.mensaje }}</li>
+              }
+            </ul>
+          }
+        }
+
+        <div>
+          <h3 class="obra-ctl-label">Historial</h3>
+          @if (eventos().length === 0) {
+            <p class="obra-ctl-hint">Sin eventos todavía.</p>
+          } @else {
+            <ul class="space-y-1 max-h-48 overflow-y-auto">
+              @for (e of eventos(); track e.id) {
+                <li class="text-xs">
+                  <span [class]="severidad(e.severidad)" class="font-semibold">{{ e.titulo }}</span>
+                  <span class="text-slate-500"> · {{ fecha(e.created_at) }}{{ e.usuario ? ' · ' + e.usuario : '' }}</span>
+                  @if (e.detalle) {
+                    <span class="block text-slate-600">{{ e.detalle }}</span>
+                  }
+                </li>
+              }
+            </ul>
+          }
+        </div>
+      } @else {
+        <p class="obra-ctl-hint">Cargando control de avance…</p>
+      }
+    }
+
+    @case ('estructura') {
+      <app-estructura-partidas
+        [partidas]="partidas()"
+        [permisos]="permisos()"
+        (importar)="dlgImportar.set(true)"
+        (importarExcel)="dlgExcel.set(true)"
+        (nuevaPartida)="nuevaPartida()"
+        (editarPartida)="editarPartida($event)"
+        (eliminarPartida)="eliminarPartida($event)"
+        (nuevaSubpartida)="nuevaSubpartida($event)"
+        (editarSubpartida)="editarSubpartida($event)"
+        (eliminarSubpartida)="eliminarSubpartida($event)"
+        (metas)="editarMetas($event)"
+      />
+    }
+
+    @case ('avance') {
+      <app-avance-semanal [idCentroCosto]="idCentroCosto()" [avance]="avanceRes.hasValue() ? avanceRes.value() : null" [permisos]="permisos()" (saved)="refrescar()" />
+    }
+
+    @case ('reprogramaciones') {
+      <section class="space-y-3" aria-label="Reprogramaciones">
+        <div class="flex flex-wrap items-center justify-between gap-2">
+          <p class="text-xs font-semibold text-slate-700" data-testid="resumen-reprogramaciones">{{ resumenRep().texto }}</p>
+          @if (permisos().crear) {
+            <button type="button" class="obra-ctl-btn obra-ctl-btn--primario" (click)="nuevaReprogramacion()"><i class="fa-solid fa-plus"></i> Reprogramar</button>
+          }
+        </div>
+        @if (reprogramaciones().length === 0) {
+          <p class="obra-ctl-hint">Esta obra no tiene reprogramaciones.</p>
+        } @else {
+          <table class="obra-ctl-tabla">
+            <thead>
+              <tr>
+                <th>Desde</th>
+                <th>Días</th>
+                <th>Motivo</th>
+                <th>Detalle</th>
+                <th><span class="sr-only">Acciones</span></th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (r of reprogramaciones(); track r.id) {
+                <tr>
+                  <td>{{ fecha(r.desde) }}</td>
+                  <td>{{ r.dias }}</td>
+                  <td>
+                    {{ motivos[r.motivo] }}
+                    @if (r.es_atraso) {
+                      <span class="obra-ctl-chip ml-1">Atraso</span>
+                    }
+                  </td>
+                  <td>{{ r.detalle || '—' }}</td>
+                  <td class="text-right whitespace-nowrap">
+                    @if (permisos().editar) {
+                      <button type="button" class="obra-ctl-btn" (click)="editarReprogramacion(r)" [attr.aria-label]="'Editar reprogramación del ' + fecha(r.desde)">Editar</button>
+                    }
+                    @if (permisos().eliminar) {
+                      <button type="button" class="obra-ctl-btn obra-ctl-btn--peligro" (click)="eliminarReprogramacion(r)" [attr.aria-label]="'Eliminar reprogramación del ' + fecha(r.desde)">Eliminar</button>
+                    }
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        }
+      </section>
+    }
+
+    @case ('curva') {
+      <app-curva-s-control [curva]="curvaRes.hasValue() ? curvaRes.value() : null" [filtro]="filtroCurva()" [hayAdicionales]="hayAdicionales()" (filtroCambiado)="filtroCurva.set($event)" />
+    }
+  }
+</div>
+
+<app-estado-obra-dialog
+  [isOpen]="dlgEstado()"
+  [idCentroCosto]="idCentroCosto()"
+  [estadoActual]="estadoActual()"
+  [realActual]="resultado()?.real ?? null"
+  [permisos]="permisos()"
+  (closed)="dlgEstado.set(false)"
+  (saved)="guardado()"
+/>
+<app-importar-excel-dialog
+  [isOpen]="dlgExcel()"
+  [idCentroCosto]="idCentroCosto()"
+  [permisos]="permisos()"
+  (closed)="dlgExcel.set(false)"
+  (saved)="guardado()"
+/>
+<app-importar-presupuesto-dialog
+  [isOpen]="dlgImportar()"
+  [idCentroCosto]="idCentroCosto()"
+  [hayEstructura]="partidas().length > 0"
+  [permisos]="permisos()"
+  (closed)="dlgImportar.set(false)"
+  (saved)="guardado()"
+/>
+<app-partida-dialog
+  [isOpen]="dlgPartida()"
+  [idCentroCosto]="idCentroCosto()"
+  [partida]="partidaSel()"
+  [itemSugerido]="itemPartidaSugerido()"
+  [permisos]="permisos()"
+  (closed)="dlgPartida.set(false)"
+  (saved)="guardado()"
+/>
+<app-subpartida-dialog
+  [isOpen]="dlgSubpartida()"
+  [idCentroCosto]="idCentroCosto()"
+  [partida]="subpartidaPadre()"
+  [subpartida]="subpartidaSel()"
+  [itemSugerido]="itemSubSugerido()"
+  [inicioObra]="inicioObra()"
+  [finObra]="finObra()"
+  [permisos]="permisos()"
+  (closed)="dlgSubpartida.set(false)"
+  (saved)="guardado()"
+/>
+<app-metas-dialog
+  [isOpen]="dlgMetas()"
+  [idCentroCosto]="idCentroCosto()"
+  [subpartida]="metasSel()"
+  [inicioObra]="inicioObra()"
+  [permisos]="permisos()"
+  (closed)="dlgMetas.set(false)"
+  (saved)="guardado()"
+/>
+<app-reprogramacion-dialog
+  [isOpen]="dlgRep()"
+  [idCentroCosto]="idCentroCosto()"
+  [reprogramacion]="repSel()"
+  [permisos]="permisos()"
+  (closed)="dlgRep.set(false)"
+  (saved)="guardado()"
+/>

@@ -1,0 +1,128 @@
+<div class="ops-grid">
+  <section class="ops-grid ops-grid--kpi" aria-label="Indicadores principales">
+    <div class="ops-kpi" data-testid="kpi-vigentes">
+      <span class="ops-kpi__valor">{{ kpis().vigentes }}</span>
+      <span class="ops-kpi__etiqueta">Proyectos vigentes</span>
+      <span class="ops-kpi__detalle">
+        @for (a of kpis().vigentesPorAnio; track a.anio; let ultimo = $last) {
+          {{ a.anio }}: {{ a.cantidad }}{{ ultimo ? '' : ' · ' }}
+        }
+      </span>
+    </div>
+    <div class="ops-kpi" data-testid="kpi-clientes">
+      <span class="ops-kpi__valor">{{ kpis().clientes }}</span>
+      <span class="ops-kpi__etiqueta">Clientes</span>
+    </div>
+    <div class="ops-kpi" data-testid="kpi-coordinadores">
+      <span class="ops-kpi__valor">{{ kpis().coordinadoresActivos }}</span>
+      <span class="ops-kpi__etiqueta">Coordinadores activos</span>
+    </div>
+    <div class="ops-kpi" data-testid="kpi-jefes">
+      <span class="ops-kpi__valor">{{ kpis().jefesActivos }}</span>
+      <span class="ops-kpi__etiqueta">Jefes activos</span>
+    </div>
+    <div class="ops-kpi" data-testid="kpi-ejecucion">
+      <span class="ops-kpi__valor">{{ kpis().enEjecucion }}</span>
+      <span class="ops-kpi__etiqueta">En ejecución</span>
+    </div>
+    <div class="ops-kpi" data-testid="kpi-postventa">
+      <span class="ops-kpi__valor">{{ kpis().postVenta }}</span>
+      <span class="ops-kpi__etiqueta">En post venta</span>
+    </div>
+    <div class="ops-kpi" data-testid="kpi-proximos">
+      <span class="ops-kpi__valor">{{ kpis().proximos }}</span>
+      <span class="ops-kpi__etiqueta">Próximos</span>
+    </div>
+    <div class="ops-kpi" [class.ops-kpi--warn]="kpis().proximasAVencer > 0" data-testid="kpi-vencer">
+      <span class="ops-kpi__valor">{{ kpis().proximasAVencer }}</span>
+      <span class="ops-kpi__etiqueta">Próx. a vencer</span>
+      <span class="ops-kpi__detalle">en 7 días</span>
+    </div>
+  </section>
+
+  <section class="ops-grid ops-grid--2" aria-label="Distribución">
+    <div class="ops-card">
+      <h2 class="ops-card__titulo">Por jefe de proyecto</h2>
+      <app-ops-dona [porciones]="porJefe()" titulo="Obras vigentes por jefe de proyecto" [clicable]="true" (seleccion)="filtrarJefe($event)" />
+      <p class="ops-tabla__sub" data-testid="semaforo-jefes">
+        Carga: {{ semaforoJefes().sobrecarga }} en sobrecarga · {{ semaforoJefes().cerca }} cerca del tope · {{ semaforoJefes().holgura }} con holgura
+      </p>
+    </div>
+    <div class="ops-card">
+      <h2 class="ops-card__titulo">Por coordinador</h2>
+      <app-ops-dona [porciones]="porCoordinador()" titulo="Obras vigentes por coordinador" [clicable]="true" (seleccion)="filtrarCoordinador($event)" />
+      <p class="ops-tabla__sub" data-testid="semaforo-coordinadores">
+        Carga: {{ semaforoCoordinadores().sobrecarga }} en sobrecarga · {{ semaforoCoordinadores().cerca }} cerca del tope · {{ semaforoCoordinadores().holgura }} con holgura
+      </p>
+    </div>
+    <div class="ops-card">
+      <h2 class="ops-card__titulo">Por cliente</h2>
+      <app-ops-dona [porciones]="porCliente()" titulo="Obras vigentes por cliente" [clicable]="true" (seleccion)="filtrarCliente($event)" />
+    </div>
+    <div class="ops-card">
+      <h2 class="ops-card__titulo">Por estado</h2>
+      <app-ops-dona [porciones]="porEstado()" titulo="Obras vigentes por estado" [clicable]="true" [colores]="coloresEstado" (seleccion)="filtrarEstado($event)" />
+    </div>
+  </section>
+
+  <section class="ops-card" aria-label="Línea de tiempo">
+    <h2 class="ops-card__titulo">Línea de tiempo</h2>
+    <app-ops-gantt [filas]="filas()" [hoy]="store.hoy()" (seleccion)="enfocar($event)" />
+  </section>
+
+  <section class="ops-card" aria-label="Bitácora de obras">
+    <h2 class="ops-card__titulo">Bitácora de obras vigentes</h2>
+    @if (vigentes().length === 0) {
+      <p class="ops-vacio" data-testid="sin-obras">No hay obras vigentes con estos filtros.</p>
+    } @else {
+      <div class="ops-tabla-wrap">
+        <table class="ops-tabla" data-testid="bitacora">
+          <thead>
+            <tr>
+              <th>Obra</th>
+              <th>Jefe</th>
+              <th>Coordinador</th>
+              <th>Estado</th>
+              <th>Inicio</th>
+              <th>Fin</th>
+              <th>Semana</th>
+              <th>Avance</th>
+              <th>Situación</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (o of vigentes(); track o.id_centro_costo) {
+              <tr>
+                <td>
+                  <button type="button" class="ops-tabla__link" (click)="store.enfocarObra(o)">{{ o.nombre }}</button>
+                  @if (o.codigo_obra) {
+                    <span class="ops-tabla__sub">{{ o.codigo_obra }}</span>
+                  }
+                  @if (store.avisosPorObra().get(o.id_centro_costo); as n) {
+                    <span class="ops-chip ops-chip--suspendida" data-testid="avisos-obra" title="Avisos sin leer">⚠ {{ n }} {{ n === 1 ? 'aviso' : 'avisos' }}</span>
+                  }
+                </td>
+                <td>{{ o.equipo.jefe_proyecto?.nombre ?? '—' }}</td>
+                <td>{{ o.equipo.coordinador?.nombre ?? '—' }}</td>
+                <td>
+                  <app-ops-estado-chip [estado]="o.resultado.estadoEfectivo" />
+                  @if (o.resultado.plazos.diasReprogramados > 0) {
+                    <span class="ops-tabla__sub">+{{ o.resultado.plazos.diasReprogramados }} d</span>
+                  }
+                </td>
+                <td>{{ diaMes(o.inicio) }}</td>
+                <td>{{ diaMes(o.resultado.plazos.finVigente) }}</td>
+                <td>{{ o.resultado.semana.texto }}</td>
+                <td><app-ops-barra-avance [valor]="o.resultado.real" [meta]="o.resultado.programado" [clave]="o.resultado.situacion.clave" /></td>
+                <td>
+                  <app-situacion-chip [situacion]="o.resultado.situacion" />
+                  <span class="ops-tabla__sub">{{ desviacion(o.resultado.desviacion) }}</span>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  </section>
+</div>

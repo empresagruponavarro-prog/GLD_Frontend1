@@ -1,0 +1,53 @@
+<div style="position: relative">
+  <button type="button" class="ops-btn" (click)="alternar()" [attr.aria-expanded]="abierta()" aria-haspopup="true" aria-label="Avisos" data-testid="campana">
+    🔔
+    @if (cantidad() > 0) {
+      <span class="ops-chip ops-chip--cancelada" data-testid="campana-contador" style="margin-left: 0.25rem">{{ etiqueta() }}</span>
+    }
+  </button>
+
+  @if (abierta()) {
+    <div class="ops-card" role="dialog" aria-label="Avisos de las obras" data-testid="campana-panel" style="position: absolute; right: 0; z-index: 30; width: min(26rem, 90vw); margin-top: 0.25rem; box-shadow: var(--shadow-lg)">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem">
+        <h2 class="ops-card__titulo" style="margin: 0">Avisos</h2>
+        <div style="display: flex; gap: 0.25rem">
+          <button type="button" class="ops-btn" (click)="store.marcarLeidos()" [disabled]="cantidad() === 0">Marcar leídos</button>
+          <button type="button" class="ops-btn" (click)="verPreferencias.set(!verPreferencias())" [attr.aria-pressed]="verPreferencias()">Preferencias</button>
+        </div>
+      </div>
+
+      @if (verPreferencias()) {
+        <fieldset style="border: 1px solid var(--border-color); border-radius: var(--radius-sm); padding: 0.5rem; margin: 0 0 0.5rem" data-testid="campana-preferencias">
+          <legend class="ops-filtros__etiqueta">Avisarme de</legend>
+          @for (t of tipos; track t.valor) {
+            <label style="display: flex; gap: 0.375rem; align-items: center; font-size: 0.75rem">
+              <input type="checkbox" [checked]="incluye(t.valor)" (change)="elegirTipo(t.valor, marcadoDe($event))" />
+              {{ t.etiqueta }}
+            </label>
+          }
+        </fieldset>
+      }
+
+      @if (lista().length === 0) {
+        <p class="ops-vacio" data-testid="campana-vacia">No hay avisos recientes.</p>
+      } @else {
+        <ul style="list-style: none; padding: 0; margin: 0; max-height: 20rem; overflow-y: auto" data-testid="campana-lista">
+          @for (e of lista(); track e.id) {
+            <li style="border-bottom: 1px solid var(--border-color)">
+              <button type="button" class="ops-dona__item ops-dona__item--clic" style="padding: 0.375rem 0" (click)="abrirObra(e)">
+                <span class="ops-punto" [class]="'ops-punto ops-punto--' + (e.severidad === 'info' ? 'neutral' : e.severidad)"></span>
+                <span style="flex: 1">
+                  <span style="display: block; font-size: 0.75rem" [style.font-weight]="sinLeer(e) ? 700 : 400">{{ e.titulo }}</span>
+                  <span class="ops-tabla__sub">{{ e.codigo_obra ?? e.centro_costo }} · {{ hace(e.created_at) }}</span>
+                </span>
+                @if (sinLeer(e)) {
+                  <span class="ops-punto ops-punto--crit" title="Sin leer"></span>
+                }
+              </button>
+            </li>
+          }
+        </ul>
+      }
+    </div>
+  }
+</div>

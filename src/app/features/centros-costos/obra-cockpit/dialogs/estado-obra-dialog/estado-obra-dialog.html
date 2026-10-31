@@ -1,0 +1,69 @@
+<app-modal
+  [isOpen]="isOpen()"
+  [title]="esAlta() ? 'Iniciar el control de la obra' : 'Cambiar el estado de la obra'"
+  icon="fa-solid fa-diagram-project"
+  [showDefaultFooter]="false"
+  maxWidth="520px"
+  (closed)="closed.emit()"
+>
+  <form [formGroup]="form" (ngSubmit)="onSubmit()" id="form-estado-obra" class="space-y-3">
+    <p class="text-xs text-slate-600">
+      Estado actual: <strong class="text-slate-800">{{ etiquetaActual() }}</strong>
+    </p>
+
+    @if (opciones().length === 0) {
+      <p class="obra-ctl-aviso" role="status">
+        «{{ etiquetaActual() }}» es un estado final: la obra ya no cambia de estado.
+      </p>
+    } @else {
+      <div>
+        <label class="obra-ctl-label" for="estado-nuevo">Nuevo estado</label>
+        <select id="estado-nuevo" class="obra-ctl-input" formControlName="estado">
+          @for (e of opciones(); track e) {
+            <option [value]="e">{{ etiquetas[e] }}</option>
+          }
+        </select>
+        @if (esAlta()) {
+          <p class="obra-ctl-hint">Para iniciar el control la ficha debe tener código, tienda, departamento, jefe de proyecto, inicio y fin.</p>
+        }
+      </div>
+
+      @if (pideFecha()) {
+        <div>
+          <label class="obra-ctl-label" for="estado-fecha">{{ etiquetaFecha() }}</label>
+          <input id="estado-fecha" type="date" class="obra-ctl-input" formControlName="fecha" />
+          <p class="obra-ctl-hint">Si la deja vacía se usa la fecha de hoy.</p>
+        </div>
+        <div>
+          <label class="obra-ctl-label" for="estado-obs">Observaciones de la post venta</label>
+          <textarea id="estado-obs" rows="2" class="obra-ctl-input" formControlName="observaciones" maxlength="200" placeholder="Pendientes o levantamientos"></textarea>
+        </div>
+      }
+
+      @if (entregaIncompleta()) {
+        <div class="obra-ctl-aviso" role="alert">
+          <p>
+            La obra está al <strong>{{ realActual() ?? 0 | number: '1.0-0' }} %</strong> de avance. Entregarla incompleta queda registrado en el historial.
+          </p>
+          <label class="flex items-center gap-2 mt-2 text-xs font-semibold cursor-pointer">
+            <input type="checkbox" formControlName="confirmar" />
+            Confirmo la entrega con avance menor a 100 %
+          </label>
+        </div>
+      }
+    }
+
+    @if (formError()) {
+      <p class="obra-ctl-error" role="alert">{{ formError() }}</p>
+    }
+
+    <div class="obra-ctl-acciones">
+      <button type="button" class="obra-ctl-btn" (click)="closed.emit()">Cancelar</button>
+      @if (puedeGuardar() && opciones().length > 0) {
+        <button type="submit" class="obra-ctl-btn obra-ctl-btn--primario" [disabled]="isSaving()">
+          {{ isSaving() ? 'Guardando…' : 'Cambiar estado' }}
+        </button>
+      }
+    </div>
+  </form>
+</app-modal>

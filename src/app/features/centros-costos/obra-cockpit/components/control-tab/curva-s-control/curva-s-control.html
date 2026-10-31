@@ -1,0 +1,61 @@
+<section class="space-y-3" aria-label="Curva S">
+  @if (hayAdicionales()) {
+    <div class="flex gap-1" role="group" aria-label="Filtrar la curva">
+      @for (f of filtros; track f.valor) {
+        <button type="button" class="obra-ctl-btn" [class.obra-ctl-btn--primario]="filtro() === f.valor" [attr.aria-pressed]="filtro() === f.valor" (click)="filtroCambiado.emit(f.valor)">
+          {{ f.etiqueta }}
+        </button>
+      }
+    </div>
+  }
+
+  @if (geo(); as g) {
+    @if (curva(); as c) {
+      <svg [attr.viewBox]="'0 0 ' + g.ancho + ' ' + g.alto" class="w-full h-auto bg-white rounded-lg border border-slate-200" role="img" aria-label="Curva S: pactado frente a real por semana">
+        @for (l of g.guias; track l.valor) {
+          <line [attr.x1]="g.izq" [attr.x2]="g.ancho - g.der" [attr.y1]="l.y" [attr.y2]="l.y" stroke="#e2e8f0" stroke-width="1" />
+          <text [attr.x]="g.izq - 6" [attr.y]="l.y + 3" text-anchor="end" font-size="10" fill="#64748b">{{ l.valor }}%</text>
+        }
+        @if (g.xCurso; as k) {
+          <rect [attr.x]="k.x" [attr.y]="g.arriba" [attr.width]="k.ancho" [attr.height]="g.alto - g.arriba - g.abajo" fill="#f1f5f9" />
+        }
+        @for (p of g.pausas; track p.semana) {
+          <rect [attr.x]="p.x" [attr.y]="g.arriba" [attr.width]="p.ancho" [attr.height]="g.alto - g.arriba - g.abajo" fill="#ede9fe" opacity="0.7" />
+        }
+        @if (g.hayOriginalDistinto) {
+          <path [attr.d]="g.pactadoOriginal" fill="none" stroke="#94a3b8" stroke-width="1.5" stroke-dasharray="4 3" />
+        }
+        <path [attr.d]="g.pactado" fill="none" stroke="#2563eb" stroke-width="2" />
+        @if (g.real) {
+          <path [attr.d]="g.real" fill="none" stroke="#16a34a" stroke-width="2.5" />
+        }
+        @if (g.xCorte !== null) {
+          <line [attr.x1]="g.xCorte" [attr.x2]="g.xCorte" [attr.y1]="g.arriba" [attr.y2]="g.alto - g.abajo" stroke="#475569" stroke-width="1" stroke-dasharray="2 2" />
+        }
+        @for (s of c.semanas; track s.semana; let i = $index) {
+          <text [attr.x]="g.xs[i]" [attr.y]="g.alto - 14" text-anchor="end" font-size="9" fill="#64748b">S{{ s.semana }}</text>
+        }
+      </svg>
+
+      <div class="flex flex-wrap gap-3 text-[11px] text-slate-600">
+        <span><span class="inline-block w-3 h-0.5 align-middle bg-blue-600"></span> Pactado</span>
+        @if (g.hayOriginalDistinto) {
+          <span><span class="inline-block w-3 h-0.5 align-middle bg-slate-400"></span> Original (antes de reprogramar)</span>
+        }
+        <span><span class="inline-block w-3 h-0.5 align-middle bg-green-600"></span> Real</span>
+        @if (g.pausas.length > 0) {
+          <span><span class="inline-block w-3 h-3 align-middle bg-violet-100"></span> Semana en pausa</span>
+        }
+      </div>
+
+      @if (frase(); as f) {
+        <p class="text-xs" [class.text-error]="f.desviacion < -0.5" [class.font-semibold]="f.desviacion < -0.5" data-testid="frase-curva">{{ f.texto }}</p>
+      }
+      @if (c.excede) {
+        <p class="obra-ctl-aviso" role="alert">La obra dura más de las semanas que muestra el gráfico; se ven solo las primeras.</p>
+      }
+    }
+  } @else {
+    <p class="obra-ctl-aviso" data-testid="sin-curva">Aún no hay curva: cargue la estructura de la obra y sus fechas de inicio y fin.</p>
+  }
+</section>

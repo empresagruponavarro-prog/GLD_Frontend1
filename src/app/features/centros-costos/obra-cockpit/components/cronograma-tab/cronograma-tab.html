@@ -12,7 +12,7 @@
   </div>
   <div class="p-3 bg-surface-container-lowest rounded-xl shadow-sm border border-surface-container">
     <div class="flex items-center justify-between">
-      <span class="text-[10px] text-on-surface-variant uppercase font-medium tracking-wider">Avance físico global</span>
+      <span class="text-[10px] text-on-surface-variant uppercase font-medium tracking-wider">{{ desdeControl() ? 'Avance global (control de avance)' : 'Avance físico global (bitácora)' }}</span>
       <span class="material-symbols-outlined text-primary text-base">trending_up</span>
     </div>
     <div class="text-lg font-bold font-headline-xl text-primary mt-0.5">{{ (kpis()?.avance_real_global ?? 0) | number: '1.0-2' }}%</div>

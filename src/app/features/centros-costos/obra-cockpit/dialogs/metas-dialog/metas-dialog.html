@@ -1,0 +1,61 @@
+<app-modal
+  [isOpen]="isOpen()"
+  title="Metas semanales"
+  icon="fa-solid fa-bullseye"
+  [showDefaultFooter]="false"
+  maxWidth="600px"
+  (closed)="closed.emit()"
+>
+  @if (subpartida(); as s) {
+    <div class="space-y-3">
+      <p class="text-xs text-slate-600">
+        <strong class="text-slate-800">{{ s.item }} · {{ s.nombre }}</strong> — del {{ s.fecha_inicio }} al {{ s.fecha_fin }}
+      </p>
+      <p class="obra-ctl-hint">
+        % que se espera completar <strong>en cada semana</strong> (no acumulado). Déjela vacía para repartirla por días laborables; la suma debe ser 100.
+      </p>
+
+      <div class="grid grid-cols-5 gap-2">
+        @for (n of semanas; track n) {
+          <div>
+            <label class="obra-ctl-label" [for]="'meta-' + n">Sem {{ n }}</label>
+            <input
+              [id]="'meta-' + n"
+              type="text"
+              inputmode="decimal"
+              class="obra-ctl-input obra-ctl-input--num"
+              [class.obra-ctl-input--error]="errores()[n - 1]"
+              [value]="textos()[n - 1]"
+              [placeholder]="automaticas()[n - 1] | number: '1.0-1'"
+              [disabled]="!puedeGuardar()"
+              (input)="escribir(n - 1, valorDe($event))"
+              [attr.aria-invalid]="errores()[n - 1] ? 'true' : null"
+            />
+          </div>
+        }
+      </div>
+
+      <div class="flex items-center justify-between text-xs">
+        <span [class]="sumaOk() ? 'text-slate-600' : 'text-error font-semibold'" data-testid="suma-metas">
+          Suma: <strong>{{ suma() | number: '1.0-1' }} %</strong> {{ sumaOk() ? '' : '— no suma 100 %' }}
+        </span>
+        @if (puedeGuardar()) {
+          <button type="button" class="obra-ctl-btn" (click)="restablecer()">Volver al reparto automático</button>
+        }
+      </div>
+
+      @if (formError()) {
+        <p class="obra-ctl-error" role="alert">{{ formError() }}</p>
+      }
+
+      <div class="obra-ctl-acciones">
+        <button type="button" class="obra-ctl-btn" (click)="closed.emit()">Cerrar</button>
+        @if (puedeGuardar()) {
+          <button type="button" class="obra-ctl-btn obra-ctl-btn--primario" [disabled]="isSaving() || hayErrores()" (click)="onSubmit()">
+            {{ isSaving() ? 'Guardando…' : 'Guardar metas' }}
+          </button>
+        }
+      </div>
+    </div>
+  }
+</app-modal>

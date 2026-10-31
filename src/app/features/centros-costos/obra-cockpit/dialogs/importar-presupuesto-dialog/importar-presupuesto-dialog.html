@@ -1,0 +1,57 @@
+<app-modal
+  [isOpen]="isOpen()"
+  title="Importar desde presupuesto"
+  icon="fa-solid fa-file-import"
+  [showDefaultFooter]="false"
+  maxWidth="600px"
+  (closed)="closed.emit()"
+>
+  <div class="space-y-3">
+    <p class="obra-ctl-hint">
+      Cada fase del presupuesto se vuelve una partida y cada categoría una subpartida. Después podrá completar las fechas de cada subpartida.
+    </p>
+
+    @if (hayEstructura()) {
+      <p class="obra-ctl-aviso" role="alert">
+        Esta obra ya tiene estructura: al importar se <strong>reemplaza</strong>. Solo es posible si ninguna subpartida tiene avance reportado.
+      </p>
+    }
+
+    @if (cargando()) {
+      <p class="obra-ctl-hint">Buscando presupuestos aprobados…</p>
+    } @else if (presupuestos().length === 0) {
+      <p class="obra-ctl-hint">Este centro de costo no tiene presupuestos aprobados para importar.</p>
+    } @else {
+      <ul class="space-y-2" role="radiogroup" aria-label="Presupuestos aprobados">
+        @for (p of presupuestos(); track p.id) {
+          <li>
+            <label class="flex items-start gap-2 p-2 rounded border border-slate-200 cursor-pointer" [class.bg-primary-fixed]="elegido() === p.id">
+              <input type="radio" name="presupuesto" [checked]="elegido() === p.id" [disabled]="!puedeGuardar()" (change)="elegir(p.id)" />
+              <span class="text-xs">
+                <strong class="text-slate-800">{{ p.id_presupuesto ?? 'Presupuesto ' + p.id }}</strong>
+                @if (p.version) {
+                  <span class="text-slate-500"> · v{{ p.version }}</span>
+                }
+                <span class="block text-slate-600">{{ p.proyecto }}</span>
+                <span class="block text-slate-500">{{ p.fases }} fases · {{ p.categorias }} categorías</span>
+              </span>
+            </label>
+          </li>
+        }
+      </ul>
+    }
+
+    @if (formError()) {
+      <p class="obra-ctl-error" role="alert">{{ formError() }}</p>
+    }
+
+    <div class="obra-ctl-acciones">
+      <button type="button" class="obra-ctl-btn" (click)="closed.emit()">Cancelar</button>
+      @if (puedeGuardar()) {
+        <button type="button" class="obra-ctl-btn obra-ctl-btn--primario" [disabled]="isSaving() || elegido() === null" (click)="onSubmit()">
+          {{ isSaving() ? 'Importando…' : hayEstructura() ? 'Reemplazar estructura' : 'Importar' }}
+        </button>
+      }
+    </div>
+  </div>
+</app-modal>

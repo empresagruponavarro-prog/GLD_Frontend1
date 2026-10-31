@@ -1,0 +1,88 @@
+<section class="space-y-3" aria-label="Estructura de la obra">
+  <div class="flex flex-wrap items-center justify-between gap-2">
+    <p class="obra-ctl-hint">Partidas y subpartidas con sus fechas programadas (línea base). Cada semana se espera un % de avance (meta).</p>
+    @if (permisos().editar) {
+      <div class="flex gap-2">
+        <button type="button" class="obra-ctl-btn" (click)="importarExcel.emit()"><i class="fa-solid fa-file-excel"></i> Importar Excel</button>
+        <button type="button" class="obra-ctl-btn" (click)="importar.emit()"><i class="fa-solid fa-file-import"></i> Importar de presupuesto</button>
+        @if (permisos().crear) {
+          <button type="button" class="obra-ctl-btn obra-ctl-btn--primario" (click)="nuevaPartida.emit()"><i class="fa-solid fa-plus"></i> Nueva partida</button>
+        }
+      </div>
+    }
+  </div>
+
+  @if (partidas().length === 0) {
+    <p class="obra-ctl-aviso" data-testid="sin-estructura">
+      Esta obra aún no tiene partidas. {{ permisos().editar ? 'Impórtelas de un presupuesto aprobado o créelas a mano.' : 'Pida a quien edita la obra que las cargue.' }}
+    </p>
+  }
+
+  @for (p of partidas(); track p.id) {
+    <div class="rounded-lg border border-slate-200 bg-white">
+      <div class="flex flex-wrap items-center justify-between gap-2 px-3 py-2 bg-slate-50 rounded-t-lg">
+        <div class="text-xs">
+          <strong class="text-slate-800">{{ p.item }} · {{ p.nombre }}</strong>
+          <span class="obra-ctl-chip ml-2">{{ p.tipo === 'ADICIONAL' ? 'Adicional' : 'Contractual' }}</span>
+        </div>
+        @if (permisos().editar || permisos().eliminar) {
+          <div class="flex gap-1">
+            @if (permisos().crear) {
+              <button type="button" class="obra-ctl-btn" (click)="nuevaSubpartida.emit(p)">+ Subpartida</button>
+            }
+            @if (permisos().editar) {
+              <button type="button" class="obra-ctl-btn" (click)="editarPartida.emit(p)" [attr.aria-label]="'Editar partida ' + p.item">Editar</button>
+            }
+            @if (permisos().eliminar) {
+              <button type="button" class="obra-ctl-btn obra-ctl-btn--peligro" (click)="eliminarPartida.emit(p)" [attr.aria-label]="'Eliminar partida ' + p.item">Eliminar</button>
+            }
+          </div>
+        }
+      </div>
+      @if (p.subpartidas.length > 0) {
+        <table class="obra-ctl-tabla">
+          <thead>
+            <tr>
+              <th>Ítem</th>
+              <th>Subpartida</th>
+              <th>Inicio</th>
+              <th>Fin</th>
+              <th>Metas</th>
+              <th><span class="sr-only">Acciones</span></th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (s of p.subpartidas; track s.id) {
+              <tr>
+                <td class="font-mono">{{ s.item }}</td>
+                <td>
+                  {{ s.nombre }}
+                  @if (s.tipo === 'ADICIONAL' && p.tipo !== 'ADICIONAL') {
+                    <span class="obra-ctl-chip ml-1">Adicional</span>
+                  }
+                  @if (s.tiene_avance) {
+                    <span class="obra-ctl-chip ml-1" title="Tiene avance reportado">con avance</span>
+                  }
+                </td>
+                <td>{{ fecha(s.fecha_inicio) }}</td>
+                <td>{{ fecha(s.fecha_fin) }}</td>
+                <td>{{ cantidadMetasManuales(s) > 0 ? 'Manuales (' + cantidadMetasManuales(s) + ')' : 'Automáticas' }}</td>
+                <td class="text-right whitespace-nowrap">
+                  <button type="button" class="obra-ctl-btn" (click)="metas.emit(s)" [attr.aria-label]="'Metas de ' + s.item">Metas</button>
+                  @if (permisos().editar) {
+                    <button type="button" class="obra-ctl-btn" (click)="editarSubpartida.emit({ partida: p, subpartida: s })" [attr.aria-label]="'Editar subpartida ' + s.item">Editar</button>
+                  }
+                  @if (permisos().eliminar) {
+                    <button type="button" class="obra-ctl-btn obra-ctl-btn--peligro" (click)="eliminarSubpartida.emit(s)" [attr.aria-label]="'Eliminar subpartida ' + s.item">Eliminar</button>
+                  }
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      } @else {
+        <p class="obra-ctl-hint px-3 py-2">Sin subpartidas.</p>
+      }
+    </div>
+  }
+</section>

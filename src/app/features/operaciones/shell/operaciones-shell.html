@@ -1,0 +1,122 @@
+<div class="ops-grid" style="padding: 1rem; max-width: 1920px; margin: 0 auto">
+  <header class="ops-card" style="display: flex; flex-wrap: wrap; gap: 0.75rem; align-items: center; justify-content: space-between">
+    <div>
+      <h1 style="margin: 0; font-size: 1.125rem; font-weight: 800">Dashboard de Operaciones</h1>
+      <p class="ops-tabla__sub" data-testid="resumen-filtro">
+        {{ store.obras().length }} de {{ store.todas().length }} obras
+        @if (store.hoy()) {
+          · al {{ store.hoy() }}
+        }
+      </p>
+    </div>
+    <div style="display: flex; gap: 0.5rem; align-items: center">
+      <app-ops-campana />
+      <button type="button" class="ops-btn" (click)="store.recargar()" [disabled]="store.cargando()">Actualizar</button>
+      <a class="ops-btn ops-btn--primario" routerLink="/operaciones/tv" style="text-decoration: none">Modo pantalla</a>
+    </div>
+  </header>
+
+  <nav class="ops-pestanas" aria-label="Vistas del dashboard">
+    @for (p of pestanas; track p.ruta) {
+      <a class="ops-pestana" [routerLink]="['/operaciones', p.ruta]" routerLinkActive="ops-pestana--activa">{{ p.etiqueta }}</a>
+    }
+  </nav>
+
+  <section class="ops-card" aria-label="Filtros globales">
+    <div class="ops-filtros">
+      <label class="ops-filtros__campo">
+        <span class="ops-filtros__etiqueta">Año de inicio</span>
+        <select class="ops-input" [value]="store.filtros().anio ?? ''" (change)="store.actualizar({ anio: numero(valorDe($event)) })">
+          <option value="">Todos</option>
+          @for (a of store.catalogos().anios; track a) {
+            <option [value]="a">{{ a }}</option>
+          }
+        </select>
+      </label>
+      @if (store.filtros().anio !== null) {
+        <label class="ops-filtros__campo" style="min-width: auto; flex-direction: row; gap: 0.375rem; align-items: center">
+          <input type="checkbox" [checked]="store.filtros().vigentesAnteriores" (change)="store.actualizar({ vigentesAnteriores: marcadoDe($event) })" />
+          <span class="ops-filtros__etiqueta">+ vigentes de años anteriores</span>
+        </label>
+      }
+      <label class="ops-filtros__campo">
+        <span class="ops-filtros__etiqueta">Cliente</span>
+        <select class="ops-input" [value]="store.filtros().cliente ?? ''" (change)="store.actualizar({ cliente: numero(valorDe($event)) })">
+          <option value="">Todos</option>
+          @for (c of store.catalogos().clientes; track c.id) {
+            <option [value]="c.id">{{ c.nombre }}</option>
+          }
+        </select>
+      </label>
+      <label class="ops-filtros__campo">
+        <span class="ops-filtros__etiqueta">Jefe de proyecto</span>
+        <select class="ops-input" [value]="store.filtros().jefe ?? ''" (change)="store.actualizar({ jefe: numero(valorDe($event)) })">
+          <option value="">Todos</option>
+          @for (j of store.catalogos().jefes; track j.id) {
+            <option [value]="j.id">{{ j.nombre }}</option>
+          }
+        </select>
+      </label>
+      <label class="ops-filtros__campo">
+        <span class="ops-filtros__etiqueta">Coordinador</span>
+        <select class="ops-input" [value]="store.filtros().coordinador ?? ''" (change)="store.actualizar({ coordinador: numero(valorDe($event)) })">
+          <option value="">Todos</option>
+          @for (c of store.catalogos().coordinadores; track c.id) {
+            <option [value]="c.id">{{ c.nombre }}</option>
+          }
+        </select>
+      </label>
+      <label class="ops-filtros__campo">
+        <span class="ops-filtros__etiqueta">Departamento</span>
+        <select class="ops-input" [value]="store.filtros().departamento ?? ''" (change)="store.actualizar({ departamento: texto(valorDe($event)) })">
+          <option value="">Todos</option>
+          @for (d of store.catalogos().departamentos; track d) {
+            <option [value]="d">{{ d }}</option>
+          }
+        </select>
+      </label>
+      <label class="ops-filtros__campo">
+        <span class="ops-filtros__etiqueta">Estado</span>
+        <select class="ops-input" [value]="store.filtros().estado ?? ''" (change)="store.actualizar({ estado: estado(valorDe($event)) })">
+          <option value="">Todos</option>
+          @for (e of estados; track e.valor) {
+            <option [value]="e.valor">{{ e.etiqueta }}</option>
+          }
+        </select>
+      </label>
+      <label class="ops-filtros__campo" style="flex: 1; min-width: 10rem">
+        <span class="ops-filtros__etiqueta">Buscar obra (sede o código)</span>
+        <input type="search" class="ops-input" [value]="store.filtros().q" (input)="store.actualizar({ q: valorDe($event) })" placeholder="Ej. OP-26-017" />
+      </label>
+      <button type="button" class="ops-btn" [disabled]="!store.filtrado()" (click)="store.limpiar()">Limpiar filtros</button>
+    </div>
+    @if (chips().length > 0) {
+      <div class="ops-chips-filtro" style="margin-top: 0.5rem" data-testid="chips-filtro">
+        @for (c of chips(); track c.clave) {
+          <span class="ops-chip-filtro">
+            {{ c.texto }}
+            <button type="button" (click)="quitar(c.clave)" [attr.aria-label]="'Quitar filtro ' + c.texto">✕</button>
+          </span>
+        }
+      </div>
+    }
+  </section>
+
+  @if (store.error()) {
+    <p class="ops-aviso ops-aviso--error" role="alert">No se pudo cargar el portafolio de obras. Pruebe con «Actualizar».</p>
+  } @else if (store.cargando() && !store.portafolio()) {
+    <p class="ops-vacio">Cargando obras…</p>
+  } @else {
+    @if (store.sinEvaluar().length > 0) {
+      <p class="ops-aviso" role="status" data-testid="sin-evaluar">
+        {{ store.sinEvaluar().length }} obra(s) tienen estado pero les faltan fechas, por eso no se calculan.
+      </p>
+    }
+    <router-outlet />
+  }
+
+  <footer style="display: flex; justify-content: space-between">
+    <button type="button" class="ops-btn" [disabled]="!anterior()" (click)="irA(anterior())">← {{ anterior()?.etiqueta ?? 'Anterior' }}</button>
+    <button type="button" class="ops-btn" [disabled]="!siguiente()" (click)="irA(siguiente())">{{ siguiente()?.etiqueta ?? 'Siguiente' }} →</button>
+  </footer>
+</div>

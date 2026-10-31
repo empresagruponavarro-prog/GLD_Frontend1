@@ -1,0 +1,63 @@
+<app-modal
+  [isOpen]="isOpen()"
+  [title]="esEdicion() ? 'Editar subpartida' : 'Nueva subpartida'"
+  icon="fa-solid fa-list-check"
+  [showDefaultFooter]="false"
+  maxWidth="540px"
+  (closed)="closed.emit()"
+>
+  <form [formGroup]="form" (ngSubmit)="onSubmit()" id="form-subpartida" class="space-y-3">
+    @if (partida(); as p) {
+      <p class="text-xs text-slate-600">Partida <strong class="text-slate-800">{{ p.item }} · {{ p.nombre }}</strong></p>
+    }
+    <div class="grid grid-cols-3 gap-3">
+      <div>
+        <label class="obra-ctl-label" for="sub-item">Ítem</label>
+        <input id="sub-item" type="text" class="obra-ctl-input" formControlName="item" maxlength="20" placeholder="03.01" />
+        <p class="obra-ctl-hint">Un adicional puede terminar en «A» (05.02A).</p>
+      </div>
+      <div class="col-span-2">
+        <label class="obra-ctl-label" for="sub-nombre">Subpartida</label>
+        <input id="sub-nombre" type="text" class="obra-ctl-input" formControlName="nombre" maxlength="150" placeholder="Tabiquería de drywall" />
+      </div>
+    </div>
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+      <div>
+        <label class="obra-ctl-label" for="sub-inicio">Inicio programado</label>
+        <input id="sub-inicio" type="date" class="obra-ctl-input" formControlName="fecha_inicio" />
+      </div>
+      <div>
+        <label class="obra-ctl-label" for="sub-fin">Fin programado</label>
+        <input id="sub-fin" type="date" class="obra-ctl-input" formControlName="fecha_fin" />
+      </div>
+      <div>
+        <label class="obra-ctl-label" for="sub-tipo">Tipo</label>
+        <select id="sub-tipo" class="obra-ctl-input" formControlName="tipo">
+          <option value="">Como su partida</option>
+          <option value="CONTRACTUAL">Contractual</option>
+          <option value="ADICIONAL">Adicional</option>
+        </select>
+      </div>
+    </div>
+    <p class="obra-ctl-hint">
+      Estas fechas son la línea base: no cambian al reprogramar la obra. La meta de cada semana se reparte sola por días laborables (lunes a sábado).
+    </p>
+    <div>
+      <label class="obra-ctl-label" for="sub-obs">Observación (opcional)</label>
+      <input id="sub-obs" type="text" class="obra-ctl-input" formControlName="observacion" maxlength="200" />
+    </div>
+
+    @if (formError()) {
+      <p class="obra-ctl-error" role="alert">{{ formError() }}</p>
+    }
+
+    <div class="obra-ctl-acciones">
+      <button type="button" class="obra-ctl-btn" (click)="closed.emit()">Cancelar</button>
+      @if (puedeGuardar()) {
+        <button type="submit" class="obra-ctl-btn obra-ctl-btn--primario" [disabled]="isSaving()">
+          {{ isSaving() ? 'Guardando…' : esEdicion() ? 'Guardar cambios' : 'Crear subpartida' }}
+        </button>
+      }
+    </div>
+  </form>
+</app-modal>

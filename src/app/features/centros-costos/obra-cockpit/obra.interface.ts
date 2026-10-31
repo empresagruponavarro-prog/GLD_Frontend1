@@ -1,3 +1,5 @@
+import type { EquipoObra, EstadoObra } from './obra-control.interface';
+
 // ─── Catálogos (deben coincidir con las validaciones del backend) ────────────
 export const ESTADOS_SEMANA = ['Programado', 'En Plazo', 'Retrasado', 'Completado'] as const;
 export const ESTADOS_PLANTA = ['En Planta', 'Fuera de Planta', 'Vacaciones', 'Retirado'] as const;
@@ -12,7 +14,7 @@ export type EstadoSemana = (typeof ESTADOS_SEMANA)[number];
 export type PrioridadIncidencia = (typeof PRIORIDADES_INCIDENCIA)[number];
 export type EstadoIncidencia = (typeof ESTADOS_INCIDENCIA)[number];
 
-export type ObraTab = 'cronograma' | 'directorio' | 'planos' | 'documentos' | 'incidencias';
+export type ObraTab = 'cronograma' | 'control' | 'directorio' | 'planos' | 'documentos' | 'incidencias';
 
 // ─── Modelos de respuesta ────────────────────────────────────────────────────
 export interface ObraResidente {
@@ -88,6 +90,8 @@ export interface ObraIncidencia {
   estado: string;
   fecha_reporte: string;
   fecha_resolucion?: string;
+  /** Subpartida a la que se atribuye (motivo del retraso). */
+  id_subpartida?: number;
 }
 
 export interface ObraDatosGenerales {
@@ -108,6 +112,18 @@ export interface ObraDatosGenerales {
   contacto_cliente_nombre?: string;
   contacto_cliente_telefono?: string;
   contacto_cliente_correo?: string;
+  // ── Ficha operativa (Dashboard de Operaciones) ──
+  codigo_obra?: string;
+  tienda?: string;
+  /** Ausente = la obra no participa del control de avance. */
+  estado_obra?: EstadoObra;
+  comentario?: string;
+  avance_general?: number;
+  fecha_cierre_postventa?: string;
+  plazo_postventa_dias?: number;
+  observaciones_postventa?: string;
+  id_presupuesto_origen?: number;
+  equipo?: EquipoObra;
 }
 
 export interface ObraCabecera {
@@ -147,7 +163,21 @@ export interface ObraCockpit {
 }
 
 // ─── Payloads ────────────────────────────────────────────────────────────────
-export type UpdateGeneralesPayload = Partial<Omit<ObraDatosGenerales, 'id' | 'google_maps_url' | 'waze_url'>>;
+type CamposSoloLectura = 'id' | 'google_maps_url' | 'waze_url' | 'estado_obra' | 'equipo' | 'id_presupuesto_origen' | 'fecha_cierre_postventa';
+type CamposLimpiablesFicha = 'avance_general' | 'comentario' | 'plazo_postventa_dias' | 'observaciones_postventa';
+
+/** La ficha: los campos limpiables aceptan `null`; el estado se cambia con `POST …/estado`. */
+export type UpdateGeneralesPayload = Partial<Omit<ObraDatosGenerales, CamposSoloLectura | CamposLimpiablesFicha>> &
+  Partial<{ [K in CamposLimpiablesFicha]: ObraDatosGenerales[K] | null }> & {
+    id_jefe_proyecto?: number | null;
+    id_coordinador?: number | null;
+    id_residente?: number | null;
+    id_resp_presupuesto?: number | null;
+    id_resp_procura?: number | null;
+    /** Inicio y fin programado: se guardan en el centro de costo. */
+    fecha_inicio?: string;
+    fecha_fin_prog?: string;
+  };
 
 export interface SemanaPayload {
   numero_semana?: number;
@@ -231,6 +261,7 @@ export interface IncidenciaPayload {
   accion_solicitada_o_ejecutada?: string;
   plazo_resolucion?: string;
   estado?: string;
+  id_subpartida?: number | null;
 }
 
 export interface DeleteResult {

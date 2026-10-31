@@ -38,6 +38,18 @@ import { TipoCambioComponent } from './features/tesoreria/tipo-cambio/tipo-cambi
 import { ProgramacionComponent } from './features/tesoreria/programacion/programacion';
 import { PagosComponent } from './features/tesoreria/pagos/pagos';
 import { ConsultaTesoreriaComponent } from './features/tesoreria/consulta/consulta';
+import { OperacionesShellComponent } from './features/operaciones/shell/operaciones-shell';
+import { EnVivoComponent } from './features/operaciones/en-vivo/en-vivo';
+import { IndicadoresComponent } from './features/operaciones/indicadores/indicadores';
+import { PorClienteComponent } from './features/operaciones/por-cliente/por-cliente';
+import { PorDepartamentoComponent } from './features/operaciones/por-departamento/por-departamento';
+import { CulminadosComponent } from './features/operaciones/culminados/culminados';
+import { PartidasComponent } from './features/operaciones/partidas/partidas';
+import { CurvaSComponent } from './features/operaciones/curva-s/curva-s';
+import { CronogramaComponent } from './features/operaciones/cronograma/cronograma';
+import { CargaEquipoComponent } from './features/operaciones/carga-equipo/carga-equipo';
+import { EquipoComponent } from './features/operaciones/equipo/equipo';
+import { TvComponent } from './features/operaciones/tv/tv';
 
 import { BandejaAprobacionComponent } from './features/requerimientos/bandeja-aprobacion/bandeja-aprobacion';
 import { RequerimientoFormComponent } from './features/requerimientos/requerimiento-form/requerimiento-form';
@@ -90,6 +102,26 @@ export const routes: Routes = [
       rutaModulo('tesoreria/programacion', ProgramacionComponent, 'tesoreria.programacion'),
       rutaModulo('tesoreria/pagos', PagosComponent, 'tesoreria.pagos'),
       rutaModulo('tesoreria/consulta', ConsultaTesoreriaComponent, 'tesoreria.consulta'),
+      // Dashboard de Operaciones: el módulo `operaciones` lo declara la ruta padre y los hijos lo heredan.
+      // El modo pantalla va fuera del marco (sin filtros ni pestañas) y también exige `operaciones.ver`.
+      rutaModulo('operaciones/tv', TvComponent, 'operaciones'),
+      {
+        ...rutaModulo('operaciones', OperacionesShellComponent, 'operaciones'),
+        children: [
+          { path: '', pathMatch: 'full', redirectTo: 'en-vivo' },
+          { path: 'en-vivo', component: EnVivoComponent },
+          { path: 'indicadores', component: IndicadoresComponent },
+          { path: 'por-cliente', component: PorClienteComponent },
+          { path: 'por-departamento', component: PorDepartamentoComponent },
+          { path: 'culminados', component: CulminadosComponent },
+          { path: 'partidas', component: PartidasComponent },
+          { path: 'curva-s', component: CurvaSComponent },
+          { path: 'cronograma', component: CronogramaComponent },
+          { path: 'jefes', component: CargaEquipoComponent, data: { rol: 'jefe' } },
+          { path: 'coordinadores', component: CargaEquipoComponent, data: { rol: 'coordinador' } },
+          { path: 'equipo', component: EquipoComponent },
+        ],
+      },
       // Formatos para imprimir o guardar como PDF (sin menú lateral): por ahora solo exigen sesión
       // (la API marca sus lecturas como compartidas).
       rutaSesion('imprimir/fur/:id', ImprimirComponent, { tipo: 'fur' }),

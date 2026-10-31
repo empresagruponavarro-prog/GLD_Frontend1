@@ -49,6 +49,7 @@ export const MENU_LATERAL: readonly SeccionMenu[] = [
   {
     categoria: 'Operaciones',
     entradas: [
+      enlace({ etiqueta: 'Dashboard de Operaciones', ruta: '/operaciones', icono: 'fa-solid fa-gauge-high', modulo: 'operaciones' }),
       enlace({ etiqueta: 'Registro de Incidencias', ruta: '/incidencias', icono: 'fa-solid fa-clipboard-list', modulo: 'incidencias' }),
       submenu({
         id: 'documentos',

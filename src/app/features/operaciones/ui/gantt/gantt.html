@@ -1,0 +1,59 @@
+<div class="ops-gantt" role="group" aria-label="Cronograma">
+  <div class="ops-gantt__fila ops-gantt__fila--cabecera">
+    <span></span>
+    <div class="ops-gantt__pista">
+      @for (m of meses(); track m.iso) {
+        <span class="ops-gantt__mes" [style.left.%]="m.pos">{{ m.etiqueta }}</span>
+      }
+    </div>
+  </div>
+
+  @for (f of filas(); track f.id) {
+    <div class="ops-gantt__fila">
+      <div class="ops-gantt__nombre" [class.ops-gantt__nombre--n1]="f.nivel === 1">
+        @if (f.expandible) {
+          <button type="button" class="ops-arbol__alternar" (click)="alternar.emit(f.id)" [attr.aria-expanded]="!!f.expandida" [attr.aria-label]="(f.expandida ? 'Contraer ' : 'Expandir ') + f.etiqueta">
+            {{ f.expandida ? '▾' : '▸' }}
+          </button>
+        }
+        <button type="button" class="ops-tabla__link" (click)="seleccion.emit(f.id)" [attr.title]="f.etiqueta">{{ f.etiqueta }}</button>
+        @if (f.detalle) {
+          <span class="ops-tabla__sub">{{ f.detalle }}</span>
+        }
+      </div>
+      <div class="ops-gantt__pista">
+        @for (p of f.pausas ?? []; track p.desde) {
+          <span class="ops-gantt__pausa" [style.left.%]="escala().pos(p.desde)" [style.width.%]="escala().ancho(p.desde, p.hasta)" title="Semana en pausa"></span>
+        }
+        <span
+          class="ops-gantt__barra"
+          [class]="'ops-gantt__barra ops-gantt__barra--' + f.clave"
+          [style.left.%]="escala().pos(f.inicio)"
+          [style.width.%]="escala().ancho(f.inicio, f.fin)"
+          [attr.title]="fecha(f.inicio) + ' – ' + fecha(f.fin) + (f.nota ? ' · ' + f.nota : '')"
+        ></span>
+        @if (f.finOriginal && f.finOriginal !== f.fin) {
+          <span class="ops-gantt__linea ops-gantt__linea--original" [style.left.%]="escala().pos(f.finOriginal)" [attr.title]="'Fin original ' + fecha(f.finOriginal)"></span>
+        }
+        @if (f.vencida && hoy()) {
+          <span class="ops-gantt__fuera" [style.left.%]="escala().pos(f.fin)" [style.width.%]="escala().ancho(f.fin, hoy())" title="Fuera de plazo"></span>
+        }
+        @if (f.postVentaHasta) {
+          <span class="ops-gantt__postventa" [style.left.%]="escala().pos(f.fin)" [style.width.%]="escala().ancho(f.fin, f.postVentaHasta)" title="Post venta"></span>
+        }
+        @if (f.corte) {
+          <span class="ops-gantt__linea ops-gantt__linea--corte" [style.left.%]="escala().pos(f.corte)" [attr.title]="'Corte ' + fecha(f.corte)"></span>
+        }
+        @if (posHoy() !== null) {
+          <span class="ops-gantt__linea ops-gantt__linea--hoy" [style.left.%]="posHoy()" title="Hoy"></span>
+        }
+      </div>
+    </div>
+  } @empty {
+    <p class="ops-vacio">No hay obras para mostrar con estos filtros.</p>
+  }
+
+  <p class="ops-tabla__sub" style="margin-top: 0.5rem">
+    Línea roja: hoy · azul: corte · punteada: fin original · violeta: pausa o post venta · rojo rayado: fuera de plazo.
+  </p>
+</div>

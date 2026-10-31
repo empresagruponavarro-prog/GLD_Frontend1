@@ -58,6 +58,10 @@
           </div>
           <!-- Inline Badge Pills -->
           <div class="flex flex-wrap items-center gap-1.5 text-[11px]">
+            <span class="px-2 py-0.5 rounded bg-surface-container-low text-on-surface"><span class="text-on-surface-variant/70 uppercase text-[9px] font-bold">Estado obra:</span> <strong class="font-semibold" data-testid="cab-estado-obra">{{ etiquetaEstado(control()?.estado_obra) }}</strong></span>
+            @if (control()?.resultado; as res) {
+              <app-situacion-chip [situacion]="res.situacion" />
+            }
             <span class="px-2 py-0.5 rounded bg-surface-container text-on-surface-variant font-mono font-semibold">COD CC: #{{ idCentroCosto() }}</span>
             <span class="px-2 py-0.5 rounded bg-surface-container-low text-on-surface"><span class="text-on-surface-variant/70 uppercase text-[9px] font-bold">Empresa:</span> <strong class="font-semibold">{{ cabecera()?.empresa || '—' }}</strong></span>
             <span class="px-2 py-0.5 rounded bg-surface-container-low text-on-surface"><span class="text-on-surface-variant/70 uppercase text-[9px] font-bold">Cliente:</span> <strong class="font-semibold">{{ cabecera()?.cliente || cabecera()?.cod_cliente || '—' }}</strong></span>
@@ -96,6 +100,10 @@
       <div class="xl:col-span-8 min-w-0 flex flex-col gap-3">
         <!-- Operational Navigation Tabs -->
         <div class="flex items-center gap-1 overflow-x-auto pb-0.5 scrollbar-none" id="tabContainer">
+          <button type="button" (click)="setTab('tab-control')" class="tab-button shrink-0 whitespace-nowrap flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all shadow-sm cursor-pointer" [ngClass]="activeTab() === 'tab-control' ? 'bg-primary text-on-primary' : 'bg-surface-container-lowest text-on-surface-variant hover:bg-surface-container hover:text-on-surface'">
+            <span class="material-symbols-outlined text-sm">monitoring</span>
+            <span>Control de Avance</span>
+          </button>
           <button type="button" (click)="setTab('tab-cronograma')" class="tab-button shrink-0 whitespace-nowrap flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all shadow-sm cursor-pointer" [ngClass]="activeTab() === 'tab-cronograma' ? 'bg-primary text-on-primary' : 'bg-surface-container-lowest text-on-surface-variant hover:bg-surface-container hover:text-on-surface'">
             <span class="material-symbols-outlined text-sm">calendar_month</span>
             <span>Cronograma Semanal</span>
@@ -125,12 +133,24 @@
 
         <!-- TAB CONTENT AREA -->
         <div class="h-full relative min-h-[400px]">
+          @if (activeTab() === 'tab-control') {
+            <app-control-tab
+              [idCentroCosto]="idCentroCosto()"
+              [control]="control()"
+              [permisos]="permisosObra()"
+              [inicioObra]="cabecera()?.fecha_inicio?.slice(0, 10) ?? ''"
+              [finObra]="cabecera()?.fecha_fin_prog?.slice(0, 10) ?? ''"
+              (cambio)="cargarControl(idCentroCosto())">
+            </app-control-tab>
+          }
+
           @if (activeTab() === 'tab-cronograma') {
             <app-cronograma-tab 
               [semanas]="semanas()" 
               [kpis]="kpis()" 
               [cabecera]="cabecera()" 
               [permisos]="permisosObra()"
+              [desdeControl]="desdeControl()"
               (nueva)="onNuevaSemana()"
               (generarLote)="onGenerarLoteSemanas()"
               (editar)="onEditarSemana($event)"
@@ -299,6 +319,6 @@
     <app-historial-planos-dialog [isOpen]="true" [permisos]="permisosObra()" [idCentroCosto]="idCentroCosto()" [plano]="selectedPlano()" (closed)="showHistorialDialog.set(false)" (verPlano)="onVerPlano($event)" (nuevaVersion)="onNuevaVersionPlano($event)"></app-historial-planos-dialog>
   }
   @if (showGeneralesDialog()) {
-    <app-generales-dialog [isOpen]="true" [permisos]="permisosObra()" [idCentroCosto]="idCentroCosto()" [generales]="generales()" (closed)="showGeneralesDialog.set(false)" (saved)="onDialogSaved()"></app-generales-dialog>
+    <app-generales-dialog [isOpen]="true" [permisos]="permisosObra()" [idCentroCosto]="idCentroCosto()" [nombreObra]="cockpit()?.nombre_obra || ''" [generales]="generales()" [cabecera]="cabecera()" (closed)="showGeneralesDialog.set(false)" (saved)="onDialogSaved()"></app-generales-dialog>
   }
 </div>

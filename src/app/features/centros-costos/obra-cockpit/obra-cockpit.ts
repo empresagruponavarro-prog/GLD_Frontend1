@@ -9,6 +9,8 @@ import { errorMessage } from '@app/features/almacen/almacen.utils';
 import { nombreArchivoDocumento } from './obra.calc';
 import { ObraCockpit, ObraSemana, ObraResidente, ObraPlano, ObraDocumento, ObraIncidencia } from './obra.interface';
 import { PermisosObra } from './obra-permisos';
+import { ControlObra } from './obra-control.interface';
+import { etiquetaEstadoObra } from './obra-control.calc';
 
 // Tabs
 import { CronogramaTabComponent } from './components/cronograma-tab/cronograma-tab';
@@ -16,6 +18,8 @@ import { DirectorioTabComponent } from './components/directorio-tab/directorio-t
 import { PlanosTabComponent } from './components/planos-tab/planos-tab';
 import { DocumentosTabComponent } from './components/documentos-tab/documentos-tab';
 import { IncidenciasTabComponent } from './components/incidencias-tab/incidencias-tab';
+import { ControlTabComponent } from './components/control-tab/control-tab';
+import { SituacionChipComponent } from './components/control-tab/situacion-chip/situacion-chip';
 
 // Dialogs
 import { SemanaDialogComponent } from './dialogs/semana-dialog/semana-dialog';
@@ -38,7 +42,7 @@ import { GeneralesDialogComponent } from './dialogs/generales-dialog/generales-d
   standalone: true,
   imports: [
     CommonModule, RouterLink,
-    CronogramaTabComponent, DirectorioTabComponent, PlanosTabComponent, DocumentosTabComponent, IncidenciasTabComponent,
+    ControlTabComponent, SituacionChipComponent, CronogramaTabComponent, DirectorioTabComponent, PlanosTabComponent, DocumentosTabComponent, IncidenciasTabComponent,
     SemanaDialogComponent, SemanaAvanceDialogComponent, GeneradorSemanasDialogComponent, ResidenteDialogComponent, PlanoDialogComponent, PlanoVisorDialogComponent, HistorialPlanosDialogComponent,
     DocumentoDialogComponent, DocumentoVistaDialogComponent, DocumentoEliminarDialogComponent, IncidenciaDialogComponent, IncidenciaDetalleDialogComponent, IncidenciaResolverDialogComponent, GeneralesDialogComponent
   ],
@@ -61,6 +65,10 @@ export class ObraCockpitComponent implements OnInit {
   idCentroCosto = signal<number>(0);
   loading = signal<boolean>(false);
   cockpit = signal<ObraCockpit | null>(null);
+
+  /** Control de avance (estado, situación y equipo): alimenta la cabecera y la pestaña «Control». */
+  control = signal<ControlObra | null>(null);
+  protected readonly etiquetaEstado = etiquetaEstadoObra;
 
   activeTab = signal<string>('tab-cronograma');
   exportMenuOpen = signal<boolean>(false);
@@ -98,6 +106,8 @@ export class ObraCockpitComponent implements OnInit {
   incidenciaParaResolver = signal<ObraIncidencia | null>(null);
 
   // Computed data for tabs
+  /** El avance global del cronograma sale del control cuando la obra ya tiene partidas. */
+  desdeControl = computed(() => this.control()?.resultado?.sinPartidas === false);
   semanas = computed(() => this.cockpit()?.cronograma || []);
   kpis = computed(() => this.cockpit()?.kpis);
   cabecera = computed(() => this.cockpit()?.cabecera);
@@ -131,11 +141,20 @@ export class ObraCockpitComponent implements OnInit {
       next: (data) => {
         this.cockpit.set(data);
         this.loading.set(false);
+        this.cargarControl(id);
       },
       error: (err: unknown) => {
         console.error('Error cargando cockpit', err);
         this.loading.set(false);
       },
+    });
+  }
+
+  /** Recarga solo el control de avance (la pestaña «Control» lo pide al cambiar algo). */
+  cargarControl(id: number): void {
+    this.obraService.getControl(id).subscribe({
+      next: (c) => this.control.set(c),
+      error: () => this.control.set(null),
     });
   }
 

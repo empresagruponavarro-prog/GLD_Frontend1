@@ -1,0 +1,77 @@
+<section class="space-y-3" aria-label="Avance semanal">
+  <p class="obra-ctl-hint">
+    Escriba lo avanzado <strong>solo esa semana</strong> (no el acumulado), de 0 a 100. Las semanas futuras no se pueden reportar y cada subpartida no puede sumar más de 100 %.
+  </p>
+
+  @if (avance(); as datos) {
+    @if (datos.subpartidas.length === 0) {
+      <p class="obra-ctl-aviso" data-testid="sin-subpartidas">Cargue primero la estructura de la obra para reportar avance.</p>
+    } @else {
+      <div class="overflow-x-auto rounded-lg border border-slate-200 bg-white">
+        <table class="obra-ctl-tabla" data-testid="grilla-avance">
+          <thead>
+            <tr>
+              <th class="sticky left-0 bg-slate-50">Subpartida</th>
+              @for (w of datos.semanas; track w.numero) {
+                <th class="text-center" [class.bg-primary-fixed]="w.en_curso" [attr.title]="dia(w.desde) + ' – ' + dia(w.hasta)">
+                  S{{ w.numero }}
+                  <span class="block font-normal text-[10px] text-slate-500">{{ dia(w.desde) }}</span>
+                </th>
+              }
+              <th class="text-center">Real</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (sub of datos.subpartidas; track sub.id) {
+              <tr>
+                <td class="sticky left-0 bg-white whitespace-nowrap">
+                  <span class="font-mono text-slate-500">{{ sub.item }}</span> {{ sub.nombre }}
+                </td>
+                @for (w of datos.semanas; track w.numero) {
+                  <td class="p-0.5">
+                    <input
+                      type="text"
+                      inputmode="decimal"
+                      class="obra-ctl-input obra-ctl-input--num w-14"
+                      [class.obra-ctl-input--error]="errores().has(claveCelda(sub.id, w.numero))"
+                      [value]="texto(sub, w.numero)"
+                      [placeholder]="meta(sub, w.numero) === null ? '' : '' + meta(sub, w.numero)"
+                      [disabled]="w.futura || !puedeEditar()"
+                      [attr.aria-label]="sub.item + ', semana ' + w.numero"
+                      [attr.aria-invalid]="errores().has(claveCelda(sub.id, w.numero)) ? 'true' : null"
+                      [attr.title]="errores().get(claveCelda(sub.id, w.numero)) ?? null"
+                      (input)="escribir(sub, w.numero, valorDe($event))"
+                    />
+                  </td>
+                }
+                <td class="text-center font-semibold">{{ totalReal(sub) }} %</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+
+      @if (errores().size > 0) {
+        <ul class="obra-ctl-error" role="alert">
+          @for (e of errores() | keyvalue; track e.key) {
+            <li>{{ e.value }}</li>
+          }
+        </ul>
+      }
+      @if (formError()) {
+        <p class="obra-ctl-error" role="alert">{{ formError() }}</p>
+      }
+
+      @if (puedeEditar()) {
+        <div class="obra-ctl-acciones">
+          <button type="button" class="obra-ctl-btn" [disabled]="cambios().length === 0 || isSaving()" (click)="descartar()">Descartar cambios</button>
+          <button type="button" class="obra-ctl-btn obra-ctl-btn--primario" [disabled]="cambios().length === 0 || hayErrores() || isSaving()" (click)="guardar()">
+            {{ isSaving() ? 'Guardando…' : 'Guardar avance' + (cambios().length ? ' (' + cambios().length + ')' : '') }}
+          </button>
+        </div>
+      }
+    }
+  } @else {
+    <p class="obra-ctl-hint">Cargando avance…</p>
+  }
+</section>

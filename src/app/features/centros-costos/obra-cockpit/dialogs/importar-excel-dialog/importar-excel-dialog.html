@@ -1,0 +1,95 @@
+<app-modal
+  [isOpen]="isOpen()"
+  title="Importar Excel del proyecto"
+  icon="fa-solid fa-file-excel"
+  [showDefaultFooter]="false"
+  maxWidth="760px"
+  (closed)="closed.emit()"
+>
+  <div class="space-y-3">
+    <p class="obra-ctl-hint">
+      Cargue el Excel por proyecto (hojas <strong>Ficha</strong>, <strong>Partidas</strong> y <strong>Reprogramaciones</strong>). Primero verá qué trae;
+      recién al confirmar se escribe. Importar <strong>reemplaza</strong> la ficha, la estructura (si no tiene avance) y las reprogramaciones de esta obra.
+    </p>
+
+    <div>
+      <label class="obra-ctl-label" for="imp-excel">Archivo (.xlsx, máx. 10 MB)</label>
+      <input id="imp-excel" type="file" accept=".xlsx" class="obra-ctl-input" [disabled]="!puedeGuardar() || importando()" (change)="elegir($event)" />
+    </div>
+
+    @if (leyendo()) {
+      <p class="obra-ctl-hint" data-testid="leyendo">Leyendo el archivo…</p>
+    }
+
+    @if (vista(); as v) {
+      <section class="space-y-2" aria-label="Vista previa" data-testid="vista-previa">
+        <div class="rounded-lg bg-slate-50 p-3 text-xs">
+          <strong class="text-slate-800">{{ v.ficha.codigo }} · {{ v.ficha.cliente }} {{ v.ficha.tienda }}</strong>
+          <span class="block text-slate-600">
+            {{ v.ficha.departamento }} · {{ v.ficha.estado ? estados[v.ficha.estado] : '—' }} · {{ fecha(v.ficha.inicio) }} – {{ fecha(v.ficha.fin) }}
+          </span>
+          <span class="block text-slate-600" data-testid="resumen-excel">
+            {{ v.resumen.partidas }} partida(s) · {{ v.resumen.subpartidas }} subpartida(s) ({{ v.resumen.subpartidas_con_avance }} con avance) ·
+            {{ v.resumen.metas_manuales }} meta(s) manuales · {{ v.resumen.reprogramaciones }} reprogramación(es)
+          </span>
+        </div>
+
+        <ul class="grid grid-cols-1 sm:grid-cols-2 gap-1 text-xs" aria-label="Equipo">
+          @for (e of v.equipo; track e.rol) {
+            @if (e.texto) {
+              <li>
+                <span class="text-slate-500">{{ roles[e.rol] }}:</span> {{ e.texto }}
+                @if (e.persona) {
+                  <span class="text-green-700"> → {{ e.persona.nombre }}</span>
+                } @else {
+                  <span class="text-amber-700"> → sin asignar</span>
+                }
+              </li>
+            }
+          }
+        </ul>
+
+        @if (v.reemplaza_estructura) {
+          <p class="obra-ctl-aviso" role="status">
+            Reemplaza la estructura actual ({{ v.obra_actual.partidas }} partida(s), {{ v.obra_actual.subpartidas }} subpartida(s)).
+          </p>
+        }
+
+        @if (v.errores.length > 0) {
+          <div role="alert" data-testid="errores-excel">
+            <h3 class="obra-ctl-label text-error">{{ v.errores.length }} error(es): corrija el archivo y vuelva a cargarlo</h3>
+            <ul class="obra-ctl-error max-h-40 overflow-y-auto">
+              @for (m of v.errores; track $index) {
+                <li><strong>{{ donde(m) }}</strong>: {{ m.mensaje }}</li>
+              }
+            </ul>
+          </div>
+        }
+
+        @if (v.avisos.length > 0) {
+          <div data-testid="avisos-excel">
+            <h3 class="obra-ctl-label">{{ v.avisos.length }} aviso(s) (no impiden importar)</h3>
+            <ul class="obra-ctl-hint max-h-40 overflow-y-auto">
+              @for (m of v.avisos; track $index) {
+                <li><strong>{{ donde(m) }}</strong>: {{ m.mensaje }}</li>
+              }
+            </ul>
+          </div>
+        }
+      </section>
+    }
+
+    @if (formError()) {
+      <p class="obra-ctl-error" role="alert">{{ formError() }}</p>
+    }
+
+    <div class="obra-ctl-acciones">
+      <button type="button" class="obra-ctl-btn" (click)="closed.emit()">Cancelar</button>
+      @if (puedeGuardar()) {
+        <button type="button" class="obra-ctl-btn obra-ctl-btn--primario" [disabled]="!puedeImportar()" (click)="confirmar()">
+          {{ importando() ? 'Importando…' : 'Importar' }}
+        </button>
+      }
+    </div>
+  </div>
+</app-modal>

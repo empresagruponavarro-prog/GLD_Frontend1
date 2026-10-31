@@ -23,6 +23,26 @@ import {
   UpdateAvancePayload,
   UpdateGeneralesPayload,
 } from './obra.interface';
+import {
+  AvanceObra,
+  CambiarEstadoPayload,
+  CambioEstado,
+  ControlObra,
+  CurvaS,
+  LineaAvance,
+  ObraEvento,
+  ObraPartida,
+  ObraReprogramacion,
+  ObraSubpartida,
+  PartidaPayload,
+  PresupuestoDisponible,
+  ReprogramacionPayload,
+  ResultadoGuardarAvance,
+  ResultadoImportacionExcel,
+  VistaPreviaExcel,
+  ResultadoImportacion,
+  SubpartidaPayload,
+} from './obra-control.interface';
 
 @Service()
 export class ObraService {
@@ -173,5 +193,106 @@ export class ObraService {
 
   deleteIncidencia(idCentroCosto: number, idIncidencia: number): Observable<DeleteResult> {
     return this.#http.delete<DeleteResult>(this.#cc(idCentroCosto, `/incidencias/${idIncidencia}`));
+  }
+
+  // ─── Control de avance (Dashboard de Operaciones) ──────────────────────────
+  /** Ficha operativa + todo lo calculado por el motor. `hoy` (YYYY-MM-DD) solo sirve para consultar «como estaba» otro día. */
+  getControl(idCentroCosto: number, hoy?: string): Observable<ControlObra> {
+    return this.#http.get<ControlObra>(this.#cc(idCentroCosto, '/control'), { params: hoy ? { hoy } : {} });
+  }
+
+  getCurvaS(idCentroCosto: number, tipo: 'todo' | 'C' | 'A' = 'todo'): Observable<CurvaS | null> {
+    return this.#http.get<CurvaS | null>(this.#cc(idCentroCosto, '/control/curva-s'), { params: { tipo } });
+  }
+
+  getEventos(idCentroCosto: number, limite = 50): Observable<ObraEvento[]> {
+    return this.#http.get<ObraEvento[]>(this.#cc(idCentroCosto, '/eventos'), { params: { limite } });
+  }
+
+  cambiarEstado(idCentroCosto: number, payload: CambiarEstadoPayload): Observable<CambioEstado> {
+    return this.#http.post<CambioEstado>(this.#cc(idCentroCosto, '/estado'), payload);
+  }
+
+  // Estructura
+  getPartidas(idCentroCosto: number): Observable<ObraPartida[]> {
+    return this.#http.get<ObraPartida[]>(this.#cc(idCentroCosto, '/partidas'));
+  }
+
+  createPartida(idCentroCosto: number, payload: PartidaPayload): Observable<ObraPartida> {
+    return this.#http.post<ObraPartida>(this.#cc(idCentroCosto, '/partidas'), payload);
+  }
+
+  updatePartida(idCentroCosto: number, idPartida: number, payload: Partial<PartidaPayload>): Observable<ObraPartida> {
+    return this.#http.patch<ObraPartida>(this.#cc(idCentroCosto, `/partidas/${idPartida}`), payload);
+  }
+
+  deletePartida(idCentroCosto: number, idPartida: number): Observable<DeleteResult> {
+    return this.#http.delete<DeleteResult>(this.#cc(idCentroCosto, `/partidas/${idPartida}`));
+  }
+
+  createSubpartida(idCentroCosto: number, idPartida: number, payload: SubpartidaPayload): Observable<ObraSubpartida> {
+    return this.#http.post<ObraSubpartida>(this.#cc(idCentroCosto, `/partidas/${idPartida}/subpartidas`), payload);
+  }
+
+  updateSubpartida(idCentroCosto: number, idSubpartida: number, payload: Partial<SubpartidaPayload>): Observable<ObraSubpartida> {
+    return this.#http.patch<ObraSubpartida>(this.#cc(idCentroCosto, `/subpartidas/${idSubpartida}`), payload);
+  }
+
+  deleteSubpartida(idCentroCosto: number, idSubpartida: number): Observable<DeleteResult> {
+    return this.#http.delete<DeleteResult>(this.#cc(idCentroCosto, `/subpartidas/${idSubpartida}`));
+  }
+
+  /** Metas manuales de las semanas 1 a 10; `null` = reparto automático por días laborables. */
+  updateMetas(idCentroCosto: number, idSubpartida: number, metas: (number | null)[]): Observable<ObraSubpartida> {
+    return this.#http.put<ObraSubpartida>(this.#cc(idCentroCosto, `/subpartidas/${idSubpartida}/metas`), { metas });
+  }
+
+  getPresupuestosDisponibles(idCentroCosto: number): Observable<PresupuestoDisponible[]> {
+    return this.#http.get<PresupuestoDisponible[]>(this.#cc(idCentroCosto, '/presupuestos-disponibles'));
+  }
+
+  importarPresupuesto(idCentroCosto: number, idPresupuesto: number, reemplazar = false): Observable<ResultadoImportacion> {
+    return this.#http.post<ResultadoImportacion>(this.#cc(idCentroCosto, '/partidas/importar-presupuesto'), { idPresupuesto, reemplazar });
+  }
+
+  // Avance semanal
+  getAvance(idCentroCosto: number): Observable<AvanceObra> {
+    return this.#http.get<AvanceObra>(this.#cc(idCentroCosto, '/avance'));
+  }
+
+  /** Registra lo avanzado SOLO en esa semana (0-100) para varias subpartidas; `avance: null` borra el dato. */
+  guardarAvanceSemana(idCentroCosto: number, semana: number, lineas: LineaAvance[]): Observable<ResultadoGuardarAvance> {
+    return this.#http.put<ResultadoGuardarAvance>(this.#cc(idCentroCosto, `/avance/semanas/${semana}`), { lineas });
+  }
+
+  // Reprogramaciones
+  getReprogramaciones(idCentroCosto: number): Observable<ObraReprogramacion[]> {
+    return this.#http.get<ObraReprogramacion[]>(this.#cc(idCentroCosto, '/reprogramaciones'));
+  }
+
+  createReprogramacion(idCentroCosto: number, payload: ReprogramacionPayload): Observable<ObraReprogramacion> {
+    return this.#http.post<ObraReprogramacion>(this.#cc(idCentroCosto, '/reprogramaciones'), payload);
+  }
+
+  updateReprogramacion(idCentroCosto: number, id: number, payload: Partial<ReprogramacionPayload>): Observable<ObraReprogramacion> {
+    return this.#http.patch<ObraReprogramacion>(this.#cc(idCentroCosto, `/reprogramaciones/${id}`), payload);
+  }
+
+  deleteReprogramacion(idCentroCosto: number, id: number): Observable<DeleteResult> {
+    return this.#http.delete<DeleteResult>(this.#cc(idCentroCosto, `/reprogramaciones/${id}`));
+  }
+
+  // Importación del Excel por proyecto
+  /** Lee el archivo y devuelve lo que traería, con errores y avisos; no escribe nada. */
+  previsualizarExcel(idCentroCosto: number, archivo: File): Observable<VistaPreviaExcel> {
+    const cuerpo = new FormData();
+    cuerpo.append('archivo', archivo, archivo.name);
+    return this.#http.post<VistaPreviaExcel>(this.#cc(idCentroCosto, '/importar-excel'), cuerpo);
+  }
+
+  importarExcel(idCentroCosto: number, archivo: File): Observable<ResultadoImportacionExcel> {
+    const cuerpo = new FormData();
+    cuerpo.append('archivo', archivo, archivo.name);
+    return this.#http.post<ResultadoImportacionExcel>(this.#cc(idCentroCosto, '/importar-excel'), cuerpo, { params: { confirmar: true } });
   }
 }

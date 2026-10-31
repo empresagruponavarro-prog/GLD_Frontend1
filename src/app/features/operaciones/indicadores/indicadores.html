@@ -1,0 +1,144 @@
+<div class="ops-grid">
+  <section class="ops-grid ops-grid--3" aria-label="Resumen">
+    <div class="ops-card" data-testid="ind-anios">
+      <h2 class="ops-card__titulo">Proyectos por año de inicio</h2>
+      @if (porAnio().length === 0) {
+        <p class="ops-vacio">Sin obras.</p>
+      } @else {
+        <table class="ops-tabla">
+          <thead>
+            <tr><th>Año</th><th class="ops-tabla__num">Vigentes</th><th class="ops-tabla__num">Culminadas</th><th class="ops-tabla__num">Total</th></tr>
+          </thead>
+          <tbody>
+            @for (a of porAnio(); track a.anio) {
+              <tr>
+                <td><strong>{{ a.anio }}</strong></td>
+                <td class="ops-tabla__num">{{ a.vigentes }}</td>
+                <td class="ops-tabla__num">{{ a.culminadas }}</td>
+                <td class="ops-tabla__num">{{ a.total }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      }
+    </div>
+
+    <div class="ops-card">
+      <h2 class="ops-card__titulo">Activos</h2>
+      <div class="ops-kpi" [class.ops-kpi--crit]="conRetraso() > 0" data-testid="ind-activos">
+        <span class="ops-kpi__valor">{{ enEjecucion().length }}</span>
+        <span class="ops-kpi__etiqueta">En ejecución</span>
+        <span class="ops-kpi__detalle">{{ conRetraso() }} con retraso</span>
+      </div>
+      <p class="ops-tabla__sub">{{ kpis().proximasAVencer }} próxima(s) a vencer en 7 días</p>
+    </div>
+
+    <div class="ops-card" data-testid="ind-proximos">
+      <h2 class="ops-card__titulo">Próximos</h2>
+      <div class="ops-kpi">
+        <span class="ops-kpi__valor">{{ kpis().proximos }}</span>
+        <span class="ops-kpi__etiqueta">Por iniciar</span>
+        @if (siguiente(); as s) {
+          <span class="ops-kpi__detalle">Siguiente: {{ s.nombre }} · {{ fecha(s.inicio) }}</span>
+        }
+      </div>
+    </div>
+
+    <div class="ops-card" data-testid="ind-postventa">
+      <h2 class="ops-card__titulo">Post venta</h2>
+      <div class="ops-kpi">
+        <span class="ops-kpi__valor">{{ postVenta().cantidad }}</span>
+        <span class="ops-kpi__etiqueta">En post venta</span>
+        <span class="ops-kpi__detalle">Promedio {{ postVenta().promedioDias }} d · máximo {{ postVenta().maximoDias }} d</span>
+      </div>
+    </div>
+  </section>
+
+  <section class="ops-card" aria-label="Obras iniciadas por mes">
+    <div style="display: flex; justify-content: space-between; align-items: center">
+      <h2 class="ops-card__titulo">Obras iniciadas por mes</h2>
+      <label class="ops-filtros__campo" style="min-width: auto">
+        <span class="ops-filtros__etiqueta">Año</span>
+        <select class="ops-input" [value]="anio()" (change)="elegirAnio(valorDe($event))">
+          @for (a of anios(); track a) {
+            <option [value]="a">{{ a }}</option>
+          } @empty {
+            <option [value]="anio()">{{ anio() }}</option>
+          }
+        </select>
+      </label>
+    </div>
+    <div style="display: flex; align-items: flex-end; gap: 0.5rem; height: 9rem" data-testid="grafico-meses">
+      @for (m of meses(); track m.mes) {
+        <div style="flex: 1; text-align: center" [attr.title]="m.cantidad ? m.obras.join(', ') : 'Sin obras'">
+          <div style="font-size: 0.6875rem; font-weight: 700">{{ m.cantidad || '' }}</div>
+          <div
+            [style.height.%]="(m.cantidad / maxMes()) * 100"
+            [style.min-height.px]="m.cantidad ? 4 : 0"
+            [style.background]="m.actual ? 'var(--gld-green-dark)' : 'var(--gld-green-primary)'"
+            style="border-radius: 3px 3px 0 0"
+          ></div>
+          <div style="font-size: 0.6875rem" [style.font-weight]="m.actual ? 800 : 400">{{ m.etiqueta }}</div>
+        </div>
+      }
+    </div>
+  </section>
+
+  <section class="ops-card" aria-label="Requieren atención">
+    <h2 class="ops-card__titulo">Requieren atención</h2>
+    @if (atencion().length === 0) {
+      <p class="ops-vacio" data-testid="sin-atencion">Ninguna obra en ejecución está retrasada, en riesgo o fuera de plazo.</p>
+    } @else {
+      <div class="ops-tabla-wrap">
+        <table class="ops-tabla" data-testid="tabla-atencion">
+          <thead>
+            <tr><th>Obra</th><th>Jefe</th><th>Situación</th><th class="ops-tabla__num">Desviación</th><th>Fin vigente</th><th></th></tr>
+          </thead>
+          <tbody>
+            @for (o of atencion(); track o.id_centro_costo) {
+              <tr>
+                <td>{{ o.nombre }}<span class="ops-tabla__sub">{{ o.codigo_obra }}</span></td>
+                <td>{{ o.equipo.jefe_proyecto?.nombre ?? '—' }}</td>
+                <td>
+                  <app-situacion-chip [situacion]="o.resultado.situacion" />
+                  @if (o.resultado.plazos.diasFueraDePlazo > 0) {
+                    <span class="ops-tabla__sub">{{ o.resultado.plazos.diasFueraDePlazo }} d fuera de plazo</span>
+                  }
+                </td>
+                <td class="ops-tabla__num">{{ desviacion(o.resultado.desviacion) }}</td>
+                <td>{{ fecha(o.resultado.plazos.finVigente) }}</td>
+                <td><button type="button" class="ops-btn" (click)="verEnPartidas(o)">Ver en Partidas</button></td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  </section>
+
+  <section class="ops-card" aria-label="Seguimiento de post venta">
+    <h2 class="ops-card__titulo">Seguimiento de post venta</h2>
+    @if (enPostVenta().length === 0) {
+      <p class="ops-vacio" data-testid="sin-postventa">No hay obras en post venta.</p>
+    } @else {
+      <div class="ops-tabla-wrap">
+        <table class="ops-tabla" data-testid="tabla-postventa">
+          <thead>
+            <tr><th>Obra</th><th>Entrega</th><th class="ops-tabla__num">Días</th><th>Situación</th><th>Observación</th></tr>
+          </thead>
+          <tbody>
+            @for (o of enPostVenta(); track o.id_centro_costo) {
+              <tr>
+                <td>{{ o.nombre }}<span class="ops-tabla__sub">{{ o.codigo_obra }}</span></td>
+                <td>{{ fecha(o.resultado.postVenta?.inicio) }}</td>
+                <td class="ops-tabla__num">{{ o.resultado.postVenta?.dias ?? '—' }}</td>
+                <td>{{ o.resultado.postVenta?.texto ?? '—' }}</td>
+                <td>{{ o.comentario ?? '—' }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  </section>
+</div>

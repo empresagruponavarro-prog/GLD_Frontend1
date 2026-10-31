@@ -1,0 +1,59 @@
+<div class="ops-grid">
+  <section class="ops-card" aria-label="Curva S de una obra">
+    <div style="display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: flex-end; justify-content: space-between">
+      <h2 class="ops-card__titulo" style="margin: 0">Curva S por obra</h2>
+      <label class="ops-filtros__campo" style="min-width: 14rem">
+        <span class="ops-filtros__etiqueta">Obra</span>
+        <select class="ops-input" [value]="obra()?.id_centro_costo ?? ''" (change)="elegir(valorDe($event))" [disabled]="conCurva().length === 0">
+          @for (o of conCurva(); track o.id_centro_costo) {
+            <option [value]="o.id_centro_costo">{{ o.nombre }}{{ o.codigo_obra ? ' · ' + o.codigo_obra : '' }}</option>
+          }
+        </select>
+      </label>
+    </div>
+
+    @if (!obra()) {
+      <p class="ops-vacio" data-testid="sin-curva">No hay obras con curva para estos filtros. Una obra necesita partidas cargadas.</p>
+    } @else {
+      @if (kpi(); as k) {
+        <div class="ops-grid ops-grid--kpi" style="margin: 0.75rem 0" data-testid="kpi-curva">
+          <div class="ops-kpi"><span class="ops-kpi__valor">{{ pct(k.pactado) }}%</span><span class="ops-kpi__etiqueta">Pactado al corte</span><span class="ops-kpi__detalle">Semana {{ k.corte }}</span></div>
+          <div class="ops-kpi"><span class="ops-kpi__valor">{{ pct(k.real) }}%</span><span class="ops-kpi__etiqueta">Real</span></div>
+          <div class="ops-kpi" [class.ops-kpi--crit]="k.desviacion < -0.5"><span class="ops-kpi__valor">{{ desviacion(k.desviacion) }}</span><span class="ops-kpi__etiqueta">Desviación</span></div>
+          <div class="ops-kpi"><span class="ops-kpi__valor">{{ k.restantes }}</span><span class="ops-kpi__etiqueta">Semanas restantes</span></div>
+        </div>
+      }
+      @if (store.cargandoArboles() && !curva()) {
+        <p class="ops-vacio">Cargando curva…</p>
+      } @else {
+        <app-curva-s-control [curva]="curva()" />
+      }
+    }
+  </section>
+
+  <section class="ops-card" aria-label="Obras en ejecución">
+    <h2 class="ops-card__titulo">Obras en ejecución</h2>
+    @if (enEjecucion().length === 0) {
+      <p class="ops-vacio" data-testid="sin-ejecucion">No hay obras en ejecución con estos filtros.</p>
+    } @else {
+      <div class="ops-tabla-wrap">
+        <table class="ops-tabla" data-testid="tabla-curvas">
+          <thead>
+            <tr><th>Obra</th><th>Curva S</th><th>Avance</th><th class="ops-tabla__num">Desv.</th><th>Situación</th></tr>
+          </thead>
+          <tbody>
+            @for (o of enEjecucion(); track o.id_centro_costo) {
+              <tr>
+                <td>{{ o.nombre }}<span class="ops-tabla__sub">{{ o.codigo_obra }}</span></td>
+                <td><app-ops-curva-mini [curva]="o.curva" /></td>
+                <td><app-ops-barra-avance [valor]="o.resultado.real" [meta]="o.resultado.programado" [clave]="o.resultado.situacion.clave" /></td>
+                <td class="ops-tabla__num">{{ desviacion(o.resultado.desviacion) }}</td>
+                <td><app-situacion-chip [situacion]="o.resultado.situacion" /></td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  </section>
+</div>

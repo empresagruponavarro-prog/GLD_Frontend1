@@ -1,0 +1,59 @@
+<div class="ops-tv" data-testid="modo-tv">
+  <header class="ops-tv__cabecera">
+    <div>
+      <h1 style="margin: 0; font-size: 1.5rem; font-weight: 800">Obras vigentes</h1>
+      <p class="ops-tabla__sub">
+        {{ ahora().toLocaleString('es-PE', { dateStyle: 'full', timeStyle: 'short' }) }} · página {{ vista().pagina + 1 }} de {{ vista().paginas }}
+      </p>
+    </div>
+    <div style="display: flex; gap: 0.75rem">
+      <div class="ops-kpi"><span class="ops-kpi__valor">{{ kpis().vigentes }}</span><span class="ops-kpi__etiqueta">Vigentes</span></div>
+      <div class="ops-kpi"><span class="ops-kpi__valor">{{ kpis().enEjecucion }}</span><span class="ops-kpi__etiqueta">En ejecución</span></div>
+      <div class="ops-kpi"><span class="ops-kpi__valor" [style.color]="conRetraso() ? '#f87171' : null">{{ conRetraso() }}</span><span class="ops-kpi__etiqueta">Con retraso</span></div>
+      <div class="ops-kpi"><span class="ops-kpi__valor">{{ kpis().proximasAVencer }}</span><span class="ops-kpi__etiqueta">Próx. a vencer</span></div>
+    </div>
+    <div style="display: flex; gap: 0.5rem">
+      <button type="button" class="ops-btn" (click)="avanzar(-1)" aria-label="Página anterior">←</button>
+      <button type="button" class="ops-btn" (click)="avanzar(1)" aria-label="Página siguiente">→</button>
+      <button type="button" class="ops-btn" (click)="pantallaCompleta()">Pantalla completa</button>
+      <button type="button" class="ops-btn" (click)="salir()">Salir (Esc)</button>
+    </div>
+  </header>
+
+  @if (store.error()) {
+    <p class="ops-aviso ops-aviso--error" role="alert">No se pudo actualizar; se muestra la última lectura.</p>
+  }
+
+  <div class="ops-card">
+    @if (vigentes().length === 0) {
+      <p class="ops-vacio" data-testid="tv-sin-obras">{{ store.cargando() ? 'Cargando obras…' : 'No hay obras vigentes.' }}</p>
+    } @else {
+      <table class="ops-tabla" data-testid="tv-tabla">
+        <thead>
+          <tr><th>Obra</th><th>Jefe</th><th>Coordinador</th><th>Estado</th><th>Inicio</th><th>Fin</th><th>Semana</th><th>Avance</th><th>Situación</th></tr>
+        </thead>
+        <tbody>
+          @for (o of vista().items; track o.id_centro_costo) {
+            <tr>
+              <td><strong>{{ o.nombre }}</strong><span class="ops-tabla__sub">{{ o.codigo_obra }}</span></td>
+              <td>{{ o.equipo.jefe_proyecto?.nombre ?? '—' }}</td>
+              <td>{{ o.equipo.coordinador?.nombre ?? '—' }}</td>
+              <td><app-ops-estado-chip [estado]="o.resultado.estadoEfectivo" /></td>
+              <td>{{ diaMes(o.inicio) }}</td>
+              <td>{{ diaMes(o.resultado.plazos.finVigente) }}</td>
+              <td>{{ o.resultado.semana.texto }}</td>
+              <td><app-ops-barra-avance [valor]="o.resultado.real" [meta]="o.resultado.programado" [clave]="o.resultado.situacion.clave" /></td>
+              <td><app-situacion-chip [situacion]="o.resultado.situacion" /><span class="ops-tabla__sub">{{ desviacion(o.resultado.desviacion) }}</span></td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    }
+  </div>
+
+  <div class="ops-tv__cinta" aria-label="Clientes" data-testid="tv-clientes">
+    @for (c of clientes(); track c) {
+      <span>{{ c }}</span>
+    }
+  </div>
+</div>

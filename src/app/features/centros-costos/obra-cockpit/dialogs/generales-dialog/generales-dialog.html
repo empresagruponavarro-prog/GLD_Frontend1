@@ -356,6 +356,77 @@
         </div>
       </div>
 
+      <!-- TARJETA 4: Ficha operativa del control de avance -->
+      <div class="p-3.5 sm:p-4 rounded-xl bg-slate-50/70 border border-slate-200/80 shadow-2xs space-y-3.5" data-testid="ficha-operativa">
+        <div class="flex items-center gap-2 pb-2 border-b border-slate-200/60">
+          <div class="w-7 h-7 rounded-lg bg-violet-100/70 text-violet-700 flex items-center justify-center">
+            <span class="material-symbols-outlined text-base">monitoring</span>
+          </div>
+          <div>
+            <h3 class="text-xs font-bold text-slate-900 leading-tight uppercase tracking-wider">Control de Avance &amp; Equipo</h3>
+            <p class="text-[10px] text-slate-500">Código, tienda, plazos programados, equipo responsable y datos de post venta.</p>
+          </div>
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div>
+            <label for="gen-codigo" class="block text-[11px] font-bold uppercase tracking-wider text-slate-700 mb-1">Código de obra</label>
+            <input id="gen-codigo" type="text" maxlength="30" placeholder="OP-26-017" class="h-9 w-full px-3 rounded-lg border border-slate-200 bg-white text-xs text-slate-800 focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600 transition-all shadow-2xs" formControlName="codigo_obra" />
+          </div>
+          <div>
+            <label for="gen-tienda" class="block text-[11px] font-bold uppercase tracking-wider text-slate-700 mb-1">Tienda</label>
+            <input id="gen-tienda" type="text" maxlength="150" class="h-9 w-full px-3 rounded-lg border border-slate-200 bg-white text-xs text-slate-800 focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600 transition-all shadow-2xs" formControlName="tienda" />
+          </div>
+          <div>
+            <label for="gen-avance" class="block text-[11px] font-bold uppercase tracking-wider text-slate-700 mb-1">Avance general (%)</label>
+            <input id="gen-avance" type="number" min="0" max="100" class="h-9 w-full px-3 rounded-lg border border-slate-200 bg-white text-xs text-slate-800 focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600 transition-all shadow-2xs" formControlName="avance_general" />
+          </div>
+          <div>
+            <label for="gen-inicio" class="block text-[11px] font-bold uppercase tracking-wider text-slate-700 mb-1">Inicio programado</label>
+            <input id="gen-inicio" type="date" class="h-9 w-full px-3 rounded-lg border border-slate-200 bg-white text-xs text-slate-800 focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600 transition-all shadow-2xs" formControlName="fecha_inicio" />
+          </div>
+          <div>
+            <label for="gen-fin" class="block text-[11px] font-bold uppercase tracking-wider text-slate-700 mb-1">Fin programado</label>
+            <input id="gen-fin" type="date" class="h-9 w-full px-3 rounded-lg border border-slate-200 bg-white text-xs text-slate-800 focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600 transition-all shadow-2xs" formControlName="fecha_fin_prog" />
+          </div>
+          <div>
+            <label for="gen-postventa" class="block text-[11px] font-bold uppercase tracking-wider text-slate-700 mb-1">Plazo post venta (días)</label>
+            <input id="gen-postventa" type="number" min="0" class="h-9 w-full px-3 rounded-lg border border-slate-200 bg-white text-xs text-slate-800 focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600 transition-all shadow-2xs" formControlName="plazo_postventa_dias" />
+          </div>
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div>
+            <label for="gen-jefe" class="block text-[11px] font-bold uppercase tracking-wider text-slate-700 mb-1">Jefe de proyecto</label>
+            <app-search-select inputId="gen-jefe" [options]="trabajadores()" placeholder="Buscar trabajador…" formControlName="id_jefe_proyecto" />
+          </div>
+          <div>
+            <label for="gen-coord" class="block text-[11px] font-bold uppercase tracking-wider text-slate-700 mb-1">Coordinador</label>
+            <app-search-select inputId="gen-coord" [options]="trabajadores()" placeholder="Buscar trabajador…" formControlName="id_coordinador" />
+          </div>
+          <div>
+            <label for="gen-resid" class="block text-[11px] font-bold uppercase tracking-wider text-slate-700 mb-1">Residente</label>
+            <app-search-select inputId="gen-resid" [options]="trabajadores()" placeholder="Buscar trabajador…" formControlName="id_residente" />
+          </div>
+          <div>
+            <label for="gen-ppto" class="block text-[11px] font-bold uppercase tracking-wider text-slate-700 mb-1">Resp. presupuesto</label>
+            <app-search-select inputId="gen-ppto" [options]="trabajadores()" placeholder="Buscar trabajador…" formControlName="id_resp_presupuesto" />
+          </div>
+          <div>
+            <label for="gen-procura" class="block text-[11px] font-bold uppercase tracking-wider text-slate-700 mb-1">Resp. procura</label>
+            <app-search-select inputId="gen-procura" [options]="trabajadores()" placeholder="Buscar trabajador…" formControlName="id_resp_procura" />
+          </div>
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label for="gen-comentario" class="block text-[11px] font-bold uppercase tracking-wider text-slate-700 mb-1">Comentario de la obra</label>
+            <input id="gen-comentario" type="text" maxlength="1000" class="h-9 w-full px-3 rounded-lg border border-slate-200 bg-white text-xs text-slate-800 focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600 transition-all shadow-2xs" formControlName="comentario" />
+          </div>
+          <div>
+            <label for="gen-obs-pv" class="block text-[11px] font-bold uppercase tracking-wider text-slate-700 mb-1">Observaciones de post venta</label>
+            <input id="gen-obs-pv" type="text" maxlength="1000" class="h-9 w-full px-3 rounded-lg border border-slate-200 bg-white text-xs text-slate-800 focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600 transition-all shadow-2xs" formControlName="observaciones_postventa" />
+          </div>
+        </div>
+      </div>
+
       <!-- Alertas de Error -->
       @if (formError()) {
         <div class="p-3 rounded-lg bg-rose-50 border border-rose-200 text-rose-700 text-xs flex items-center gap-2" role="alert">

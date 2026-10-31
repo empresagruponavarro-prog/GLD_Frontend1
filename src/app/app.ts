@@ -6,7 +6,7 @@ import { AvisosService } from './core/avisos/avisos.service';
 import { PermisosService } from './core/auth/permisos.service';
 
 /** Rutas que se muestran sin cabecera ni menú lateral (impresión/PDF y login). */
-const RUTAS_SIN_LAYOUT = ['/imprimir', '/login'];
+const RUTAS_SIN_LAYOUT = ['/imprimir', '/login', '/operaciones/tv'];
 
 function empiezaPor(url: string, r: string): boolean {
   return url === r || url.startsWith(`${r}/`) || url.startsWith(`${r}?`);

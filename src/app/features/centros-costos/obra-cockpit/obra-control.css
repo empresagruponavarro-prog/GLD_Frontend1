@@ -1,0 +1,166 @@
+/*
+ * Estilos comunes del control de avance (pestaña, diálogos). BEM con prefijo `obra-ctl-`, sobre las
+ * variables de src/styles.css. Los componentes la cargan con `styleUrl` (cada uno recibe su copia
+ * encapsulada). El diseño y los colores de situación usan los tokens Tailwind del cockpit.
+ */
+.obra-ctl-label {
+  display: block;
+  margin-bottom: 0.25rem;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-main);
+}
+
+.obra-ctl-input {
+  width: 100%;
+  height: 2.25rem;
+  padding: 0 0.75rem;
+  font-size: 0.8125rem;
+  color: var(--text-main);
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-sm);
+}
+
+.obra-ctl-input:focus {
+  outline: none;
+  border-color: var(--gld-green-primary);
+  box-shadow: 0 0 0 1px var(--gld-green-primary);
+}
+
+.obra-ctl-input:disabled,
+.obra-ctl-input[readonly] {
+  background: var(--bg-main);
+  color: var(--text-muted);
+  cursor: not-allowed;
+}
+
+.obra-ctl-input--error {
+  border-color: var(--danger-color);
+}
+
+.obra-ctl-input--num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+textarea.obra-ctl-input {
+  height: auto;
+  padding: 0.5rem 0.75rem;
+}
+
+.obra-ctl-hint {
+  margin-top: 0.25rem;
+  font-size: 0.6875rem;
+  color: var(--text-muted);
+}
+
+.obra-ctl-error {
+  padding: 0.5rem 0.75rem;
+  font-size: 0.75rem;
+  color: #93000a;
+  background: #ffdad6;
+  border-radius: var(--radius-sm);
+  white-space: pre-line;
+}
+
+.obra-ctl-aviso {
+  padding: 0.5rem 0.75rem;
+  font-size: 0.75rem;
+  color: #464a14;
+  background: #f1f3c8;
+  border-radius: var(--radius-sm);
+}
+
+.obra-ctl-acciones {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  padding-top: 0.75rem;
+  margin-top: 0.75rem;
+  border-top: 1px solid var(--border-color);
+}
+
+.obra-ctl-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  height: 2rem;
+  padding: 0 0.75rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-main);
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.obra-ctl-btn:hover:not(:disabled) {
+  background: var(--bg-main);
+}
+
+.obra-ctl-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.obra-ctl-btn--primario {
+  color: #fff;
+  background: var(--gld-green-dark);
+  border-color: var(--gld-green-dark);
+}
+
+.obra-ctl-btn--primario:hover:not(:disabled) {
+  background: var(--gld-green-primary);
+}
+
+.obra-ctl-btn--peligro {
+  color: var(--danger-color);
+}
+
+.obra-ctl-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.125rem 0.5rem;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  white-space: nowrap;
+  border-radius: 999px;
+}
+
+.obra-ctl-tabla {
+  width: 100%;
+  font-size: 0.75rem;
+  border-collapse: collapse;
+}
+
+.obra-ctl-tabla th {
+  padding: 0.5rem 0.625rem;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  text-align: left;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
+  background: var(--bg-main);
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
+.obra-ctl-tabla td {
+  padding: 0.5rem 0.625rem;
+  border-top: 1px solid var(--border-color);
+  vertical-align: middle;
+}
+
+.obra-ctl-tabla .num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
