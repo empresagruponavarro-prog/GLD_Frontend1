@@ -1,8 +1,8 @@
 <div class="documentos-wrapper">
   <header class="documentos-header">
     <div>
-      <h1 class="content-title">Documentos Origen</h1>
-      <p class="content-subtitle">Órdenes de compra y documentos origen registrados.</p>
+      <h1 class="content-title">Valorizaciones</h1>
+      <p class="content-subtitle">Órdenes de compra y de servicio registradas.</p>
     </div>
 
     <div style="display: flex; gap: 0.5rem; align-items: center;">
@@ -145,6 +145,7 @@
 
   <ng-template #documentoRow let-item>
     <tr>
+      <td style="text-align: center">{{ item.id }}</td>
       <td>{{ item.tipo_oc || '—' }}</td>
       <td>{{ item.tipo_costo || '—' }}</td>
       <td>{{ item.nombre_centro_costo || '—' }}</td>
@@ -245,32 +246,17 @@
 
         <div class="form-group">
           <label>Centro de Costo</label>
-          <select class="form-control" [(ngModel)]="formData.id_centro_costo" name="id_centro_costo" (ngModelChange)="onCentroCostoChange($event)" [disabled]="furActual() !== null">
-            <option [ngValue]="0">Seleccione...</option>
-            <option *ngFor="let cc of centrosCostos()" [ngValue]="cc.id">
-              {{ cc.nombre }}
-            </option>
-          </select>
+          <app-search-select [options]="opcCentrosCostos()" placeholder="Buscar centro de costo..." inputId="doc-cc" name="id_centro_costo" [ngModel]="formData.id_centro_costo || null" (ngModelChange)="formData.id_centro_costo = $event ?? 0; onCentroCostoChange($event ?? 0)" [disabled]="furActual() !== null" />
         </div>
 
         <div class="form-group">
           <label>Fase</label>
-          <select class="form-control" [(ngModel)]="formData.id_fase" name="id_fase">
-            <option [ngValue]="0">Seleccione...</option>
-            <option *ngFor="let f of fases()" [ngValue]="f.id">
-              {{ f.descripcion }}
-            </option>
-          </select>
+          <app-search-select [options]="opcFases()" placeholder="Buscar fase..." inputId="doc-fase" name="id_fase" [ngModel]="formData.id_fase || null" (ngModelChange)="formData.id_fase = $event ?? 0" />
         </div>
 
         <div class="form-group">
           <label>Categoría</label>
-          <select class="form-control" [(ngModel)]="formData.id_categoria" name="id_categoria">
-            <option [ngValue]="0">Seleccione...</option>
-            <option *ngFor="let c of categorias()" [ngValue]="c.id">
-              {{ c.nombre }}
-            </option>
-          </select>
+          <app-search-select [options]="opcCategorias()" placeholder="Buscar categoría..." inputId="doc-categoria" name="id_categoria" [ngModel]="formData.id_categoria || null" (ngModelChange)="formData.id_categoria = $event ?? 0" />
         </div>
 
         <div class="form-group">
@@ -282,12 +268,7 @@
 
         <div class="form-group">
           <label>Proveedor</label>
-          <select class="form-control" [(ngModel)]="formData.id_anexo" name="id_anexo">
-            <option [ngValue]="0">Seleccione...</option>
-            <option *ngFor="let a of anexos()" [ngValue]="a.id">
-              {{ a.nombre }}
-            </option>
-          </select>
+          <app-search-select [options]="opcAnexos()" placeholder="Buscar proveedor..." inputId="doc-proveedor" name="id_anexo" [ngModel]="formData.id_anexo || null" (ngModelChange)="formData.id_anexo = $event ?? 0" />
         </div>
 
         <div class="form-group">
@@ -330,12 +311,7 @@
                       <small class="detalle-hint">Máximo a ordenar: {{ d.maximo }}</small>
                     }
                   } @else {
-                    <select class="form-control" [ngModel]="d.id_producto" (ngModelChange)="updateDetalle(i, 'id_producto', $event)" [name]="'id_producto_' + i" [attr.aria-label]="'Producto o servicio ' + (i + 1)">
-                      <option [ngValue]="0">Seleccione...</option>
-                      @for (p of productos(); track p.id) {
-                        <option [ngValue]="p.id">{{ p.descripcion }}</option>
-                      }
-                    </select>
+                    <app-search-select [options]="opcProductos()" placeholder="Buscar producto o servicio..." [inputId]="'doc-prod-' + i" [name]="'id_producto_' + i" [ngModel]="d.id_producto || null" (ngModelChange)="updateDetalle(i, 'id_producto', $event ?? 0)" />
                   }
                 </td>
                 <td class="detalle-table__qty">
