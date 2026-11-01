@@ -9,6 +9,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { DataTableComponent } from '../../../shared/components/data-table/data-table';
 import { ModalComponent } from '../../../shared/components/modal/modal';
+import { SearchSelectComponent, type SearchSelectOption } from '../../../shared/components/search-select/search-select';
 import { DataTable } from '../../../shared/interfaces';
 import { errorMessage } from '../../almacen/almacen.utils';
 import { CentroCostoSelect } from '../../centros-costos/interfaces/centros-costos.interface';
@@ -31,7 +32,7 @@ const MESES = ['ENERO', 'FEBRERO', 'MARZO', 'ABRIL', 'MAYO', 'JUNIO', 'JULIO', '
 @Component({
   selector: 'app-documentos-origen',
   standalone: true,
-  imports: [CommonModule, FormsModule, DataTableComponent, ModalComponent],
+  imports: [CommonModule, FormsModule, DataTableComponent, ModalComponent, SearchSelectComponent],
   templateUrl: './documentos-origen.html',
   styleUrl: './documentos-origen.css'
 })
@@ -79,6 +80,12 @@ export class DocumentosOrigenComponent {
   anexos = signal<AnexoSelect[]>([]);
   productos = signal<ProductoSelect[]>([]);
   fases = signal<FasePorCentroCosto[]>([]);
+  // Opciones con búsqueda (app-search-select) derivadas de las listas de arriba.
+  opcCentrosCostos = computed<SearchSelectOption[]>(() => this.centrosCostos().map((c) => ({ id: c.id, nombre: c.nombre })));
+  opcFases = computed<SearchSelectOption[]>(() => this.fases().map((f) => ({ id: f.id, nombre: f.descripcion })));
+  opcCategorias = computed<SearchSelectOption[]>(() => this.categorias().map((c) => ({ id: c.id, nombre: c.nombre })));
+  opcAnexos = computed<SearchSelectOption[]>(() => this.anexos().map((a) => ({ id: a.id, nombre: a.nombre })));
+  opcProductos = computed<SearchSelectOption[]>(() => this.productos().map((p) => ({ id: p.id, nombre: p.descripcion })));
   saving = signal<boolean>(false);
   editingId = signal<number | null>(null);
   formData: CreateDocumentoOrigen = this.emptyForm();
@@ -100,6 +107,7 @@ export class DocumentosOrigenComponent {
   );
 
   columns: DataTable[] = [
+    { label: 'ID', width: '70px', align: 'center' },
     { label: 'Tipo OC' },
     { label: 'Tipo Costo' },
     { label: 'Centro de Costo' },

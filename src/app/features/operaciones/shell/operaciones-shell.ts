@@ -35,6 +35,8 @@ export const PESTANAS_OPERACIONES: readonly PestanaOperaciones[] = [
   templateUrl: './operaciones-shell.html',
   styleUrl: '../operaciones.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
+  // .app-content es overflow: hidden: el marco del dashboard es quien hace scroll (ver :host(.ops-shell) en operaciones.css).
+  host: { class: 'ops-shell' },
 })
 export class OperacionesShellComponent {
   readonly #router = inject(Router);

@@ -112,7 +112,8 @@
 }
 
 .detalle-table-wrap {
-  overflow-x: auto;
+  /* visible: el desplegable de app-search-select (producto) es absoluto y no debe quedar recortado por la tabla. */
+  overflow: visible;
   border: 1px solid #e2e8f0;
   border-radius: 8px;
 }

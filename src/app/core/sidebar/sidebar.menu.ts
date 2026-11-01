@@ -57,7 +57,7 @@ export const MENU_LATERAL: readonly SeccionMenu[] = [
         icono: 'fa-solid fa-folder-open',
         enlaces: [
           { etiqueta: 'Compromisos de pago', ruta: '/documentos/administracion', icono: 'fa-solid fa-file-invoice-dollar', modulo: 'documentos.administracion' },
-          { etiqueta: 'Órdenes de compra', ruta: '/documentos/origen', icono: 'fa-solid fa-file-lines', modulo: 'documentos.origen' },
+          { etiqueta: 'Valorizaciones', ruta: '/documentos/origen', icono: 'fa-solid fa-file-lines', modulo: 'documentos.origen' },
           { etiqueta: 'Requerimientos (FUR)', ruta: '/requerimientos', icono: 'fa-solid fa-file-circle-plus', modulo: 'requerimientos', exacto: true },
           { etiqueta: 'Aprobaciones', ruta: '/requerimientos/aprobacion', icono: 'fa-solid fa-clipboard-check', modulo: 'requerimientos.aprobacion' },
         ],
