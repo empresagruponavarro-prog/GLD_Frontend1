@@ -30,11 +30,11 @@ import { AnexosService } from './anexos.service';
 })
 export class AnexosComponent {
   private readonly service = inject(AnexosService);
-  /** Botones de escritura según la matriz (maestros.anexos). */
-  protected readonly permisos = permisosDePantalla('maestros.anexos');
-
-  /** En `/personas` (módulo Activo Fijo) la pantalla abre filtrada por los trabajadores. */
+  /** En `/personas` (módulo Inv. Tecnología) la pantalla abre filtrada por los trabajadores. */
   protected readonly modoPersonas = inject(ActivatedRoute).snapshot.routeConfig?.path === 'personas';
+
+  /** Botones de escritura según la matriz: `tecnologia.personas` en /personas y `maestros.anexos` en /anexos. */
+  protected readonly permisos = permisosDePantalla(this.modoPersonas ? 'tecnologia.personas' : 'maestros.anexos');
 
   readonly tiposAnexo: TipoAnexo[] = ['Proveedor', 'Cliente', 'Trabajador'];
 

@@ -350,4 +350,7 @@ export interface Area {
   codigo: string;
   nombre: string;
   estado: boolean;
+  descripcion?: string | null;
+  idJefe?: number | null;
+  jefe?: string | null;
 }

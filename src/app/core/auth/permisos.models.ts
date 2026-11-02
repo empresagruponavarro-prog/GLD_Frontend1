@@ -3,7 +3,7 @@
  * Idénticos a los del backend; `CLAVES_MODULO` sigue el orden de la semilla de la tabla `modulo`.
  */
 
-/** Claves estables de los módulos de GLD (34, en el orden del catálogo §5; `operaciones` es el último). */
+/** Claves estables de los módulos de GLD (38, en el orden del catálogo §5; `tecnologia.ambientes` es el último). */
 export const CLAVES_MODULO = [
   'dashboard',
   'modulos',
@@ -39,6 +39,10 @@ export const CLAVES_MODULO = [
   'admin.usuarios',
   'admin.roles',
   'operaciones',
+  'tecnologia.dashboard',
+  'tecnologia.mantenimiento',
+  'tecnologia.personas',
+  'tecnologia.ambientes',
 ] as const;
 
 export type ClaveModulo = (typeof CLAVES_MODULO)[number];

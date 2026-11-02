@@ -44,7 +44,7 @@ const BOTONES_LOCAL = { nuevo: 'Nuevo local', editar: 'Editar local' };
 async function montar(acciones: Partial<Permisos>) {
   const p = await montarPantalla(
     LocalesComponent,
-    misPermisos('Usuario', { 'maestros.generales': acciones }),
+    misPermisos('Usuario', { 'tecnologia.ambientes': acciones }),
     (req) => {
       if (req.url.includes('/maestros/ubicacion')) return [UBICACION];
       if (req.url.includes('/maestros/local')) return [LOCAL];

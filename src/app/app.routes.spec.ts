@@ -65,6 +65,8 @@ describe('app.routes', () => {
     ['requerimientos/:id', 'requerimientos'],
     ['maestros-generales/especialidades', 'maestros.generales'],
     ['anexos', 'maestros.anexos'],
+    ['equipos-tecnologicos', 'tecnologia.dashboard'],
+    ['equipos-mantenimiento', 'tecnologia.mantenimiento'],
     ['almacen/salidas', 'almacen.salidas'],
   ])('%s -> %s', (path, modulo) => {
     expect(hijos.find((r) => r.path === path)?.data?.['modulo']).toBe(modulo);

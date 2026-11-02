@@ -12,7 +12,7 @@ const BOTONES = { nueva: 'Nueva área', editar: 'Editar' };
 
 async function montar(acciones: Partial<Permisos>) {
   const p = await montarPantalla(AreasComponent, misPermisos('Usuario', { 'maestros.areas': acciones }), () => [AREA]);
-  expect(p.el.textContent).toContain('SISTEMAS');
+  expect(p.el.textContent).toContain('AR-01');
   return p;
 }
 

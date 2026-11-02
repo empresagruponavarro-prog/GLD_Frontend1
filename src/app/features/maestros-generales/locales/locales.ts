@@ -52,7 +52,7 @@ export class LocalesComponent {
   private readonly empresasService = inject(EmpresasService);
   private readonly centrosCostosService = inject(CentrosCostosService);
 
-  protected readonly permisos = permisosDePantalla('maestros.generales');
+  protected readonly permisos = permisosDePantalla('tecnologia.ambientes');
 
   // Navegación por pestañas: Ubicaciones | Locales | Niveles | Ambientes | Selector
   protected readonly activeTab = signal<'ubicaciones' | 'locales' | 'niveles' | 'ambientes' | 'selector'>('ubicaciones');

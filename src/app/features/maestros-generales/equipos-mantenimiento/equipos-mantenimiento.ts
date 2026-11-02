@@ -41,8 +41,8 @@ import { RegistroActivoDialogComponent } from './registro-activo-dialog/registro
 export class EquiposMantenimientoComponent {
   private readonly service = inject(EquiposTrabajadorService);
   private readonly anexos = inject(AnexosService);
-  /** Registrar, mover y entregar exigen crear / editar en Anexos; dar de baja, eliminar. */
-  protected readonly permisos = permisosDePantalla('maestros.anexos');
+  /** Registrar exige crear; mover, entregar y cambiar de estado, editar; dar de baja, eliminar. */
+  protected readonly permisos = permisosDePantalla('tecnologia.mantenimiento');
 
   readonly mostrarRegistro = signal(false);
   readonly qrEquipo = signal<EquipoInventario | null>(null);
