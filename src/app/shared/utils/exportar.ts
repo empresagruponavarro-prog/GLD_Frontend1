@@ -35,9 +35,20 @@ export function generarCsv(datos: DatosExportacion): string {
   return '\uFEFF' + lineas.map((l) => l.join(',')).join('\r\n');
 }
 
+type ExcelJs = typeof import('exceljs');
+
+/**
+ * exceljs es CommonJS: en el build de producción el módulo diferido solo expone `default` (con `Workbook`
+ * dentro) y en desarrollo expone `Workbook` directamente. Se acepta cualquiera de las dos formas.
+ */
+async function cargarExcelJs(): Promise<ExcelJs> {
+  const modulo: ExcelJs & { default?: ExcelJs } = await import('exceljs');
+  return modulo.Workbook ? modulo : (modulo.default ?? modulo);
+}
+
 /** Libro de Excel con cabecera resaltada, fila congelada, filtro automático y anchos ajustados. */
 export async function generarXlsx(datos: DatosExportacion): Promise<Blob> {
-  const { Workbook } = await import('exceljs');
+  const { Workbook } = await cargarExcelJs();
   const libro = new Workbook();
   const hoja = libro.addWorksheet((datos.hoja ?? datos.nombre).replace(/[/\\?*:[\]]/g, ' ').slice(0, 31));
   hoja.columns = datos.columnas.map((titulo, i) => {
