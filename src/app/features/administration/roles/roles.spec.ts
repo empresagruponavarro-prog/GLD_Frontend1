@@ -639,7 +639,7 @@ describe('RolesComponent — crear, editar y eliminar roles', () => {
     expect(q('[data-testid="rol-eliminar-error"]')?.textContent).toContain('tiene 2 usuarios asignados');
   });
 
-  it('Escape y clic en el fondo cierran el modal; no mientras se guarda', async () => {
+  it('Escape cierra el modal y el clic en el fondo no; Escape tampoco cierra mientras se guarda', async () => {
     const { q, http, escribir, guardar, click, render } = await setup();
     await click(q('[data-testid="roles-nuevo"]'));
     q('#rol-nombre')!.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
@@ -650,6 +650,10 @@ describe('RolesComponent — crear, editar y eliminar roles', () => {
     await click(q('.modal-content'));
     expect(q('.modal-content')).not.toBeNull();
     await click(q('.modal-overlay'));
+    // El fondo ya no cierra el pop-up (evita perder lo escrito): se cierra con Escape, la X o Cancelar.
+    expect(q('.modal-content')).not.toBeNull();
+    q('#rol-nombre')!.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+    await render();
     expect(q('.modal-content')).toBeNull();
 
     await click(q('[data-testid="roles-nuevo"]'));

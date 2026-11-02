@@ -307,7 +307,7 @@
 @if (showFasesModal()) {
 <!-- MODAL: FASES Y ANÁLISIS DE COSTOS APU (acordeón). z-40 para que los modales de fase/categoría/compras/plantillas (z-50+) queden encima. -->
 <div class="fixed inset-0 z-40 flex items-center justify-center p-4 sm:p-6 animate-in fade-in duration-150" data-purpose="fases-costos-modal">
-  <button type="button" aria-label="Cerrar modal de fases y costos" class="fixed inset-0 bg-slate-900/50 backdrop-blur-xs w-full h-full border-none cursor-default" (click)="cerrarFasesModal()"></button>
+  <div aria-hidden="true" class="fixed inset-0 bg-slate-900/50 backdrop-blur-xs w-full h-full border-none cursor-default"></div>
   <div class="relative z-10 w-full max-w-6xl max-h-[92vh] bg-white rounded-lg shadow-2xl border border-[#d1dcd7] flex flex-col overflow-hidden" style="font-family: 'Inter', system-ui, sans-serif;">
     <!-- HEADER -->
     <div class="px-6 py-4 bg-[#f6f8f7] border-b border-[#d1dcd7] flex flex-col gap-3 shrink-0">
@@ -584,7 +584,7 @@
 @if (showForm()) {
 <!-- BACKDROP OVERLAY FLOTANTE -->
 <div class="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 md:p-6">
-  <button type="button" aria-label="Cerrar formulario" class="fixed inset-0 bg-slate-950/70 backdrop-blur-sm w-full h-full border-none cursor-default" (click)="closeForm()"></button>
+  <div aria-hidden="true" class="fixed inset-0 bg-slate-950/70 backdrop-blur-sm w-full h-full border-none cursor-default"></div>
 
   <!-- CONTENEDOR MODAL FLOTANTE -->
   <div class="relative z-10 w-full max-w-6xl h-[90vh] max-h-[880px] flex flex-col bg-slate-100 rounded-2xl shadow-2xl overflow-hidden border border-slate-700/30 ring-1 ring-black/10"
@@ -1648,7 +1648,7 @@
 <!-- MODAL FLOTANTE: COMPRAS Y DOCUMENTOS ORIGEN POR FASE -->
 @if (modalComprasOpen()) {
 <div class="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 animate-in fade-in duration-150">
-  <button type="button" aria-label="Cerrar modal de compras" class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs w-full h-full border-none cursor-default" (click)="cerrarModalCompras()"></button>
+  <div aria-hidden="true" class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs w-full h-full border-none cursor-default"></div>
   <div class="relative z-10 bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-5xl max-h-[85vh] flex flex-col overflow-hidden animate-in zoom-in-95 duration-150">
     
     <!-- CABECERA DEL MODAL -->
@@ -1855,7 +1855,7 @@
   <!-- MODAL SELECCIONAR PLANTILLA -->
   @if (showPlantillasModal()) {
     <div class="fixed inset-0 z-[100] flex items-center justify-center p-4">
-      <button type="button" aria-label="Cerrar modal de plantillas" class="absolute inset-0 bg-slate-900/40 backdrop-blur-sm w-full h-full border-none cursor-default" (click)="cerrarModalPlantillas()"></button>
+      <div aria-hidden="true" class="absolute inset-0 bg-slate-900/40 backdrop-blur-sm w-full h-full border-none cursor-default"></div>
       <div class="bg-white rounded-xl shadow-xl w-full max-w-md relative flex flex-col max-h-[90vh] overflow-hidden border border-slate-200">
         <!-- Header -->
         <div class="px-5 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50">

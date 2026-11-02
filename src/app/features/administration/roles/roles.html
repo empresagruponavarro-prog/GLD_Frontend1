@@ -207,7 +207,7 @@
 
 <!-- Modal crear / editar rol (misma familia visual que el de usuarios) -->
 @if (showModal()) {
-<div class="modal-overlay" tabindex="-1" (click)="onOverlayClick($event, 'form')" (keydown.escape)="closeModal()">
+<div class="modal-overlay" tabindex="-1" (keydown.escape)="closeModal()">
   <div class="modal-content usuario-modal" role="dialog" aria-modal="true" aria-labelledby="rol-modal-title">
 
     <div class="modal-header-custom">
@@ -312,7 +312,7 @@
 
 <!-- Confirmación de eliminación (dentro de la pantalla, sin confirm()) -->
 @if (porEliminar(); as rol) {
-<div class="modal-overlay" tabindex="-1" (click)="onOverlayClick($event, 'delete')" (keydown.escape)="cancelDelete()">
+<div class="modal-overlay" tabindex="-1" (keydown.escape)="cancelDelete()">
   <div class="modal-content usuario-modal roles-confirm-modal" role="alertdialog" aria-modal="true"
     aria-labelledby="rol-eliminar-title" aria-describedby="rol-eliminar-desc">
 
@@ -352,7 +352,7 @@
 
 <!-- Cambios sin guardar al cambiar de rol o actualizar (dentro de la pantalla, sin confirm()) -->
 @if (pendiente()) {
-<div class="modal-overlay" tabindex="-1" (click)="onOverlayClick($event, 'pendiente')" (keydown.escape)="cancelarPendiente()">
+<div class="modal-overlay" tabindex="-1" (keydown.escape)="cancelarPendiente()">
   <div class="modal-content usuario-modal roles-confirm-modal" role="alertdialog" aria-modal="true"
     aria-labelledby="permisos-pendientes-title" aria-describedby="permisos-pendientes-desc" data-testid="permisos-pendientes">
 

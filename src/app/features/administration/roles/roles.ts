@@ -59,8 +59,6 @@ type AccionPendiente =
   | { tipo: 'actualizar' }
   | { tipo: 'salir'; resolver: (salir: boolean) => void };
 
-type Modal = 'form' | 'delete' | 'pendiente';
-
 interface CeldaVista {
   accion: Accion;
   admite: boolean;
@@ -583,14 +581,6 @@ export class RolesComponent implements PantallaConCambiosPendientes {
   /** Estado `checked` de una casilla a partir de su evento `change`. */
   protected marcado(event: Event): boolean {
     return event.target instanceof HTMLInputElement && event.target.checked;
-  }
-
-  /** Clic en el fondo del modal (no en su contenido). */
-  protected onOverlayClick(event: MouseEvent, modal: Modal): void {
-    if (event.target !== event.currentTarget) return;
-    if (modal === 'form') this.closeModal();
-    else if (modal === 'delete') this.cancelDelete();
-    else this.cancelarPendiente();
   }
 
   // ---- Privados ----

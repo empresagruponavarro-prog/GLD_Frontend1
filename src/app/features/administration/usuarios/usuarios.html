@@ -127,7 +127,7 @@
 
 <!-- Modal Formulario Rediseñado -->
 @if (showModal()) {
-<div class="modal-overlay" tabindex="-1" (click)="onFormOverlayClick($event)" (keydown)="teclaEnFormulario($event)">
+<div class="modal-overlay" tabindex="-1" (keydown)="teclaEnFormulario($event)">
   <div class="modal-content usuario-modal" role="dialog" aria-modal="true" aria-labelledby="usuario-modal-title">
     
     <!-- Encabezado con Icono Corporativo GLD -->
@@ -316,7 +316,7 @@
 
 <!-- Confirmación de desactivar / reactivar / eliminar (dentro de la pantalla, sin confirm()) -->
 @if (porConfirmar(); as pendiente) {
-<div class="modal-overlay" tabindex="-1" (click)="onConfirmOverlayClick($event)" (keydown)="teclaEnConfirmacion($event)">
+<div class="modal-overlay" tabindex="-1" (keydown)="teclaEnConfirmacion($event)">
   <div class="modal-content usuario-modal usuarios-confirm-modal" role="alertdialog" aria-modal="true"
     aria-labelledby="usuario-confirm-title" aria-describedby="usuario-confirm-desc" data-testid="usuario-confirm">
 

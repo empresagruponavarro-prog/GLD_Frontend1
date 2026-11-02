@@ -1,6 +1,7 @@
 @if (isOpen()) {
-  <div class="modal-overlay" (click)="onClose()">
-    <div class="modal-content" [style.max-width]="maxWidth()" [style.height]="height()" (click)="$event.stopPropagation()">
+  <!-- El fondo no cierra el pop-up: solo la X, Cancelar o Guardar (evita perder lo escrito por un clic de más). -->
+  <div class="modal-overlay">
+    <div class="modal-content" [style.max-width]="maxWidth()" [style.height]="height()">
       @if (showHeader()) {
         <div class="modal-header">
           <div class="modal-header-content">

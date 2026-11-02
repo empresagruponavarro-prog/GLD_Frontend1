@@ -390,16 +390,6 @@ export class UsuariosComponent {
     });
   }
 
-  /** Clic en el fondo del formulario (no en su contenido): lo cierra. */
-  onFormOverlayClick(event: MouseEvent) {
-    if (event.target === event.currentTarget) this.closeModal();
-  }
-
-  /** Clic en el fondo de la confirmación (no en su contenido). */
-  onConfirmOverlayClick(event: MouseEvent) {
-    if (event.target === event.currentTarget) this.cancelarConfirmacion();
-  }
-
   private pedirConfirmacion(accion: AccionUsuario, usuario: Usuario) {
     const activo = this.#document.activeElement;
     this.#focoPrevio = activo instanceof HTMLElement ? activo : null;
