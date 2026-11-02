@@ -1,0 +1,98 @@
+<div class="content-header">
+  <div>
+    <h1 class="content-title">Catálogos de RR.HH.</h1>
+    <p class="content-subtitle">Opciones que ofrece el formulario de Trabajadores. Una opción en uso no se elimina: se desactiva.</p>
+  </div>
+  <div class="cat-cabecera">
+    @if (permisos.crear()) {
+      <button class="btn btn-primary" type="button" (click)="nueva()"><i class="fa-solid fa-plus"></i> Nueva opción</button>
+    }
+    <button class="btn btn-secondary" type="button" (click)="cargar()" [disabled]="cargando()">
+      <i class="fa-solid fa-arrows-rotate" [class.fa-spin]="cargando()"></i> Actualizar
+    </button>
+  </div>
+</div>
+
+<div class="content-body">
+  <div class="cat-pestanas" role="tablist" aria-label="Catálogos">
+    @for (p of pestanas; track p.catalogo) {
+      <button type="button" role="tab" class="cat-pestana" [class.cat-pestana--activa]="p.catalogo === actual().catalogo"
+        [attr.aria-selected]="p.catalogo === actual().catalogo" (click)="elegir(p)">{{ p.titulo }}</button>
+    }
+  </div>
+
+  @if (error()) {
+    <p class="badge badge-danger cat-error" role="alert">{{ error() }}</p>
+  }
+
+  <div class="table-card">
+    <table class="table">
+      <thead>
+        <tr>
+          <th style="width: 90px">Orden</th>
+          <th>Nombre</th>
+          <th style="text-align: center; width: 130px">Trabajadores</th>
+          <th style="text-align: center; width: 110px">Estado</th>
+          <th style="text-align: center; width: 150px">Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (o of opciones(); track o.id; let primero = $first; let ultimo = $last) {
+          <tr [class.cat-inactiva]="!o.activo">
+            <td>
+              @if (permisos.editar()) {
+                <button class="table-action-btn" type="button" title="Subir" [disabled]="primero" (click)="mover(o, 'arriba')"><i class="fa-solid fa-arrow-up"></i></button>
+                <button class="table-action-btn" type="button" title="Bajar" [disabled]="ultimo" (click)="mover(o, 'abajo')"><i class="fa-solid fa-arrow-down"></i></button>
+              } @else {
+                {{ o.orden }}
+              }
+            </td>
+            <td><strong>{{ o.nombre }}</strong></td>
+            <td align="center">{{ o.usos }}</td>
+            <td align="center">
+              <span class="badge" [class.badge-completed]="o.activo" [class.badge-danger]="!o.activo">{{ o.activo ? 'Activa' : 'Inactiva' }}</span>
+            </td>
+            <td align="center">
+              @if (permisos.editar()) {
+                <button class="table-action-btn table-action-btn--primary" type="button" title="Renombrar" (click)="renombrar(o)"><i class="fa-solid fa-pen-to-square"></i></button>
+                <button class="table-action-btn" type="button" [title]="o.activo ? 'Desactivar' : 'Activar'" (click)="cambiarEstado(o)">
+                  <i class="fa-solid" [class.fa-toggle-on]="o.activo" [class.fa-toggle-off]="!o.activo"></i>
+                </button>
+              }
+              @if (permisos.eliminar()) {
+                <button class="table-action-btn table-action-btn--danger" type="button"
+                  [title]="o.usos > 0 ? 'En uso: desactívala en lugar de eliminarla' : 'Eliminar'" [disabled]="o.usos > 0" (click)="eliminar(o)">
+                  <i class="fa-solid fa-trash"></i>
+                </button>
+              }
+            </td>
+          </tr>
+        } @empty {
+          <tr>
+            <td colspan="5" align="center">{{ cargando() ? 'Cargando...' : 'No hay opciones registradas.' }}</td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<app-modal
+  [isOpen]="modalAbierto()"
+  [title]="editando() ? 'Renombrar ' + actual().singular : 'Nueva ' + actual().singular"
+  icon="fa-solid fa-list-check"
+  maxWidth="480px"
+  [loading]="guardando()"
+  submitText="Guardar"
+  (closed)="cerrarModal()"
+  (saved)="guardar()"
+>
+  <div class="form-group">
+    <label for="cat-nombre">Nombre <span class="required">*</span></label>
+    <input id="cat-nombre" class="form-control" [formControl]="nombre" maxlength="80" autocomplete="off" />
+    <p class="cat-ayuda">Se guarda en mayúsculas. Si ya hay trabajadores con esta opción, el cambio de nombre se ve en todos ellos.</p>
+  </div>
+  @if (modalError()) {
+    <p class="badge badge-danger cat-error" role="alert">{{ modalError() }}</p>
+  }
+</app-modal>

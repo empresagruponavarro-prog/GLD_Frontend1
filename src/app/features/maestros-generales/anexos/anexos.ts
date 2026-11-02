@@ -1,8 +1,9 @@
 import { Component, computed, inject, signal } from '@angular/core';
-import { ActivatedRoute } from '@angular/router';
+import { RouterLink } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { permisosDePantalla } from '@app/core/auth/permisos-pantalla';
+import { PermisosService } from '@app/core/auth/permisos.service';
 import { mensajeError } from '@shared/utils/errores-http';
 import { DataTableComponent } from '../../../shared/components/data-table/data-table';
 import { ExportarBotonesComponent } from '../../../shared/components/exportar-botones/exportar-botones';
@@ -10,8 +11,6 @@ import { ModalComponent } from '../../../shared/components/modal/modal';
 import { traerTodasLasPaginas, type DatosExportacion } from '../../../shared/utils/exportar';
 import { DataTable } from '../../../shared/interfaces';
 import { Anexo, AnexoQuery, SelectOption, TipoAnexo } from './interfaces/anexos.interface';
-import { TrabajadorResumen } from './interfaces/equipo-asignado.interface';
-import { EquiposTrabajadorModalComponent } from './equipos-trabajador-modal/equipos-trabajador-modal';
 import { AnexosService } from './anexos.service';
 
 @Component({
@@ -23,20 +22,23 @@ import { AnexosService } from './anexos.service';
     DataTableComponent,
     ModalComponent,
     ExportarBotonesComponent,
-    EquiposTrabajadorModalComponent,
+    RouterLink,
   ],
   templateUrl: './anexos.html',
   styleUrl: './anexos.css',
 })
 export class AnexosComponent {
   private readonly service = inject(AnexosService);
-  /** En `/personas` (módulo Inv. Tecnología) la pantalla abre filtrada por los trabajadores. */
-  protected readonly modoPersonas = inject(ActivatedRoute).snapshot.routeConfig?.path === 'personas';
+  private readonly permisosService = inject(PermisosService);
+  /** Botones de escritura según la matriz (maestros.anexos). */
+  protected readonly permisos = permisosDePantalla('maestros.anexos');
+  /** Los trabajadores se ven aquí, pero se registran y editan en RR.HH. › Trabajadores. */
+  protected readonly verTrabajadores = computed(() => this.permisosService.puede('rrhh.trabajadores', 'ver'));
 
-  /** Botones de escritura según la matriz: `tecnologia.personas` en /personas y `maestros.anexos` en /anexos. */
-  protected readonly permisos = permisosDePantalla(this.modoPersonas ? 'tecnologia.personas' : 'maestros.anexos');
-
+  /** Filtro de la lista (incluye trabajadores, que aquí son de solo lectura). */
   readonly tiposAnexo: TipoAnexo[] = ['Proveedor', 'Cliente', 'Trabajador'];
+  /** Lo que se puede crear o editar desde Anexos. */
+  readonly tiposAnexoForm: TipoAnexo[] = ['Proveedor', 'Cliente'];
 
   columns: DataTable[] = [
     { label: 'ID', width: '60px' },
@@ -59,7 +61,7 @@ export class AnexosComponent {
   totalRecords = signal<number>(0);
 
   // Filtros
-  tipoAnexoFilter = signal<TipoAnexo | ''>(this.modoPersonas ? 'Trabajador' : '');
+  tipoAnexoFilter = signal<TipoAnexo | ''>('');
   anexoFilter = signal<string>('');
   estadoFilter = signal<boolean | null>(null);
 
@@ -72,9 +74,6 @@ export class AnexosComponent {
   // Modal detalle
   showDetail = signal<boolean>(false);
   detail = signal<Anexo | null>(null);
-
-  // Modal equipos tecnológicos (solo Trabajador)
-  trabajadorEquipos = signal<TrabajadorResumen | null>(null);
 
   // Combos
   especialidades = signal<SelectOption[]>([]);
@@ -169,7 +168,7 @@ export class AnexosComponent {
   }
 
   resetFilters() {
-    this.tipoAnexoFilter.set(this.modoPersonas ? 'Trabajador' : '');
+    this.tipoAnexoFilter.set('');
     this.anexoFilter.set('');
     this.estadoFilter.set(null);
     this.currentPage.set(1);
@@ -186,7 +185,7 @@ export class AnexosComponent {
   }
 
   openEdit(item: Anexo) {
-    if (!this.permisos.editar()) return;
+    if (!this.permisos.editar() || item.tipoAnexo === 'Trabajador') return;
     this.editingId.set(item.id);
     this.formData = { ...this.emptyForm(), ...item };
     this.saving.set(false);
@@ -202,21 +201,6 @@ export class AnexosComponent {
   openDetail(item: Anexo) {
     this.detail.set(item);
     this.showDetail.set(true);
-  }
-
-  openEquipos(item: Anexo) {
-    if (item.tipoAnexo !== 'Trabajador') return;
-    this.trabajadorEquipos.set({
-      id: item.id,
-      anexo: item.Anexo ?? item.NombreComercial ?? `ID ${item.id}`,
-      tipoDocumento: this.nombreTipoDoc(item.AnexoTipoDocIdeId),
-      numeroDocumento: item.NumeroDocIde ?? '—',
-      especialidad: this.nombreEspecialidad(item.AnexoEspecialidadId),
-    });
-  }
-
-  closeEquipos() {
-    this.trabajadorEquipos.set(null);
   }
 
   closeDetail() {
@@ -276,7 +260,7 @@ export class AnexosComponent {
   }
 
   deleteAnexo(item: Anexo) {
-    if (!this.permisos.eliminar()) return;
+    if (!this.permisos.eliminar() || item.tipoAnexo === 'Trabajador') return;
     const label = item.Anexo || item.NombreComercial || `ID ${item.id}`;
     if (!confirm(`¿Eliminar el anexo "${label}"? Esta acción no se puede deshacer.`)) return;
     this.service.delete(item.id).subscribe({

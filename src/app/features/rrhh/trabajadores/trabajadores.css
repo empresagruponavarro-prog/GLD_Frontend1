@@ -1,0 +1,123 @@
+.trab-cabecera {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.trab-resumen {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.trab-tarjeta {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.7rem 0.9rem;
+  border: 1px solid var(--border-color, #e2e8f0);
+  border-radius: 12px;
+  background: #fff;
+  font: inherit;
+  text-align: left;
+  color: var(--text-muted, #64748b);
+}
+
+.trab-tarjeta strong {
+  font-size: 1.5rem;
+  color: var(--text-primary, #1f2a25);
+}
+
+.trab-tarjeta--accion {
+  cursor: pointer;
+}
+
+.trab-tarjeta--accion:hover {
+  border-color: var(--gld-green-primary, #5a9e80);
+}
+
+.trab-tarjeta--activa {
+  outline: 2px solid var(--gld-green-dark, #3b7a5e);
+}
+
+.trab-tarjeta strong.trab-ambar {
+  color: #b45309;
+}
+
+.trab-tarjeta strong.trab-rojo {
+  color: #b91c1c;
+}
+
+.trab-seccion {
+  margin: 0.4rem 0 0.6rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--text-muted, #64748b);
+}
+
+.trab-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0 1rem;
+}
+
+.trab-ancho {
+  grid-column: 1 / -1;
+}
+
+.trab-contacto {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.trab-caja {
+  margin: 0;
+  padding: 0.6rem 0.8rem 0.2rem;
+  border: 1px solid var(--border-color, #e2e8f0);
+  border-radius: 10px;
+}
+
+.trab-caja legend {
+  padding: 0 0.3rem;
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.trab-ayuda {
+  margin: 0.3rem 0 0;
+  font-size: 0.75rem;
+  color: var(--text-muted, #64748b);
+}
+
+.trab-error {
+  white-space: pre-line;
+  text-align: left;
+}
+
+.trab-doc {
+  display: inline-block;
+  margin-right: 0.35rem;
+  padding: 0.05rem 0.4rem;
+  border-radius: 6px;
+  background: #eef0f2;
+  color: var(--text-muted, #64748b);
+  font-size: 0.72rem;
+  font-weight: 600;
+}
+
+.trab-sub {
+  font-size: 0.75rem;
+  color: var(--text-muted, #64748b);
+}
+
+@media (max-width: 640px) {
+  .trab-grid,
+  .trab-contacto {
+    grid-template-columns: 1fr;
+  }
+}

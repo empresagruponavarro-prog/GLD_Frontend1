@@ -13,6 +13,8 @@ import { AnexosComponent } from './features/maestros-generales/anexos/anexos';
 import { ProductosComponent } from './features/maestros-generales/productos/productos';
 import { EquiposDashboardComponent } from './features/maestros-generales/equipos-dashboard/equipos-dashboard';
 import { EquiposMantenimientoComponent } from './features/maestros-generales/equipos-mantenimiento/equipos-mantenimiento';
+import { TrabajadoresComponent } from './features/rrhh/trabajadores/trabajadores';
+import { CatalogosRrhhComponent } from './features/rrhh/catalogos/catalogos';
 import { EspecialidadesComponent } from './features/maestros-generales/especialidades/especialidades';
 import { TipoDocIdentidadComponent } from './features/maestros-generales/tipo-doc-identidad/tipo-doc-identidad';
 import { CentrosCostosDashboardComponent } from './features/centros-costos/centro-costos-dashboard/centros-costos-dashboard';
@@ -89,8 +91,10 @@ export const routes: Routes = [
       rutaModulo('equipos-tecnologicos', EquiposDashboardComponent, 'tecnologia.dashboard'),
       // Mantenimiento de equipos (registrar, mover, entregar, baja): el tablero anterior es solo de lectura.
       rutaModulo('equipos-mantenimiento', EquiposMantenimientoComponent, 'tecnologia.mantenimiento'),
-      // Maestro de personas del módulo Activo Fijo: los anexos de tipo Trabajador (reutiliza la pantalla de Anexos).
-      rutaModulo('personas', AnexosComponent, 'tecnologia.personas'),
+      // RR.HH. › Trabajadores (reemplaza a «Personas» de Inv. Tecnología); /personas redirige aquí.
+      rutaModulo('rrhh/trabajadores', TrabajadoresComponent, 'rrhh.trabajadores'),
+      rutaModulo('rrhh/catalogos', CatalogosRrhhComponent, 'rrhh.catalogos'),
+      { path: 'personas', redirectTo: 'rrhh/trabajadores', pathMatch: 'full' },
       rutaModulo('maestros-generales/especialidades', EspecialidadesComponent, 'maestros.generales'),
       rutaModulo('maestros-generales/tipo-doc-identidad', TipoDocIdentidadComponent, 'maestros.generales'),
       rutaModulo('maestros-generales/unidades-medida', UnidadesMedidaComponent, 'maestros.generales'),

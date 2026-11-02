@@ -123,10 +123,16 @@ export const MENU_LATERAL: readonly SeccionMenu[] = [
         enlaces: [
           { etiqueta: 'Dashboard de Tecnología', ruta: '/equipos-tecnologicos', icono: 'fa-solid fa-chart-pie', modulo: 'tecnologia.dashboard' },
           { etiqueta: 'Mantenimiento de Equipos', ruta: '/equipos-mantenimiento', icono: 'fa-solid fa-screwdriver-wrench', modulo: 'tecnologia.mantenimiento' },
-          { etiqueta: 'Personas', ruta: '/personas', icono: 'fa-solid fa-user-group', modulo: 'tecnologia.personas' },
           { etiqueta: 'Ambientes y Ubicaciones', ruta: '/maestros-generales/locales', icono: 'fa-solid fa-door-open', modulo: 'tecnologia.ambientes' },
         ],
       }),
+    ],
+  },
+  {
+    categoria: 'RR.HH.',
+    entradas: [
+      enlace({ etiqueta: 'Trabajadores', ruta: '/rrhh/trabajadores', icono: 'fa-solid fa-id-card', modulo: 'rrhh.trabajadores' }),
+      enlace({ etiqueta: 'Catálogos de RR.HH.', ruta: '/rrhh/catalogos', icono: 'fa-solid fa-list-check', modulo: 'rrhh.catalogos' }),
     ],
   },
   {

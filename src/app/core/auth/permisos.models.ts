@@ -3,7 +3,7 @@
  * Idénticos a los del backend; `CLAVES_MODULO` sigue el orden de la semilla de la tabla `modulo`.
  */
 
-/** Claves estables de los módulos de GLD (38, en el orden del catálogo §5; `tecnologia.ambientes` es el último). */
+/** Claves estables de los módulos de GLD (40, en el orden del catálogo §5; `rrhh.catalogos` es el último). */
 export const CLAVES_MODULO = [
   'dashboard',
   'modulos',
@@ -43,7 +43,15 @@ export const CLAVES_MODULO = [
   'tecnologia.mantenimiento',
   'tecnologia.personas',
   'tecnologia.ambientes',
+  'rrhh.trabajadores',
+  'rrhh.catalogos',
 ] as const;
+
+/**
+ * Módulos que siguen en el catálogo (su posición es fija) pero ya no tienen pantalla: están inactivos en
+ * la tabla `modulo` y no salen en Roles y permisos. `tecnologia.personas` lo reemplazó `rrhh.trabajadores`.
+ */
+export const MODULOS_RETIRADOS: readonly (typeof CLAVES_MODULO)[number][] = ['tecnologia.personas'];
 
 export type ClaveModulo = (typeof CLAVES_MODULO)[number];
 

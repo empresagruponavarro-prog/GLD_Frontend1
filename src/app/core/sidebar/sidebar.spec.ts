@@ -51,8 +51,8 @@ describe('SidebarComponent', () => {
     const { enlaces, textos } = await setup('Administrador', misPermisos('Administrador', {}, true));
     const lista = enlaces();
     expect(lista.map((e) => e.href)).toEqual(TODAS);
-    expect(lista).toHaveLength(37);
-    expect(textos('.menu-category')).toEqual(['Navegación', 'Operaciones', 'Módulos del Sistema', 'Inv. Tecnología', 'Administración']);
+    expect(lista).toHaveLength(38);
+    expect(textos('.menu-category')).toEqual(['Navegación', 'Operaciones', 'Módulos del Sistema', 'Inv. Tecnología', 'RR.HH.', 'Administración']);
     expect(textos('.sidebar-item.has-sub > span')).toEqual(['Documentos', 'Tesorería', 'Control de Almacén', 'Maestros Generales', 'Activo Fijo']);
     expect(lista[0]).toEqual({
       href: '/dashboard-situacional',
@@ -72,10 +72,10 @@ describe('SidebarComponent', () => {
   it('un usuario con permisos parciales ve solo sus enlaces y grupos', async () => {
     const { enlaces, textos } = await setup(
       'Jefe de Área',
-      misPermisos('Jefe de Área', { incidencias: {}, 'tesoreria.pagos': {}, 'tesoreria.cuentas': {}, 'maestros.anexos': {}, 'tecnologia.dashboard': {}, 'tecnologia.mantenimiento': {}, 'tecnologia.personas': {}, 'tecnologia.ambientes': {} }),
+      misPermisos('Jefe de Área', { incidencias: {}, 'tesoreria.pagos': {}, 'tesoreria.cuentas': {}, 'maestros.anexos': {}, 'tecnologia.dashboard': {}, 'tecnologia.mantenimiento': {}, 'tecnologia.ambientes': {}, 'rrhh.trabajadores': {} }),
     );
-    expect(enlaces().map((e) => e.href)).toEqual(['/incidencias', '/tesoreria/pagos', '/tesoreria/cuentas', '/anexos', '/equipos-tecnologicos', '/equipos-mantenimiento', '/personas', '/maestros-generales/locales']);
-    expect(textos('.menu-category')).toEqual(['Operaciones', 'Módulos del Sistema', 'Inv. Tecnología']);
+    expect(enlaces().map((e) => e.href)).toEqual(['/incidencias', '/tesoreria/pagos', '/tesoreria/cuentas', '/anexos', '/equipos-tecnologicos', '/equipos-mantenimiento', '/maestros-generales/locales', '/rrhh/trabajadores']);
+    expect(textos('.menu-category')).toEqual(['Operaciones', 'Módulos del Sistema', 'Inv. Tecnología', 'RR.HH.']);
     expect(textos('.sidebar-item.has-sub > span')).toEqual(['Tesorería', 'Maestros Generales', 'Activo Fijo']);
   });
 

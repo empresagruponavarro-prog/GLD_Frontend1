@@ -2,7 +2,7 @@ import { Route } from '@angular/router';
 import { routes } from './app.routes';
 import { authGuard, invitadoGuard } from './core/auth/auth.guards';
 import { permisoGuard } from './core/auth/permiso.guard';
-import { CLAVES_MODULO, esClaveModulo } from './core/auth/permisos.models';
+import { CLAVES_MODULO, MODULOS_RETIRADOS, esClaveModulo } from './core/auth/permisos.models';
 import { rolesPendientesGuard } from './features/administration/roles/roles.guard';
 import { LoginComponent } from './features/auth/login/login';
 import { CentrosCostosDashboardComponent } from './features/centros-costos/centro-costos-dashboard/centros-costos-dashboard';
@@ -22,7 +22,14 @@ const SIN_MODULO: readonly string[] = ['', ...IMPRESIONES.map(([path]) => path)]
 describe('app.routes', () => {
   const login = routes.find((r) => r.path === 'login');
   const protegida = routes.find((r) => r.path === '' && r.children);
-  const hijos: Route[] = protegida?.children ?? [];
+  const todas: Route[] = protegida?.children ?? [];
+  /** Pantallas: las rutas hijas que no son redirecciones (las redirecciones no tienen módulo propio). */
+  const hijos: Route[] = todas.filter((r) => r.redirectTo === undefined);
+
+  it('/personas redirige a RR.HH. › Trabajadores (enlaces guardados)', () => {
+    expect(todas.find((r) => r.path === 'personas')?.redirectTo).toBe('rrhh/trabajadores');
+    expect(todas.filter((r) => r.redirectTo !== undefined).map((r) => r.path)).toEqual(['personas']);
+  });
 
   it('expone /login solo para invitados', () => {
     expect(login?.component).toBe(LoginComponent);
@@ -54,7 +61,7 @@ describe('app.routes', () => {
 
   it('cada módulo con ruta propia en el catálogo tiene al menos una pantalla', () => {
     const usados = new Set(hijos.map((r) => r.data?.['modulo']));
-    expect(CLAVES_MODULO.filter((c) => !usados.has(c))).toEqual([]);
+    expect(CLAVES_MODULO.filter((c) => !usados.has(c) && !MODULOS_RETIRADOS.includes(c))).toEqual([]);
   });
 
   it.each([
@@ -67,6 +74,8 @@ describe('app.routes', () => {
     ['anexos', 'maestros.anexos'],
     ['equipos-tecnologicos', 'tecnologia.dashboard'],
     ['equipos-mantenimiento', 'tecnologia.mantenimiento'],
+    ['rrhh/trabajadores', 'rrhh.trabajadores'],
+    ['rrhh/catalogos', 'rrhh.catalogos'],
     ['almacen/salidas', 'almacen.salidas'],
   ])('%s -> %s', (path, modulo) => {
     expect(hijos.find((r) => r.path === path)?.data?.['modulo']).toBe(modulo);

@@ -1,0 +1,271 @@
+<div class="content-header">
+  <div>
+    <h1 class="content-title">Trabajadores</h1>
+    <p class="content-subtitle">Registro de los trabajadores de la empresa. Lo mantiene RR.HH.</p>
+  </div>
+  <div class="trab-cabecera">
+    <app-exportar-botones [obtener]="exportar" [cargando]="cargando()" />
+    @if (permisos.crear()) {
+      <button class="btn btn-primary" type="button" (click)="nuevo()"><i class="fa-solid fa-plus"></i> Nuevo trabajador</button>
+    }
+    <button class="btn btn-secondary" type="button" (click)="cargar()" [disabled]="cargando()">
+      <i class="fa-solid fa-arrows-rotate" [class.fa-spin]="cargando()"></i>
+      {{ cargando() ? 'Cargando...' : 'Actualizar' }}
+    </button>
+  </div>
+</div>
+
+<div class="content-body">
+  @if (resumen(); as r) {
+    <section class="trab-resumen" aria-label="Resumen">
+      <div class="trab-tarjeta">
+        <strong>{{ r.total }}</strong><span>trabajadores ({{ r.activos }} activos, {{ r.deBaja }} de baja)</span>
+      </div>
+      <button type="button" class="trab-tarjeta trab-tarjeta--accion" [class.trab-tarjeta--activa]="situacionFiltro() === 'ficha-pendiente'"
+        [attr.aria-pressed]="situacionFiltro() === 'ficha-pendiente'" (click)="verSituacion('ficha-pendiente')">
+        <strong class="trab-ambar">{{ r.fichaPendiente }}</strong><span>con ficha pendiente (sin tipo ni modalidad)</span>
+      </button>
+      <button type="button" class="trab-tarjeta trab-tarjeta--accion" [class.trab-tarjeta--activa]="situacionFiltro() === 'documento-pendiente'"
+        [attr.aria-pressed]="situacionFiltro() === 'documento-pendiente'" (click)="verSituacion('documento-pendiente')">
+        <strong class="trab-rojo">{{ r.documentoPendiente }}</strong><span>con documento pendiente (vacío o «-»)</span>
+      </button>
+    </section>
+  }
+
+  <section class="toolbar-shell">
+    <div class="toolbar-search-row">
+      <div class="search-field">
+        <span class="search-icon"><i class="fa-solid fa-magnifying-glass"></i></span>
+        <input
+          type="text"
+          class="form-control search-input"
+          placeholder="Buscar por nombre o N° de documento..."
+          aria-label="Buscar trabajadores"
+          maxlength="255"
+          [value]="busqueda()"
+          (input)="buscar($event)"
+        />
+      </div>
+      <div class="toolbar-meta">
+        <span>Mostrando</span>
+        <strong>{{ total() }}</strong>
+        <span>trabajadores</span>
+      </div>
+    </div>
+    <div class="toolbar-filters-row">
+      <div class="toolbar-filters-left">
+        <select class="toolbar-select" aria-label="Estado" [value]="estadoFiltro()" (change)="filtrarEstado($event)">
+          <option value="">Todos los estados</option>
+          <option value="true">Activos</option>
+          <option value="false">De baja</option>
+        </select>
+        <select class="toolbar-select" aria-label="Situación" [value]="situacionFiltro()" (change)="filtrarSituacion($event)">
+          <option value="">Toda situación</option>
+          <option value="ficha-pendiente">Ficha pendiente</option>
+          <option value="documento-pendiente">Documento pendiente</option>
+        </select>
+        <select class="toolbar-select" aria-label="Tipo de trabajador" (change)="filtrarPor('tipo', $event)">
+          <option value="" [selected]="tipoFiltro() === null">Todos los tipos</option>
+          @for (o of tiposTrabajador(); track o.id) {
+            <option [value]="o.id" [selected]="tipoFiltro() === o.id">{{ o.nombre }}</option>
+          }
+        </select>
+        <select class="toolbar-select" aria-label="Modalidad de contrato" (change)="filtrarPor('modalidad', $event)">
+          <option value="" [selected]="modalidadFiltro() === null">Todas las modalidades</option>
+          @for (o of modalidades(); track o.id) {
+            <option [value]="o.id" [selected]="modalidadFiltro() === o.id">{{ o.nombre }}</option>
+          }
+        </select>
+        <select class="toolbar-select" aria-label="Área" (change)="filtrarPor('area', $event)">
+          <option value="" [selected]="areaFiltro() === null">Todas las áreas</option>
+          @for (a of areas(); track a.id) {
+            <option [value]="a.id" [selected]="areaFiltro() === a.id">{{ a.nombre }}</option>
+          }
+        </select>
+        <button class="toolbar-reset" type="button" (click)="restablecer()"><i class="fa-solid fa-rotate-left"></i> Restablecer</button>
+      </div>
+    </div>
+  </section>
+
+  <app-data-table
+    [columns]="columnas"
+    [items]="items()"
+    [loading]="cargando()"
+    [totalItems]="total()"
+    [currentPage]="pagina()"
+    [pageSize]="tamanoPagina()"
+    [pageSizeOptions]="[10, 20, 50, 100]"
+    [minWidth]="'1100px'"
+    emptyMessage="No hay trabajadores con esos filtros."
+    emptyIcon="fa-solid fa-id-card"
+    [rowTemplate]="fila"
+    (pageChange)="cambiarPagina($event)"
+    (pageSizeChange)="cambiarTamano($event)"
+  />
+
+  <ng-template #fila let-item>
+    <tr>
+      <td>
+        @if (documentoPendiente(item)) {
+          <span class="badge badge-danger" title="Sin documento o con «-»: edítalo para corregirlo">Documento pendiente</span>
+        } @else {
+          <span class="trab-doc">{{ nombreTipoDoc(item.AnexoTipoDocIdeId) }}</span>
+          {{ item.NumeroDocIde }}
+        }
+      </td>
+      <td><strong>{{ item.Anexo ?? '—' }}</strong></td>
+      <td>
+        @if (item.conFicha) {
+          {{ item.tipoTrabajador ?? '—' }}
+          <div class="trab-sub">{{ item.modalidadContrato ?? '—' }}</div>
+        } @else {
+          <span class="badge badge-pending" title="Trabajador antiguo: edítalo para completar sus datos">Ficha pendiente</span>
+        }
+      </td>
+      <td>{{ item.area ?? '—' }}</td>
+      <td>{{ item.Telefono ?? item.telefonoInstitucional ?? '—' }}</td>
+      <td>{{ item.correoInstitucional ?? item.Correo ?? '—' }}</td>
+      <td align="center">
+        <span class="badge" [class.badge-completed]="item.estado" [class.badge-danger]="!item.estado">{{ item.estado ? 'Activo' : 'De baja' }}</span>
+      </td>
+      <td align="center">
+        @if (permisos.editar()) {
+          <button class="table-action-btn table-action-btn--primary" type="button" title="Editar" (click)="editar(item)">
+            <i class="fa-solid fa-pen-to-square"></i>
+          </button>
+        }
+        @if (verEquipos()) {
+          <button class="table-action-btn" type="button" title="Ver equipos" (click)="abrirEquipos(item)">
+            <i class="fa-solid fa-laptop"></i>
+          </button>
+        }
+      </td>
+    </tr>
+  </ng-template>
+</div>
+
+<app-modal
+  [isOpen]="modalAbierto()"
+  [title]="editando() ? 'Editar trabajador' : 'Nuevo trabajador'"
+  icon="fa-solid fa-id-card"
+  maxWidth="780px"
+  [loading]="guardando()"
+  submitText="Guardar"
+  (closed)="cerrarModal()"
+  (saved)="guardar()"
+>
+  <form class="trab-form" [formGroup]="form" (ngSubmit)="guardar()">
+    <p class="trab-seccion">1 · Identificación</p>
+    <div class="trab-grid">
+      <div class="form-group">
+        <label for="trab-tipo">Tipo de trabajador <span class="required">*</span></label>
+        <select id="trab-tipo" class="form-control" formControlName="idTipoTrabajador">
+          <option [ngValue]="null">— Seleccione —</option>
+          @for (o of opcionesTipo(); track o.id) {
+            <option [ngValue]="o.id">{{ o.nombre }}{{ o.activo ? '' : ' (desactivado)' }}</option>
+          }
+        </select>
+      </div>
+      <div class="form-group">
+        <label for="trab-modalidad">Modalidad de contrato <span class="required">*</span></label>
+        <select id="trab-modalidad" class="form-control" formControlName="idModalidadContrato">
+          <option [ngValue]="null">— Seleccione —</option>
+          @for (o of opcionesModalidad(); track o.id) {
+            <option [ngValue]="o.id">{{ o.nombre }}{{ o.activo ? '' : ' (desactivada)' }}</option>
+          }
+        </select>
+      </div>
+      <div class="form-group">
+        <label for="trab-tdoc">Tipo de documento <span class="required">*</span></label>
+        <select id="trab-tdoc" class="form-control" formControlName="AnexoTipoDocIdeId">
+          <option [ngValue]="null">— Seleccione —</option>
+          @for (t of tiposDoc(); track t.id) {
+            <option [ngValue]="t.id">{{ t.nombre }}</option>
+          }
+        </select>
+      </div>
+      <div class="form-group">
+        <label for="trab-doc">N° de documento <span class="required">*</span></label>
+        <input id="trab-doc" class="form-control" formControlName="NumeroDocIde" maxlength="20" autocomplete="off" />
+      </div>
+      <div class="form-group trab-ancho">
+        <label for="trab-nombre">Nombre completo <span class="required">*</span></label>
+        <input id="trab-nombre" class="form-control" formControlName="Anexo" maxlength="255" autocomplete="off" />
+      </div>
+      <div class="form-group">
+        <label for="trab-area">Área de trabajo</label>
+        <select id="trab-area" class="form-control" formControlName="idArea">
+          <option [ngValue]="null">— Sin área —</option>
+          @for (a of areas(); track a.id) {
+            <option [ngValue]="a.id">{{ a.nombre }}</option>
+          }
+        </select>
+        @if (jefeInmediato()) {
+          <p class="trab-ayuda">{{ jefeInmediato() }}</p>
+        }
+      </div>
+      <div class="form-group">
+        <label for="trab-esp">Especialidad</label>
+        <select id="trab-esp" class="form-control" formControlName="AnexoEspecialidadId">
+          <option [ngValue]="null">— Seleccione —</option>
+          @for (e of especialidades(); track e.id) {
+            <option [ngValue]="e.id">{{ e.nombre }}</option>
+          }
+        </select>
+      </div>
+      <div class="form-group">
+        <label for="trab-estado">Estado</label>
+        <select id="trab-estado" class="form-control" formControlName="estado">
+          <option [ngValue]="true">Activo</option>
+          <option [ngValue]="false">De baja</option>
+        </select>
+      </div>
+    </div>
+
+    <p class="trab-seccion">2 · Contacto</p>
+    <div class="trab-contacto">
+      <fieldset class="trab-caja">
+        <legend>Personal</legend>
+        <div class="form-group">
+          <label for="trab-dir">Dirección</label>
+          <input id="trab-dir" class="form-control" formControlName="Direccion" maxlength="255" autocomplete="off" />
+        </div>
+        <div class="form-group">
+          <label for="trab-tel">Teléfono</label>
+          <input id="trab-tel" class="form-control" formControlName="Telefono" maxlength="255" autocomplete="off" />
+        </div>
+        <div class="form-group">
+          <label for="trab-correo">Correo</label>
+          <input id="trab-correo" type="email" class="form-control" formControlName="Correo" maxlength="255" autocomplete="off" />
+        </div>
+      </fieldset>
+      <fieldset class="trab-caja">
+        <legend>Institucional</legend>
+        <div class="form-group">
+          <label for="trab-diri">Dirección (sede / oficina)</label>
+          <input id="trab-diri" class="form-control" formControlName="direccionInstitucional" maxlength="255" autocomplete="off" />
+        </div>
+        <div class="form-group">
+          <label for="trab-teli">Teléfono / anexo</label>
+          <input id="trab-teli" class="form-control" formControlName="telefonoInstitucional" maxlength="60" autocomplete="off" />
+        </div>
+        <div class="form-group">
+          <label for="trab-cori">Correo</label>
+          <input id="trab-cori" type="email" class="form-control" formControlName="correoInstitucional" maxlength="255" autocomplete="off" />
+        </div>
+      </fieldset>
+    </div>
+  </form>
+  @if (modalError()) {
+    <p class="badge badge-danger trab-error" role="alert">{{ modalError() }}</p>
+  }
+</app-modal>
+
+@if (trabajadorEquipos(); as t) {
+  <app-equipos-trabajador-modal
+    [trabajador]="t"
+    [puedeAsignar]="permisosEquipos.crear()"
+    [puedeGestionar]="permisosEquipos.editar()"
+    (cerrar)="cerrarEquipos()"
+  />
+}

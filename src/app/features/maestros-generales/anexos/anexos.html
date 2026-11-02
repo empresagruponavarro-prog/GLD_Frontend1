@@ -1,8 +1,8 @@
 <div class="content-header">
   <div>
-    <h1 class="content-title">{{ modoPersonas ? 'Personas' : 'Anexos' }}</h1>
+    <h1 class="content-title">Anexos</h1>
     <p class="content-subtitle">
-      {{ modoPersonas ? 'Trabajadores que reciben equipos tecnológicos. Haz clic en un nombre para ver sus equipos.' : 'Maestro de anexos (proveedores, clientes y trabajadores).' }}
+      Maestro de proveedores y clientes. Los trabajadores se ven aquí, pero se registran en RR.HH. › Trabajadores.
     </p>
   </div>
   <div style="display: flex; gap: 0.5rem; align-items: center">
@@ -101,34 +101,8 @@
       <td>{{ nombreEspecialidad(item.AnexoEspecialidadId) }}</td>
       <td>{{ nombreTipoDoc(item.AnexoTipoDocIdeId) }}</td>
       <td>{{ item.NumeroDocIde ?? '—' }}</td>
-      <td>
-        @if (item.tipoAnexo === 'Trabajador') {
-          <button
-            class="anexo-link"
-            type="button"
-            title="Ver equipos tecnológicos"
-            (click)="openEquipos(item)"
-          >
-            <strong>{{ item.Anexo ?? '—' }}</strong>
-          </button>
-        } @else {
-          <strong>{{ item.Anexo ?? '—' }}</strong>
-        }
-      </td>
-      <td>
-        @if (item.tipoAnexo === 'Trabajador' && item.NombreComercial) {
-          <button
-            class="anexo-link"
-            type="button"
-            title="Ver equipos tecnológicos"
-            (click)="openEquipos(item)"
-          >
-            {{ item.NombreComercial }}
-          </button>
-        } @else {
-          {{ item.NombreComercial ?? '—' }}
-        }
-      </td>
+      <td><strong>{{ item.Anexo ?? '—' }}</strong></td>
+      <td>{{ item.NombreComercial ?? '—' }}</td>
       <td>{{ item.Contacto ?? '—' }}</td>
       <td align="center">
         <span
@@ -148,25 +122,33 @@
         >
           <i class="fa-solid fa-eye"></i>
         </button>
-        @if (permisos.editar()) {
-          <button
-            class="table-action-btn table-action-btn--primary"
-            type="button"
-            (click)="openEdit(item)"
-            title="Editar"
-          >
-            <i class="fa-solid fa-pen-to-square"></i>
-          </button>
-        }
-        @if (permisos.eliminar()) {
-          <button
-            class="table-action-btn table-action-btn--danger"
-            type="button"
-            (click)="deleteAnexo(item)"
-            title="Eliminar"
-          >
-            <i class="fa-solid fa-trash"></i>
-          </button>
+        @if (item.tipoAnexo === 'Trabajador') {
+          @if (verTrabajadores()) {
+            <a class="table-action-btn" routerLink="/rrhh/trabajadores" title="Se gestiona en RR.HH. › Trabajadores">
+              <i class="fa-solid fa-id-card"></i>
+            </a>
+          }
+        } @else {
+          @if (permisos.editar()) {
+            <button
+              class="table-action-btn table-action-btn--primary"
+              type="button"
+              (click)="openEdit(item)"
+              title="Editar"
+            >
+              <i class="fa-solid fa-pen-to-square"></i>
+            </button>
+          }
+          @if (permisos.eliminar()) {
+            <button
+              class="table-action-btn table-action-btn--danger"
+              type="button"
+              (click)="deleteAnexo(item)"
+              title="Eliminar"
+            >
+              <i class="fa-solid fa-trash"></i>
+            </button>
+          }
         }
       </td>
     </tr>
@@ -193,7 +175,7 @@
           (ngModelChange)="onTipoAnexoChange($event)"
         >
           <option [ngValue]="null">— Seleccione —</option>
-          @for (t of tiposAnexo; track t) {
+          @for (t of tiposAnexoForm; track t) {
           <option [ngValue]="t">{{ t }}</option>
           }
         </select>
@@ -315,16 +297,6 @@
     </div>
   </div>
 </app-modal>
-
-<!-- Modal equipos tecnológicos del trabajador -->
-@if (trabajadorEquipos(); as t) {
-  <app-equipos-trabajador-modal
-    [trabajador]="t"
-    [puedeAsignar]="permisos.crear()"
-    [puedeGestionar]="permisos.editar()"
-    (cerrar)="closeEquipos()"
-  />
-}
 
 <!-- Modal detalle (solo lectura) -->
 <app-modal

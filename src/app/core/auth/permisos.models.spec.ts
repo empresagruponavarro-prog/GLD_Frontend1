@@ -1,13 +1,13 @@
 import { ACCIONES, CLAVES_MODULO, esClaveModulo } from './permisos.models';
 
 describe('CLAVES_MODULO', () => {
-  it('tiene las 38 claves del catálogo §5, sin repetir y en el orden de la semilla', () => {
-    expect(CLAVES_MODULO.length).toBe(38);
-    expect(new Set(CLAVES_MODULO).size).toBe(38);
+  it('tiene las 40 claves del catálogo §5, sin repetir y en el orden de la semilla', () => {
+    expect(CLAVES_MODULO.length).toBe(40);
+    expect(new Set(CLAVES_MODULO).size).toBe(40);
     expect(CLAVES_MODULO[0]).toBe('dashboard');
     expect(CLAVES_MODULO.indexOf('tesoreria.pagos')).toBe(9);
     expect(CLAVES_MODULO.indexOf('almacen.almacenes')).toBe(21);
-    expect(CLAVES_MODULO.slice(-8)).toEqual([
+    expect(CLAVES_MODULO.slice(-10)).toEqual([
       'admin.empresas',
       'admin.usuarios',
       'admin.roles',
@@ -16,6 +16,8 @@ describe('CLAVES_MODULO', () => {
       'tecnologia.mantenimiento',
       'tecnologia.personas',
       'tecnologia.ambientes',
+      'rrhh.trabajadores',
+      'rrhh.catalogos',
     ]);
   });
 
