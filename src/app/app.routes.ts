@@ -12,6 +12,7 @@ import { MaestrosGeneralesComponent } from './features/maestros-generales/maestr
 import { AnexosComponent } from './features/maestros-generales/anexos/anexos';
 import { ProductosComponent } from './features/maestros-generales/productos/productos';
 import { EquiposDashboardComponent } from './features/maestros-generales/equipos-dashboard/equipos-dashboard';
+import { EquiposMantenimientoComponent } from './features/maestros-generales/equipos-mantenimiento/equipos-mantenimiento';
 import { EspecialidadesComponent } from './features/maestros-generales/especialidades/especialidades';
 import { TipoDocIdentidadComponent } from './features/maestros-generales/tipo-doc-identidad/tipo-doc-identidad';
 import { CentrosCostosDashboardComponent } from './features/centros-costos/centro-costos-dashboard/centros-costos-dashboard';
@@ -86,6 +87,8 @@ export const routes: Routes = [
       rutaModulo('anexos', AnexosComponent, 'maestros.anexos'),
       rutaModulo('productos', ProductosComponent, 'maestros.productos'),
       rutaModulo('equipos-tecnologicos', EquiposDashboardComponent, 'maestros.anexos'),
+      // Mantenimiento de equipos (registrar, mover, entregar, baja): el tablero anterior es solo de lectura.
+      rutaModulo('equipos-mantenimiento', EquiposMantenimientoComponent, 'maestros.anexos'),
       // Maestro de personas del módulo Activo Fijo: los anexos de tipo Trabajador (reutiliza la pantalla de Anexos).
       rutaModulo('personas', AnexosComponent, 'maestros.anexos'),
       rutaModulo('maestros-generales/especialidades', EspecialidadesComponent, 'maestros.generales'),

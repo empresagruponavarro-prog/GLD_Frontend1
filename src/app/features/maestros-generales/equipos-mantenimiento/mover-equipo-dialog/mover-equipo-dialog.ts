@@ -6,7 +6,7 @@ import { EquiposTrabajadorService } from '../../anexos/equipos-trabajador.servic
 import { AreaOpcion, EquipoInventario, LocalOpcion, OpcionDestino } from '../../anexos/interfaces/equipo-asignado.interface';
 import { UbicacionDestinoComponent } from '../../anexos/ubicacion-destino/ubicacion-destino';
 import { cuerpoDestino, DESTINO_VACIO, DestinoSeleccionado, errorDestino } from '../../anexos/ubicacion-destino/ubicacion-destino.util';
-import { destinoDe, ubicacionDe } from '../equipos-dashboard.util';
+import { destinoDe, ubicacionDe } from '../../equipos-dashboard/equipos-dashboard.util';
 
 /** Cambia a un equipo de empresa / centro de costo, ambiente o área (con o sin responsable); queda en su historial. */
 @Component({

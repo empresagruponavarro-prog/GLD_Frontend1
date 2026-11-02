@@ -121,7 +121,8 @@ export const MENU_LATERAL: readonly SeccionMenu[] = [
         etiqueta: 'Activo Fijo',
         icono: 'fa-solid fa-laptop-code',
         enlaces: [
-          { etiqueta: 'Equipos Tecnológicos', ruta: '/equipos-tecnologicos', icono: 'fa-solid fa-laptop', modulo: 'maestros.anexos' },
+          { etiqueta: 'Dashboard de Tecnología', ruta: '/equipos-tecnologicos', icono: 'fa-solid fa-chart-pie', modulo: 'maestros.anexos' },
+          { etiqueta: 'Mantenimiento de Equipos', ruta: '/equipos-mantenimiento', icono: 'fa-solid fa-screwdriver-wrench', modulo: 'maestros.anexos' },
           { etiqueta: 'Personas', ruta: '/personas', icono: 'fa-solid fa-user-group', modulo: 'maestros.anexos' },
           { etiqueta: 'Ambientes y Ubicaciones', ruta: '/maestros-generales/locales', icono: 'fa-solid fa-door-open', modulo: 'maestros.generales' },
         ],

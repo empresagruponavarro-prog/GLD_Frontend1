@@ -1,0 +1,324 @@
+:host {
+  --eqm-ease: cubic-bezier(0.16, 1, 0.3, 1);
+  --eqm-verde-oscuro: var(--gld-green-dark, #3b7a5e);
+  --eqm-verde-suave: var(--gld-green-light, #e8f4ef);
+  /* Texto sobre fondos verdes tintados: más oscuro que el verde de marca para cumplir contraste AA. */
+  --eqm-verde-texto: #2c604a;
+  --eqm-rojo: #b91c1c;
+  --eqm-superficie: #ffffff;
+  --eqm-linea: var(--border-color, #e2e8f0);
+  /* Uso compartido: azul pizarra, distinto del verde «con persona». */
+  --eqm-compartido: #3d6fa8;
+  --eqm-compartido-suave: #e7eef7;
+}
+
+/* ── Mensajes ─────────────────────────────────────────────────────────────── */
+
+.eqm__error {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0 0 1rem;
+  padding: 0.65rem 0.9rem;
+  border: 1px solid #fecaca;
+  border-radius: var(--radius-md, 10px);
+  background: #fef2f2;
+  color: var(--eqm-rojo);
+  font-size: 0.9rem;
+}
+
+.eqm__sin-datos {
+  margin: 0;
+  color: var(--text-muted, #64748b);
+  font-size: 0.875rem;
+}
+
+.eqm__sin-datos--tabla {
+  padding: 2rem 1rem;
+  text-align: center;
+}
+
+/* ── Cabecera y filtros ───────────────────────────────────────────────────── */
+
+.eqm__acciones-cabecera {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.eqm__filtros {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.6rem;
+  margin: 0 0 1rem;
+}
+
+.eqm__filtros .form-control {
+  width: auto;
+  min-width: 11rem;
+}
+
+.eqm__buscar {
+  flex: 1 1 16rem;
+}
+
+/* ── Detalle ──────────────────────────────────────────────────────────────── */
+
+.eqm__detalle {
+  padding: 1.05rem 1.15rem;
+  border: 1px solid var(--eqm-linea);
+  border-radius: 14px;
+  background: var(--eqm-superficie);
+  box-shadow: var(--shadow-sm);
+}
+
+.eqm__card-title {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin: 0 0 0.85rem;
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--text-muted, #64748b);
+}
+
+.eqm__icono {
+  display: grid;
+  place-items: center;
+  width: 1.9rem;
+  height: 1.9rem;
+  border-radius: 9px;
+  background: var(--eqm-verde-suave);
+  color: var(--eqm-verde-texto);
+  font-size: 0.8rem;
+}
+
+.eqm__contador {
+  margin-left: auto;
+  padding: 0.1rem 0.6rem;
+  border-radius: 999px;
+  background: var(--eqm-verde-suave);
+  color: var(--eqm-verde-texto);
+  font-size: 0.78rem;
+  letter-spacing: 0;
+  font-variant-numeric: tabular-nums;
+}
+
+.eqm__tabla-wrap {
+  max-height: 70vh;
+  overflow: auto;
+  border: 1px solid var(--eqm-linea);
+  border-radius: 10px;
+  scrollbar-width: thin;
+  scrollbar-color: #c3d3cb transparent;
+}
+
+.eqm__tabla {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+}
+
+.eqm__tabla th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  padding: 0.7rem 0.9rem;
+  text-align: left;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-muted, #64748b);
+  background: #f6f9f7;
+  border-bottom: 1px solid var(--eqm-linea);
+}
+
+.eqm__tabla td {
+  padding: 0.7rem 0.9rem;
+  vertical-align: middle;
+  border-bottom: 1px solid #eef2f0;
+}
+
+.eqm__tabla tbody tr {
+  transition: background-color 150ms ease;
+}
+
+.eqm__tabla tbody tr:hover {
+  background: #f6faf8;
+}
+
+.eqm__tabla tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.eqm__tipo {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+}
+
+.eqm__tipo-icono {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 2.1rem;
+  height: 2.1rem;
+  border-radius: 10px;
+  background: var(--eqm-verde-suave);
+  color: var(--eqm-verde-texto);
+  font-size: 0.9rem;
+  transition: transform 200ms var(--eqm-ease);
+}
+
+.eqm__tabla tbody tr:hover .eqm__tipo-icono {
+  transform: scale(1.08);
+}
+
+.eqm__codigo,
+.eqm__mono {
+  font-family: ui-monospace, monospace;
+  font-variant-numeric: tabular-nums;
+}
+
+.eqm__codigo {
+  font-size: 0.72rem;
+  color: #6b7a74;
+}
+
+.eqm__sin-asignar {
+  color: #6b7a74;
+  font-style: italic;
+}
+
+.eqm__acciones {
+  white-space: nowrap;
+}
+
+.eqm__pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin-left: 0.35rem;
+  padding: 0.3rem 0.75rem;
+  border: 1px solid #cfe3d9;
+  border-radius: 999px;
+  background: var(--eqm-verde-suave);
+  color: var(--eqm-verde-texto);
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 150ms ease, color 150ms ease, transform 150ms var(--eqm-ease);
+}
+
+.eqm__pill:hover {
+  background: var(--eqm-verde-oscuro);
+  border-color: var(--eqm-verde-oscuro);
+  color: #fff;
+}
+
+.eqm__pill:active {
+  transform: scale(0.96);
+}
+
+.eqm__pill:focus-visible,
+.eqm__estado:focus-visible {
+  outline: 2px solid var(--eqm-verde-oscuro);
+  outline-offset: 2px;
+}
+
+/* Dar de baja: rojo solo al pasar el cursor, para que no compita con las demás acciones. */
+.eqm__baja:hover:not(:disabled) {
+  color: var(--eqm-rojo);
+  border-color: #fecaca;
+  background: #fef2f2;
+}
+
+.eqm__baja:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.eqm__entrega-detalle {
+  margin: 0 0 0.9rem;
+  font-size: 0.9rem;
+}
+
+/* Estado editable en la tabla: parece la insignia, pero se puede cambiar. */
+.eqm__estado {
+  padding: 0.2rem 1.4rem 0.2rem 0.6rem;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  font: inherit;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.eqm__compartido {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.1rem 0.55rem;
+  border-radius: 999px;
+  background: var(--eqm-compartido-suave);
+  color: var(--eqm-compartido);
+  font-size: 0.8rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+/* ── Estado vacío ─────────────────────────────────────────────────────────── */
+
+.eqm__vacio {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 3rem 1.5rem;
+  border: 1px dashed #c3d3cb;
+  border-radius: 14px;
+  background: var(--eqm-superficie);
+  text-align: center;
+}
+
+.eqm__vacio-icono {
+  display: grid;
+  place-items: center;
+  width: 3.4rem;
+  height: 3.4rem;
+  border-radius: 16px;
+  background: var(--eqm-verde-suave);
+  color: var(--eqm-verde-texto);
+  font-size: 1.4rem;
+}
+
+.eqm__vacio-titulo {
+  margin: 0.25rem 0 0;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--gld-charcoal-dark, #1f2321);
+}
+
+.eqm__vacio-texto {
+  max-width: 42ch;
+  margin: 0 0 0.6rem;
+  font-size: 0.9rem;
+  color: var(--text-muted, #64748b);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .eqm__tipo-icono,
+  .eqm__pill {
+    transition: none;
+  }
+
+  .eqm__tabla tbody tr:hover .eqm__tipo-icono,
+  .eqm__pill:active {
+    transform: none;
+  }
+}

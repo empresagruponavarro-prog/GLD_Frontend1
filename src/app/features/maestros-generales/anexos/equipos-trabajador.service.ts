@@ -38,6 +38,11 @@ export class EquiposTrabajadorService {
     return this.http.patch<EquipoInventario>(`${this.baseUrl}/equipos/${equipoId}/estado`, { estado });
   }
 
+  /** Baja lógica: el equipo (sin responsable) sale del inventario pero conserva su registro e historial. */
+  darDeBaja(equipoId: number): Observable<void> {
+    return this.http.delete<void>(`${this.baseUrl}/equipos/${equipoId}`);
+  }
+
   /** Entrega a un trabajador un equipo disponible. */
   asignarActivo(equipoId: number, body: { anexoId: number; fechaAsignacion: string }): Observable<EquipoInventario> {
     return this.http.patch<EquipoInventario>(`${this.baseUrl}/equipos/${equipoId}/asignar`, body);

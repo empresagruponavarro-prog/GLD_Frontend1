@@ -74,7 +74,7 @@ describe('SidebarComponent', () => {
       'Jefe de Área',
       misPermisos('Jefe de Área', { incidencias: {}, 'tesoreria.pagos': {}, 'tesoreria.cuentas': {}, 'maestros.anexos': {} }),
     );
-    expect(enlaces().map((e) => e.href)).toEqual(['/incidencias', '/tesoreria/pagos', '/tesoreria/cuentas', '/anexos', '/equipos-tecnologicos', '/personas']);
+    expect(enlaces().map((e) => e.href)).toEqual(['/incidencias', '/tesoreria/pagos', '/tesoreria/cuentas', '/anexos', '/equipos-tecnologicos', '/equipos-mantenimiento', '/personas']);
     expect(textos('.menu-category')).toEqual(['Operaciones', 'Módulos del Sistema', 'Inv. Tecnología']);
     expect(textos('.sidebar-item.has-sub > span')).toEqual(['Tesorería', 'Maestros Generales', 'Activo Fijo']);
   });

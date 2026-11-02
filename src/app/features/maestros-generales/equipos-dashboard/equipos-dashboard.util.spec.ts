@@ -75,6 +75,15 @@ describe('equipos-dashboard.util', () => {
     expect(filtrarEquipos(EQUIPOS, { ...SIN_FILTROS, busqueda: 'hp' }).map((e) => e.id)).toEqual([2]);
     expect(filtrarEquipos(EQUIPOS, { ...SIN_FILTROS, local: 'Sin ubicación' }).map((e) => e.id)).toEqual([3]);
   });
+
+  it('filtra por marca, marca y modelo, sistema operativo, RAM y responsable', () => {
+    expect(filtrarEquipos(EQUIPOS, { ...SIN_FILTROS, marca: 'HP' }).map((e) => e.id)).toEqual([2]);
+    expect(filtrarEquipos(EQUIPOS, { ...SIN_FILTROS, marcaModelo: 'Lenovo ThinkCentre' }).map((e) => e.id)).toEqual([1, 3, 4]);
+    expect(filtrarEquipos(EQUIPOS, { ...SIN_FILTROS, sistemaOperativo: 'Sin dato' }).map((e) => e.id)).toEqual([1, 2, 3, 4]);
+    expect(filtrarEquipos(EQUIPOS, { ...SIN_FILTROS, ram: '16 GB' }).map((e) => e.id)).toEqual([1, 2, 3, 4]);
+    expect(filtrarEquipos(EQUIPOS, { ...SIN_FILTROS, responsable: 'Sin asignar' }).map((e) => e.id)).toEqual([3]);
+    expect(filtrarEquipos(EQUIPOS, { ...SIN_FILTROS, responsable: 'Ana' }).map((e) => e.id)).toEqual([1, 2, 4]);
+  });
 });
 
 describe('usoDe', () => {

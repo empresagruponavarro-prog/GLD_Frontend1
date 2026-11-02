@@ -36,24 +36,62 @@ export interface FiltrosEquipos {
   destino: string;
   area: string;
   estado: string;
+  marca: string;
+  marcaModelo: string;
+  sistemaOperativo: string;
+  ram: string;
+  responsable: string;
   asignacion: Asignacion;
   busqueda: string;
 }
 
-export const SIN_FILTROS: FiltrosEquipos = { tipo: '', local: '', destino: '', area: '', estado: '', asignacion: '', busqueda: '' };
+export const SIN_FILTROS: FiltrosEquipos = {
+  tipo: '',
+  local: '',
+  destino: '',
+  area: '',
+  estado: '',
+  marca: '',
+  marcaModelo: '',
+  sistemaOperativo: '',
+  ram: '',
+  responsable: '',
+  asignacion: '',
+  busqueda: '',
+};
 
 export const SIN_AREA = 'Sin área';
 export const SIN_UBICACION = 'Sin ubicación';
 export const SIN_DESTINO = 'Sin destino';
+export const SIN_MARCA = 'Sin marca';
+export const SIN_MODELO = 'Sin modelo';
+export const SIN_DATO = 'Sin dato';
+export const SIN_RESPONSABLE = 'Sin asignar';
 
 /** Obra / centro de costo o sede a la que pertenece el local del equipo. */
 export function destinoDe(e: EquipoInventario): string {
   return etiquetaDestino(e.destino, e.destinoTipo) || SIN_DESTINO;
 }
 
+export function marcaDe(e: EquipoInventario): string {
+  return e.marca || SIN_MARCA;
+}
+
+export function marcaModeloDe(e: EquipoInventario): string {
+  return [e.marca, e.modelo].filter(Boolean).join(' ') || SIN_MODELO;
+}
+
+export function sistemaOperativoDe(e: EquipoInventario): string {
+  return e.caracteristicas['Sistema operativo'] ?? SIN_DATO;
+}
+
+export function responsableDe(e: EquipoInventario): string {
+  return e.responsable ?? SIN_RESPONSABLE;
+}
+
 export function ramDe(e: EquipoInventario): string {
   const ram = e.caracteristicas['RAM'] ?? '';
-  return /\d+\s*GB/i.exec(ram)?.[0].replace(/\s+/g, ' ').toUpperCase() ?? (ram || 'Sin dato');
+  return /\d+\s*GB/i.exec(ram)?.[0].replace(/\s+/g, ' ').toUpperCase() ?? (ram || SIN_DATO);
 }
 
 export function ubicacionDe(e: EquipoInventario): string {
@@ -81,6 +119,11 @@ export function filtrarEquipos(equipos: readonly EquipoInventario[], f: FiltrosE
     if (f.destino && destinoDe(e) !== f.destino) return false;
     if (f.area && (e.area ?? SIN_AREA) !== f.area) return false;
     if (f.estado && e.estado !== f.estado) return false;
+    if (f.marca && marcaDe(e) !== f.marca) return false;
+    if (f.marcaModelo && marcaModeloDe(e) !== f.marcaModelo) return false;
+    if (f.sistemaOperativo && sistemaOperativoDe(e) !== f.sistemaOperativo) return false;
+    if (f.ram && ramDe(e) !== f.ram) return false;
+    if (f.responsable && responsableDe(e) !== f.responsable) return false;
     if (f.asignacion && usoDe(e) !== USO_DE_FILTRO[f.asignacion]) return false;
     if (!texto) return true;
     return [e.codigo, e.codigoActivo, e.tipo, e.marca, e.modelo, e.serie ?? '', e.responsable ?? '', e.local, e.nivel, e.ambiente, e.area ?? '']

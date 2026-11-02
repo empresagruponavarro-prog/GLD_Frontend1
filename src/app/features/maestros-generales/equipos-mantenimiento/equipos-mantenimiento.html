@@ -1,0 +1,242 @@
+<div class="content-header">
+  <div>
+    <h1 class="content-title">Mantenimiento de Equipos</h1>
+    <p class="content-subtitle">Registra, mueve, entrega y da de baja los equipos tecnológicos.</p>
+  </div>
+  <div class="eqm__acciones-cabecera">
+    <a id="eqm-tablero" class="btn btn-secondary" routerLink="/equipos-tecnologicos">
+      <i class="fa-solid fa-chart-pie" aria-hidden="true"></i> Ver tablero
+    </a>
+    @if (permisos.crear()) {
+      <button id="eqm-registrar" class="btn btn-primary" type="button" (click)="mostrarRegistro.set(true)">
+        <i class="fa-solid fa-plus" aria-hidden="true"></i> Registrar activo
+      </button>
+    }
+    <button id="eqm-actualizar" class="btn btn-secondary" type="button" [disabled]="cargando()" (click)="cargar()">
+      <i class="fa-solid fa-arrows-rotate" [class.fa-spin]="cargando()" aria-hidden="true"></i>
+      {{ cargando() ? 'Cargando...' : 'Actualizar' }}
+    </button>
+  </div>
+</div>
+
+<div class="content-body">
+  @if (error() ?? errorAccion(); as mensaje) {
+    <p class="eqm__error" role="alert"><i class="fa-solid fa-circle-exclamation" aria-hidden="true"></i> {{ mensaje }}</p>
+  }
+
+  @if (!cargando() && equipos().length === 0 && !error()) {
+    <section class="eqm__vacio" aria-label="Sin equipos">
+      <span class="eqm__vacio-icono" aria-hidden="true"><i class="fa-solid fa-laptop"></i></span>
+      <h2 class="eqm__vacio-titulo">Aún no hay equipos registrados</h2>
+      <p class="eqm__vacio-texto">Registra el primer activo para empezar el inventario.</p>
+      @if (permisos.crear()) {
+        <button class="btn btn-primary" type="button" (click)="mostrarRegistro.set(true)">
+          <i class="fa-solid fa-plus" aria-hidden="true"></i> Registrar activo
+        </button>
+      }
+    </section>
+  } @else {
+    <section class="eqm__filtros" aria-label="Filtros">
+      <input
+        class="form-control eqm__buscar"
+        type="search"
+        placeholder="Buscar por código, marca, serie, responsable..."
+        aria-label="Buscar equipos"
+        [ngModel]="filtros().busqueda"
+        (ngModelChange)="cambiar('busqueda', $event)"
+      />
+      <select class="form-control" aria-label="Tipo" [ngModel]="filtros().tipo" (ngModelChange)="cambiar('tipo', $event)">
+        <option value="">Todos los tipos</option>
+        @for (t of tipos(); track t) {
+          <option [value]="t">{{ t }}</option>
+        }
+      </select>
+      <select class="form-control" aria-label="Estado" [ngModel]="filtros().estado" (ngModelChange)="cambiar('estado', $event)">
+        <option value="">Todos los estados</option>
+        @for (s of estados; track s) {
+          <option [value]="s">{{ s }}</option>
+        }
+      </select>
+      <select class="form-control" aria-label="Asignación" [ngModel]="filtros().asignacion" (ngModelChange)="cambiarAsignacion($event)">
+        <option value="">Toda asignación</option>
+        <option value="asignados">Con responsable</option>
+        <option value="compartidos">Uso compartido</option>
+        <option value="disponibles">Disponibles</option>
+      </select>
+      @if (hayFiltros()) {
+        <button class="toolbar-reset" type="button" (click)="restablecer()">
+          <i class="fa-solid fa-rotate-left" aria-hidden="true"></i> Quitar filtros
+        </button>
+      }
+    </section>
+
+    <section class="eqm__detalle" aria-label="Detalle de equipos">
+      <h2 class="eqm__card-title">
+        <span class="eqm__icono" aria-hidden="true"><i class="fa-solid fa-table-list"></i></span>
+        Equipos
+        <span class="eqm__contador">{{ filtrados().length }}</span>
+      </h2>
+      <div class="eqm__tabla-wrap">
+        <table class="eqm__tabla">
+          <thead>
+            <tr>
+              <th>Equipo</th>
+              <th>Marca / Modelo</th>
+              <th>N° Serie</th>
+              <th>Ubicación</th>
+              <th>Área</th>
+              <th>Responsable</th>
+              <th>Estado</th>
+              <th>Asignado</th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (e of filtrados(); track e.id) {
+              <tr>
+                <td>
+                  <div class="eqm__tipo">
+                    <span class="eqm__tipo-icono" aria-hidden="true"><i class="fa-solid" [class]="icono(e.tipo)"></i></span>
+                    <div>
+                      <strong>{{ e.tipo }}</strong>
+                      <div class="eqm__codigo">{{ e.codigo }} · {{ e.codigoActivo }}</div>
+                    </div>
+                  </div>
+                </td>
+                <td>{{ e.marca }} {{ e.modelo }}</td>
+                <td class="eqm__mono">{{ e.serie ?? '—' }}</td>
+                <td>
+                  {{ ubicacion(e) }}
+                  @if (e.destino) {
+                    <div class="eqm__codigo">{{ destinoEtiqueta(e) }}</div>
+                  }
+                </td>
+                <td>{{ e.area ?? '—' }}</td>
+                <td>
+                  @if (e.responsable) {
+                    {{ e.responsable }}
+                  } @else if (uso(e) === 'compartido') {
+                    <span class="eqm__compartido"><i class="fa-solid fa-people-roof" aria-hidden="true"></i> Uso compartido</span>
+                  } @else {
+                    <span class="eqm__sin-asignar">Sin asignar</span>
+                  }
+                </td>
+                <td>
+                  @if (permisos.editar()) {
+                    <select class="eqm__estado" [class]="'eqm__estado ' + claseEstado(e.estado)" [attr.aria-label]="'Estado de ' + e.codigoActivo" [value]="e.estado" (change)="cambiarEstadoEquipo(e, $event)">
+                      @for (s of estados; track s) {
+                        <option [value]="s" [selected]="s === e.estado">{{ s }}</option>
+                      }
+                    </select>
+                  } @else {
+                    <span [class]="'badge ' + claseEstado(e.estado)">{{ e.estado }}</span>
+                  }
+                </td>
+                <td class="eqm__mono">{{ e.fechaAsignacion ? (e.fechaAsignacion | date: 'dd/MM/yyyy') : '—' }}</td>
+                <td class="eqm__acciones">
+                  <button
+                    class="table-action-btn"
+                    type="button"
+                    title="Ver código QR"
+                    [attr.aria-label]="'Ver código QR de ' + e.codigoActivo"
+                    (click)="qrEquipo.set(e)"
+                  >
+                    <i class="fa-solid fa-qrcode" aria-hidden="true"></i>
+                  </button>
+                  @if (permisos.editar()) {
+                    <button
+                      class="table-action-btn"
+                      type="button"
+                      title="Mover de empresa, ambiente o área"
+                      [attr.aria-label]="'Mover ' + e.codigoActivo"
+                      (click)="moviendo.set(e)"
+                    >
+                      <i class="fa-solid fa-arrows-up-down-left-right" aria-hidden="true"></i>
+                    </button>
+                  }
+                  @if (e.responsableId !== null) {
+                    <button
+                      class="table-action-btn"
+                      type="button"
+                      title="Hoja de entrega (.docx)"
+                      [attr.aria-label]="'Descargar hoja de entrega de ' + e.codigoActivo"
+                      (click)="descargarActa(e)"
+                    >
+                      <i class="fa-solid fa-file-arrow-down" aria-hidden="true"></i>
+                    </button>
+                  } @else if (permisos.editar()) {
+                    <button class="eqm__pill" type="button" (click)="abrirAsignar(e)">
+                      <i class="fa-solid fa-user-check" aria-hidden="true"></i> Asignar
+                    </button>
+                  }
+                  @if (permisos.eliminar()) {
+                    <button
+                      class="table-action-btn eqm__baja"
+                      type="button"
+                      [disabled]="e.responsableId !== null"
+                      [title]="e.responsableId !== null ? 'Devuélvelo antes de darlo de baja' : 'Dar de baja'"
+                      [attr.aria-label]="'Dar de baja ' + e.codigoActivo"
+                      (click)="darDeBaja(e)"
+                    >
+                      <i class="fa-solid fa-trash-can" aria-hidden="true"></i>
+                    </button>
+                  }
+                </td>
+              </tr>
+            } @empty {
+              <tr>
+                <td colspan="9" class="eqm__sin-datos eqm__sin-datos--tabla">Ningún equipo coincide con los filtros.</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </section>
+  }
+</div>
+
+@if (mostrarRegistro()) {
+  <app-registro-activo-dialog (cerrar)="mostrarRegistro.set(false)" (registrado)="alRegistrar($event)" />
+}
+
+@if (qrEquipo(); as equipo) {
+  <app-equipo-qr-dialog [equipo]="equipo" (cerrar)="qrEquipo.set(null)" />
+}
+
+@if (moviendo(); as equipo) {
+  <app-mover-equipo-dialog [equipo]="equipo" (cerrar)="moviendo.set(null)" (movido)="alMover($event)" />
+}
+
+<app-modal
+  [isOpen]="asignando() !== null"
+  title="Entregar equipo a un trabajador"
+  icon="fa-solid fa-user-check"
+  maxWidth="520px"
+  [loading]="guardandoEntrega()"
+  submitText="Entregar"
+  submitIcon="fa-solid fa-check"
+  (closed)="asignando.set(null)"
+  (saved)="confirmarAsignar()"
+>
+  @if (asignando(); as equipo) {
+    <p class="eqm__entrega-detalle">
+      <strong>{{ equipo.tipo }} {{ equipo.marca }} {{ equipo.modelo }}</strong> · {{ equipo.codigoActivo }}
+    </p>
+  }
+  <div class="form-group">
+    <label for="eqm-trabajador">Trabajador</label>
+    <select id="eqm-trabajador" class="form-control" [ngModel]="destinoId()" (ngModelChange)="destinoId.set($event)">
+      <option [ngValue]="0">— Seleccione —</option>
+      @for (t of trabajadores(); track t.id) {
+        <option [ngValue]="t.id">{{ t.nombre }}</option>
+      }
+    </select>
+  </div>
+  <div class="form-group">
+    <label for="eqm-fecha">Fecha de entrega</label>
+    <input id="eqm-fecha" class="form-control" type="date" [ngModel]="fechaEntrega()" (ngModelChange)="fechaEntrega.set($event)" />
+  </div>
+  @if (errorAccion(); as mensaje) {
+    <p class="eqm__error" role="alert">{{ mensaje }}</p>
+  }
+</app-modal>
