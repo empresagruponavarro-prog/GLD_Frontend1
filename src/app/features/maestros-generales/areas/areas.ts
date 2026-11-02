@@ -153,6 +153,7 @@ export class AreasComponent {
   }
 
   protected guardar(): void {
+    if (this.isSaving()) return;
     if (this.form.invalid) {
       this.form.markAllAsTouched();
       return this.modalError.set('Indique el nombre del área.');
