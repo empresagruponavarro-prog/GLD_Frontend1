@@ -19,8 +19,8 @@
         <tr>
           <th>ID</th>
           <th>Nombre</th>
-          <th>Descripción</th>
-          <th>Jefe o gerente</th>
+          <th>Depende de</th>
+          <th>Jefe del área</th>
           <th style="text-align: center">Estado</th>
           <th style="text-align: center">Acciones</th>
         </tr>
@@ -30,7 +30,14 @@
         <tr>
           <td><strong>{{ codigoDe(a) }}</strong></td>
           <td>{{ a.nombre }}</td>
-          <td>{{ a.descripcion || "—" }}</td>
+          <td>
+            @if (a.areaPadre) {
+            {{ a.areaPadre }}
+            <div class="content-subtitle">Jefe superior: {{ a.jefeSuperior || 'sin designar' }}</div>
+            } @else {
+            —
+            }
+          </td>
           <td>{{ a.jefe || "—" }}</td>
           <td align="center"><span class="badge" [class.badge-completed]="a.estado" [class.badge-danger]="!a.estado">{{
               a.estado ? 'Activa' : 'Inactiva' }}</span></td>
@@ -38,6 +45,10 @@
             @if (permisos.editar()) {
             <button class="table-action-btn" type="button" title="Editar" (click)="editar(a)"><i
                 class="fa-solid fa-pen-to-square"></i></button>
+            }
+            @if (permisos.eliminar()) {
+            <button class="table-action-btn table-action-btn--danger" type="button" title="Eliminar" (click)="eliminar(a)"><i
+                class="fa-solid fa-trash"></i></button>
             }
           </td>
         </tr>
@@ -56,26 +67,37 @@
   <form [formGroup]="form" (ngSubmit)="guardar()">
     @if (editando(); as a) {
     <p class="content-subtitle">ID: <strong>{{ codigoDe(a) }}</strong></p>
-    } @else {
-    <p class="content-subtitle">El ID (AR-01, AR-02…) se asigna solo al guardar.</p>
     }
-    <div class="form-group"><label for="area-nombre">Nombre <span class="required">*</span></label><input
+    <div class="form-group"><label for="area-nombre">Nombre del área <span class="required">*</span></label><input
         id="area-nombre" class="form-control" formControlName="nombre" maxlength="100" /></div>
-    <div class="form-group"><label for="area-descripcion">Descripción</label><textarea id="area-descripcion"
-        class="form-control" formControlName="descripcion" maxlength="255" rows="2"></textarea></div>
     <div class="form-group">
-      <label for="area-jefe">Dependiente</label>
+      <label for="area-padre">Depende de</label>
+      <select id="area-padre" class="form-control" formControlName="idAreaPadre">
+        <option [ngValue]="0">— Ninguna (área superior) —</option>
+        @for (o of opcionesPadre(); track o.id) {
+        <option [ngValue]="o.id">{{ etiquetaPadre(o) }}</option>
+        }
+      </select>
+      <p class="content-subtitle">{{ pistaPadre() }}</p>
+    </div>
+    <div class="form-group">
+      <label for="area-jefe">Jefe del área</label>
       <input id="area-jefe" class="form-control" formControlName="jefeTexto" list="area-trabajadores" maxlength="255"
-        autocomplete="off" placeholder="Escribe para buscar o elige de la lista" />
+        autocomplete="off" placeholder="Vacante / sin designar" />
       <datalist id="area-trabajadores">
         @for (t of trabajadores(); track t.id) {
         <option [value]="t.nombre ?? ''"></option>
         }
       </datalist>
+      <p class="content-subtitle">Si el cargo está vacante, déjalo en blanco (Vacante / sin designar).</p>
     </div>
-    @if (editando()) {
-    <div class="form-group"><label><input type="checkbox" formControlName="estado" /> Área activa</label></div>
-    }
+    <div class="form-group">
+      <label for="area-estado">Estado</label>
+      <select id="area-estado" class="form-control" formControlName="estado">
+        <option [ngValue]="true">ACTIVA</option>
+        <option [ngValue]="false">INACTIVA</option>
+      </select>
+    </div>
   </form>
   @if (modalError()) {
   <p class="badge badge-danger" role="alert" style="white-space: pre-line">{{ modalError() }}</p>

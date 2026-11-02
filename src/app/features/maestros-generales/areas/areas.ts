@@ -1,4 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { permisosDePantalla } from '@app/core/auth/permisos-pantalla';
 import { ExportarBotonesComponent } from '../../../shared/components/exportar-botones/exportar-botones';
@@ -25,8 +26,15 @@ export class AreasComponent {
   protected readonly items = signal<Area[]>([]);
   protected readonly datosExportacion = computed<DatosExportacion>(() => ({
     nombre: 'Areas',
-    columnas: ['Código', 'Nombre', 'Descripción', 'Jefe o gerente', 'Estado'],
-    filas: this.items().map((a) => [this.codigoDe(a), a.nombre, a.descripcion ?? '', a.jefe ?? '', a.estado ? 'Activa' : 'Inactiva']),
+    columnas: ['Código', 'Nombre', 'Depende de', 'Jefe superior', 'Jefe del área', 'Estado'],
+    filas: this.items().map((a) => [
+      this.codigoDe(a),
+      a.nombre,
+      a.areaPadre ?? '',
+      a.jefeSuperior ?? '',
+      a.jefe ?? '',
+      a.estado ? 'Activa' : 'Inactiva',
+    ]),
   }));
   protected readonly isLoading = signal(false);
   protected readonly isModalOpen = signal(false);
@@ -38,13 +46,53 @@ export class AreasComponent {
 
   protected readonly form = new FormGroup({
     nombre: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
-    descripcion: new FormControl('', { nonNullable: true }),
     jefeTexto: new FormControl('', { nonNullable: true }),
+    idAreaPadre: new FormControl(0, { nonNullable: true }),
     estado: new FormControl(true, { nonNullable: true }),
   });
 
+  /** Áreas que se pueden elegir como superior: sin la propia ni las que dependen de ella (sería un ciclo). */
+  protected readonly opcionesPadre = computed(() => {
+    const actual = this.editando();
+    if (!actual) return this.items();
+    const dependientes = this.dependientesDe(actual.id);
+    return this.items().filter((a) => a.id !== actual.id && !dependientes.has(a.id));
+  });
+
+  private readonly padreElegido = toSignal(this.form.controls.idAreaPadre.valueChanges, { initialValue: 0 });
+
+  /** Ayuda bajo «Depende de»: quién será el jefe superior según el área elegida. */
+  protected readonly pistaPadre = computed(() => {
+    const id = Number(this.padreElegido());
+    if (!id) return 'Será un área superior (no depende de otra).';
+    const padre = this.items().find((a) => a.id === id);
+    if (!padre) return '';
+    return padre.jefe ? `Su jefe superior será: ${padre.jefe}` : 'Esa área no tiene jefe designado todavía (vacante).';
+  });
+
+  /** Texto de cada opción de «Depende de»: el área y su jefe (o vacante). */
+  protected etiquetaPadre(a: Area): string {
+    return `${a.nombre}  ·  ${a.jefe ? `Jefe: ${a.jefe}` : 'vacante'}`;
+  }
+
   constructor() {
     this.load();
+  }
+
+  /** Ids de todas las áreas que cuelgan, directa o indirectamente, de `id`. */
+  private dependientesDe(id: number): Set<number> {
+    const resultado = new Set<number>();
+    const pendientes = [id];
+    while (pendientes.length > 0) {
+      const actual = pendientes.pop();
+      for (const a of this.items()) {
+        if (a.idAreaPadre === actual && !resultado.has(a.id)) {
+          resultado.add(a.id);
+          pendientes.push(a.id);
+        }
+      }
+    }
+    return resultado;
   }
 
   /** Código correlativo que se muestra (AR-01, AR-02…); sale del ID, no se escribe a mano. */
@@ -78,7 +126,7 @@ export class AreasComponent {
     if (!this.permisos.crear()) return;
     this.editando.set(null);
     this.modalError.set('');
-    this.form.reset({ nombre: '', descripcion: '', jefeTexto: '', estado: true });
+    this.form.reset({ nombre: '', jefeTexto: '', idAreaPadre: 0, estado: true });
     this.cargarTrabajadores();
     this.isModalOpen.set(true);
   }
@@ -87,11 +135,19 @@ export class AreasComponent {
     if (!this.permisos.editar()) return;
     this.editando.set(a);
     this.modalError.set('');
-    this.form.reset({ nombre: a.nombre, descripcion: a.descripcion ?? '', jefeTexto: a.jefe ?? '', estado: a.estado });
+    this.form.reset({ nombre: a.nombre, jefeTexto: a.jefe ?? '', idAreaPadre: a.idAreaPadre ?? 0, estado: a.estado });
     this.cargarTrabajadores();
     this.isModalOpen.set(true);
   }
 
+  protected eliminar(a: Area): void {
+    if (!this.permisos.eliminar()) return;
+    if (!confirm(`¿Eliminar el área "${a.nombre}" (${this.codigoDe(a)})? Esta acción no se puede deshacer.`)) return;
+    this.areasService.delete(a.id).subscribe({
+      next: () => this.load(),
+      error: (err: unknown) => alert(errorMessage(err)),
+    });
+  }
   protected closeModal(): void {
     this.isModalOpen.set(false);
   }
@@ -104,18 +160,23 @@ export class AreasComponent {
     const v = this.form.getRawValue();
     const actual = this.editando();
     const nombre = v.nombre.trim();
-    const descripcion = v.descripcion.trim();
     const textoJefe = v.jefeTexto.trim();
-    // El dependiente se escribe o se elige, pero debe ser un trabajador registrado.
+    // El jefe o gerente se escribe o se elige, pero debe ser un trabajador registrado.
     const jefe = textoJefe ? this.trabajadores().find((x) => (x.nombre ?? '').trim().toLowerCase() === textoJefe.toLowerCase()) : undefined;
     if (textoJefe && !jefe) {
-      return this.modalError.set('El dependiente debe ser un trabajador de la lista. Escribe para buscarlo y elígelo.');
+      return this.modalError.set('El jefe o gerente debe ser un trabajador de la lista. Escribe para buscarlo y elígelo.');
     }
     const idJefe = jefe?.id ?? 0;
+    const idAreaPadre = Number(v.idAreaPadre);
     this.isSaving.set(true);
     const request$ = actual
-      ? this.areasService.update(actual.id, { nombre, descripcion, idJefe, estado: v.estado })
-      : this.areasService.create({ nombre, ...(descripcion ? { descripcion } : {}), ...(idJefe > 0 ? { idJefe } : {}) });
+      ? this.areasService.update(actual.id, { nombre, idJefe, idAreaPadre, estado: v.estado })
+      : this.areasService.create({
+          nombre,
+          ...(idJefe > 0 ? { idJefe } : {}),
+          ...(idAreaPadre > 0 ? { idAreaPadre } : {}),
+          estado: v.estado,
+        });
     request$.subscribe({
       next: () => {
         this.isSaving.set(false);

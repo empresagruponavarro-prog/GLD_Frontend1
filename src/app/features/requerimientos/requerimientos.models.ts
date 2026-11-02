@@ -353,4 +353,9 @@ export interface Area {
   descripcion?: string | null;
   idJefe?: number | null;
   jefe?: string | null;
+  /** Área de la que depende (organigrama); sin valor = área superior. */
+  idAreaPadre?: number | null;
+  areaPadre?: string | null;
+  /** Jefe superior: el jefe del área de la que depende. */
+  jefeSuperior?: string | null;
 }

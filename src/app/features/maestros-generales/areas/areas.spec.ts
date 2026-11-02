@@ -16,6 +16,18 @@ async function montar(acciones: Partial<Permisos>) {
   return p;
 }
 
+describe('AreasComponent: dependencia entre áreas', () => {
+  afterEach(() => TestBed.inject(HttpTestingController).verify());
+
+  it('muestra de qué área depende cada una y su jefe superior', async () => {
+    const GERENCIA: Area = { id: 1, codigo: 'GG', nombre: 'Gerencia General', estado: true, jefe: 'Ana Gerente' };
+    const JEFATURA: Area = { id: 2, codigo: 'JP', nombre: 'Jefatura', estado: true, idAreaPadre: 1, areaPadre: 'Gerencia General', jefeSuperior: 'Ana Gerente' };
+    const { el } = await montarPantalla(AreasComponent, misPermisos('Usuario', { 'maestros.areas': {} }), () => [GERENCIA, JEFATURA]);
+    expect(el.textContent).toContain('Depende de');
+    expect(el.textContent).toContain('Jefe superior: Ana Gerente');
+  });
+});
+
 describe('AreasComponent: botones según permisos (maestros.areas)', () => {
   afterEach(() => TestBed.inject(HttpTestingController).verify());
 

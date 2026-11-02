@@ -26,11 +26,14 @@ export class AreasService {
     });
   }
 
-  create(data: { nombre: string; descripcion?: string; idJefe?: number }): Observable<Area> {
+  create(data: { nombre: string; idJefe?: number; idAreaPadre?: number; estado?: boolean }): Observable<Area> {
     return this.http.post<Area>(this.api, data);
   }
 
-  update(id: number, data: { nombre: string; estado: boolean; descripcion: string; idJefe: number }): Observable<Area> {
+  update(id: number, data: { nombre: string; estado: boolean; idJefe: number; idAreaPadre: number }): Observable<Area> {
     return this.http.patch<Area>(`${this.api}/${id}`, data);
   }
-}
+
+  delete(id: number): Observable<void> {
+    return this.http.delete<void>(`${this.api}/${id}`);
+  }}
