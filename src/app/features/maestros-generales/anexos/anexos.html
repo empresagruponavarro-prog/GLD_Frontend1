@@ -168,8 +168,8 @@
   <div class="anexo-form">
     <div class="anexo-form-grid">
       <div class="form-group">
-        <label>Tipo de Anexo</label>
-        <select
+        <label for="anx-tipo">Tipo de Anexo</label>
+        <select id="anx-tipo"
           class="form-control"
           [ngModel]="formData.tipoAnexo"
           (ngModelChange)="onTipoAnexoChange($event)"
@@ -182,8 +182,8 @@
       </div>
 
       <div class="form-group">
-        <label>N° Documento</label>
-        <input
+        <label for="anx-doc">N° Documento</label>
+        <input id="anx-doc"
           type="text"
           class="form-control"
           [(ngModel)]="formData.NumeroDocIde"
@@ -192,8 +192,8 @@
       </div>
 
       <div class="form-group">
-        <label>Especialidad</label>
-        <select class="form-control" [(ngModel)]="formData.AnexoEspecialidadId">
+        <label for="anx-esp">Especialidad</label>
+        <select id="anx-esp" class="form-control" [(ngModel)]="formData.AnexoEspecialidadId">
           <option [ngValue]="null">— Seleccione —</option>
           @for (e of especialidadesForm(); track e.id) {
           <option [ngValue]="e.id">{{ e.nombre }}</option>
@@ -202,8 +202,8 @@
       </div>
 
       <div class="form-group">
-        <label>Tipo Documento (IDE)</label>
-        <select class="form-control" [(ngModel)]="formData.AnexoTipoDocIdeId">
+        <label for="anx-tipodoc">Tipo Documento (IDE)</label>
+        <select id="anx-tipodoc" class="form-control" [(ngModel)]="formData.AnexoTipoDocIdeId">
           <option [ngValue]="null">— Seleccione —</option>
           @for (t of tiposDocIdeForm(); track t.id) {
           <option [ngValue]="t.id">{{ t.nombre }}</option>
@@ -212,8 +212,8 @@
       </div>
 
       <div class="form-group">
-        <label>Anexo <span class="required">*</span></label>
-        <input
+        <label for="anx-anexo">Anexo <span class="required">*</span></label>
+        <input id="anx-anexo"
           type="text"
           class="form-control"
           [(ngModel)]="formData.Anexo"
@@ -223,8 +223,8 @@
       </div>
 
       <div class="form-group">
-        <label>Nombre Comercial</label>
-        <input
+        <label for="anx-comercial">Nombre Comercial</label>
+        <input id="anx-comercial"
           type="text"
           class="form-control"
           [(ngModel)]="formData.NombreComercial"
@@ -233,8 +233,8 @@
       </div>
 
       <div class="form-group">
-        <label>Dirección</label>
-        <input
+        <label for="anx-dir">Dirección</label>
+        <input id="anx-dir"
           type="text"
           class="form-control"
           [(ngModel)]="formData.Direccion"
@@ -243,8 +243,8 @@
       </div>
 
       <div class="form-group">
-        <label>Contacto</label>
-        <input
+        <label for="anx-contacto">Contacto</label>
+        <input id="anx-contacto"
           type="text"
           class="form-control"
           [(ngModel)]="formData.Contacto"
@@ -253,8 +253,8 @@
       </div>
 
       <div class="form-group">
-        <label>Teléfono</label>
-        <input
+        <label for="anx-tel">Teléfono</label>
+        <input id="anx-tel"
           type="text"
           class="form-control"
           [(ngModel)]="formData.Telefono"
@@ -263,8 +263,8 @@
       </div>
 
       <div class="form-group">
-        <label>Correo</label>
-        <input
+        <label for="anx-correo">Correo</label>
+        <input id="anx-correo"
           type="email"
           class="form-control"
           [(ngModel)]="formData.Correo"
@@ -274,23 +274,23 @@
 
       @if (formData.tipoAnexo === 'Proveedor') {
         <div class="form-group">
-          <label>Cuenta de detracciones (Banco de la Nación)</label>
-          <input type="text" class="form-control" [(ngModel)]="formData.cuenta_detraccion" maxlength="30" />
+          <label for="anx-detraccion">Cuenta de detracciones (Banco de la Nación)</label>
+          <input id="anx-detraccion" type="text" class="form-control" [(ngModel)]="formData.cuenta_detraccion" maxlength="30" />
         </div>
 
         <div class="form-group">
-          <label>Retención del IGV</label>
+          <label for="anx-retencion">Retención del IGV</label>
           <label class="anexo-estado">
-            <input type="checkbox" [(ngModel)]="formData.exceptuado_retencion" />
+            <input id="anx-retencion" type="checkbox" [(ngModel)]="formData.exceptuado_retencion" />
             <span>Exceptuado (buen contribuyente / agente de retención o percepción)</span>
           </label>
         </div>
       }
 
       <div class="form-group">
-        <label>Estado</label>
+        <label for="anx-estado">Estado</label>
         <label class="anexo-estado">
-          <input type="checkbox" [(ngModel)]="formData.estado" />
+          <input id="anx-estado" type="checkbox" [(ngModel)]="formData.estado" />
           <span>{{ formData.estado ? 'Activo' : 'Inactivo' }}</span>
         </label>
       </div>
