@@ -17,14 +17,30 @@ export type EstadoIncidencia = (typeof ESTADOS_INCIDENCIA)[number];
 export type ObraTab = 'cronograma' | 'control' | 'directorio' | 'planos' | 'documentos' | 'incidencias';
 
 // ─── Modelos de respuesta ────────────────────────────────────────────────────
+/** Roles del equipo de la ficha técnica (ver `EquipoObra`). */
+export type RolEquipoObra = 'jefe_proyecto' | 'coordinador' | 'residente' | 'resp_presupuesto' | 'resp_procura';
+
+/**
+ * Tarjeta del Directorio de Residentes. `origen: 'equipo'` = persona del equipo de la ficha técnica: nombre y cargo
+ * salen de la ficha y de Trabajadores; aquí solo se completan sus datos de obra (`id` es `null` mientras no los tenga).
+ */
 export interface ObraResidente {
-  id: number;
+  id: number | null;
+  clave: string;
+  origen: 'equipo' | 'directorio';
+  roles_equipo?: RolEquipoObra[];
   id_anexo?: number;
   nombre_completo: string;
   rol_obra: string;
   especialidad?: string;
   telefono?: string;
   correo?: string;
+  /** Equipo de la ficha: teléfono y correo escritos para esta obra (tienen prioridad sobre los de Trabajadores). */
+  telefono_obra?: string;
+  correo_obra?: string;
+  /** Equipo de la ficha: contacto registrado en RR.HH. › Trabajadores. */
+  telefono_trabajador?: string;
+  correo_trabajador?: string;
   turno?: string;
   estado_planta: string;
   foto_url?: string;
@@ -197,8 +213,17 @@ export interface UpdateAvancePayload {
   estado?: string;
 }
 
-export type ResidentePayload = Partial<Omit<ObraResidente, 'id' | 'whatsapp_url' | 'foto_url'>> &
+export type ResidentePayload = Partial<Pick<ObraResidente, 'id_anexo' | 'especialidad' | 'telefono' | 'correo' | 'turno' | 'estado_planta' | 'orden'>> &
   Pick<ObraResidente, 'nombre_completo' | 'rol_obra'>;
+
+/** Datos de obra de una persona del equipo de la ficha; `null` quita el dato propio (vuelve el de Trabajadores). */
+export interface DatosEquipoDirectorioPayload {
+  especialidad: string | null;
+  telefono: string | null;
+  correo: string | null;
+  turno: string | null;
+  estado_planta: string;
+}
 
 export interface PlanoPayload {
   codigo_plano: string;

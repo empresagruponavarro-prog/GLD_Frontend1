@@ -44,49 +44,51 @@
         </div>
       </div>
 
-      <!-- Line 2: Panoramic Project Headline + Inline Badges + Integrated KPI Strip -->
-      <div class="flex flex-col 2xl:flex-row 2xl:items-center justify-between gap-3 pt-2.5">
-        <div class="flex flex-col xl:flex-row xl:items-center gap-3 min-w-0">
-          <div class="flex items-center gap-2">
+      <!-- Line 2: nombre con estado y situación; debajo los datos de la obra; a la derecha los indicadores -->
+      <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-3 pt-2">
+        <div class="min-w-0 flex flex-col gap-1">
+          <div class="flex flex-wrap items-center gap-2">
+            <h1 class="font-headline-xl text-lg font-extrabold tracking-tight text-primary leading-tight">
+              {{ cockpit()?.nombre_obra || ('CC-' + idCentroCosto()) | uppercase }}
+            </h1>
             <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-primary-fixed text-on-primary-fixed-variant text-[11px] font-bold tracking-tight">
               <span class="w-2 h-2 rounded-full bg-primary animate-pulse"></span>
               {{ (cabecera()?.estado || '—') | uppercase }}
             </span>
-            <h1 class="font-headline-xl text-lg 2xl:text-xl font-bold break-words tracking-tight text-on-surface">
-              Datos Operativos de Obra: <span class="text-primary">{{ cockpit()?.nombre_obra || ('CC-' + idCentroCosto()) | uppercase }}</span>
-            </h1>
-          </div>
-          <!-- Inline Badge Pills -->
-          <div class="flex flex-wrap items-center gap-1.5 text-[11px]">
-            <span class="px-2 py-0.5 rounded bg-surface-container-low text-on-surface"><span class="text-on-surface-variant/70 uppercase text-[9px] font-bold">Estado obra:</span> <strong class="font-semibold" data-testid="cab-estado-obra">{{ etiquetaEstado(control()?.estado_obra) }}</strong></span>
+            <span class="px-2 py-0.5 rounded bg-surface-container-low text-on-surface text-[11px]" title="Estado de la obra"><strong class="font-semibold" data-testid="cab-estado-obra">{{ etiquetaEstado(control()?.estado_obra) }}</strong></span>
             @if (control()?.resultado; as res) {
               <app-situacion-chip [situacion]="res.situacion" />
             }
-            <span class="px-2 py-0.5 rounded bg-surface-container text-on-surface-variant font-mono font-semibold">COD CC: #{{ idCentroCosto() }}</span>
-            <span class="px-2 py-0.5 rounded bg-surface-container-low text-on-surface"><span class="text-on-surface-variant/70 uppercase text-[9px] font-bold">Empresa:</span> <strong class="font-semibold">{{ cabecera()?.empresa || '—' }}</strong></span>
-            <span class="px-2 py-0.5 rounded bg-surface-container-low text-on-surface"><span class="text-on-surface-variant/70 uppercase text-[9px] font-bold">Cliente:</span> <strong class="font-semibold">{{ cabecera()?.cliente || cabecera()?.cod_cliente || '—' }}</strong></span>
-            <span class="px-2 py-0.5 rounded bg-surface-container-low text-on-surface"><span class="text-on-surface-variant/70 uppercase text-[9px] font-bold">Inicio:</span> <strong class="font-semibold">{{ (cabecera()?.fecha_inicio | date:'dd/MM/yyyy') || '—' }}</strong></span>
-            <span class="px-2 py-0.5 rounded bg-surface-container-low text-on-surface flex items-center gap-0.5"><span class="material-symbols-outlined text-xs text-primary">pin_drop</span><span class="font-semibold">{{ cockpit()?.generales?.direccion || '—' }}</span></span>
+          </div>
+          <div class="flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-[11.5px] text-on-surface-variant">
+            <span class="font-mono font-semibold">CC {{ idCentroCosto() }}</span>
+            <span class="text-outline-variant">·</span>
+            <span>{{ cabecera()?.empresa || '—' }}</span>
+            <span class="text-outline-variant">·</span>
+            <span>Cliente: <strong class="font-semibold text-on-surface">{{ cabecera()?.cliente || cabecera()?.cod_cliente || '—' }}</strong></span>
+            <span class="text-outline-variant">·</span>
+            <span>Inicio: <strong class="font-semibold text-on-surface">{{ (cabecera()?.fecha_inicio | date:'dd/MM/yyyy') || '—' }}</strong></span>
+            <span class="text-outline-variant">·</span>
+            <span class="inline-flex items-center gap-0.5"><span class="material-symbols-outlined text-xs text-primary">pin_drop</span>{{ cockpit()?.generales?.direccion || '—' }}</span>
           </div>
         </div>
 
-        <!-- Horizontal KPI Metric Strip -->
-        <div class="flex items-center gap-2 bg-surface-container-low px-3 py-1.5 rounded-xl self-start 2xl:self-auto shrink-0 flex-wrap border border-surface-container">
-          <div class="text-center px-2.5">
-            <span class="text-[9px] uppercase font-bold text-on-surface-variant block tracking-wider leading-tight">Avance Real</span>
-            <span class="text-lg font-headline-xl font-extrabold text-primary leading-tight">{{ kpis()?.avance_real_global || '—' }}%</span>
-            <span class="text-[9px] text-primary font-medium block leading-tight">Meta: {{ kpis()?.avance_meta_global || '—' }}%</span>
+        <!-- Indicadores -->
+        <div class="flex items-center gap-1 bg-surface-container-low px-2 py-1 rounded-xl self-start lg:self-auto shrink-0 border border-surface-container">
+          <div class="text-center px-2">
+            <span class="text-[9px] uppercase font-bold text-on-surface-variant block tracking-wider leading-tight">Avance</span>
+            <span class="text-base font-headline-xl font-extrabold text-primary leading-tight">{{ kpis()?.avance_real_global || '—' }}%</span>
+            <span class="text-[9px] text-primary font-medium block leading-tight">meta {{ kpis()?.avance_meta_global || '—' }}%</span>
           </div>
-          <div class="w-px h-8 bg-surface-variant"></div>
-          <div class="text-center px-2.5">
-            <span class="text-[9px] uppercase font-bold text-on-surface-variant block tracking-wider leading-tight">Semana Actual</span>
-            <span class="text-lg font-headline-xl font-extrabold text-on-surface leading-tight">Sem {{ kpis()?.semana_activa || '—' }}</span>
-            <span class="text-[9px] text-on-surface-variant block leading-tight">de {{ kpis()?.semanas_totales || '—' }}</span>
+          <div class="w-px h-7 bg-surface-variant"></div>
+          <div class="text-center px-2">
+            <span class="text-[9px] uppercase font-bold text-on-surface-variant block tracking-wider leading-tight">Semana</span>
+            <span class="text-base font-headline-xl font-extrabold text-on-surface leading-tight">{{ kpis()?.semana_activa || '—' }} / {{ kpis()?.semanas_totales || '—' }}</span>
           </div>
-          <div class="w-px h-8 bg-surface-variant"></div>
-          <div class="text-center px-2.5">
-            <span class="text-[9px] uppercase font-bold text-on-surface-variant block tracking-wider leading-tight">Personal Activo</span>
-            <span class="text-lg font-headline-xl font-extrabold text-secondary leading-tight">{{ kpis()?.personal_activo || '—' }} Op.</span>
+          <div class="w-px h-7 bg-surface-variant"></div>
+          <div class="text-center px-2">
+            <span class="text-[9px] uppercase font-bold text-on-surface-variant block tracking-wider leading-tight">Personal</span>
+            <span class="text-base font-headline-xl font-extrabold text-secondary leading-tight">{{ kpis()?.personal_activo || '—' }}</span>
             <span class="text-[9px] text-on-surface-variant block leading-tight">{{ cockpit()?.generales?.turno_trabajo || '—' }}</span>
           </div>
         </div>
@@ -220,7 +222,7 @@
             <button class="text-[10px] text-primary font-semibold hover:underline" (click)="setTab('tab-directorio')">Ver todos</button>
           </div>
           <div class="space-y-2">
-            @for (res of residentes() | slice:0:3; track res.id) {
+            @for (res of residentes() | slice:0:3; track res.clave) {
               <div class="p-2 rounded-lg bg-surface-container-low border border-surface-container/70 flex flex-col gap-1.5">
                 <div class="flex items-center justify-between">
                   <span class="px-1.5 py-0.2 rounded bg-primary-fixed text-on-primary-fixed-variant text-[9px] font-extrabold uppercase tracking-wide">{{ res.rol_obra }}</span>

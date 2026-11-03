@@ -18,6 +18,7 @@ import {
   ObraResidente,
   ObraSemana,
   PlanoPayload,
+  DatosEquipoDirectorioPayload,
   ResidentePayload,
   SemanaPayload,
   UpdateAvancePayload,
@@ -91,6 +92,11 @@ export class ObraService {
 
   updateResidente(idCentroCosto: number, idResidente: number, payload: Partial<ResidentePayload>): Observable<ObraResidente> {
     return this.#http.patch<ObraResidente>(this.#cc(idCentroCosto, `/residentes/${idResidente}`), payload);
+  }
+
+  /** Datos de obra (teléfono, correo, turno, estado) de una persona del equipo de la ficha técnica. */
+  guardarDatosEquipo(idCentroCosto: number, idAnexo: number, payload: DatosEquipoDirectorioPayload): Observable<ObraResidente> {
+    return this.#http.put<ObraResidente>(this.#cc(idCentroCosto, `/residentes/equipo/${idAnexo}`), payload);
   }
 
   deleteResidente(idCentroCosto: number, idResidente: number): Observable<DeleteResult> {

@@ -1,9 +1,10 @@
 import { ChangeDetectionStrategy, Component, computed, effect, inject, input, output, signal } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { Observable } from 'rxjs';
 import { ModalComponent } from '@shared/components/modal/modal';
 import { errorMessage } from '@app/features/almacen/almacen.utils';
 import { sinVacios } from '../../obra.calc';
-import { ESTADOS_PLANTA, ObraResidente, ResidentePayload } from '../../obra.interface';
+import { DatosEquipoDirectorioPayload, ESTADOS_PLANTA, ObraResidente, ResidentePayload } from '../../obra.interface';
 import { AnexosService } from '@app/features/maestros-generales/anexos/anexos.service';
 import { AnexoSelect, SelectOption } from '@app/features/maestros-generales/anexos/interfaces/anexos.interface';
 import { ObraService } from '../../obra.service';
@@ -37,7 +38,12 @@ export class ResidenteDialogComponent {
   protected readonly puedeGuardar = computed(() => puedeGuardarObra(this.permisos(), this.residente() !== null));
   /** Sin permiso de guardar, el formulario se muestra en solo lectura. */
   protected readonly soloLectura = computed(() => !this.puedeGuardar());
-  protected readonly puedeEliminar = computed(() => this.residente() !== null && this.permisos().eliminar);
+  /** Persona del equipo de la ficha técnica: nombre y cargo vienen de allí; aquí solo sus datos de obra. */
+  protected readonly esEquipo = computed(() => this.residente()?.origen === 'equipo');
+  /** Al equipo de la ficha se le quita desde la ficha, no desde el directorio. */
+  protected readonly puedeEliminar = computed(() => this.residente() !== null && !this.esEquipo() && this.permisos().eliminar);
+  protected readonly telefonoSugerido = computed(() => (this.esEquipo() ? this.residente()?.telefono_trabajador : undefined) ?? '987654321');
+  protected readonly correoSugerido = computed(() => (this.esEquipo() ? this.residente()?.correo_trabajador : undefined) ?? 'usuario@gld.com.pe');
 
   protected readonly form = new FormGroup({
     id_anexo: new FormControl<number | null>(null),
@@ -74,19 +80,25 @@ export class ResidenteDialogComponent {
       if (!this.isOpen()) return;
       this.formError.set('');
       const r = this.residente();
+      const equipo = this.esEquipo();
+      // Sin emitir: elegir un anexo autocompleta, pero abrir una ficha no debe pisar lo guardado.
       this.form.reset({
         id_anexo: r?.id_anexo ?? null,
         nombre_completo: r?.nombre_completo ?? '',
         rol_obra: r?.rol_obra ?? '',
         especialidad: r?.especialidad ?? '',
-        telefono: r?.telefono ?? '',
-        correo: r?.correo ?? '',
+        // Equipo de la ficha: solo el dato propio de la obra; el de Trabajadores se ve como sugerencia.
+        telefono: (equipo ? r?.telefono_obra : r?.telefono) ?? '',
+        correo: (equipo ? r?.correo_obra : r?.correo) ?? '',
         turno: r?.turno ?? 'Lun - Sáb 07:00 - 18:00',
         estado_planta: r?.estado_planta ?? 'En Planta',
         orden: r?.orden ?? null,
-      });
+      }, { emitEvent: false });
       if (this.soloLectura()) this.form.disable({ emitEvent: false });
       else this.form.enable({ emitEvent: false });
+      if (equipo) {
+        for (const c of [this.form.controls.id_anexo, this.form.controls.nombre_completo, this.form.controls.rol_obra, this.form.controls.orden]) c.disable({ emitEvent: false });
+      }
     });
   }
 
@@ -102,6 +114,18 @@ export class ResidenteDialogComponent {
       return;
     }
     const v = this.form.getRawValue();
+    const r = this.residente();
+    if (r?.origen === 'equipo' && r.id_anexo !== undefined) {
+      const datos: DatosEquipoDirectorioPayload = {
+        especialidad: v.especialidad.trim() || null,
+        telefono: v.telefono.trim() || null,
+        correo: v.correo.trim() || null,
+        turno: v.turno.trim() || null,
+        estado_planta: v.estado_planta,
+      };
+      this.#guardar(this.#service.guardarDatosEquipo(this.idCentroCosto(), r.id_anexo, datos));
+      return;
+    }
     const payload = sinVacios<ResidentePayload>({
       id_anexo: v.id_anexo ?? undefined,
       nombre_completo: v.nombre_completo.trim(),
@@ -113,11 +137,12 @@ export class ResidenteDialogComponent {
       estado_planta: v.estado_planta,
       orden: v.orden ?? undefined,
     });
-    const r = this.residente();
-    const req$ = r
-      ? this.#service.updateResidente(this.idCentroCosto(), r.id, payload)
-      : this.#service.createResidente(this.idCentroCosto(), payload);
+    this.#guardar(
+      r?.id != null ? this.#service.updateResidente(this.idCentroCosto(), r.id, payload) : this.#service.createResidente(this.idCentroCosto(), payload),
+    );
+  }
 
+  #guardar(req$: Observable<ObraResidente>): void {
     this.isSaving.set(true);
     req$.subscribe({
       next: () => {
@@ -133,7 +158,7 @@ export class ResidenteDialogComponent {
 
   protected onDelete(): void {
     const r = this.residente();
-    if (!r || !this.puedeEliminar() || !confirm(`¿Desasignar a ${r.nombre_completo} de la obra?`)) return;
+    if (!r || r.id === null || !this.puedeEliminar() || !confirm(`¿Desasignar a ${r.nombre_completo} de la obra?`)) return;
     this.isSaving.set(true);
     this.#service.deleteResidente(this.idCentroCosto(), r.id).subscribe({
       next: () => {

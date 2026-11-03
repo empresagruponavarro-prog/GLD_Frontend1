@@ -24,6 +24,12 @@
 
     <form [formGroup]="form" (ngSubmit)="onSubmit()" id="form-residente" class="p-5">
       
+      @if (esEquipo()) {
+      <div class="rounded-xl border border-primary/20 bg-primary/5 p-4 mb-5 text-xs text-on-surface-variant flex items-start gap-2">
+        <span class="material-symbols-outlined text-[16px] text-primary">badge</span>
+        <span>Viene del <strong>equipo de la ficha técnica</strong>: el nombre y el cargo se cambian en la ficha. Aquí completas sus datos para esta obra; si dejas el teléfono o el correo vacíos se usa el de RR.HH. › Trabajadores.</span>
+      </div>
+      } @else {
       <!-- TOP BOX: VINCULAR RRHH -->
       <div class="rounded-xl border border-surface-container/80 bg-surface-container-lowest p-4 mb-5 shadow-sm">
         <div class="mb-3">
@@ -43,6 +49,7 @@
         Seleccionar un anexo autocompletará automáticamente sus datos.
       </p>
     </div>
+      }
 
     <!-- GRID OF FIELDS -->
     <div class="grid grid-cols-1 md:grid-cols-2 gap-x-5 gap-y-4">
@@ -84,7 +91,7 @@
           <div class="h-10 px-3 bg-surface-container flex items-center justify-center border border-r-0 border-surface-container/80 rounded-l-lg text-sm text-on-surface-variant font-semibold">
             +51
           </div>
-          <input type="tel" class="w-full h-10 px-3 rounded-r-lg border border-surface-container/80 bg-surface-container-lowest text-sm text-on-surface focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary" formControlName="telefono" placeholder="987654321" maxlength="9" minlength="9" />
+          <input type="tel" class="w-full h-10 px-3 rounded-r-lg border border-surface-container/80 bg-surface-container-lowest text-sm text-on-surface focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary" formControlName="telefono" [placeholder]="telefonoSugerido()" maxlength="9" minlength="9" />
         </div>
       </div>
 
@@ -93,7 +100,7 @@
         <label class="block text-[11px] font-bold text-on-surface-variant uppercase tracking-wider mb-1.5">Correo electrónico</label>
         <div class="relative">
           <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-[18px]">mail</span>
-          <input type="email" class="w-full h-10 pl-9 pr-3 rounded-lg border border-surface-container/80 bg-surface-container-lowest text-sm text-on-surface focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary" formControlName="correo" placeholder="usuario@gld.com.pe" />
+          <input type="email" class="w-full h-10 pl-9 pr-3 rounded-lg border border-surface-container/80 bg-surface-container-lowest text-sm text-on-surface focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary" formControlName="correo" [placeholder]="correoSugerido()" />
         </div>
       </div>
 

@@ -15,11 +15,16 @@
   </div>
   <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
     @if (residentes().length > 0) {
-      @for (res of residentes(); track res.id) {
+      @for (res of residentes(); track res.clave) {
         <div class="rounded-xl bg-surface-container-lowest shadow-sm border border-surface-container p-4 flex flex-col justify-between relative overflow-hidden">
           <div>
             <div class="flex items-center justify-between mb-2">
-              <span class="px-2 py-0.5 rounded-full bg-primary-fixed text-on-primary-fixed-variant text-[10px] font-extrabold uppercase tracking-wide">{{ res.rol_obra }}</span>
+              <span class="flex items-center gap-1.5">
+                <span class="px-2 py-0.5 rounded-full bg-primary-fixed text-on-primary-fixed-variant text-[10px] font-extrabold uppercase tracking-wide">{{ res.rol_obra }}</span>
+                @if (res.origen === 'equipo') {
+                  <span class="px-1.5 py-0.5 rounded-full border border-surface-container text-on-surface-variant text-[9px] font-semibold" title="Viene del equipo de la ficha técnica: el nombre y el cargo se cambian allí">De la ficha</span>
+                }
+              </span>
               <span class="flex items-center gap-1 text-[10px] font-bold" [class.text-primary]="res.estado_planta === 'En Planta'" [class.text-on-surface-variant]="res.estado_planta !== 'En Planta'">
                 <span class="w-1.5 h-1.5 rounded-full" [class.bg-primary]="res.estado_planta === 'En Planta'" [class.bg-outline]="res.estado_planta !== 'En Planta'"></span>
                 {{ res.estado_planta }}
@@ -52,11 +57,21 @@
                   <span class="material-symbols-outlined text-xs text-outline">mail</span>
                   <span class="truncate">{{ res.correo }}</span>
                 </div>
+              } @else if (res.origen === 'equipo') {
+                <div class="flex items-center gap-1.5 italic">
+                  <span class="material-symbols-outlined text-xs text-outline">mail</span>
+                  <span>Sin correo</span>
+                </div>
               }
               @if (res.telefono) {
                 <div class="flex items-center gap-1.5">
                   <span class="material-symbols-outlined text-xs text-outline">phone</span>
                   <span>{{ res.telefono }}</span>
+                </div>
+              } @else if (res.origen === 'equipo') {
+                <div class="flex items-center gap-1.5 italic">
+                  <span class="material-symbols-outlined text-xs text-outline">phone</span>
+                  <span>Sin teléfono</span>
                 </div>
               }
             </div>

@@ -6,10 +6,29 @@ import { ResidenteDialogComponent } from './residente-dialog';
 
 const RESIDENTE: ObraResidente = {
   id: 3,
+  clave: 'res-3',
+  origen: 'directorio',
   nombre_completo: 'Ana Torres',
   rol_obra: 'Residente',
   estado_planta: 'En Planta',
   orden: 1,
+};
+
+/** Jefe de proyecto de la ficha técnica, con teléfono en Trabajadores y sin datos de obra propios. */
+const JEFE: ObraResidente = {
+  id: null,
+  clave: 'equipo-7',
+  origen: 'equipo',
+  roles_equipo: ['jefe_proyecto'],
+  id_anexo: 7,
+  nombre_completo: 'Luis Paz',
+  rol_obra: 'Jefe de proyecto',
+  telefono: '911111111',
+  telefono_trabajador: '911111111',
+  correo: 'lpaz@gld.pe',
+  correo_trabajador: 'lpaz@gld.pe',
+  estado_planta: 'En Planta',
+  orden: 0,
 };
 
 const abrir = (residente: ObraResidente | null, permisos: PermisosObra) =>
@@ -55,3 +74,31 @@ describe('ResidenteDialogComponent: permisos (obra)', () => {
     expect(hayBoton(el, 'Desasignar')).toBe(true);
   });
 });
+
+describe('ResidenteDialogComponent: equipo de la ficha', () => {
+  it('nombre y cargo no se editan, no hay Desasignar y el contacto de Trabajadores solo se sugiere', async () => {
+    const { el } = await abrir(JEFE, TODOS_PERMISOS_OBRA);
+    const input = (control: string) => el.querySelector<HTMLInputElement>(`[formControlName="${control}"]`);
+
+    expect(el.textContent).toContain('equipo de la ficha técnica');
+    expect(input('nombre_completo')?.disabled).toBe(true);
+    expect(input('rol_obra')?.disabled).toBe(true);
+    expect(el.querySelector('select[formControlName="id_anexo"]')).toBeNull();
+    expect(hayBoton(el, 'Desasignar')).toBe(false);
+    expect(input('telefono')?.value).toBe('');
+    expect(input('telefono')?.placeholder).toBe('911111111');
+  });
+
+  it('Guardar envía solo los datos de obra; lo vacío viaja como null para usar el de Trabajadores', async () => {
+    const { el, http } = await abrir(JEFE, TODOS_PERMISOS_OBRA);
+    const turno = el.querySelector<HTMLInputElement>('[formControlName="turno"]');
+    if (!turno) throw new Error('falta el turno');
+    turno.value = 'Noche';
+    turno.dispatchEvent(new Event('input'));
+    el.querySelector('form')?.dispatchEvent(new Event('submit'));
+
+    const req = http.expectOne((r) => r.method === 'PUT' && r.url.endsWith('/operaciones/obra/10/residentes/equipo/7'));
+    expect(req.request.body).toEqual({ especialidad: null, telefono: null, correo: null, turno: 'Noche', estado_planta: 'En Planta' });
+  });
+});
+
