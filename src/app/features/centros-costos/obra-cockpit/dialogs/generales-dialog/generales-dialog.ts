@@ -1,7 +1,9 @@
+import { toSignal } from '@angular/core/rxjs-interop';
 import { ChangeDetectionStrategy, Component, computed, effect, inject, input, output, signal } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ModalComponent } from '@shared/components/modal/modal';
 import { errorMessage } from '@app/features/almacen/almacen.utils';
+import { MapaPuntoComponent, PuntoMapa } from '@shared/components/mapa-punto/mapa-punto';
 import { SearchSelectComponent } from '@shared/components/search-select/search-select';
 import { AnexosService } from '@app/features/maestros-generales/anexos/anexos.service';
 import { AnexoSelect } from '@app/features/maestros-generales/anexos/interfaces/anexos.interface';
@@ -13,7 +15,7 @@ import { PermisosObra, SIN_PERMISOS_OBRA } from '../../obra-permisos';
 @Component({
   selector: 'app-generales-dialog',
   standalone: true,
-  imports: [ReactiveFormsModule, ModalComponent, SearchSelectComponent],
+  imports: [ReactiveFormsModule, ModalComponent, SearchSelectComponent, MapaPuntoComponent],
   templateUrl: './generales-dialog.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -82,8 +84,6 @@ export class GeneralesDialogComponent {
     contacto_cliente_telefono: new FormControl('', { nonNullable: true, validators: [Validators.maxLength(50)] }),
     contacto_cliente_correo: new FormControl('', { nonNullable: true, validators: [Validators.email, Validators.maxLength(150)] }),
     // Ficha operativa del control de avance
-    codigo_obra: new FormControl('', { nonNullable: true, validators: [Validators.maxLength(30)] }),
-    tienda: new FormControl('', { nonNullable: true, validators: [Validators.maxLength(150)] }),
     fecha_inicio: new FormControl('', { nonNullable: true }),
     fecha_fin_prog: new FormControl('', { nonNullable: true }),
     avance_general: new FormControl<number | null>(null, { validators: [Validators.min(0), Validators.max(100)] }),
@@ -96,6 +96,19 @@ export class GeneralesDialogComponent {
     id_resp_presupuesto: new FormControl<number | null>(null),
     id_resp_procura: new FormControl<number | null>(null),
   });
+
+  /** Código y tienda vienen del centro de costo: no se escriben en la ficha. */
+  protected readonly codigoObra = computed(() => `CC-${this.idCentroCosto()}`);
+  protected readonly tiendaObra = computed(() => this.nombreObra() || '—');
+
+  protected readonly latitudMapa = toSignal(this.form.controls.latitud.valueChanges, { initialValue: this.form.controls.latitud.value });
+  protected readonly longitudMapa = toSignal(this.form.controls.longitud.valueChanges, { initialValue: this.form.controls.longitud.value });
+
+  /** El punto elegido en el mapa llena latitud y longitud. */
+  protected elegirPunto(punto: PuntoMapa): void {
+    this.form.patchValue({ latitud: punto.latitud, longitud: punto.longitud });
+    this.form.markAsDirty();
+  }
 
   constructor() {
     this.#anexos.getSelect('Trabajador').subscribe((res) => this.trabajadores.set(res));
@@ -118,8 +131,6 @@ export class GeneralesDialogComponent {
         contacto_cliente_nombre: g?.contacto_cliente_nombre ?? '',
         contacto_cliente_telefono: g?.contacto_cliente_telefono ?? '',
         contacto_cliente_correo: g?.contacto_cliente_correo ?? '',
-        codigo_obra: g?.codigo_obra ?? '',
-        tienda: g?.tienda ?? '',
         fecha_inicio: this.cabecera()?.fecha_inicio?.slice(0, 10) ?? '',
         fecha_fin_prog: this.cabecera()?.fecha_fin_prog?.slice(0, 10) ?? '',
         avance_general: g?.avance_general ?? null,
@@ -191,8 +202,8 @@ export class GeneralesDialogComponent {
         campo('Correo', v.contacto_cliente_correo),
       ])}
       ${seccion('Control de avance &amp; equipo', [
-        campo('Código de obra', v.codigo_obra),
-        campo('Tienda', v.tienda, 'x2'),
+        campo('Código de obra', this.codigoObra()),
+        campo('Tienda', this.tiendaObra(), 'x2'),
         campo('Avance general (%)', v.avance_general),
         campo('Inicio programado', v.fecha_inicio),
         campo('Fin programado', v.fecha_fin_prog),
@@ -252,8 +263,6 @@ export class GeneralesDialogComponent {
       contacto_cliente_nombre: v.contacto_cliente_nombre.trim(),
       contacto_cliente_telefono: v.contacto_cliente_telefono.trim(),
       contacto_cliente_correo: v.contacto_cliente_correo.trim(),
-      codigo_obra: v.codigo_obra.trim(),
-      tienda: v.tienda.trim(),
       fecha_inicio: v.fecha_inicio,
       fecha_fin_prog: v.fecha_fin_prog,
     });

@@ -6,7 +6,7 @@ import { permisosDePantalla } from '@app/core/auth/permisos-pantalla';
 import { mensajeError } from '@shared/utils/errores-http';
 import { IncidenciasService } from './incidencias.service';
 import { Incidencia, IncidenciaFiltros } from './interfaces';
-import { LeafletGlobal, LeafletMap, LeafletMarker } from './leaflet.types';
+import { LeafletGlobal, LeafletMap, LeafletMarker } from '@shared/components/mapa-punto/leaflet.types';
 import { DataTableComponent } from '../../shared/components/data-table/data-table';
 import { DataTable } from '../../shared/interfaces';
 /** Leaflet global (script de `index.html`); `undefined` si no cargó. */

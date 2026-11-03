@@ -216,6 +216,10 @@
               />
             </div>
           </div>
+
+          <div class="sm:col-span-12">
+            <app-mapa-punto [latitud]="latitudMapa()" [longitud]="longitudMapa()" [soloLectura]="soloLectura()" (cambio)="elegirPunto($event)" />
+          </div>
         </div>
       </div>
 
@@ -380,12 +384,14 @@
         </div>
         <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
           <div>
-            <label for="gen-codigo" class="block text-[11px] font-bold uppercase tracking-wider text-slate-700 mb-1">Código de obra</label>
-            <input id="gen-codigo" type="text" maxlength="30" placeholder="OP-26-017" class="h-9 w-full px-3 rounded-lg border border-slate-200 bg-white text-xs text-slate-800 focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600 transition-all shadow-2xs" formControlName="codigo_obra" />
+            <span id="gen-codigo-et" class="block text-[11px] font-bold uppercase tracking-wider text-slate-700 mb-1">Código de obra</span>
+            <div id="gen-codigo" aria-labelledby="gen-codigo-et" class="h-9 w-full px-3 rounded-lg border border-slate-200 bg-slate-50 text-xs font-mono text-slate-700 flex items-center">{{ codigoObra() }}</div>
+            <p class="mt-1 text-[10px] text-slate-400">Viene del centro de costo</p>
           </div>
           <div>
-            <label for="gen-tienda" class="block text-[11px] font-bold uppercase tracking-wider text-slate-700 mb-1">Tienda</label>
-            <input id="gen-tienda" type="text" maxlength="150" class="h-9 w-full px-3 rounded-lg border border-slate-200 bg-white text-xs text-slate-800 focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600 transition-all shadow-2xs" formControlName="tienda" />
+            <span id="gen-tienda-et" class="block text-[11px] font-bold uppercase tracking-wider text-slate-700 mb-1">Tienda</span>
+            <div id="gen-tienda" aria-labelledby="gen-tienda-et" class="h-9 w-full px-3 rounded-lg border border-slate-200 bg-slate-50 text-xs text-slate-700 flex items-center">{{ tiendaObra() }}</div>
+            <p class="mt-1 text-[10px] text-slate-400">Viene del centro de costo</p>
           </div>
           <div>
             <label for="gen-avance" class="block text-[11px] font-bold uppercase tracking-wider text-slate-700 mb-1">Avance general (%)</label>

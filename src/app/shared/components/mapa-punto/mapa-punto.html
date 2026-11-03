@@ -1,0 +1,9 @@
+@if (disponible()) {
+  <div #contenedor class="mapa-punto" [style.height]="altura()" [attr.aria-label]="soloLectura() ? 'Mapa con la ubicación de la obra' : 'Mapa para elegir la ubicación de la obra'"></div>
+  @if (!soloLectura()) {
+    <p class="mapa-punto-ayuda">Haz clic en el mapa para colocar el punto y arrástralo para afinarlo.</p>
+  }
+} @else {
+  <div #contenedor hidden></div>
+  <p class="mapa-punto-ayuda">El mapa no está disponible (sin conexión a internet). Escribe las coordenadas a mano.</p>
+}

@@ -7,11 +7,10 @@ const abrir = async (permisos = permisosObra()) => {
   const m = await montar(GeneralesDialogComponent, {
     isOpen: true,
     idCentroCosto: 10,
+    nombreObra: 'Tienda Norte',
     generales: {
       id: 1,
       direccion: 'Av. Central 450',
-      codigo_obra: 'OP-26-017',
-      tienda: 'Tienda Norte',
       equipo: { jefe_proyecto: { id: 7, nombre: 'Ana Ruiz' }, coordinador: null, residente: null, resp_presupuesto: null, resp_procura: null },
     },
     cabecera: { fecha_inicio: '2026-09-14T00:00:00.000Z', fecha_fin_prog: '2026-11-30T00:00:00.000Z' },
@@ -49,8 +48,10 @@ describe('GeneralesDialogComponent: ficha operativa del control de avance', () =
     const valor = (id: string) => el.querySelector<HTMLInputElement>(`#${id}`)?.value;
 
     expect(el.querySelector('[data-testid="ficha-operativa"]')).not.toBeNull();
-    expect(valor('gen-codigo')).toBe('OP-26-017');
-    expect(valor('gen-tienda')).toBe('Tienda Norte');
+    // Código y tienda se muestran del centro de costo, sin campo para escribirlos.
+    expect(el.querySelector('#gen-codigo')?.textContent?.trim()).toBe('CC-10');
+    expect(el.querySelector('#gen-tienda')?.textContent?.trim()).toBe('Tienda Norte');
+    expect(el.querySelector('input#gen-codigo, input#gen-tienda')).toBeNull();
     expect(valor('gen-inicio')).toBe('2026-09-14');
     expect(valor('gen-fin')).toBe('2026-11-30');
   });
@@ -60,7 +61,8 @@ describe('GeneralesDialogComponent: ficha operativa del control de avance', () =
     el.querySelector('form')?.dispatchEvent(new Event('submit'));
 
     const body = http.expectOne((r) => r.url.endsWith('/operaciones/obra/10/generales')).request.body as Record<string, unknown>;
-    expect(body['codigo_obra']).toBe('OP-26-017');
+    expect(body).not.toHaveProperty('codigo_obra');
+    expect(body).not.toHaveProperty('tienda');
     expect(body['fecha_inicio']).toBe('2026-09-14');
     expect(body['fecha_fin_prog']).toBe('2026-11-30');
     expect(body['id_jefe_proyecto']).toBe(7);
@@ -101,7 +103,8 @@ describe('GeneralesDialogComponent: imprimir', () => {
     expect(imprimir).toHaveBeenCalledOnce();
     expect(html).toContain('Ficha técnica');
     expect(html).toContain('Av. Central 450');
-    expect(html).toContain('OP-26-017');
+    expect(html).toContain('CC-10');
+    expect(html).toContain('Tienda Norte');
     expect(html).toContain('Ana Ruiz');
   });
 });
