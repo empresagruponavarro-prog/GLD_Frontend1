@@ -5,9 +5,9 @@
   maxWidth="840px"
   (closed)="closed.emit()"
 >
-  <div modal-body class="p-1 sm:p-2">
+  <div modal-body class="p-1 sm:p-2 ficha-ejemplos">
     <!-- Header customizado según estándar SistemaGLD -->
-    <div class="flex items-start justify-between pb-3.5 border-b border-slate-100">
+    <div class="sticky -top-6 z-10 bg-white flex items-start justify-between pb-3.5 border-b border-slate-100 -mx-7 px-7 -mt-7 pt-7 sm:-mx-8 sm:px-8 sm:-mt-8 sm:pt-8">
       <div class="flex items-center gap-3">
         <div class="w-11 h-11 rounded-xl bg-blue-50 text-blue-600 border border-blue-100 flex items-center justify-center shrink-0 shadow-2xs">
           <span class="material-symbols-outlined text-2xl">domain</span>
@@ -32,14 +32,25 @@
           </div>
         </div>
       </div>
-      <button
-        type="button"
-        class="text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg p-1.5 transition-colors cursor-pointer"
-        (click)="closed.emit()"
-        aria-label="Cerrar modal"
-      >
-        <span class="material-symbols-outlined text-xl">close</span>
-      </button>
+      <div class="flex items-center gap-1">
+        <button
+          type="button"
+          class="text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg p-1.5 transition-colors cursor-pointer"
+          (click)="imprimir()"
+          aria-label="Imprimir ficha técnica"
+          title="Imprimir ficha técnica"
+        >
+          <span class="material-symbols-outlined text-xl">print</span>
+        </button>
+        <button
+          type="button"
+          class="text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg p-1.5 transition-colors cursor-pointer"
+          (click)="closed.emit()"
+          aria-label="Cerrar modal"
+        >
+          <span class="material-symbols-outlined text-xl">close</span>
+        </button>
+      </div>
     </div>
 
     <!-- Formulario estructurado en tarjetas temáticas -->

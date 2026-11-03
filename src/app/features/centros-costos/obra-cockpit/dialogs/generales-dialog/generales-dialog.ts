@@ -137,6 +137,94 @@ export class GeneralesDialogComponent {
     });
   }
 
+  /** Imprime la ficha con sus datos actuales (también los aún no guardados) en una hoja limpia, sin el modal. */
+  protected imprimir(): void {
+    const v = this.form.getRawValue();
+    const esc = (t: string): string =>
+      t.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    const valor = (x: string | number | null): string => {
+      const t = x === null || x === '' ? '' : String(x);
+      return t === '' ? '—' : esc(t);
+    };
+    const persona = (id: number | null): string => valor(this.trabajadores().find((t) => t.id === id)?.nombre ?? null);
+    const campo = (etiqueta: string, x: string | number | null, ancho = ''): string =>
+      `<div class="c ${ancho}"><span>${etiqueta}</span><p>${valor(x)}</p></div>`;
+    const seccion = (titulo: string, campos: string[]): string =>
+      `<section><h2>${titulo}</h2><div class="g">${campos.join('')}</div></section>`;
+
+    const html = `<!doctype html><html lang="es"><head><meta charset="utf-8"><title>Ficha técnica CC-${this.idCentroCosto()}</title><style>
+      @page { size: A4; margin: 14mm; }
+      * { box-sizing: border-box; }
+      body { font-family: Arial, Helvetica, sans-serif; color: #1f2321; font-size: 11px; margin: 0; }
+      header { border-bottom: 2px solid #5a9e80; padding-bottom: 8px; margin-bottom: 12px; }
+      header small { color: #3b7a5e; font-weight: 700; letter-spacing: .06em; }
+      header h1 { font-size: 17px; margin: 3px 0 2px; }
+      header p { margin: 0; color: #64748b; }
+      section { margin-bottom: 12px; break-inside: avoid; }
+      h2 { font-size: 11px; text-transform: uppercase; letter-spacing: .05em; color: #3b7a5e; border-bottom: 1px solid #e2e8f0; padding-bottom: 3px; margin: 0 0 6px; }
+      .g { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px 12px; }
+      .c.x2 { grid-column: span 2; } .c.x4 { grid-column: 1 / -1; }
+      .c span { display: block; font-size: 9px; font-weight: 700; text-transform: uppercase; color: #64748b; }
+      .c p { margin: 1px 0 0; padding-bottom: 2px; border-bottom: 1px dotted #cbd5e1; min-height: 14px; }
+      footer { margin-top: 10px; color: #94a3b8; font-size: 9px; text-align: right; }
+    </style></head><body>
+      <header><small>SISTEMA GLD</small><h1>Ficha técnica &amp; datos operativos de la obra</h1>
+      <p>CC-${this.idCentroCosto()}: ${esc(this.nombreObra() || 'Obra')}</p></header>
+      ${seccion('Expediente &amp; ubicación', [
+        campo('Código de expediente', v.expediente_codigo, 'x2'),
+        campo('Dirección de la obra', v.direccion, 'x2'),
+        campo('Departamento', v.departamento),
+        campo('Provincia', v.provincia),
+        campo('Distrito', v.distrito),
+        campo('Ubigeo INEI', v.ubigeo_cod),
+        campo('Latitud GPS', v.latitud, 'x2'),
+        campo('Longitud GPS', v.longitud, 'x2'),
+      ])}
+      ${seccion('Régimen de operación', [
+        campo('Semanas totales', v.semanas_totales),
+        campo('Personal operativo promedio', v.personal_activo_promedio),
+        campo('Régimen / turno de trabajo', v.turno_trabajo, 'x2'),
+      ])}
+      ${seccion('Contacto del cliente', [
+        campo('Nombre', v.contacto_cliente_nombre, 'x2'),
+        campo('Teléfono', v.contacto_cliente_telefono),
+        campo('Correo', v.contacto_cliente_correo),
+      ])}
+      ${seccion('Control de avance &amp; equipo', [
+        campo('Código de obra', v.codigo_obra),
+        campo('Tienda', v.tienda, 'x2'),
+        campo('Avance general (%)', v.avance_general),
+        campo('Inicio programado', v.fecha_inicio),
+        campo('Fin programado', v.fecha_fin_prog),
+        campo('Plazo post venta (días)', v.plazo_postventa_dias, 'x2'),
+        campo('Jefe de proyecto', persona(v.id_jefe_proyecto), 'x2'),
+        campo('Coordinador', persona(v.id_coordinador), 'x2'),
+        campo('Residente', persona(v.id_residente), 'x2'),
+        campo('Resp. presupuesto', persona(v.id_resp_presupuesto), 'x2'),
+        campo('Resp. procura', persona(v.id_resp_procura), 'x4'),
+        campo('Comentario de la obra', v.comentario, 'x4'),
+        campo('Observaciones de post venta', v.observaciones_postventa, 'x4'),
+      ])}
+      <footer>Impreso el ${esc(new Date().toLocaleString('es-PE'))}</footer>
+    </body></html>`;
+
+    const marco = document.createElement('iframe');
+    marco.setAttribute('aria-hidden', 'true');
+    marco.style.cssText = 'position:fixed;right:0;bottom:0;width:0;height:0;border:0';
+    document.body.appendChild(marco);
+    const ventana = marco.contentWindow;
+    if (!ventana) {
+      marco.remove();
+      return;
+    }
+    ventana.document.open();
+    ventana.document.write(html);
+    ventana.document.close();
+    ventana.addEventListener('afterprint', () => marco.remove());
+    ventana.focus();
+    ventana.print();
+  }
+
   protected onSubmit(): void {
     if (!this.puedeGuardar()) return;
     this.form.markAllAsTouched();

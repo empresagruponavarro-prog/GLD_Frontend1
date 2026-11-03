@@ -1649,3 +1649,9 @@ app-sidebar, .app-sidebar {
   outline: 2px solid currentColor;
   outline-offset: 1px;
 }
+
+/* Textos de ejemplo de la Ficha Técnica: gris suave para distinguirlos de los datos reales. */
+.ficha-ejemplos input::placeholder {
+  color: #94a3b8;
+  opacity: 1;
+}

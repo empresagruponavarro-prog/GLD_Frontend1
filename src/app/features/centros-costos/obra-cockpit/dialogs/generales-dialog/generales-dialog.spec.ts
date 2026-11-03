@@ -80,3 +80,28 @@ describe('GeneralesDialogComponent: ficha operativa del control de avance', () =
     expect(el.textContent).toContain('El fin programado no puede ser anterior al inicio.');
   });
 });
+
+describe('GeneralesDialogComponent: imprimir', () => {
+  afterEach(() => vi.restoreAllMocks());
+
+  it('imprime una hoja limpia con los datos de la ficha y el nombre del equipo', async () => {
+    const { el } = await abrir(permisosObra());
+    let html = '';
+    const imprimir = vi.fn();
+    const ventana = {
+      document: { open: vi.fn(), write: (t: string) => (html += t), close: vi.fn() },
+      addEventListener: vi.fn(),
+      focus: vi.fn(),
+      print: imprimir,
+    };
+    vi.spyOn(HTMLIFrameElement.prototype, 'contentWindow', 'get').mockReturnValue(ventana as unknown as Window);
+
+    el.querySelector<HTMLButtonElement>('button[aria-label="Imprimir ficha técnica"]')?.click();
+
+    expect(imprimir).toHaveBeenCalledOnce();
+    expect(html).toContain('Ficha técnica');
+    expect(html).toContain('Av. Central 450');
+    expect(html).toContain('OP-26-017');
+    expect(html).toContain('Ana Ruiz');
+  });
+});
