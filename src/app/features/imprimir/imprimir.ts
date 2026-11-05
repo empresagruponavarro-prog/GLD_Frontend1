@@ -2,6 +2,8 @@ import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@a
 import { ActivatedRoute } from '@angular/router';
 import { EmpresasService } from '../administration/empresas/empresas.service';
 import { errorMessage, fmtMoney, fmtNum } from '../almacen/almacen.utils';
+import { AlmacenService } from '../almacen/almacen.service';
+import { Documento } from '../almacen/almacen.models';
 import { AdministracionDocumentosService } from '../documentos/administracion/administracion.service';
 import { CLASE_LABEL, DocumentoDetalle } from '../documentos/administracion/administracion.models';
 import {
@@ -13,8 +15,27 @@ import {
 import { RequerimientosService } from '../requerimientos/requerimientos.service';
 import { Pago } from '../tesoreria/tesoreria.models';
 import { TesoreriaService } from '../tesoreria/tesoreria.service';
+import { FormatoDosierComponent } from './formatos/dosier';
+import { FormatoFichaObraComponent } from './formatos/ficha-obra';
+import { FormatoInformeAvanceComponent } from './formatos/informe-avance';
+import { FormatoPresupuestoComercialComponent } from './formatos/presupuesto-comercial';
+import { FormatoPresupuestoMetaComponent } from './formatos/presupuesto-meta';
 
-export type TipoImpresion = 'fur' | 'cuadro-comparativo' | 'documento-origen' | 'comprobante-pago' | 'expediente';
+export type TipoImpresion =
+  | 'fur'
+  | 'cuadro-comparativo'
+  | 'documento-origen'
+  | 'comprobante-pago'
+  | 'expediente'
+  | 'pecosa'
+  | 'presupuesto-meta'
+  | 'presupuesto-comercial'
+  | 'ficha-obra'
+  | 'informe-avance'
+  | 'dosier';
+
+/** Formatos que cargan sus propios datos (componentes de `formatos/`): la página solo pone el encabezado. */
+const FORMATOS_PROPIOS: readonly TipoImpresion[] = ['presupuesto-meta', 'presupuesto-comercial', 'ficha-obra', 'informe-avance', 'dosier'];
 
 interface Expediente {
   documento: DocumentoDetalle;
@@ -36,6 +57,7 @@ interface EmpresaCabecera {
 @Component({
   selector: 'app-imprimir',
   standalone: true,
+  imports: [FormatoPresupuestoMetaComponent, FormatoPresupuestoComercialComponent, FormatoFichaObraComponent, FormatoInformeAvanceComponent, FormatoDosierComponent],
   templateUrl: './imprimir.html',
   styleUrl: './imprimir.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -45,6 +67,7 @@ export class ImprimirComponent {
   private readonly requerimientos = inject(RequerimientosService);
   private readonly documentos = inject(AdministracionDocumentosService);
   private readonly tesoreria = inject(TesoreriaService);
+  private readonly almacen = inject(AlmacenService);
   private readonly route = inject(ActivatedRoute);
 
   protected readonly fmtMoney = fmtMoney;
@@ -55,7 +78,10 @@ export class ImprimirComponent {
   protected readonly hoy = new Date().toLocaleDateString('es-PE');
 
   protected readonly tipo = (this.route.snapshot.data['tipo'] ?? 'fur') as TipoImpresion;
-  private readonly id = Number(this.route.snapshot.paramMap.get('id'));
+  /** Parámetro tal cual (en los presupuestos puede ser el código `IdPresupuesto`). */
+  protected readonly idRaw = this.route.snapshot.paramMap.get('id') ?? '';
+  private readonly id = Number(this.idRaw);
+  protected readonly idNumero = this.id;
 
   protected readonly empresa = signal<EmpresaCabecera | null>(null);
   protected readonly isLoading = signal(true);
@@ -66,6 +92,7 @@ export class ImprimirComponent {
   protected readonly documento = signal<DocumentoDetalle | null>(null);
   protected readonly pago = signal<Pago | null>(null);
   protected readonly expediente = signal<Expediente | null>(null);
+  protected readonly pecosa = signal<Documento | null>(null);
 
   protected readonly titulo = computed(() => {
     switch (this.tipo) {
@@ -73,6 +100,12 @@ export class ImprimirComponent {
       case 'cuadro-comparativo': return 'CUADRO COMPARATIVO DE COTIZACIONES';
       case 'documento-origen': return 'DOCUMENTO DE ORIGEN';
       case 'comprobante-pago': return 'COMPROBANTE DE PAGO';
+      case 'pecosa': return 'PECOSA · PEDIDO-COMPROBANTE DE SALIDA';
+      case 'presupuesto-meta': return 'PRESUPUESTO META';
+      case 'presupuesto-comercial': return 'PRESUPUESTO COMERCIAL';
+      case 'ficha-obra': return 'FICHA TÉCNICA DE LA OBRA';
+      case 'informe-avance': return 'INFORME DE AVANCE';
+      case 'dosier': return 'DOSIER DE LA OBRA';
       default: return 'EXPEDIENTE DE PAGO';
     }
   });
@@ -90,6 +123,10 @@ export class ImprimirComponent {
       this.error.set(errorMessage(err));
       this.isLoading.set(false);
     };
+    if (FORMATOS_PROPIOS.includes(this.tipo)) {
+      this.isLoading.set(false);
+      return;
+    }
     switch (this.tipo) {
       case 'fur':
         this.requerimientos.getById(this.id).subscribe({ next: (r) => this.listo(() => this.fur.set(r)), error: fallo });
@@ -109,6 +146,9 @@ export class ImprimirComponent {
       case 'comprobante-pago':
         this.tesoreria.getPago(this.id).subscribe({ next: (p) => this.listo(() => this.pago.set(p)), error: fallo });
         break;
+      case 'pecosa':
+        this.almacen.getDocumento('salidas', this.id).subscribe({ next: (d) => this.listo(() => this.pecosa.set(d)), error: fallo });
+        break;
       default:
         this.documentos.getExpediente(this.id).subscribe({ next: (e) => this.listo(() => this.expediente.set(e as Expediente)), error: fallo });
     }
@@ -121,6 +161,15 @@ export class ImprimirComponent {
 
   protected oferta(c: CuadroComparativo, idDetalle: number, idCotizacion: number) {
     return c.lineas.find((l) => l.id_detalle === idDetalle)?.ofertas.find((o) => o.id_cotizacion === idCotizacion);
+  }
+
+  protected hayFurSubfase(r: Requerimiento): boolean {
+    return (r.lineas ?? []).some((l) => !!l.subfase);
+  }
+
+  /** Total de la PECOSA: suma de cantidad × costo de cada línea. */
+  protected totalPecosa(d: Documento): number {
+    return (d.lineas ?? []).reduce((acc, l) => acc + Number(l.cantidad) * Number(l.costo_unitario ?? 0), 0);
   }
 
   protected cerrar(): void {

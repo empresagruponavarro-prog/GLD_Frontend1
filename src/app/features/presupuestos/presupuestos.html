@@ -287,7 +287,7 @@
           </div>
           <div class="flex items-center gap-2">
             @if (permisos.crear()) {
-              <button id="btn-generar-furs-banner" (click)="abrirGenerarFursModal()" [disabled]="!selectedPresupuestoId()" type="button" title="Generar Formatos Únicos de Requerimiento (FURs) de compra para cada fase" class="px-3.5 py-2 rounded-lg bg-[#24543d] hover:bg-[#1a3d2c] disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold text-xs shadow-xs whitespace-nowrap transition cursor-pointer flex items-center gap-1.5">
+              <button id="btn-generar-furs-banner" (click)="abrirGenerarFursModal()" [disabled]="!selectedPresupuestoId() || !selectedPptoAprobado()" type="button" [title]="selectedPptoAprobado() ? 'Generar Formatos Únicos de Requerimiento (FURs) de compra para cada fase' : 'Apruebe el presupuesto para generar sus requerimientos (FUR)'" class="px-3.5 py-2 rounded-lg bg-[#24543d] hover:bg-[#1a3d2c] disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold text-xs shadow-xs whitespace-nowrap transition cursor-pointer flex items-center gap-1.5">
                 <svg class="w-3.5 h-3.5 text-amber-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
                 <span>Generar FURs</span>
               </button>
@@ -334,8 +334,18 @@
           </div>
         </div>
         <div class="flex items-center gap-2 shrink-0">
+          @if (pptoSeleccionado) {
+            <a id="fm-imprimir-meta" [routerLink]="['/imprimir/presupuesto-meta', pptoSeleccionado.IdPresupuesto]" target="_blank" title="Imprimir el presupuesto Meta" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white hover:bg-[#f6f8f7] text-slate-700 text-xs font-semibold border border-[#d1dcd7] shadow-2xs transition cursor-pointer">
+              <i class="fa-solid fa-print"></i><span>Imprimir Meta</span>
+            </a>
+            @if (isBaseContractual(pptoSeleccionado) && selectedPptoAprobado()) {
+              <a id="fm-imprimir-comercial" [routerLink]="['/imprimir/presupuesto-comercial', pptoSeleccionado.IdPresupuesto]" target="_blank" title="Imprimir el presupuesto Comercial (cotizaciones ganadoras por fase)" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white hover:bg-[#f6f8f7] text-slate-700 text-xs font-semibold border border-[#d1dcd7] shadow-2xs transition cursor-pointer">
+                <i class="fa-solid fa-print"></i><span>Imprimir Comercial</span>
+              </a>
+            }
+          }
           @if (permisos.crear()) {
-            <button id="fm-generar-furs" (click)="abrirGenerarFursModal()" type="button" title="Generar Formatos Únicos de Requerimiento (FURs) de compra para cada fase" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#24543d] hover:bg-[#1a3d2c] text-white text-xs font-semibold shadow-2xs transition cursor-pointer">
+            <button id="fm-generar-furs" (click)="abrirGenerarFursModal()" [disabled]="!selectedPptoAprobado()" type="button" [title]="selectedPptoAprobado() ? 'Generar Formatos Únicos de Requerimiento (FURs) de compra para cada fase' : 'Apruebe el presupuesto para generar sus requerimientos (FUR)'" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#24543d] hover:bg-[#1a3d2c] text-white text-xs font-semibold shadow-2xs transition cursor-pointer">
               <svg class="w-3.5 h-3.5 text-amber-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
               <span>Generar FURs</span>
             </button>
@@ -1331,15 +1341,22 @@
           <!-- Estado -->
           <div>
             <span class="block text-[12px] font-bold text-slate-500 mb-2 uppercase tracking-wide">Estado de Aprobación</span>
-            <div class="flex flex-wrap gap-2">
-              @for (est of ['PENDIENTE','En_Revision','Aprobado','Observado']; track est) {
-                <button (click)="formData.Estado = est"
-                        class="px-4 py-2 rounded-lg text-[12px] font-bold border transition-all"
-                        [ngClass]="formData.Estado === est ? 'bg-[#1e4838] text-white border-[#1e4838]' : 'bg-white text-slate-600 border-slate-200 hover:border-[#529b7b]/50'">
-                  {{ est === 'PENDIENTE' ? 'Pendiente de Aprobación' : est === 'En_Revision' ? 'En Revisión' : est }}
-                </button>
-              }
-            </div>
+            @if (formPresupuestoAprobado) {
+              <p class="text-[13px] text-slate-600 bg-slate-50 border border-slate-200 rounded-lg px-3 py-2">
+                {{ estadoFormLabel() }}: la aprobación ya está registrada y su estado no se cambia a mano.
+              </p>
+            } @else {
+              <div class="flex flex-wrap gap-2">
+                @for (est of ['PENDIENTE','En_Revision','Observado']; track est) {
+                  <button (click)="formData.Estado = est"
+                          class="px-4 py-2 rounded-lg text-[12px] font-bold border transition-all"
+                          [ngClass]="formData.Estado === est ? 'bg-[#1e4838] text-white border-[#1e4838]' : 'bg-white text-slate-600 border-slate-200 hover:border-[#529b7b]/50'">
+                    {{ est === 'PENDIENTE' ? 'Pendiente de Aprobación' : est === 'En_Revision' ? 'En Revisión' : est }}
+                  </button>
+                }
+              </div>
+              <p class="text-[11px] text-slate-400 mt-1.5">Para aprobar el presupuesto use el panel «Aprobación del presupuesto» de más abajo.</p>
+            }
           </div>
 
           <!-- Especialista Responsable (Capturado automáticamente de la sesión) -->
@@ -1383,6 +1400,22 @@
           </div>
         </div>
         </fieldset>
+
+        <!-- Aprobación (GRP): fuera del fieldset, tiene sus propios permisos (editar / aprobar / crear) -->
+        <div class="mt-6">
+          @if (editingId(); as idPpto) {
+            <app-aprobacion-panel
+              [idPresupuesto]="idPpto"
+              [puedeEditar]="permisos.editar()"
+              [puedeAprobar]="permisos.aprobar()"
+              [puedeCrear]="permisos.crear()"
+              (aprobado)="onPresupuestoAprobado($event)"
+              (limpiado)="onPresupuestoLimpiado()"
+              (versionCreada)="onVersionCreada($event)" />
+          } @else {
+            <p class="text-[13px] text-slate-500 bg-slate-50 border border-slate-200 rounded-lg px-3 py-2">Guarde el presupuesto para poder revisarlo y aprobarlo.</p>
+          }
+        </div>
       </div>
       }
 
@@ -2092,9 +2125,10 @@
                         <!-- Lista resumida de ítems -->
                         <div class="mt-2.5 pt-2 border-t border-slate-100">
                           <div class="grid grid-cols-2 sm:grid-cols-3 gap-1.5 text-[11px] text-slate-600">
-                            @for (it of f.items.slice(0, 4); track it.id_producto) {
-                              <div class="truncate">
+                            @for (it of f.items.slice(0, 4); track it.id_producto + '-' + it.id_ppto_detalle_categoria) {
+                              <div class="truncate" [title]="it.subfase">
                                 • <span class="font-medium text-slate-800">{{ it.descripcion }}</span>: {{ it.cantidad }} {{ it.unidad }}
+                                <span class="text-slate-400">· {{ it.subfase }}</span>
                               </div>
                             }
                             @if (f.items.length > 4) {

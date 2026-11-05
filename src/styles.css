@@ -1655,3 +1655,14 @@ app-sidebar, .app-sidebar {
   color: #94a3b8;
   opacity: 1;
 }
+
+/*
+ * Textos en mayúsculas (GRP S-11): lo que se escribe en los campos de texto se ve —y se guarda— en mayúsculas.
+ * Mismas excepciones que el servidor (platform/http/mayusculas.ts): correos, usuarios, claves, enlaces, rutas y archivos,
+ * observaciones, comentarios, justificaciones y tokens. Los buscadores (type="search" o .search-input) y lo marcado con
+ * .sin-mayusculas tampoco se tocan. Se detecta por formControlName o name.
+ */
+:where(input:is([type="text"], :not([type])), textarea):not(.sin-mayusculas):not(.search-input):not([inputmode="email"]):not([inputmode="url"]):not([formcontrolname*="correo" i]):not([name*="correo" i]):not([formcontrolname*="email" i]):not([name*="email" i]):not([formcontrolname*="usuario" i]):not([name*="usuario" i]):not([formcontrolname*="password" i]):not([name*="password" i]):not([formcontrolname*="clave" i]):not([name*="clave" i]):not([formcontrolname*="contrasena" i]):not([name*="contrasena" i]):not([formcontrolname*="url" i]):not([name*="url" i]):not([formcontrolname*="ruta" i]):not([name*="ruta" i]):not([formcontrolname*="archivo" i]):not([name*="archivo" i]):not([formcontrolname*="file" i]):not([name*="file" i]):not([formcontrolname*="observ" i]):not([name*="observ" i]):not([formcontrolname*="comentario" i]):not([name*="comentario" i]):not([formcontrolname*="justificacion" i]):not([name*="justificacion" i]):not([formcontrolname*="token" i]):not([name*="token" i]) {
+  text-transform: uppercase;
+}
+

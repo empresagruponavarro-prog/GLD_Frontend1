@@ -250,7 +250,7 @@ describe('PresupuestosComponent — permisos (plan 05, etapa D3)', () => {
       .toEqual({ agregar: false, editarFila: true, quitar: false });
   });
 
-  it('pasos 3 y 5 en solo lectura sin editar (estado "Aprobado" incluido)', async () => {
+  it('pasos 3 y 5 en solo lectura sin editar (los estados de trabajo incluidos)', async () => {
     const p = await montar({});
     p.cmp.abrirPresupuestoEnForm(PPTO, 3);
     await atender(p);
@@ -258,10 +258,34 @@ describe('PresupuestosComponent — permisos (plan 05, etapa D3)', () => {
     p.cmp.switchStep(5);
     await p.render();
     expect(deshabilitado(p.el.querySelector('#comentarios-input'))).toBe(true);
-    const aprobado = Array.from(p.el.querySelectorAll('button')).find((b) => b.textContent?.trim() === 'Aprobado') ?? null;
-    expect(deshabilitado(aprobado)).toBe(true);
+    const botones = Array.from(p.el.querySelectorAll('button'));
+    const observado = botones.find((b) => b.textContent?.trim() === 'Observado') ?? null;
+    expect(deshabilitado(observado)).toBe(true);
+    // Aprobar ya no es un estado más: va por el panel de aprobación, que exige su propio permiso.
+    expect(botones.some((b) => b.textContent?.trim() === 'Aprobado')).toBe(false);
+    expect(botones.some((b) => b.textContent?.includes('Aprobar presupuesto'))).toBe(false);
+    p.http.match((r) => r.url.endsWith('/validacion')).forEach((r) => r.flush({ id: 1, id_presupuesto: String(PPTO.IdPresupuesto), estado_ppto: 'EN_REVISION', tipo: 'Principal', puede_aprobar: true, problemas: [], bloqueos: [], resumen: { fases: 0, categorias: 0, items: 0, costo_directo: '0.00' } }));
     p.cmp.savePresupuestoCompleto();
     expect(p.http.match((r) => r.method !== 'GET')).toHaveLength(0);
+  });
+
+  it('GRP · los requerimientos (FUR) solo se generan desde un presupuesto aprobado, entregado o liquidado', async () => {
+    const p = await montar({ crear: true });
+    p.cmp.presupuestosDelCC.set([
+      { IdPresupuesto: 'P-BORRADOR', estado_ppto: 'EN_REVISION' },
+      { IdPresupuesto: 'P-APROBADO', estado_ppto: 'APROBADO' },
+      { IdPresupuesto: 'P-LIQUIDADO', estado_ppto: 'LIQUIDADO' },
+      { IdPresupuesto: 'P-ANULADO', estado_ppto: 'ANULADO' },
+    ]);
+    const aprobado = (id: string) => {
+      p.cmp.selectedPresupuestoId.set(id);
+      return p.cmp.selectedPptoAprobado();
+    };
+    expect(aprobado('P-BORRADOR')).toBe(false);
+    expect(aprobado('P-APROBADO')).toBe(true);
+    expect(aprobado('P-LIQUIDADO')).toBe(true);
+    expect(aprobado('P-ANULADO')).toBe(false);
+    expect(aprobado('NO-EXISTE')).toBe(false);
   });
 
   it('"Ppto" desde centros de costo sin crear: no abre el alta y muestra el aviso global', async () => {

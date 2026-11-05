@@ -1,7 +1,7 @@
+import { TestBed } from '@angular/core/testing';
 import { botonesVisibles } from '@app/core/auth/pantalla.testing';
 import { ObraSemana } from '../../obra.interface';
-import { PermisosObra } from '../../obra-permisos';
-import { TODOS_PERMISOS_OBRA, montar, permisosObra } from '../../obra-cockpit.testing';
+import { montar } from '../../obra-cockpit.testing';
 import { CronogramaTabComponent } from './cronograma-tab';
 
 const SEMANA: ObraSemana = {
@@ -17,7 +17,7 @@ const SEMANA: ObraSemana = {
   orden: 1,
 };
 
-const BOTONES = {
+const EDICION = {
   nueva: 'Programar semana',
   lote: 'Generador masivo',
   avance: 'Registrar avance',
@@ -25,59 +25,59 @@ const BOTONES = {
   eliminar: 'Eliminar semana',
 };
 
-const montarTab = (permisos: PermisosObra) => montar(CronogramaTabComponent, { semanas: [SEMANA], permisos });
+describe('CronogramaTabComponent: histórico de solo consulta (GRP S-01)', () => {
+  it('lista las semanas ya guardadas y explica dónde se registra ahora el avance', async () => {
+    const { el } = await montar(CronogramaTabComponent, { semanas: [SEMANA] });
 
-describe('CronogramaTabComponent: botones según permisos (obra)', () => {
-  it('con solo ver no aparecen altas, avance, edición ni eliminación (Evidencias sigue)', async () => {
-    const { el } = await montarTab(permisosObra());
-
-    expect(botonesVisibles(el, BOTONES)).toEqual({ nueva: false, lote: false, avance: false, editar: false, eliminar: false });
     expect(el.textContent).toContain('SEM 01');
-    expect(el.querySelector('[title="Evidencia fotográfica (prototipo)"]')).not.toBeNull();
+    expect(el.textContent).toContain('Movimiento de tierras');
+    expect(el.textContent).toContain('Programación semanal (histórico)');
+    expect(el.querySelector('[data-testid="cronograma-historico"]')?.textContent).toContain('Control de avance');
   });
 
-  it('crear → Programar y Generador; editar → Avance y Editar; eliminar → Eliminar', async () => {
-    expect(botonesVisibles((await montarTab(permisosObra({ crear: true }))).el, BOTONES)).toEqual({
-      nueva: true, lote: true, avance: false, editar: false, eliminar: false,
-    });
-    expect(botonesVisibles((await montarTab(permisosObra({ editar: true }))).el, BOTONES)).toEqual({
-      nueva: false, lote: false, avance: true, editar: true, eliminar: false,
-    });
-    expect(botonesVisibles((await montarTab(permisosObra({ eliminar: true }))).el, BOTONES)).toEqual({
-      nueva: false, lote: false, avance: false, editar: false, eliminar: true,
-    });
+  it('no ofrece programar, generar, registrar avance, editar ni eliminar semanas', async () => {
+    const { el } = await montar(CronogramaTabComponent, { semanas: [SEMANA] });
+
+    expect(botonesVisibles(el, EDICION)).toEqual({ nueva: false, lote: false, avance: false, editar: false, eliminar: false });
+    expect(el.querySelector('#btn-nueva-semana')).toBeNull();
+    expect(el.querySelector('#btn-generar-lote')).toBeNull();
+    expect(Array.from(el.querySelectorAll('th')).some((t) => t.textContent?.includes('Acciones'))).toBe(false);
   });
 
-  it('con todos los permisos aparecen todos los botones', async () => {
-    const { el } = await montarTab(TODOS_PERMISOS_OBRA);
+  it('los puntos de la Curva S solo se consultan: no se hace clic para registrar avance', async () => {
+    const { el } = await montar(CronogramaTabComponent, { semanas: [SEMANA] });
 
-    expect(Object.values(botonesVisibles(el, BOTONES)).every(Boolean)).toBe(true);
+    expect(el.querySelector('app-curva-s-chart g.group')).not.toBeNull();
+    expect(el.querySelector('app-curva-s-chart g.cursor-pointer')).toBeNull();
   });
 
-  it('la Curva S solo abre el avance al hacer clic con editar', async () => {
-    const sinEditar = await montarTab(permisosObra());
-    const avances: ObraSemana[] = [];
-    sinEditar.fixture.componentInstance.registrarAvance.subscribe((s) => avances.push(s));
-    const puntoSinEditar = sinEditar.el.querySelector('app-curva-s-chart g.group');
-    expect(puntoSinEditar).not.toBeNull();
-    expect(sinEditar.el.querySelector('app-curva-s-chart g.cursor-pointer')).toBeNull();
-    puntoSinEditar?.dispatchEvent(new MouseEvent('click'));
-    expect(avances).toEqual([]);
-
-    const conEditar = await montarTab(permisosObra({ editar: true }));
-    conEditar.fixture.componentInstance.registrarAvance.subscribe((s) => avances.push(s));
-    const punto = conEditar.el.querySelector('app-curva-s-chart g.cursor-pointer');
-    expect(punto).not.toBeNull();
-    punto?.dispatchEvent(new MouseEvent('click'));
-    expect(avances).toEqual([SEMANA]);
-  });
-
-  it('el tooltip de la Curva S muestra la desviación con signo (sin la pista de clic si no se puede editar)', async () => {
-    const { el, render } = await montarTab(permisosObra());
+  it('el tooltip de la Curva S muestra la desviación con signo y sin pista de clic', async () => {
+    const { el, render } = await montar(CronogramaTabComponent, { semanas: [SEMANA] });
     el.querySelector('app-curva-s-chart g.group')?.dispatchEvent(new MouseEvent('mouseenter'));
     await render();
 
     expect(el.textContent).toContain('-5.00 pts');
     expect(el.textContent).not.toContain('Clic para abrir opciones de la semana');
+  });
+
+  it('sin semanas dice que el avance se registra en Control de avance', async () => {
+    const { el } = await montar(CronogramaTabComponent, { semanas: [] });
+
+    expect(el.textContent).toContain('No hay semanas en este histórico');
+    expect(el.textContent).toContain('Control de avance');
+  });
+
+  it('el filtro por estado sigue funcionando sobre el histórico', async () => {
+    const otra: ObraSemana = { ...SEMANA, id: 2, numero_semana: 2, etiqueta_semana: 'SEM 02', estado: 'En Plazo' };
+    const { el, render } = await montar(CronogramaTabComponent, { semanas: [SEMANA, otra] });
+    const filtro = el.querySelector<HTMLSelectElement>('#filtro-estado-semana')!;
+    filtro.value = 'En Plazo';
+    filtro.dispatchEvent(new Event('change'));
+    await render();
+
+    const filas = Array.from(el.querySelectorAll('tbody tr')).map((f) => f.textContent ?? '');
+    expect(filas.some((f) => f.includes('SEM 02'))).toBe(true);
+    expect(filas.some((f) => f.includes('SEM 01'))).toBe(false);
+    TestBed.resetTestingModule();
   });
 });

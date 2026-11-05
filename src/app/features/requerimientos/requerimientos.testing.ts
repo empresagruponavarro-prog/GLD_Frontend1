@@ -15,6 +15,8 @@ export function lineaRequerimiento(cambios: Partial<RequerimientoLinea> = {}): R
     observaciones: null,
     id_beneficiario: null,
     beneficiario: null,
+    id_ppto_detalle_categoria: null,
+    subfase: null,
     cantidad_ordenada: '0',
     saldo_por_ordenar: '10',
     ...cambios,

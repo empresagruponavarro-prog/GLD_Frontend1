@@ -2,6 +2,8 @@ export interface CentroCostoItem {
   id?: number;
   id_empresa?: number;
   id_anexo?: number;
+  /** Tipo de proyecto: define los planos obligatorios de la obra (liquidación y dosier). */
+  id_tipo_proyecto?: number | null;
   id_centro_costo?: number;
   id_centro_costos_principal?: number;
   id_centro_costo_principal?: number;
@@ -30,12 +32,25 @@ export interface CentroCostoItem {
 
 export type CentroCosto = CentroCostoItem;
 
+/** Tipo de proyecto del catálogo (GRP). */
+export interface TipoProyectoOpcion {
+  id: number;
+  nombre: string;
+}
+
+/** Año fiscal del catálogo; `activo` = se puede elegir como periodo. */
+export interface PeriodoFiscal {
+  anio: number;
+  activo: boolean;
+}
+
 export interface CreateCentroCostoDto {
   periodo: number;
   CodCliente: string;
   id_centro_costos_principal?: number;
   id_empresa?: number;
   id_anexo?: number;
+  id_tipo_proyecto?: number | null;
   CentroCosto: string;
   FechaIncio: string;
   Estado?: string;

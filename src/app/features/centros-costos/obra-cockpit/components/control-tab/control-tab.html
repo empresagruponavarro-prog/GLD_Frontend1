@@ -98,6 +98,7 @@
     @case ('estructura') {
       <app-estructura-partidas
         [partidas]="partidas()"
+        [resultado]="resultado()"
         [permisos]="permisos()"
         (importar)="dlgImportar.set(true)"
         (importarExcel)="dlgExcel.set(true)"

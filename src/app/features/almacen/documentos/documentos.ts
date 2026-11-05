@@ -5,6 +5,9 @@ import { ActivatedRoute } from '@angular/router';
 import { permisosDePantalla } from '@app/core/auth/permisos-pantalla';
 import { opcionValida, valorDeEvento } from '@shared/utils/eventos';
 import { DataTableComponent } from '../../../shared/components/data-table/data-table';
+import { RouterLink } from '@angular/router';
+import { PresupuestosService } from '../../presupuestos/presupuestos.service';
+import { SubfaseCentroCosto } from '../../presupuestos/interfaces/presupuestos.interface';
 import { ModalComponent } from '../../../shared/components/modal/modal';
 import { SearchSelectComponent } from '../../../shared/components/search-select/search-select';
 import { DataTable } from '../../../shared/interfaces';
@@ -92,6 +95,7 @@ function lineaGroup() {
     cantidad: new FormControl('', { nonNullable: true, validators: [Validators.required, Validators.pattern(/^\d{1,12}(\.\d{1,4})?$/)] }),
     costo_unitario: new FormControl('', { nonNullable: true }),
     observaciones: new FormControl('', { nonNullable: true }),
+    id_ppto_detalle_categoria: new FormControl<number | null>(null),
   });
 }
 
@@ -100,13 +104,14 @@ type LineaGroup = ReturnType<typeof lineaGroup>;
 @Component({
   selector: 'app-documentos-almacen',
   standalone: true,
-  imports: [ReactiveFormsModule, DataTableComponent, ModalComponent, SearchSelectComponent, ProductoPickerComponent],
+  imports: [ReactiveFormsModule, RouterLink, DataTableComponent, ModalComponent, SearchSelectComponent, ProductoPickerComponent],
   templateUrl: './documentos.html',
   styleUrl: './documentos.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class DocumentosAlmacenComponent {
   private readonly service = inject(AlmacenService);
+  private readonly presupuestos = inject(PresupuestosService);
 
   protected readonly config: TipoConfig = configDeRuta(inject(ActivatedRoute).snapshot.data['tipo']);
   /**
@@ -120,6 +125,9 @@ export class DocumentosAlmacenComponent {
   protected readonly muestraOc = this.config.ruta === 'ingresos';
   protected readonly fmtNum = fmtNum;
   protected readonly fmtMoney = fmtMoney;
+  protected readonly hayLineasConSubfase = (d: Documento) => (d.lineas ?? []).some((l) => !!l.subfase);
+  /** PECOSA = salida por CONSUMO a una obra: es la que se imprime. */
+  protected readonly esPecosa = (d: Documento) => d.naturaleza === 'SALIDA' && d.motivo === 'CONSUMO' && !!d.id_centro_costo;
 
   protected readonly columns: DataTable[] = [
     { label: 'Número', width: '120px' },
@@ -182,6 +190,22 @@ export class DocumentosAlmacenComponent {
   protected readonly muestraCosto = this.esIngreso;
   protected readonly muestraProyecto = !this.esInventarioInicial && !this.esTransferencia;
 
+  // Subfase por línea (PECOSA): solo en salidas por CONSUMO a una obra con presupuesto aprobado.
+  private readonly centroCostoActual = toSignal(this.form.controls.id_centro_costo.valueChanges, { initialValue: this.form.controls.id_centro_costo.value });
+  protected readonly subfases = signal<SubfaseCentroCosto[]>([]);
+  /** La obra tiene un Principal aprobado: cada línea debe indicar su subfase. */
+  protected readonly subfaseRequerida = signal(false);
+  protected readonly opcionesSubfase = computed(() =>
+    this.subfases().map((s) => ({ id: s.id, nombre: s.fase ? `${s.fase} › ${s.subfase}` : s.subfase })),
+  );
+  protected readonly conSubfase = computed(
+    () => this.esSalida && this.motivoActual() === 'CONSUMO' && !!this.centroCostoActual() && this.subfases().length > 0,
+  );
+  protected readonly columnasLineas = computed(() => {
+    const sub = this.conSubfase() ? ' minmax(220px, 0.9fr)' : '';
+    return this.muestraCosto ? `minmax(260px, 1fr) 140px 140px${sub} 40px` : `minmax(260px, 1fr) 140px${sub} 40px`;
+  });
+
   // Detalle
   protected readonly detail = signal<Documento | null>(null);
   protected readonly isDetailOpen = signal(false);
@@ -195,7 +219,25 @@ export class DocumentosAlmacenComponent {
       this.service.getTrabajadoresSelect().subscribe({ next: (r) => this.trabajadores.set(r), error: () => this.trabajadores.set([]) });
       this.service.getCentrosCostosSelect().subscribe({ next: (r) => this.centrosCostos.set(r), error: () => this.centrosCostos.set([]) });
     }
+    if (this.esSalida) {
+      this.form.controls.id_centro_costo.valueChanges.subscribe((id) => this.cargarSubfases(id));
+    }
     this.load();
+  }
+
+  /** Las subfases son de la obra elegida: al cambiarla se pierden las de las líneas. */
+  private cargarSubfases(idCentroCosto: number | null): void {
+    this.subfases.set([]);
+    this.subfaseRequerida.set(false);
+    for (const l of this.lineas.controls) l.controls.id_ppto_detalle_categoria.setValue(null, { emitEvent: false });
+    if (!idCentroCosto) return;
+    this.presupuestos.getSubfases(idCentroCosto).subscribe({
+      next: (res) => {
+        this.subfases.set(res.subfases ?? []);
+        this.subfaseRequerida.set(!!res.requerida);
+      },
+      error: () => this.subfases.set([]),
+    });
   }
 
   protected get lineas(): FormArray<LineaGroup> {
@@ -293,6 +335,8 @@ export class DocumentosAlmacenComponent {
       motivo_trabajo: '',
       observaciones: '',
     });
+    this.subfases.set([]);
+    this.subfaseRequerida.set(false);
     this.lineas.clear();
     this.addLinea();
     this.formError.set('');
@@ -352,12 +396,17 @@ export class DocumentosAlmacenComponent {
       if (!v.id_almacen_destino) return 'Seleccione el almacén de destino.';
       if (v.id_almacen_destino === v.id_almacen) return 'El almacén de destino debe ser distinto del origen.';
     }
-    const productos = new Set<number>();
+    const productos = new Set<string>();
     for (const [i, l] of v.lineas.entries()) {
       const n = i + 1;
       if (!l.id_producto) return `Línea ${n}: seleccione un producto.`;
-      if (productos.has(l.id_producto)) return `Línea ${n}: el producto está repetido.`;
-      productos.add(l.id_producto);
+      // El mismo producto puede salir a subfases distintas; no a la misma.
+      const clave = `${l.id_producto}:${this.conSubfase() ? (l.id_ppto_detalle_categoria ?? 0) : 0}`;
+      if (productos.has(clave)) return `Línea ${n}: el producto está repetido${this.conSubfase() && l.id_ppto_detalle_categoria ? ' en la misma subfase' : ''}.`;
+      productos.add(clave);
+      if (this.conSubfase() && this.subfaseRequerida() && !l.id_ppto_detalle_categoria) {
+        return `Línea ${n}: la obra tiene presupuesto aprobado, indique la subfase a la que se imputa.`;
+      }
       if (!/^\d{1,12}(\.\d{1,4})?$/.test(l.cantidad.trim()) || Number(l.cantidad) <= 0) return `Línea ${n}: la cantidad debe ser mayor a 0 (hasta 4 decimales).`;
       if (this.muestraCosto) {
         const costo = l.costo_unitario.trim();
@@ -397,6 +446,7 @@ export class DocumentosAlmacenComponent {
                 cantidad: l.cantidad.trim(),
                 costo_unitario: this.muestraCosto ? text(l.costo_unitario) : undefined,
                 observaciones: text(l.observaciones),
+                id_ppto_detalle_categoria: this.conSubfase() ? (l.id_ppto_detalle_categoria ?? undefined) : undefined,
               },
             ],
       ),

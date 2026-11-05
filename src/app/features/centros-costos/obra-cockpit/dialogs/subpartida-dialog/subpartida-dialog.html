@@ -43,6 +43,14 @@
       Estas fechas son la línea base: no cambian al reprogramar la obra. La meta de cada semana se reparte sola por días laborables (lunes a sábado).
     </p>
     <div>
+      <label class="obra-ctl-label" for="sub-monto">Monto (S/)</label>
+      <input id="sub-monto" type="number" step="0.01" min="0" class="obra-ctl-input" formControlName="monto" placeholder="0.00" />
+      <p class="obra-ctl-hint">
+        Es el peso de la subpartida en el avance de la obra. Si todas las subpartidas tienen monto, el avance se pesa por monto; si falta alguno, por duración.
+        @if (subpartida()?.id_ppto_detalle_categoria) { Salió del presupuesto aprobado; puede ajustarlo. }
+      </p>
+    </div>
+    <div>
       <label class="obra-ctl-label" for="sub-obs">Observación (opcional)</label>
       <input id="sub-obs" type="text" class="obra-ctl-input" formControlName="observacion" maxlength="200" />
     </div>

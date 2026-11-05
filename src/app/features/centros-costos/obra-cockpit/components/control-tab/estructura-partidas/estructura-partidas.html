@@ -1,10 +1,22 @@
 <section class="space-y-3" aria-label="Estructura de la obra">
   <div class="flex flex-wrap items-center justify-between gap-2">
-    <p class="obra-ctl-hint">Partidas y subpartidas con sus fechas programadas (línea base). Cada semana se espera un % de avance (meta).</p>
+    <p class="obra-ctl-hint">
+      Partidas y subpartidas con sus fechas programadas (línea base). Cada semana se espera un % de avance (meta).
+      @if (pesaPorMonto()) {
+        <span data-testid="peso-monto">El avance de la obra se pesa por el <strong>monto</strong> de cada subpartida.</span>
+      } @else if (resultado()) {
+        <span data-testid="peso-duracion">El avance de la obra se pesa por la <strong>duración</strong> de cada subpartida (falta el monto en alguna).</span>
+      }
+      @if (vieneDelPresupuesto()) {
+        <span> La estructura salió del presupuesto aprobado.</span>
+      }
+    </p>
     @if (permisos().editar) {
       <div class="flex gap-2">
         <button type="button" class="obra-ctl-btn" (click)="importarExcel.emit()"><i class="fa-solid fa-file-excel"></i> Importar Excel</button>
-        <button type="button" class="obra-ctl-btn" (click)="importar.emit()"><i class="fa-solid fa-file-import"></i> Importar de presupuesto</button>
+        @if (!vieneDelPresupuesto()) {
+          <button type="button" class="obra-ctl-btn" (click)="importar.emit()"><i class="fa-solid fa-file-import"></i> Importar de presupuesto</button>
+        }
         @if (permisos().crear) {
           <button type="button" class="obra-ctl-btn obra-ctl-btn--primario" (click)="nuevaPartida.emit()"><i class="fa-solid fa-plus"></i> Nueva partida</button>
         }
@@ -14,7 +26,7 @@
 
   @if (partidas().length === 0) {
     <p class="obra-ctl-aviso" data-testid="sin-estructura">
-      Esta obra aún no tiene partidas. {{ permisos().editar ? 'Impórtelas de un presupuesto aprobado o créelas a mano.' : 'Pida a quien edita la obra que las cargue.' }}
+      Esta obra aún no tiene partidas. Se crean solas al aprobar su presupuesto Principal. {{ permisos().editar ? 'También puede importarlas de un presupuesto o de un Excel, o crearlas a mano.' : 'Pida a quien edita la obra que las cargue.' }}
     </p>
   }
 
@@ -24,6 +36,9 @@
         <div class="text-xs">
           <strong class="text-slate-800">{{ p.item }} · {{ p.nombre }}</strong>
           <span class="obra-ctl-chip ml-2">{{ p.tipo === 'ADICIONAL' ? 'Adicional' : 'Contractual' }}</span>
+          @if (resultado()) {
+            <span class="obra-ctl-chip ml-1" title="Peso de la partida en el avance de la obra">{{ peso(p.item) }}</span>
+          }
         </div>
         @if (permisos().editar || permisos().eliminar) {
           <div class="flex gap-1">
@@ -47,6 +62,12 @@
               <th>Subpartida</th>
               <th>Inicio</th>
               <th>Fin</th>
+              @if (hayMontos()) {
+                <th class="text-right">Monto (S/)</th>
+              }
+              @if (resultado()) {
+                <th class="text-right">Peso</th>
+              }
               <th>Metas</th>
               <th><span class="sr-only">Acciones</span></th>
             </tr>
@@ -66,6 +87,12 @@
                 </td>
                 <td>{{ fecha(s.fecha_inicio) }}</td>
                 <td>{{ fecha(s.fecha_fin) }}</td>
+                @if (hayMontos()) {
+                  <td class="text-right font-mono">{{ soles(s.monto) }}</td>
+                }
+                @if (resultado()) {
+                  <td class="text-right font-mono">{{ peso(s.item) }}</td>
+                }
                 <td>{{ cantidadMetasManuales(s) > 0 ? 'Manuales (' + cantidadMetasManuales(s) + ')' : 'Automáticas' }}</td>
                 <td class="text-right whitespace-nowrap">
                   <button type="button" class="obra-ctl-btn" (click)="metas.emit(s)" [attr.aria-label]="'Metas de ' + s.item">Metas</button>

@@ -11,9 +11,11 @@ import {
   PaginatedCentrosCostos,
   FiltrosCentrosCostos,
   MetricasPresupuestosCC,
+  PeriodoFiscal,
   PresupuestoDeCentroCosto,
   RespuestaCentrosCostos,
   ResumenFinanciero,
+  TipoProyectoOpcion,
 } from './interfaces';
 import { environment } from '@env';
 
@@ -82,6 +84,16 @@ export class CentrosCostosService {
 
   getSelect(): Observable<CentroCostoSelect[]> {
     return this.http.get<CentroCostoSelect[]>(`${this.apiUrl}/select`);
+  }
+
+  /** Años que se pueden elegir como periodo (catálogo de proyecto). */
+  getPeriodosActivos(): Observable<PeriodoFiscal[]> {
+    return this.http.get<PeriodoFiscal[]>(`${environment.apiUrl}/proyectos/catalogos/periodos`, { params: { activos: 'true' } });
+  }
+
+  /** Tipos de proyecto activos, para el combo del formulario. */
+  getTiposProyecto(): Observable<TipoProyectoOpcion[]> {
+    return this.http.get<TipoProyectoOpcion[]>(`${environment.apiUrl}/proyectos/catalogos/tipos-proyecto`, { params: { activos: 'true' } });
   }
 
   getCatalogosFiltros(): Observable<CatalogosFiltros> {

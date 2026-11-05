@@ -72,6 +72,9 @@
                 <th>Código</th>
                 <th>Descripción</th>
                 <th>Tipo</th>
+                @if (hayLineasConSubfase(r)) {
+                  <th>Subfase</th>
+                }
                 @if (r.tipo !== 'COMPRA') {
                   <th>Beneficiario</th>
                   <th style="text-align: right">Importe</th>
@@ -92,6 +95,9 @@
                       {{ l.tipo_producto === 'PRODUCTO' ? 'Producto' : 'Servicio' }}
                     </span>
                   </td>
+                  @if (hayLineasConSubfase(r)) {
+                    <td>{{ l.subfase ?? '—' }}</td>
+                  }
                   @if (r.tipo !== 'COMPRA') {
                     <td>{{ l.beneficiario ?? r.beneficiario ?? '—' }}</td>
                     <td align="right">{{ l.precio_referencial === null ? '—' : fmtMoney(l.precio_referencial) }}</td>
@@ -165,8 +171,8 @@
         </div>
 
         <h3 class="req-form__section">Ítems (productos y servicios)</h3>
-        <div class="req-lines" [class.req-lines--benef]="!esCompra()" formArrayName="lineas">
-          <div class="req-lines__head">
+        <div class="req-lines" formArrayName="lineas">
+          <div class="req-lines__head" [style.grid-template-columns]="columnasLineas()">
             <span>{{ esCompra() ? 'Producto o servicio' : 'Concepto' }}</span>
             <span>Cantidad</span>
             <span>{{ esCompra() ? 'Precio ref.' : 'Importe' }}</span>
@@ -174,10 +180,13 @@
             @if (!esCompra()) {
               <span>Beneficiario (trabajador)</span>
             }
+            @if (conSubfase()) {
+              <span>Subfase (presupuesto)</span>
+            }
             <span></span>
           </div>
           @for (linea of lineas.controls; track linea; let i = $index) {
-            <div class="req-lines__row" [formGroupName]="i">
+            <div class="req-lines__row" [formGroupName]="i" [style.grid-template-columns]="columnasLineas()">
               <div>
                 <app-catalogo-picker [label]="linea.controls.etiqueta.value" [disabled]="!puedeGuardar()" (picked)="onItemPicked(linea, $event)" />
                 @if (linea.controls.tipo.value) {
@@ -189,6 +198,9 @@
               <input class="form-control" formControlName="observaciones" [attr.aria-label]="'Observación línea ' + (i + 1)" />
               @if (!esCompra()) {
                 <app-search-select [options]="beneficiarios()" placeholder="Igual al beneficiario general" formControlName="id_beneficiario" />
+              }
+              @if (conSubfase()) {
+                <app-search-select [options]="opcionesSubfase()" placeholder="Sin subfase" formControlName="id_ppto_detalle_categoria" />
               }
               @if (puedeGuardar()) {
                 <button class="table-action-btn table-action-btn--danger" type="button" title="Quitar línea" (click)="removeLinea(i)" [disabled]="lineas.length === 1">

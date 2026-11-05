@@ -2,6 +2,7 @@ import { Type } from '@angular/core';
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { provideRouter } from '@angular/router';
 import { PermisosObra, SIN_PERMISOS_OBRA } from './obra-permisos';
 
 /** Todas las acciones de escritura del módulo `obra`. */
@@ -28,7 +29,7 @@ export async function montar<T>(componente: Type<T>, inputs: Readonly<Record<str
   TestBed.resetTestingModule();
   TestBed.configureTestingModule({
     imports: [componente],
-    providers: [provideHttpClient(), provideHttpClientTesting()],
+    providers: [provideHttpClient(), provideHttpClientTesting(), provideRouter([])],
   });
   const fixture = TestBed.createComponent(componente);
   for (const [nombre, valor] of Object.entries(inputs)) fixture.componentRef.setInput(nombre, valor);
@@ -40,6 +41,34 @@ export async function montar<T>(componente: Type<T>, inputs: Readonly<Record<str
   await render();
   const el: HTMLElement = fixture.nativeElement;
   return { fixture, el, http: TestBed.inject(HttpTestingController), render };
+}
+
+/**
+ * Como {@link montar}, para componentes que piden datos con `rxResource` al abrirse: `whenStable` no termina mientras haya
+ * peticiones pendientes, así que `responder` las atiende (con `http.expectOne(...).flush(...)`) antes de esperar.
+ */
+export async function montarConCarga<T>(
+  componente: Type<T>,
+  inputs: Readonly<Record<string, unknown>>,
+  responder: (http: HttpTestingController) => void,
+): Promise<Montado<T>> {
+  TestBed.resetTestingModule();
+  TestBed.configureTestingModule({
+    imports: [componente],
+    providers: [provideHttpClient(), provideHttpClientTesting(), provideRouter([])],
+  });
+  const fixture = TestBed.createComponent(componente);
+  for (const [nombre, valor] of Object.entries(inputs)) fixture.componentRef.setInput(nombre, valor);
+  fixture.detectChanges();
+  const http = TestBed.inject(HttpTestingController);
+  responder(http);
+  const render = async () => {
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+  };
+  await render();
+  return { fixture, el: fixture.nativeElement as HTMLElement, http, render };
 }
 
 /** Campos del formulario (`input` visibles, `select`, `textarea`) que el usuario puede modificar. */

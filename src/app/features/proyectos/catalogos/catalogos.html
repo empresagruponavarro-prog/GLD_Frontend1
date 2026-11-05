@@ -1,0 +1,168 @@
+<div class="content-header">
+  <div>
+    <h1 class="content-title">Catálogos de proyecto</h1>
+    <p class="content-subtitle">Tipos de proyecto y los planos que exige cada uno, tipos de plano y años fiscales que se pueden elegir.</p>
+  </div>
+</div>
+
+<div class="content-body">
+  <div class="cat-tabs" role="tablist" style="display: flex; gap: 0.5rem; margin-bottom: 1rem">
+    <button id="tab-tipos-proyecto" type="button" role="tab" class="btn" [class.btn-primary]="pestana() === 'tipos-proyecto'" [class.btn-secondary]="pestana() !== 'tipos-proyecto'" [attr.aria-selected]="pestana() === 'tipos-proyecto'" (click)="cambiarPestana('tipos-proyecto')">Tipos de proyecto</button>
+    <button id="tab-tipos-plano" type="button" role="tab" class="btn" [class.btn-primary]="pestana() === 'tipos-plano'" [class.btn-secondary]="pestana() !== 'tipos-plano'" [attr.aria-selected]="pestana() === 'tipos-plano'" (click)="cambiarPestana('tipos-plano')">Tipos de plano</button>
+    <button id="tab-periodos" type="button" role="tab" class="btn" [class.btn-primary]="pestana() === 'periodos'" [class.btn-secondary]="pestana() !== 'periodos'" [attr.aria-selected]="pestana() === 'periodos'" (click)="cambiarPestana('periodos')">Años fiscales</button>
+  </div>
+
+  @if (error()) {
+    <p class="badge badge-danger" role="alert" data-testid="cat-error" style="margin-bottom: 0.75rem">{{ error() }}</p>
+  }
+
+  @switch (pestana()) {
+    @case ('tipos-proyecto') {
+      @if (permisos.crear()) {
+        <div class="cat-alta" style="display: flex; gap: 0.5rem; margin-bottom: 0.75rem">
+          <input id="nuevo-tipo-proyecto" class="form-control" placeholder="Nuevo tipo de proyecto (ej. TAMBO)" maxlength="80" [value]="nuevoTipoProyecto()" (input)="nuevoTipoProyecto.set(valorDe($event))" (keydown.enter)="crearTipoProyecto()" />
+          <button id="btn-crear-tipo-proyecto" class="btn btn-primary" type="button" [disabled]="!nuevoTipoProyecto().trim()" (click)="crearTipoProyecto()"><i class="fa-solid fa-plus"></i> Agregar</button>
+        </div>
+      }
+      <div class="table-card">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Tipo de proyecto</th>
+              <th>Planos que exige</th>
+              <th style="text-align: center">Estado</th>
+              <th style="text-align: center">Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (t of tiposProyecto(); track t.id) {
+              <tr [attr.data-tipo-proyecto]="t.id">
+                <td><strong>{{ t.nombre }}</strong></td>
+                <td>{{ resumenPlanos(t) }}</td>
+                <td align="center"><span class="badge" [class.badge-completed]="t.activo" [class.badge-danger]="!t.activo">{{ t.activo ? 'Activo' : 'Inactivo' }}</span></td>
+                <td align="center">
+                  <button class="table-action-btn" type="button" title="Ver / editar planos" (click)="editarPlanos(t)"><i class="fa-solid fa-list-check"></i></button>
+                  @if (permisos.editar()) {
+                    <button class="table-action-btn" type="button" [title]="t.activo ? 'Desactivar' : 'Activar'" (click)="alternarTipoProyecto(t)"><i class="fa-solid" [class.fa-toggle-on]="t.activo" [class.fa-toggle-off]="!t.activo"></i></button>
+                  }
+                  @if (permisos.eliminar()) {
+                    <button class="table-action-btn table-action-btn--danger" type="button" title="Eliminar" (click)="eliminarTipoProyecto(t)"><i class="fa-solid fa-trash"></i></button>
+                  }
+                </td>
+              </tr>
+            } @empty {
+              <tr><td colspan="4" align="center">{{ cargando() ? 'Cargando...' : 'No hay tipos de proyecto.' }}</td></tr>
+            }
+          </tbody>
+        </table>
+      </div>
+
+      @if (editando(); as e) {
+        <section class="table-card" style="margin-top: 1rem; padding: 1rem" data-testid="editor-planos">
+          <h2 class="content-title" style="font-size: 1rem">Planos de «{{ e.nombre }}»</h2>
+          <p class="content-subtitle">Los obligatorios bloquean la liquidación y el dosier de la obra mientras falten.</p>
+          <table class="table">
+            <thead><tr><th>Código</th><th>Plano</th><th style="width: 200px">En este tipo</th></tr></thead>
+            <tbody>
+              @for (p of planosActivos(); track p.id) {
+                <tr>
+                  <td><strong>{{ p.codigo }}</strong></td>
+                  <td>{{ p.nombre }}</td>
+                  <td>
+                    <select class="form-control" [id]="'inclusion-' + p.id" [disabled]="!permisos.editar()" [value]="inclusionDe(p.id)" (change)="fijarInclusion(p.id, valorDe($event))">
+                      <option value="NO">No incluye</option>
+                      <option value="SI">Incluye</option>
+                      <option value="OBLIGATORIO">Obligatorio</option>
+                    </select>
+                  </td>
+                </tr>
+              } @empty {
+                <tr><td colspan="3" align="center">No hay tipos de plano activos.</td></tr>
+              }
+            </tbody>
+          </table>
+          <div style="display: flex; gap: 0.5rem; margin-top: 0.75rem">
+            @if (permisos.editar()) {
+              <button id="btn-guardar-planos" class="btn btn-primary" type="button" [disabled]="guardandoPlanos()" (click)="guardarPlanos()">Guardar planos</button>
+            }
+            <button class="btn btn-secondary" type="button" (click)="cerrarEditor()">Cerrar</button>
+          </div>
+        </section>
+      }
+    }
+
+    @case ('tipos-plano') {
+      @if (permisos.crear()) {
+        <div class="cat-alta" style="display: flex; gap: 0.5rem; margin-bottom: 0.75rem; flex-wrap: wrap">
+          <input id="nuevo-plano-codigo" class="form-control" style="max-width: 140px" placeholder="Código (ARQ)" maxlength="20" [value]="nuevoPlanoCodigo()" (input)="nuevoPlanoCodigo.set(valorDe($event))" />
+          <input id="nuevo-plano-nombre" class="form-control" style="max-width: 280px" placeholder="Nombre (ARQUITECTURA)" maxlength="120" [value]="nuevoPlanoNombre()" (input)="nuevoPlanoNombre.set(valorDe($event))" />
+          <input id="nuevo-plano-disciplina" class="form-control" style="max-width: 200px" placeholder="Disciplina (opcional)" maxlength="50" [value]="nuevoPlanoDisciplina()" (input)="nuevoPlanoDisciplina.set(valorDe($event))" />
+          <button id="btn-crear-tipo-plano" class="btn btn-primary" type="button" [disabled]="!nuevoPlanoCodigo().trim() || !nuevoPlanoNombre().trim()" (click)="crearTipoPlano()"><i class="fa-solid fa-plus"></i> Agregar</button>
+        </div>
+      }
+      <div class="table-card">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Código</th>
+              <th>Nombre</th>
+              <th>Disciplina</th>
+              <th style="text-align: center">Estado</th>
+              <th style="text-align: center">Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (p of tiposPlano(); track p.id) {
+              <tr [attr.data-tipo-plano]="p.id">
+                <td><strong>{{ p.codigo }}</strong></td>
+                <td>{{ p.nombre }}</td>
+                <td>{{ p.disciplina ?? '—' }}</td>
+                <td align="center"><span class="badge" [class.badge-completed]="p.activo" [class.badge-danger]="!p.activo">{{ p.activo ? 'Activo' : 'Inactivo' }}</span></td>
+                <td align="center">
+                  @if (permisos.editar()) {
+                    <button class="table-action-btn" type="button" [title]="p.activo ? 'Desactivar' : 'Activar'" (click)="alternarTipoPlano(p)"><i class="fa-solid" [class.fa-toggle-on]="p.activo" [class.fa-toggle-off]="!p.activo"></i></button>
+                  }
+                  @if (permisos.eliminar()) {
+                    <button class="table-action-btn table-action-btn--danger" type="button" title="Eliminar" (click)="eliminarTipoPlano(p)"><i class="fa-solid fa-trash"></i></button>
+                  }
+                </td>
+              </tr>
+            } @empty {
+              <tr><td colspan="5" align="center">{{ cargando() ? 'Cargando...' : 'No hay tipos de plano.' }}</td></tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+
+    @case ('periodos') {
+      @if (permisos.editar()) {
+        <div class="cat-alta" style="display: flex; gap: 0.5rem; margin-bottom: 0.75rem">
+          <input id="nuevo-anio" class="form-control" style="max-width: 160px" inputmode="numeric" placeholder="Año (2028)" maxlength="4" [value]="nuevoAnio()" (input)="nuevoAnio.set(valorDe($event))" (keydown.enter)="agregarAnio()" />
+          <button id="btn-agregar-anio" class="btn btn-primary" type="button" [disabled]="!nuevoAnio().trim()" (click)="agregarAnio()"><i class="fa-solid fa-plus"></i> Agregar año</button>
+        </div>
+      }
+      <p class="content-subtitle" style="margin-bottom: 0.5rem">Un centro de costo o un presupuesto solo puede tener como periodo un año activo, y debe ser el año de su fecha de inicio.</p>
+      <div class="table-card">
+        <table class="table">
+          <thead><tr><th>Año</th><th style="text-align: center">Estado</th><th style="text-align: center">Acciones</th></tr></thead>
+          <tbody>
+            @for (p of periodos(); track p.anio) {
+              <tr [attr.data-anio]="p.anio">
+                <td><strong>{{ p.anio }}</strong></td>
+                <td align="center"><span class="badge" [class.badge-completed]="p.activo" [class.badge-danger]="!p.activo">{{ p.activo ? 'Activo' : 'Inactivo' }}</span></td>
+                <td align="center">
+                  @if (permisos.editar()) {
+                    <button class="table-action-btn" type="button" [title]="p.activo ? 'Desactivar' : 'Activar'" (click)="alternarPeriodo(p)"><i class="fa-solid" [class.fa-toggle-on]="p.activo" [class.fa-toggle-off]="!p.activo"></i></button>
+                  }
+                </td>
+              </tr>
+            } @empty {
+              <tr><td colspan="3" align="center">{{ cargando() ? 'Cargando...' : 'No hay años fiscales.' }}</td></tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  }
+</div>

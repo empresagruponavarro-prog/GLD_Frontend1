@@ -11,7 +11,7 @@ export interface EnlaceMenu {
   exacto?: boolean;
 }
 
-export type IdSubmenu = 'documentos' | 'tesoreria' | 'almacen' | 'maestros' | 'activo-fijo';
+export type IdSubmenu = 'proyectos' | 'documentos' | 'tesoreria' | 'almacen' | 'maestros' | 'activo-fijo';
 
 /** Grupo desplegable del menú (`.sidebar-item.has-sub` + `.sidebar-submenu`). */
 export interface SubmenuMenu {
@@ -42,14 +42,24 @@ export const MENU_LATERAL: readonly SeccionMenu[] = [
   {
     categoria: 'Navegación',
     entradas: [
-      enlace({ etiqueta: 'Dashboard Situacional', ruta: '/dashboard-situacional', icono: 'fa-solid fa-chart-line', modulo: 'dashboard', exacto: true }),
+      enlace({ etiqueta: 'Dashboard de Operaciones', ruta: '/operaciones', icono: 'fa-solid fa-gauge-high', modulo: 'operaciones' }),
       enlace({ etiqueta: 'Módulos Principal', ruta: '/modulos', icono: 'fa-solid fa-table-cells-large', modulo: 'modulos' }),
     ],
   },
   {
     categoria: 'Operaciones',
     entradas: [
-      enlace({ etiqueta: 'Dashboard de Operaciones', ruta: '/operaciones', icono: 'fa-solid fa-gauge-high', modulo: 'operaciones' }),
+      submenu({
+        id: 'proyectos',
+        etiqueta: 'Proyectos',
+        icono: 'fa-solid fa-diagram-project',
+        enlaces: [
+          { etiqueta: 'Centros de Costos', ruta: '/centros-costos', icono: 'fa-solid fa-building-flag', modulo: 'centros-costos' },
+          { etiqueta: 'Presupuestos', ruta: '/presupuestos', icono: 'fa-solid fa-file-invoice-dollar', modulo: 'presupuestos', exacto: true },
+          { etiqueta: 'Plantillas', ruta: '/presupuestos/plantillas', icono: 'fa-solid fa-copy', modulo: 'presupuestos.plantillas' },
+          { etiqueta: 'Catálogos de proyecto', ruta: '/proyectos/catalogos', icono: 'fa-solid fa-list-check', modulo: 'proyectos.catalogos' },
+        ],
+      }),
       enlace({ etiqueta: 'Registro de Incidencias', ruta: '/incidencias', icono: 'fa-solid fa-clipboard-list', modulo: 'incidencias' }),
       submenu({
         id: 'documentos',
@@ -106,9 +116,6 @@ export const MENU_LATERAL: readonly SeccionMenu[] = [
           { etiqueta: 'Catálogo de Bienes y Servicios', ruta: '/productos', icono: 'fa-solid fa-box', modulo: 'maestros.productos' },
           { etiqueta: 'Áreas', ruta: '/maestros-generales/areas', icono: 'fa-solid fa-sitemap', modulo: 'maestros.areas' },
           { etiqueta: 'Unidades de Medida', ruta: '/maestros-generales/unidades-medida', icono: 'fa-solid fa-ruler-combined', modulo: 'maestros.generales' },
-          { etiqueta: 'Centros de Costos', ruta: '/centros-costos', icono: 'fa-solid fa-building-flag', modulo: 'centros-costos' },
-          { etiqueta: 'Presupuestos', ruta: '/presupuestos', icono: 'fa-solid fa-file-invoice-dollar', modulo: 'presupuestos', exacto: true },
-          { etiqueta: 'Plantillas', ruta: '/presupuestos/plantillas', icono: 'fa-solid fa-copy', modulo: 'presupuestos.plantillas' },
         ],
       }),
     ],

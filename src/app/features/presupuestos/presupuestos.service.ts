@@ -8,11 +8,17 @@ import {
   FaseCategoriaMaestra,
   FaseAsignada, 
   FasePorCentroCosto,
+  PresupuestoComercial,
+  SubfasesCentroCosto,
   DetalleFase,
   DetalleFaseCate,
   Historial,
   PaginatedResponse,
-  PresupuestoCompleto
+  PresupuestoCompleto,
+  ValidacionPresupuesto,
+  LimpiarVaciosResponse,
+  AprobarPresupuestoResponse,
+  NuevaVersionResponse
 } from './interfaces';
 import { environment } from '@env';
 
@@ -275,6 +281,16 @@ export class PresupuestosService {
     return this.http.get<FaseAsignada[]>(`${this.apiUrl}/fases-asignadas`);
   }
 
+  /** Presupuesto Comercial calculado (cotizaciones ganadoras por fase; GRP SP-16). */
+  getComercial(idOrCode: string | number): Observable<PresupuestoComercial> {
+    return this.http.get<PresupuestoComercial>(`${this.apiUrl}/${idOrCode}/comercial`);
+  }
+
+  /** Subfases de los presupuestos aprobados de la obra, para imputar compras y salidas. */
+  getSubfases(idCentroCosto: number): Observable<SubfasesCentroCosto> {
+    return this.http.get<SubfasesCentroCosto>(`${environment.apiUrl}/subfases`, { params: { id_centro_costo: idCentroCosto } });
+  }
+
   getFasesPorCentroCosto(idCentroCosto: number): Observable<FasePorCentroCosto[]> {
     return this.http.get<FasePorCentroCosto[]>(`${this.apiUrl}/fases-asignadas/centro-costo/${idCentroCosto}`);
   }
@@ -326,6 +342,23 @@ export class PresupuestosService {
     return this.http.post<Historial>(`${this.apiUrl}/historial-versiones`, data);
   }
 
+  // Aprobación (GRP): validar, limpiar vacíos, aprobar y nueva versión
+  getValidacion(idOrCode: string | number): Observable<ValidacionPresupuesto> {
+    return this.http.get<ValidacionPresupuesto>(`${this.apiUrl}/${idOrCode}/validacion`);
+  }
+
+  limpiarVacios(idOrCode: string | number): Observable<LimpiarVaciosResponse> {
+    return this.http.post<LimpiarVaciosResponse>(`${this.apiUrl}/${idOrCode}/limpiar-vacios`, {});
+  }
+
+  aprobar(idOrCode: string | number): Observable<AprobarPresupuestoResponse> {
+    return this.http.post<AprobarPresupuestoResponse>(`${this.apiUrl}/${idOrCode}/aprobar`, {});
+  }
+
+  nuevaVersion(idOrCode: string | number): Observable<NuevaVersionResponse> {
+    return this.http.post<NuevaVersionResponse>(`${this.apiUrl}/${idOrCode}/nueva-version`, {});
+  }
+
   // Generación de FURs por Fase (Requerimientos de Obra)
   getPreviewFurs(idOrCode: string | number): Observable<PreviewFursPresupuestoResponse> {
     return this.http.get<PreviewFursPresupuestoResponse>(`${this.apiUrl}/${idOrCode}/furs-preview`);
@@ -343,6 +376,9 @@ export interface FurGeneradoItem {
   unidad: string;
   cantidad: string;
   precio_referencial: string;
+  /** Subfase del presupuesto a la que se imputa la línea (una línea por producto y subfase). */
+  id_ppto_detalle_categoria: number;
+  subfase: string;
 }
 
 export interface FaseFurPreview {

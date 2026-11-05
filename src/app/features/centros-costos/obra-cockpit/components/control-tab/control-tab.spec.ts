@@ -123,7 +123,8 @@ describe('ControlTabComponent', () => {
   it('estructura vacía: invita a importar solo a quien edita', async () => {
     const editor = await montarPestana({ idCentroCosto: 10, control: control(), permisos: TODOS_PERMISOS_OBRA });
     await ir(editor.el, editor.render, 'Estructura');
-    expect(editor.el.querySelector('[data-testid="sin-estructura"]')?.textContent).toContain('Impórtelas');
+    expect(editor.el.querySelector('[data-testid="sin-estructura"]')?.textContent).toContain('Se crean solas al aprobar su presupuesto Principal');
+    expect(editor.el.querySelector('[data-testid="sin-estructura"]')?.textContent).toContain('También puede importarlas');
     expect(botones(editor.el)).toContain('Importar de presupuesto');
 
     const lector = await montarPestana({ idCentroCosto: 10, control: control(), permisos: permisosObra() });

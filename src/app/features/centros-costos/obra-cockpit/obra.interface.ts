@@ -27,7 +27,12 @@ export type RolEquipoObra = 'jefe_proyecto' | 'coordinador' | 'residente' | 'res
 export interface ObraResidente {
   id: number | null;
   clave: string;
-  origen: 'equipo' | 'directorio';
+  /** `historial`: persona que ya no ocupa ese rol del equipo de la ficha (GRP S-06). */
+  origen: 'equipo' | 'directorio' | 'historial';
+  /** Equipo de la ficha: desde cuándo ocupa el rol (`YYYY-MM-DD`), si se registró el alta. */
+  fecha_alta?: string;
+  /** Historial: hasta cuándo ocupó el rol (`YYYY-MM-DD`). */
+  fecha_baja?: string;
   roles_equipo?: RolEquipoObra[];
   id_anexo?: number;
   nombre_completo: string;
@@ -194,25 +199,6 @@ export type UpdateGeneralesPayload = Partial<Omit<ObraDatosGenerales, CamposSolo
     fecha_inicio?: string;
     fecha_fin_prog?: string;
   };
-
-export interface SemanaPayload {
-  numero_semana?: number;
-  etiqueta_semana?: string;
-  fecha_inicio: string;
-  fecha_fin: string;
-  fase_principal: string;
-  descripcion_actividades?: string;
-  responsable_nombre?: string;
-  porcentaje_meta?: number;
-  porcentaje_real?: number;
-  estado?: string;
-}
-
-export interface UpdateAvancePayload {
-  porcentaje_real: number;
-  estado?: string;
-}
-
 export type ResidentePayload = Partial<Pick<ObraResidente, 'id_anexo' | 'especialidad' | 'telefono' | 'correo' | 'turno' | 'estado_planta' | 'orden'>> &
   Pick<ObraResidente, 'nombre_completo' | 'rol_obra'>;
 

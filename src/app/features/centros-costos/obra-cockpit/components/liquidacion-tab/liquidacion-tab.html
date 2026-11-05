@@ -1,0 +1,155 @@
+<div class="flex flex-col gap-3" data-testid="liquidacion-tab">
+  @let d = datos();
+  @if (cargada.isLoading() && !d) {
+    <p class="text-xs text-on-surface-variant">Cargando liquidación…</p>
+  } @else if (cargada.error() && !d) {
+    <p class="text-xs text-error" role="alert">No se pudo cargar la liquidación de la obra.</p>
+  } @else if (d) {
+    <section class="bg-surface-container-lowest rounded-xl shadow-sm border border-surface-container p-4">
+      <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
+        <div>
+          <h2 class="font-bold text-sm text-on-surface">Liquidación de la obra</h2>
+          <p class="text-xs text-on-surface-variant">Estado del centro de costo: <strong>{{ d.estado_cc ?? '—' }}</strong></p>
+        </div>
+        @if (d.liquidada) {
+          <span class="px-2.5 py-1 rounded-full bg-primary-fixed text-on-primary-fixed-variant text-[11px] font-bold" data-testid="liquidada">
+            Liquidada{{ d.fecha_liquidacion ? ' el ' + d.fecha_liquidacion : '' }}{{ d.liquidado_por ? ' por ' + d.liquidado_por : '' }}
+          </span>
+        }
+      </div>
+
+      <h3 class="text-[11px] uppercase font-semibold tracking-wider text-on-surface-variant mb-1.5">Requisitos</h3>
+      <ul class="flex flex-col gap-1.5">
+        @for (r of d.requisitos; track r.codigo) {
+          <li class="flex items-start gap-2 text-xs" [attr.data-requisito]="r.codigo">
+            <span class="material-symbols-outlined text-base" [class.text-primary]="r.cumplido" [class.text-error]="!r.cumplido">{{ r.cumplido ? 'check_circle' : 'cancel' }}</span>
+            <span class="text-on-surface">{{ r.mensaje }}</span>
+          </li>
+        }
+      </ul>
+
+      @if (d.planos.faltantes.length > 0) {
+        <div class="mt-3 p-2 rounded-lg bg-error-container/40 text-xs" data-testid="planos-faltantes">
+          <strong>Planos obligatorios que faltan ({{ d.planos.faltantes.length }}):</strong>
+          @for (f of d.planos.faltantes; track f.id_tipo_plano; let ultimo = $last) {
+            {{ f.codigo }} · {{ f.nombre }}{{ ultimo ? '' : ',' }}
+          }
+        </div>
+      }
+
+      @if (error()) {
+        <p class="mt-3 text-xs text-error" role="alert">{{ error() }}</p>
+      }
+
+      @if (!d.liquidada) {
+        <div class="mt-4 flex flex-wrap items-center gap-2">
+          @if (puedeLiquidar()) {
+            @if (confirmando()) {
+              <span class="text-xs text-on-surface">Esta acción cierra la obra y no se deshace. ¿Liquidar?</span>
+              <button type="button" id="btn-liquidar" class="px-3 py-1.5 rounded-lg bg-error text-on-error text-xs font-semibold" [disabled]="liquidando()" (click)="liquidar()">Sí, liquidar obra</button>
+              <button type="button" class="px-3 py-1.5 rounded-lg border border-surface-container text-xs font-semibold" (click)="cancelar()">Cancelar</button>
+            } @else {
+              <button type="button" id="btn-liquidar" class="px-3 py-1.5 rounded-lg bg-primary text-on-primary text-xs font-semibold disabled:opacity-50" [disabled]="!d.puede_liquidar" (click)="liquidar()">Liquidar obra</button>
+            }
+          }
+          @if (!d.puede_liquidar) {
+            <span class="text-[11px] text-on-surface-variant">Se habilita cuando se cumplen todos los requisitos.</span>
+          }
+        </div>
+      }
+    </section>
+
+    <section class="bg-surface-container-lowest rounded-xl shadow-sm border border-surface-container p-4" data-testid="gasto-subfase">
+      <h2 class="font-bold text-sm text-on-surface">Gasto frente al presupuesto Meta</h2>
+      <p class="text-xs text-on-surface-variant mb-2">
+        Por subfase: <strong>directo</strong> (servicios), <strong>indirecto</strong> (salidas de almacén) y <strong>compromiso</strong> (bienes comprados que aún no salieron).
+      </p>
+      @let g = datosGasto();
+      @if (!g) {
+        <p class="text-xs text-on-surface-variant">{{ gasto.isLoading() ? 'Cargando gasto…' : 'No se pudo cargar el gasto de la obra.' }}</p>
+      } @else if (g.subfases.length === 0) {
+        <p class="text-xs text-on-surface-variant italic">La obra aún no tiene presupuesto aprobado ni gasto imputado.</p>
+      } @else {
+        <div class="overflow-x-auto">
+          <table class="w-full text-xs text-left border-collapse">
+            <thead>
+              <tr class="text-[11px] uppercase text-on-surface-variant border-b border-surface-container">
+                <th class="py-1.5 pr-2">Subfase</th>
+                <th class="py-1.5 px-2 text-right">Meta</th>
+                <th class="py-1.5 px-2 text-right">Directo</th>
+                <th class="py-1.5 px-2 text-right">Indirecto</th>
+                <th class="py-1.5 px-2 text-right">Compromiso</th>
+                <th class="py-1.5 px-2 text-right">Proyectado</th>
+                <th class="py-1.5 pl-2 text-right">Saldo</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (s of g.subfases; track s.id_ppto_detalle_categoria) {
+                <tr class="border-b border-surface-container/60" [attr.data-subfase]="s.id_ppto_detalle_categoria" [class.text-error]="s.sobre_meta">
+                  <td class="py-1.5 pr-2 font-semibold">{{ s.subfase }}</td>
+                  <td class="py-1.5 px-2 text-right">{{ s.meta === null ? '—' : fmtMoney(s.meta) }}</td>
+                  <td class="py-1.5 px-2 text-right">{{ fmtMoney(s.directo) }}</td>
+                  <td class="py-1.5 px-2 text-right">{{ fmtMoney(s.indirecto) }}</td>
+                  <td class="py-1.5 px-2 text-right">{{ fmtMoney(s.compromiso) }}</td>
+                  <td class="py-1.5 px-2 text-right">{{ fmtMoney(s.proyectado) }}</td>
+                  <td class="py-1.5 pl-2 text-right font-bold">{{ s.saldo === null ? '—' : fmtMoney(s.saldo) }}@if (s.sobre_meta) { <span title="El gasto proyectado supera la meta"> ⚠</span> }</td>
+                </tr>
+              }
+            </tbody>
+            <tfoot>
+              <tr class="font-bold" data-testid="gasto-total">
+                <td class="py-1.5 pr-2">Total</td>
+                <td class="py-1.5 px-2 text-right">{{ fmtMoney(g.total.meta) }}</td>
+                <td class="py-1.5 px-2 text-right">{{ fmtMoney(g.total.directo) }}</td>
+                <td class="py-1.5 px-2 text-right">{{ fmtMoney(g.total.indirecto) }}</td>
+                <td class="py-1.5 px-2 text-right">{{ fmtMoney(g.total.compromiso) }}</td>
+                <td class="py-1.5 px-2 text-right">{{ fmtMoney(g.total.proyectado) }}</td>
+                <td class="py-1.5 pl-2 text-right">{{ fmtMoney(g.total.saldo) }}</td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+        @if (g.lineas_sin_tipo_cambio > 0) {
+          <p class="mt-2 text-[11px] text-error" data-testid="gasto-sin-tc">
+            {{ g.lineas_sin_tipo_cambio }} línea(s) en otra moneda no están sumadas porque falta su tipo de cambio.
+          </p>
+        }
+      }
+    </section>
+
+    <section class="bg-surface-container-lowest rounded-xl shadow-sm border border-surface-container p-4">
+      <div class="flex flex-wrap items-center justify-between gap-2">
+        <div>
+          <h2 class="font-bold text-sm text-on-surface">Dosier de la obra</h2>
+          <p class="text-xs text-on-surface-variant">Presupuestos, ficha, informe de avance, planos y documentos en un solo documento.</p>
+        </div>
+        <button type="button" id="btn-emitir-dosier" class="px-3 py-1.5 rounded-lg border border-primary text-primary text-xs font-semibold disabled:opacity-50" [disabled]="emitiendo()" (click)="emitirDosier()">Emitir dosier</button>
+      </div>
+      @if (errorDosier()) {
+        <p class="mt-2 text-xs text-error" role="alert" data-testid="dosier-error">{{ errorDosier() }}</p>
+      }
+      @let ds = dosier();
+      @if (ds) {
+        <p class="mt-3 text-xs">
+          <a id="abrir-dosier" [routerLink]="['/imprimir/dosier', ds.id_centro_costo]" target="_blank" class="text-primary font-semibold underline">Abrir el dosier para imprimir o guardar como PDF</a>
+        </p>
+        <ol class="mt-3 flex flex-col gap-1.5" data-testid="dosier-secciones">
+          @for (s of ds.secciones; track s.codigo) {
+            <li class="text-xs flex items-start gap-2">
+              <span class="material-symbols-outlined text-base" [class.text-primary]="s.disponible" [class.text-outline]="!s.disponible">{{ s.disponible ? 'check_circle' : 'remove_circle' }}</span>
+              <span>
+                <strong>{{ s.titulo }}</strong>
+                @if (s.referencias.length > 0) {
+                  <span class="text-on-surface-variant"> — {{ s.referencias.join(', ') }}</span>
+                }
+                @if (s.nota) {
+                  <span class="block italic text-on-surface-variant">{{ s.nota }}</span>
+                }
+              </span>
+            </li>
+          }
+        </ol>
+      }
+    </section>
+  }
+</div>

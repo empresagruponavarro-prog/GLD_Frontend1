@@ -209,16 +209,19 @@
 
     <h3 class="doc-form__section">Productos</h3>
     <div class="doc-lines" formArrayName="lineas">
-      <div class="doc-lines__head" [class.doc-lines__head--costo]="muestraCosto">
+      <div class="doc-lines__head" [style.grid-template-columns]="columnasLineas()">
         <span>Producto</span>
         <span>Cantidad</span>
         @if (muestraCosto) {
           <span>Costo unit. {{ costoObligatorio() ? '*' : '(opcional)' }}</span>
         }
+        @if (conSubfase()) {
+          <span>Subfase (presupuesto){{ subfaseRequerida() ? ' *' : '' }}</span>
+        }
         <span></span>
       </div>
       @for (linea of lineas.controls; track linea; let i = $index) {
-        <div class="doc-lines__row" [formGroupName]="i" [class.doc-lines__row--costo]="muestraCosto">
+        <div class="doc-lines__row" [formGroupName]="i" [style.grid-template-columns]="columnasLineas()">
           <div>
             <app-producto-picker [label]="linea.controls.etiqueta.value" (picked)="onProductoPicked(linea, $event)" />
             @if (linea.controls.id_producto.value && !esInventarioInicial) {
@@ -233,6 +236,9 @@
           </div>
           @if (muestraCosto) {
             <input class="form-control" inputmode="decimal" formControlName="costo_unitario" placeholder="0.00" [attr.aria-label]="'Costo línea ' + (i + 1)" />
+          }
+          @if (conSubfase()) {
+            <app-search-select [options]="opcionesSubfase()" [placeholder]="subfaseRequerida() ? 'Elija la subfase' : 'Sin subfase'" formControlName="id_ppto_detalle_categoria" />
           }
           <button class="table-action-btn table-action-btn--danger" type="button" title="Quitar línea" (click)="removeLinea(i)" [disabled]="lineas.length === 1">
             <i class="fa-solid fa-trash"></i>
@@ -275,6 +281,9 @@
           <tr>
             <th>Código</th>
             <th>Producto</th>
+            @if (hayLineasConSubfase(d)) {
+              <th>Subfase</th>
+            }
             <th style="text-align: right">Cantidad</th>
             <th style="text-align: right">Costo unit.</th>
             <th style="text-align: right">Total</th>
@@ -285,6 +294,9 @@
             <tr>
               <td><strong>{{ l.codigo }}</strong></td>
               <td>{{ l.descripcion }}</td>
+              @if (hayLineasConSubfase(d)) {
+                <td>{{ l.subfase ?? '—' }}</td>
+              }
               <td align="right">{{ fmtNum(l.cantidad) }} {{ l.unidad }}</td>
               <td align="right">{{ l.costo_unitario === null ? '—' : fmtMoney(l.costo_unitario) }}</td>
               <td align="right">{{ l.costo_unitario === null ? '—' : fmtMoney(+l.cantidad * +l.costo_unitario) }}</td>
@@ -295,6 +307,11 @@
     </div>
   }
   <div modal-footer class="modal-footer">
+    @if (detail(); as d) {
+      @if (esPecosa(d)) {
+        <a class="btn btn-secondary" [routerLink]="['/imprimir/pecosa', d.id]" target="_blank"><i class="fa-solid fa-print"></i> Imprimir PECOSA</a>
+      }
+    }
     <button class="btn btn-secondary" type="button" (click)="closeDetail()">Cerrar</button>
   </div>
 </app-modal>

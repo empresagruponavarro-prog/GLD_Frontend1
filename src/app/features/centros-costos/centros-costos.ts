@@ -12,7 +12,7 @@ import { ExportarBotonesComponent } from '../../shared/components/exportar-boton
 import { ModalComponent } from '../../shared/components/modal/modal';
 import { traerTodasLasPaginas, type DatosExportacion } from '../../shared/utils/exportar';
 import { DataTable } from '../../shared/interfaces';
-import { CentroCosto, CreateCentroCostoDto, CatalogosFiltros, FiltrosCentrosCostos, ResumenFinanciero } from './interfaces';
+import { CentroCosto, CreateCentroCostoDto, CatalogosFiltros, FiltrosCentrosCostos, ResumenFinanciero, TipoProyectoOpcion } from './interfaces';
 import { CentrosCostosService } from './centros-costos.service';
 import { EmpresasService } from '../administration/empresas/empresas.service';
 import { AnexosService } from '../maestros-generales/anexos/anexos.service';
@@ -135,6 +135,47 @@ export class CentrosCostosComponent {
       next: (res) => this.clientes.set(res || []),
       error: (err: unknown) => console.warn('Error al cargar clientes:', err)
     });
+    this.centrosCostosService.getPeriodosActivos().subscribe({
+      next: (res) => this.periodos.set((res ?? []).map((p) => p.anio).sort((a, b) => a - b)),
+      error: (err: unknown) => console.warn('Error al cargar los periodos:', err)
+    });
+    this.centrosCostosService.getTiposProyecto().subscribe({
+      next: (res) => this.tiposProyecto.set(res ?? []),
+      error: (err: unknown) => console.warn('Error al cargar los tipos de proyecto:', err)
+    });
+  }
+
+  /** Años activos del catálogo (GRP S-11). Mientras no cargan, el combo ofrece solo el año vigente. */
+  periodos = signal<number[]>([]);
+  tiposProyecto = signal<TipoProyectoOpcion[]>([]);
+
+  /**
+   * Periodos que ofrece el formulario: los activos del catálogo y, al editar, el que ya tiene el centro de costo aunque se
+   * haya desactivado después (para no perderlo).
+   */
+  periodosDisponibles(): number[] {
+    const activos = this.periodos().length > 0 ? this.periodos() : [new Date().getFullYear()];
+    const actual = this.formData.periodo;
+    return actual && !activos.includes(actual) ? [...activos, actual].sort((a, b) => a - b) : activos;
+  }
+
+  /** Año de la fecha de inicio del formulario, o `null` si no hay fecha. */
+  anioInicio(): number | null {
+    const a = Number((this.formData.FechaIncio ?? '').slice(0, 4));
+    return Number.isInteger(a) && a > 0 ? a : null;
+  }
+
+  /** El periodo se valida con la fecha del proyecto (GRP S-11): avisa si no coincide con el año de inicio. */
+  periodoNoCoincide(): boolean {
+    const anio = this.anioInicio();
+    return anio !== null && !!this.formData.periodo && this.formData.periodo !== anio;
+  }
+
+  /** Al cambiar la fecha de inicio, el periodo pasa al año de esa fecha si ese año está activo. */
+  onFechaInicioChange(valor: string): void {
+    this.formData.FechaIncio = valor;
+    const anio = this.anioInicio();
+    if (anio !== null && this.periodos().includes(anio)) this.formData.periodo = anio;
   }
 
   emptyForm(): CentroCosto {
@@ -147,7 +188,8 @@ export class CentrosCostosComponent {
     return {
       CentroCosto: '',
       Estado: 'ABIERTO',
-      periodo: 2026,
+      periodo: year,
+      id_tipo_proyecto: null,
       CodCliente: '',
       Cliente: '',
       PresupuestoEstado: 'PENDIENTE',
@@ -291,6 +333,7 @@ export class CentrosCostosComponent {
       periodo: Number(d.periodo),
       id_empresa: d.id_empresa ? Number(d.id_empresa) : undefined,
       id_anexo: d.id_anexo ? Number(d.id_anexo) : undefined,
+      id_tipo_proyecto: d.id_tipo_proyecto ? Number(d.id_tipo_proyecto) : null,
       // Sin cliente el backend responde 400 (CodCliente es obligatorio), igual que antes.
       CodCliente: d.CodCliente ?? '',
       CentroCosto: d.CentroCosto,

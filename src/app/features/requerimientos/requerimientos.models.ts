@@ -87,6 +87,9 @@ export interface RequerimientoLinea {
   observaciones: string | null;
   id_beneficiario: number | null;
   beneficiario: string | null;
+  /** Subfase del presupuesto a la que se imputa la línea. */
+  id_ppto_detalle_categoria: number | null;
+  subfase: string | null;
   cantidad_ordenada: string;
   saldo_por_ordenar: string;
 }
@@ -154,6 +157,7 @@ export interface RequerimientoLineaPayload {
   precio_referencial?: string;
   observaciones?: string;
   id_beneficiario?: number;
+  id_ppto_detalle_categoria?: number;
 }
 
 export interface RequerimientoPayload {

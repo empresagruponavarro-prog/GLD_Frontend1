@@ -1,5 +1,6 @@
 import { Component, computed, inject, signal, OnInit } from '@angular/core';
 import { rxResource, toObservable, toSignal } from '@angular/core/rxjs-interop';
+import { RouterLink } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 
@@ -51,7 +52,18 @@ import {
   PreviewFursPresupuestoResponse,
   GenerarFursPresupuestoResponse,
 } from './presupuestos.service';
-import { PresupuestoPrincipal, DetalleFase, DetalleFaseCate, PresupuestoCompleto, FaseMaestra, FaseCategoriaMaestra } from './interfaces';
+import {
+  AprobarPresupuestoResponse,
+  DetalleFase,
+  DetalleFaseCate,
+  FaseCategoriaMaestra,
+  FaseMaestra,
+  NuevaVersionResponse,
+  presupuestoAprobado,
+  PresupuestoCompleto,
+  PresupuestoPrincipal,
+} from './interfaces';
+import { AprobacionPanelComponent } from './aprobacion-panel/aprobacion-panel';
 import { DocumentosOrigenService } from '../documentos/documentos-origen/documentos-origen.service';
 import { DocumentoOrigenDetalleLinea } from '../documentos/documentos-origen/interfaces/documentos-origen.interface';
 import { CentrosCostosService } from '../centros-costos/centros-costos.service'; import { CategoriasService } from '../maestros-generales/categorias/categorias.service'; import { CategoriaSelect } from '../maestros-generales/categorias/interfaces/categorias.interface';
@@ -126,7 +138,7 @@ function centroCostoDeEstado(estado: unknown): CentroCosto | null {
 @Component({
   selector: 'app-presupuestos',
   standalone: true,
-  imports: [CommonModule, FormsModule, ExportarBotonesComponent, PartidaItemsDialogComponent],
+  imports: [CommonModule, FormsModule, RouterLink, ExportarBotonesComponent, PartidaItemsDialogComponent, AprobacionPanelComponent],
   templateUrl: './presupuestos.html',
   styleUrls: ['./presupuestos.css']
   
@@ -1878,6 +1890,13 @@ export class PresupuestosComponent implements OnInit {
   presupuestosDelCC = signal<PresupuestoPrincipal[]>([]);
   selectedPresupuestoId = signal<string | null>(null);
 
+  /** GRP: los requerimientos (FUR) solo se generan desde un presupuesto aprobado. */
+  readonly selectedPptoAprobado = computed(() => {
+    const sel = this.selectedPresupuestoId();
+    const ppto = this.presupuestosDelCC().find((p) => String(p.IdPresupuesto ?? p.id ?? '') === sel);
+    return presupuestoAprobado(ppto?.estado_ppto);
+  });
+
   /** Presupuestos (base y adicionales) del centro de costos seleccionado, listos para exportar. */
   readonly datosExportacion = computed<DatosExportacion>(() => {
     const cc = this.selectedCC();
@@ -2481,8 +2500,15 @@ export class PresupuestosComponent implements OnInit {
     return (this.presupuestoActivo()?.fases || []).reduce((acc, f) => acc + (f.categorias?.length || 0), 0);
   }
 
-  /** Clave normalizada del estado del formulario (PENDIENTE | REVISION | APROBADO | OBSERVADO). */
-  private estadoFormKey(): 'PENDIENTE' | 'REVISION' | 'APROBADO' | 'OBSERVADO' {
+  /** El presupuesto del formulario ya está aprobado (aprobado, entregado o liquidado): su estado ya no se cambia a mano. */
+  get formPresupuestoAprobado(): boolean {
+    return presupuestoAprobado(this.formData?.estado_ppto);
+  }
+
+  /** Clave normalizada del estado del formulario. `estado_ppto` manda cuando el presupuesto ya pasó la aprobación. */
+  private estadoFormKey(): 'PENDIENTE' | 'REVISION' | 'APROBADO' | 'OBSERVADO' | 'ENTREGADO' | 'LIQUIDADO' | 'ANULADO' {
+    const normalizado = this.formData?.estado_ppto;
+    if (normalizado === 'ENTREGADO' || normalizado === 'LIQUIDADO' || normalizado === 'ANULADO' || normalizado === 'APROBADO') return normalizado;
     const st = String(this.formData?.Estado || 'PENDIENTE').toUpperCase();
     if (st.includes('APROB')) return 'APROBADO';
     if (st.includes('REVIS')) return 'REVISION';
@@ -2496,6 +2522,9 @@ export class PresupuestosComponent implements OnInit {
       REVISION: 'EN REVISIÓN',
       APROBADO: 'APROBADO',
       OBSERVADO: 'OBSERVADO',
+      ENTREGADO: 'ENTREGADO',
+      LIQUIDADO: 'LIQUIDADO',
+      ANULADO: 'ANULADO',
     }[this.estadoFormKey()];
   }
 
@@ -2506,6 +2535,9 @@ export class PresupuestosComponent implements OnInit {
       REVISION: 'bg-sky-400/20 text-sky-300 border-sky-400/40',
       APROBADO: 'bg-emerald-400/20 text-emerald-300 border-emerald-400/40',
       OBSERVADO: 'bg-rose-400/20 text-rose-300 border-rose-400/40',
+      ENTREGADO: 'bg-emerald-400/20 text-emerald-300 border-emerald-400/40',
+      LIQUIDADO: 'bg-slate-400/20 text-slate-200 border-slate-400/40',
+      ANULADO: 'bg-rose-400/20 text-rose-300 border-rose-400/40',
     }[this.estadoFormKey()];
   }
 
@@ -2516,6 +2548,9 @@ export class PresupuestosComponent implements OnInit {
       REVISION: 'bg-sky-50 text-sky-800 border-sky-200',
       APROBADO: 'bg-emerald-50 text-emerald-800 border-emerald-200',
       OBSERVADO: 'bg-rose-50 text-rose-800 border-rose-200',
+      ENTREGADO: 'bg-emerald-50 text-emerald-800 border-emerald-200',
+      LIQUIDADO: 'bg-slate-100 text-slate-700 border-slate-300',
+      ANULADO: 'bg-rose-50 text-rose-800 border-rose-200',
     }[this.estadoFormKey()];
   }
 
@@ -2525,7 +2560,34 @@ export class PresupuestosComponent implements OnInit {
       REVISION: 'bg-sky-400',
       APROBADO: 'bg-emerald-400',
       OBSERVADO: 'bg-rose-400',
+      ENTREGADO: 'bg-emerald-400',
+      LIQUIDADO: 'bg-slate-400',
+      ANULADO: 'bg-rose-400',
     }[this.estadoFormKey()];
+  }
+
+  // ─── Aprobación (panel del paso 5) ──────────────────────────────────────────
+
+  /** Tras aprobar: el formulario refleja el estado nuevo (así guardar no intenta devolverlo a «En revisión») y se recargan las listas. */
+  onPresupuestoAprobado(r: AprobarPresupuestoResponse) {
+    this.formData.Estado = 'Aprobado';
+    this.formData.estado_ppto = r.estado_ppto;
+    this.recargarPresupuestoActivo();
+    this.loadCentrosCostos();
+  }
+
+  /** Tras limpiar vacíos cambian los ítems, las categorías y los costos: se recarga el presupuesto. */
+  onPresupuestoLimpiado() {
+    this.recargarPresupuestoActivo();
+  }
+
+  /** Abre la versión nueva para completarla (nace en desarrollo, con la estructura copiada). */
+  onVersionCreada(r: NuevaVersionResponse) {
+    this.recargarPresupuestosDelCCActual();
+    this.presupuestosService.getPresupuestoCompleto(r.id_presupuesto).subscribe({
+      next: (completo) => this.abrirPresupuestoEnForm(completo, 2),
+      error: (err) => alert('La versión se creó, pero no se pudo abrir: ' + mensajeDeError(err)),
+    });
   }
 
   estadoPptoClass(estado: string | undefined): string {

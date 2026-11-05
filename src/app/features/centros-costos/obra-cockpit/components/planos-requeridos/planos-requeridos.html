@@ -1,0 +1,63 @@
+@if (idCentroCosto() !== null) {
+  <section class="bg-surface-container-lowest rounded-xl shadow-sm border border-surface-container p-3" data-testid="planos-requeridos">
+    @let d = datos();
+    <div class="flex flex-wrap items-center justify-between gap-2 mb-2">
+      <div>
+        <h3 class="font-bold text-xs text-on-surface">Planos requeridos de la obra</h3>
+        <p class="text-[11px] text-on-surface-variant">
+          @if (d?.tipo_proyecto) {
+            Lista del tipo de proyecto {{ d?.tipo_proyecto }}.
+          } @else {
+            La obra no tiene tipo de proyecto: no hay lista de planos.
+          }
+        </p>
+      </div>
+      @if (d && d.resumen.obligatorios > 0) {
+        <span
+          class="px-2 py-0.5 rounded-full text-[11px] font-bold"
+          [class.bg-primary-fixed]="d.resumen.completo"
+          [class.text-on-primary-fixed-variant]="d.resumen.completo"
+          [class.bg-error-container]="!d.resumen.completo"
+          [class.text-on-error-container]="!d.resumen.completo"
+          data-testid="planos-contador"
+          >{{ d.resumen.entregados_obligatorios }} de {{ d.resumen.obligatorios }} obligatorios entregados</span
+        >
+      }
+    </div>
+
+    @if (error()) {
+      <p class="text-[11px] text-error mb-2" role="alert">{{ error() }}</p>
+    }
+    @if (cargada.isLoading() && !d) {
+      <p class="text-[11px] text-on-surface-variant">Cargando…</p>
+    } @else if (cargada.error() && !d) {
+      <p class="text-[11px] text-error" role="alert">No se pudo cargar la lista de planos requeridos.</p>
+    } @else if (d && d.items.length === 0) {
+      <p class="text-[11px] text-on-surface-variant italic">Esta obra no tiene planos requeridos.</p>
+    } @else if (d) {
+      <ul class="grid grid-cols-1 md:grid-cols-2 gap-1.5">
+        @for (item of d.items; track item.id_tipo_plano) {
+          <li class="flex items-center gap-2 px-2 py-1.5 rounded-lg border border-surface-container text-xs">
+            <input
+              type="checkbox"
+              class="w-4 h-4 accent-primary"
+              [id]="'plano-req-' + item.id_tipo_plano"
+              [checked]="item.entregado"
+              [disabled]="!puedeEditar() || guardando() !== null"
+              (change)="alternar(item)"
+            />
+            <label [for]="'plano-req-' + item.id_tipo_plano" class="flex-1 text-on-surface">
+              <span class="font-semibold">{{ item.codigo }}</span> · {{ item.nombre }}
+            </label>
+            @if (item.obligatorio) {
+              <span class="text-[10px] font-bold uppercase text-on-surface-variant">Obligatorio</span>
+            }
+            @if (item.entregado && item.entregado_por) {
+              <span class="text-[10px] text-on-surface-variant" [title]="item.entregado_en ?? ''">{{ item.entregado_por }}</span>
+            }
+          </li>
+        }
+      </ul>
+    }
+  </section>
+}

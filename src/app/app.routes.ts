@@ -17,7 +17,8 @@ import { TrabajadoresComponent } from './features/rrhh/trabajadores/trabajadores
 import { CatalogosRrhhComponent } from './features/rrhh/catalogos/catalogos';
 import { EspecialidadesComponent } from './features/maestros-generales/especialidades/especialidades';
 import { TipoDocIdentidadComponent } from './features/maestros-generales/tipo-doc-identidad/tipo-doc-identidad';
-import { CentrosCostosDashboardComponent } from './features/centros-costos/centro-costos-dashboard/centros-costos-dashboard';
+import { InicioComponent } from './core/inicio/inicio';
+import { CatalogosProyectoComponent } from './features/proyectos/catalogos/catalogos';
 import { CentrosCostosComponent } from './features/centros-costos/centros-costos';
 import { ObraCockpitComponent } from './features/centros-costos/obra-cockpit/obra-cockpit';
 import { PresupuestosComponent } from './features/presupuestos/presupuestos';
@@ -73,9 +74,9 @@ export const routes: Routes = [
     canActivateChild: [authGuard, permisoGuard],
     children: [
       rutaModulo('presupuestos/plantillas', MantenimientoPlantillasComponent, 'presupuestos.plantillas'),
-      // Inicio: menú de módulos principal, sin módulo (es el destino al denegar el acceso a una pantalla).
-      rutaSesion('', ModulesDashboardComponent),
-      rutaModulo('dashboard-situacional', CentrosCostosDashboardComponent, 'dashboard'),
+      // Inicio: lleva a Centros de Costos (o al menú de módulos); es también el destino al denegar el acceso a una pantalla.
+      rutaSesion('', InicioComponent),
+      rutaModulo('proyectos/catalogos', CatalogosProyectoComponent, 'proyectos.catalogos'),
       rutaModulo('centros-costos', CentrosCostosComponent, 'centros-costos'),
       rutaModulo('centros-costos/:id/datos', ObraCockpitComponent, 'obra'),
       rutaModulo('modulos', ModulesDashboardComponent, 'modulos'),
@@ -136,6 +137,12 @@ export const routes: Routes = [
       rutaSesion('imprimir/documento-origen/:id', ImprimirComponent, { tipo: 'documento-origen' }),
       rutaSesion('imprimir/comprobante-pago/:id', ImprimirComponent, { tipo: 'comprobante-pago' }),
       rutaSesion('imprimir/expediente/:id', ImprimirComponent, { tipo: 'expediente' }),
+      rutaSesion('imprimir/pecosa/:id', ImprimirComponent, { tipo: 'pecosa' }),
+      rutaSesion('imprimir/presupuesto-meta/:id', ImprimirComponent, { tipo: 'presupuesto-meta' }),
+      rutaSesion('imprimir/presupuesto-comercial/:id', ImprimirComponent, { tipo: 'presupuesto-comercial' }),
+      rutaSesion('imprimir/ficha-obra/:id', ImprimirComponent, { tipo: 'ficha-obra' }),
+      rutaSesion('imprimir/informe-avance/:id', ImprimirComponent, { tipo: 'informe-avance' }),
+      rutaSesion('imprimir/dosier/:id', ImprimirComponent, { tipo: 'dosier' }),
       rutaModulo('requerimientos', RequerimientosListaComponent, 'requerimientos'),
       rutaModulo('requerimientos/aprobacion', BandejaAprobacionComponent, 'requerimientos.aprobacion'),
       rutaModulo('requerimientos/nuevo', RequerimientoFormComponent, 'requerimientos'),

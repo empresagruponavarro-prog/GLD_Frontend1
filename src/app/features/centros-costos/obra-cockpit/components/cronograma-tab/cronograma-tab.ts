@@ -1,11 +1,14 @@
-import { ChangeDetectionStrategy, Component, computed, input, output, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, input, signal } from '@angular/core';
 import { DatePipe, DecimalPipe } from '@angular/common';
 import { clampPct, estadoSemanaClass, ordenarSemanas } from '../../obra.calc';
 import { ESTADOS_SEMANA, ObraCabecera, ObraKpi, ObraSemana } from '../../obra.interface';
 import { CurvaSChartComponent } from './curva-s-chart/curva-s-chart';
 import { valorDeEvento } from '@shared/utils/eventos';
-import { PermisosObra, SIN_PERMISOS_OBRA } from '../../obra-permisos';
 
+/**
+ * Cronograma semanal: histórico de **solo consulta** (GRP S-01). El avance y las fechas de la obra se registran en «Control de
+ * avance» (partidas y subpartidas); aquí quedan las semanas que ya se habían guardado.
+ */
 @Component({
   selector: 'app-cronograma-tab',
   standalone: true,
@@ -19,15 +22,6 @@ export class CronogramaTabComponent {
   /** La obra tiene estructura de control: el avance global ya sale del control de avance, no de esta bitácora. */
   readonly desdeControl = input(false);
   readonly cabecera = input<ObraCabecera | undefined>(undefined);
-  /** Permisos del módulo `obra`; sin ellos la pestaña queda en solo lectura. */
-  readonly permisos = input<PermisosObra>(SIN_PERMISOS_OBRA);
-
-  readonly nueva = output<void>();
-  readonly editar = output<ObraSemana>();
-  readonly evidencias = output<ObraSemana>();
-  readonly registrarAvance = output<ObraSemana>();
-  readonly eliminar = output<ObraSemana>();
-  readonly generarLote = output<void>();
 
   protected readonly estados = ESTADOS_SEMANA;
   protected readonly estadoClass = estadoSemanaClass;

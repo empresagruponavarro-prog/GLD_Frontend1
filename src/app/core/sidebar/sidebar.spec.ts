@@ -53,12 +53,12 @@ describe('SidebarComponent', () => {
     expect(lista.map((e) => e.href)).toEqual(TODAS);
     expect(lista).toHaveLength(38);
     expect(textos('.menu-category')).toEqual(['Navegación', 'Operaciones', 'Módulos del Sistema', 'Inv. Tecnología', 'RR.HH.', 'Administración']);
-    expect(textos('.sidebar-item.has-sub > span')).toEqual(['Documentos', 'Tesorería', 'Control de Almacén', 'Maestros Generales', 'Activo Fijo']);
+    expect(textos('.sidebar-item.has-sub > span')).toEqual(['Proyectos', 'Documentos', 'Tesorería', 'Control de Almacén', 'Maestros Generales', 'Activo Fijo']);
     expect(lista[0]).toEqual({
-      href: '/dashboard-situacional',
-      texto: 'Dashboard Situacional',
+      href: '/operaciones',
+      texto: 'Dashboard de Operaciones',
       clase: expect.stringContaining('sidebar-item'),
-      icono: 'fa-chart-line fa-solid',
+      icono: 'fa-gauge-high fa-solid',
     });
     expect(lista.find((e) => e.href === '/anexos')?.clase).toContain('sidebar-subitem');
 
@@ -80,13 +80,13 @@ describe('SidebarComponent', () => {
   });
 
   it('Administración se muestra a cualquier rol con ver (la decide la matriz, no el rol)', async () => {
-    const { enlaces } = await setup('Gerente', misPermisos('Gerente', { 'admin.usuarios': {}, 'admin.empresas': {}, dashboard: {} }));
-    expect(enlaces().map((e) => e.href)).toEqual(['/dashboard-situacional', '/admin/empresas', '/admin/usuarios']);
+    const { enlaces } = await setup('Gerente', misPermisos('Gerente', { 'admin.usuarios': {}, 'admin.empresas': {}, operaciones: {} }));
+    expect(enlaces().map((e) => e.href)).toEqual(['/operaciones', '/admin/empresas', '/admin/usuarios']);
   });
 
   it('sin ver en Administración no ve esa sección', async () => {
-    const { enlaces, textos } = await setup('Gerente', misPermisos('Gerente', { dashboard: {} }));
-    expect(enlaces().map((e) => e.href)).toEqual(['/dashboard-situacional']);
+    const { enlaces, textos } = await setup('Gerente', misPermisos('Gerente', { operaciones: {} }));
+    expect(enlaces().map((e) => e.href)).toEqual(['/operaciones']);
     expect(textos('.menu-category')).toEqual(['Navegación']);
   });
 
@@ -119,5 +119,36 @@ describe('SidebarComponent', () => {
     cabecera?.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter' }));
     await fixture.whenStable();
     expect(enlaces().map((e) => e.href)).toEqual(['/almacen/stock', '/almacen/kardex']);
+  });
+
+  it('el grupo «Proyectos» reúne Centros de Costos, Presupuestos, Plantillas y Catálogos, en ese orden', async () => {
+    const { enlaces, textos } = await setup(
+      'Promotor',
+      misPermisos('Promotor', { 'centros-costos': {}, presupuestos: {}, 'presupuestos.plantillas': {}, 'proyectos.catalogos': {} }),
+    );
+
+    expect(textos('.sidebar-item.has-sub > span')).toEqual(['Proyectos']);
+    expect(enlaces().map((e) => e.href)).toEqual(['/centros-costos', '/presupuestos', '/presupuestos/plantillas', '/proyectos/catalogos']);
+  });
+});
+
+describe('MENU_LATERAL (GRP T70)', () => {
+  it('Maestros Generales ya no incluye Centros de Costos, Presupuestos ni Plantillas', () => {
+    const maestros = MENU_LATERAL.flatMap((s) => s.entradas).find((e) => e.tipo === 'submenu' && e.submenu.id === 'maestros');
+    const rutas = maestros?.tipo === 'submenu' ? maestros.submenu.enlaces.map((x) => x.ruta) : [];
+
+    expect(rutas.length).toBeGreaterThan(0);
+    for (const r of ['/centros-costos', '/presupuestos', '/presupuestos/plantillas']) expect(rutas).not.toContain(r);
+  });
+
+  it('el menú ya no tiene el Dashboard Situacional ni usa el módulo dashboard', () => {
+    expect(TODAS).not.toContain('/dashboard-situacional');
+    const modulos = MENU_LATERAL.flatMap((s) => s.entradas.flatMap((e) => (e.tipo === 'enlace' ? [e.enlace.modulo] : e.submenu.enlaces.map((x) => x.modulo))));
+    expect(modulos).not.toContain('dashboard');
+  });
+
+  it('el Dashboard de Operaciones está en Navegación', () => {
+    const navegacion = MENU_LATERAL.find((s) => s.categoria === 'Navegación');
+    expect(navegacion?.entradas.some((e) => e.tipo === 'enlace' && e.enlace.ruta === '/operaciones')).toBe(true);
   });
 });

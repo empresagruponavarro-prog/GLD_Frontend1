@@ -1,0 +1,112 @@
+<section class="rounded-xl border border-slate-200 bg-white p-4" aria-label="Aprobación del presupuesto">
+  <div class="flex items-center justify-between gap-3 mb-3">
+    <h3 class="text-[12px] font-bold text-slate-500 uppercase tracking-wide">Aprobación del presupuesto</h3>
+    @if (validacion(); as v) {
+      <span class="text-[11px] font-semibold text-slate-600 bg-slate-100 border border-slate-200 px-2.5 py-0.5 rounded-full">{{ etiquetaEstado() }} · {{ v.tipo }}</span>
+    }
+  </div>
+
+  @if (validacionRes.isLoading() && !validacion()) {
+    <p class="text-[13px] text-slate-500">Verificando el presupuesto…</p>
+  } @else if (errorCarga()) {
+    <p class="text-[13px] text-rose-700" role="alert">{{ errorCarga() }}</p>
+    <button type="button" (click)="verificar()" class="mt-2 text-[12px] font-semibold text-[#1e4838] underline cursor-pointer">Reintentar</button>
+  } @else if (validacion(); as v) {
+    <p class="text-[12px] text-slate-500 mb-3">
+      {{ v.resumen.fases }} fase(s) · {{ v.resumen.categorias }} categoría(s) · {{ v.resumen.items }} ítem(s) · costo directo <strong class="text-slate-700">S/ {{ v.resumen.costo_directo }}</strong>
+    </p>
+
+    @if (yaAprobado()) {
+      <p class="text-[13px] text-emerald-800 bg-emerald-50 border border-emerald-200 rounded-lg px-3 py-2">
+        Este presupuesto ya está aprobado: ya no se edita ni se aprueba de nuevo.
+        @if (esPrincipal()) {
+          Si la obra aún no tiene avance, puede crear una nueva versión; si ya avanzó, registre el cambio como presupuesto adicional.
+        }
+      </p>
+      @if (esPrincipal() && puedeCrear()) {
+        <div class="mt-3 flex items-center gap-2">
+          <button type="button" (click)="pedir('version')" [disabled]="ocupado()"
+                  class="px-3.5 py-2 rounded-lg border border-slate-300 bg-white text-[12px] font-bold text-slate-700 hover:border-[#529b7b] disabled:opacity-50 cursor-pointer">
+            {{ confirmando() === 'version' ? 'Confirmar nueva versión' : 'Nueva versión' }}
+          </button>
+          @if (confirmando() === 'version') {
+            <button type="button" (click)="cancelar()" class="text-[12px] text-slate-500 underline cursor-pointer">Cancelar</button>
+          }
+        </div>
+      }
+    } @else {
+      @if (v.bloqueos.length > 0) {
+        <ul class="mb-3 space-y-1" aria-label="Reglas que impiden aprobar">
+          @for (b of v.bloqueos; track b.codigo) {
+            <li class="text-[13px] text-rose-800 bg-rose-50 border border-rose-200 rounded-lg px-3 py-2">{{ b.mensaje }}</li>
+          }
+        </ul>
+      }
+      @if (v.problemas.length > 0) {
+        <p class="text-[12px] font-bold text-amber-800 mb-1">Falta completar ({{ v.problemas.length }}):</p>
+        <ul class="mb-3 space-y-1" aria-label="Pendientes del presupuesto">
+          @for (p of problemasVisibles(); track $index) {
+            <li class="text-[13px] text-amber-900 bg-amber-50 border border-amber-200 rounded-lg px-3 py-1.5">{{ p.mensaje }}</li>
+          }
+          @if (problemasOcultos() > 0) {
+            <li class="text-[12px] text-amber-800 px-1">… y {{ problemasOcultos() }} más</li>
+          }
+        </ul>
+      } @else if (v.bloqueos.length === 0) {
+        <p class="mb-3 text-[13px] text-emerald-800 bg-emerald-50 border border-emerald-200 rounded-lg px-3 py-2">El presupuesto está completo y listo para aprobar.</p>
+      }
+
+      <div class="flex flex-wrap items-center gap-2">
+        @if (hayVacios() && puedeEditar()) {
+          <button type="button" (click)="pedir('limpiar')" [disabled]="ocupado()"
+                  title="Elimina los ítems en cero y las categorías sin ítems"
+                  class="px-3.5 py-2 rounded-lg border border-slate-300 bg-white text-[12px] font-bold text-slate-700 hover:border-[#529b7b] disabled:opacity-50 cursor-pointer">
+            {{ confirmando() === 'limpiar' ? 'Confirmar: borrar vacíos' : 'Limpiar vacíos' }}
+          </button>
+        }
+        @if (puedeAprobar()) {
+          <button type="button" (click)="pedir('aprobar')" [disabled]="ocupado() || !v.puede_aprobar"
+                  title="Aprueba el presupuesto y crea las partidas y subpartidas de la obra"
+                  class="px-3.5 py-2 rounded-lg bg-[#1e4838] text-white text-[12px] font-bold hover:bg-[#163a2d] disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer">
+            {{ confirmando() === 'aprobar' ? 'Confirmar aprobación' : 'Aprobar presupuesto' }}
+          </button>
+        }
+        @if (confirmando()) {
+          <button type="button" (click)="cancelar()" class="text-[12px] text-slate-500 underline cursor-pointer">Cancelar</button>
+        }
+        <button type="button" (click)="verificar()" [disabled]="ocupado()" class="ml-auto text-[12px] font-semibold text-[#1e4838] underline disabled:opacity-50 cursor-pointer">Verificar de nuevo</button>
+      </div>
+      @if (!puedeAprobar()) {
+        <p class="mt-2 text-[11px] text-slate-400">Aprobar requiere el permiso «aprobar» en Presupuestos.</p>
+      }
+    }
+  }
+
+  @if (error()) {
+    <p class="mt-3 text-[13px] text-rose-700 bg-rose-50 border border-rose-200 rounded-lg px-3 py-2" role="alert">{{ error() }}</p>
+  }
+
+  @if (ultimoLimpiado(); as l) {
+    <p class="mt-3 text-[13px] text-slate-700 bg-slate-50 border border-slate-200 rounded-lg px-3 py-2" role="status">
+      Se eliminaron {{ l.items_eliminados }} ítem(s) en cero y {{ l.categorias_eliminadas }} categoría(s) sin ítems.
+      @if (l.fases_sin_categorias.length > 0) {
+        Quedaron fases sin categorías (agréguelas o quite la fase):
+        @for (f of l.fases_sin_categorias; track f.id) { <strong>{{ f.nombre }}</strong>{{ $last ? '.' : ', ' }} }
+      }
+    </p>
+  }
+
+  @if (ultimoAprobado(); as r) {
+    <div class="mt-3 text-[13px] bg-emerald-50 border border-emerald-200 rounded-lg px-3 py-2 text-emerald-900" role="status">
+      <p class="font-semibold">Presupuesto aprobado.</p>
+      @if (r.estructura.capturada) {
+        <p>Se creó la estructura de la obra: {{ r.estructura.partidas }} partida(s) y {{ r.estructura.subpartidas }} subpartida(s).</p>
+      } @else if (r.estructura.motivo) {
+        <p class="text-amber-900">No se creó la estructura de la obra: {{ r.estructura.motivo }}.</p>
+      }
+      @if (r.reemplaza) {
+        <p>Reemplaza a {{ r.reemplaza.id_presupuesto || ('#' + r.reemplaza.id) }}, que quedó anulado.</p>
+      }
+    </div>
+  }
+</section>

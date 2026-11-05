@@ -19,6 +19,7 @@ interface Internals {
   };
   formError(): string;
   save(enviar?: boolean): void;
+  addLinea(): void;
 }
 
 /** Ruta `requerimientos/nuevo` (sin `id`) o `requerimientos/:id`. */
@@ -46,7 +47,7 @@ describe('RequerimientoFormComponent', () => {
   afterEach(() => {
     const http = TestBed.inject(HttpTestingController);
     // Al elegir un centro de costos el formulario consulta sus fases.
-    http.match((r) => r.url.includes('/fases-asignadas/')).forEach((r) => r.flush([]));
+    http.match((r) => /fases-asignadas\/|\/subfases/.test(r.url)).forEach((r) => r.flush([]));
     http.verify();
   });
 
@@ -143,7 +144,7 @@ describe('RequerimientoFormComponent', () => {
       ordenes_compra: [],
       lineas: [{ id: 1, id_producto: 10, codigo: 'P-10', descripcion: 'Cemento', tipo_producto: 'PRODUCTO', unidad: 'BLS', cantidad: '5', cantidad_aprobada: null, precio_referencial: null, observaciones: null, cantidad_ordenada: '0', saldo_por_ordenar: '0' }],
     });
-    http.match((r) => r.url.includes('/fases-asignadas/')).forEach((r) => r.flush([]));
+    http.match((r) => /fases-asignadas\/|\/subfases/.test(r.url)).forEach((r) => r.flush([]));
 
     cmp.form.patchValue({ justificacion: 'Corregido' });
     cmp.save();
@@ -152,6 +153,72 @@ describe('RequerimientoFormComponent', () => {
     expect(req.request.body.justificacion).toBe('Corregido');
     expect(req.request.body.lineas).toEqual([{ id_producto: 10, cantidad: '5', precio_referencial: undefined, observaciones: undefined }]);
     req.flush({ id: 9, estado: 'OBSERVADO', eventos: [], ordenes_compra: [], lineas: [] });
+  });
+
+  describe('subfase por línea (GRP S-09)', () => {
+    const SUBFASES = {
+      id_centro_costo: 4,
+      requerida: true,
+      subfases: [
+        { id: 40, subfase: 'MATERIALES', fase: 'OBRA GRUESA', presupuesto: 'PPTO-1' },
+        { id: 41, subfase: 'SERVICIOS', fase: 'OBRA GRUESA', presupuesto: 'PPTO-1' },
+      ],
+    };
+
+    async function conSubfases() {
+      const m = await setup();
+      m.cmp.form.patchValue(valido);
+      m.http.match((r) => r.url.includes('/fases-asignadas/')).forEach((r) => r.flush([]));
+      m.http.expectOne((r) => r.url.endsWith('/subfases') && r.params.get('id_centro_costo') === '4').flush(SUBFASES);
+      return m;
+    }
+
+    it('al elegir la obra pide sus subfases y la subfase de la línea viaja en el payload', async () => {
+      const { http, cmp } = await conSubfases();
+      cmp.form.controls.lineas.at(0).patchValue({ id_producto: 10, cantidad: '2', id_ppto_detalle_categoria: 40 });
+      cmp.save();
+
+      const req = http.expectOne(`${environment.apiUrl}/requerimientos`);
+      expect(req.request.body.lineas[0]).toMatchObject({ id_producto: 10, id_ppto_detalle_categoria: 40 });
+      req.flush({ id: 1 });
+    });
+
+    it('el mismo ítem puede repetirse en subfases distintas, no en la misma', async () => {
+      const { http, cmp } = await conSubfases();
+      cmp.addLinea();
+      cmp.form.controls.lineas.at(0).patchValue({ id_producto: 10, cantidad: '1', id_ppto_detalle_categoria: 40 });
+      cmp.form.controls.lineas.at(1).patchValue({ id_producto: 10, cantidad: '1', id_ppto_detalle_categoria: 40 });
+      cmp.save();
+      expect(cmp.formError()).toBe('Línea 2: el ítem está repetido en la misma subfase.');
+      http.expectNone((r) => r.method === 'POST');
+
+      cmp.form.controls.lineas.at(1).patchValue({ id_ppto_detalle_categoria: 41 });
+      cmp.save();
+      const req = http.expectOne(`${environment.apiUrl}/requerimientos`);
+      expect(req.request.body.lineas.map((l: { id_ppto_detalle_categoria: number }) => l.id_ppto_detalle_categoria)).toEqual([40, 41]);
+      req.flush({ id: 1 });
+    });
+
+    it('sin subfase repetir el ítem sigue siendo un error', async () => {
+      const { http, cmp } = await conSubfases();
+      cmp.addLinea();
+      cmp.form.controls.lineas.at(0).patchValue({ id_producto: 10, cantidad: '1' });
+      cmp.form.controls.lineas.at(1).patchValue({ id_producto: 10, cantidad: '1' });
+      cmp.save();
+
+      expect(cmp.formError()).toBe('Línea 2: el ítem está repetido.');
+      http.expectNone((r) => r.method === 'POST');
+    });
+
+    it('sin subfase la línea no manda el campo', async () => {
+      const { http, cmp } = await conSubfases();
+      cmp.form.controls.lineas.at(0).patchValue({ id_producto: 10, cantidad: '2' });
+      cmp.save();
+
+      const req = http.expectOne(`${environment.apiUrl}/requerimientos`);
+      expect(req.request.body.lineas[0].id_ppto_detalle_categoria).toBeUndefined();
+      req.flush({ id: 1 });
+    });
   });
 
   it('sin crear, el alta no guarda (defensa en el método)', async () => {
@@ -167,7 +234,7 @@ describe('RequerimientoFormComponent', () => {
   it('sin editar, la edición no guarda aunque el estado sea editable (defensa en el método)', async () => {
     const { http, cmp } = await setup('9', { crear: true });
     http.expectOne(`${environment.apiUrl}/requerimientos/9`).flush(BORRADOR);
-    http.match((r) => r.url.includes('/fases-asignadas/')).forEach((r) => r.flush([]));
+    http.match((r) => /fases-asignadas\/|\/subfases/.test(r.url)).forEach((r) => r.flush([]));
     cmp.save();
     http.expectNone((r) => r.method === 'PATCH');
   });
@@ -256,6 +323,29 @@ async function vaciar(p: Pantalla<RequerimientoFormComponent>, r: Requerimiento,
 }
 
 const hayTitulo = (el: HTMLElement, titulo: string) => el.querySelector(`button[title="${titulo}"]`) !== null;
+
+describe('RequerimientoFormComponent: subfase en la vista del FUR', () => {
+  it('muestra la subfase de cada línea cuando alguna la tiene', async () => {
+    const fur = requerimiento({
+      ...COMPRA,
+      id: 6,
+      numero: 'FUR-000006',
+      estado: 'APROBADO',
+      avance: 'SIN_ATENDER',
+      lineas: [lineaRequerimiento({ id: 1, id_ppto_detalle_categoria: 40, subfase: 'MATERIALES' }), lineaRequerimiento({ id: 2, id_producto: 101, codigo: 'P-101' })],
+    });
+    const { el } = await montar({}, fur);
+
+    expect(Array.from(el.querySelectorAll('th')).some((t) => t.textContent?.trim() === 'Subfase')).toBe(true);
+    expect(el.textContent).toContain('MATERIALES');
+  });
+
+  it('sin subfases no agrega la columna', async () => {
+    const { el } = await montar({}, APROBADO);
+
+    expect(Array.from(el.querySelectorAll('th')).some((t) => t.textContent?.trim() === 'Subfase')).toBe(false);
+  });
+});
 
 describe('RequerimientoFormComponent: controles según permisos (requerimientos)', () => {
   afterEach(() => {

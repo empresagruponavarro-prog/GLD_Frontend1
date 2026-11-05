@@ -40,6 +40,7 @@ interface Internals {
   formError(): string;
   openCreate(): void;
   save(): void;
+  addLinea(): void;
 }
 
 /** Monta la pantalla de `tipo` con permiso de crear en su módulo y abre el formulario. */
@@ -239,5 +240,83 @@ describe('DocumentosAlmacenComponent: botones según permisos (clave de la ruta)
     (cmp as unknown as Internals).openCreate();
     await render();
     expect(el.querySelector('.doc-lines__add')).toBeNull();
+  });
+});
+
+describe('DocumentosAlmacenComponent: subfase en la salida (PECOSA, GRP S-09)', () => {
+  afterEach(() => TestBed.inject(HttpTestingController).verify());
+
+  const SUBFASES = (requerida: boolean) => ({
+    id_centro_costo: 5,
+    requerida,
+    subfases: [
+      { id: 40, subfase: 'MATERIALES', fase: 'OBRA GRUESA', presupuesto: 'PPTO-1' },
+      { id: 41, subfase: 'SERVICIOS', fase: 'OBRA GRUESA', presupuesto: 'PPTO-1' },
+    ],
+  });
+
+  /** Salida CONSUMO a la obra 5; la API responde sus subfases. */
+  async function conObra(requerida: boolean) {
+    const m = await setup('salidas');
+    m.cmp.form.patchValue({ id_almacen: 1, id_centro_costo: 5 });
+    m.http.expectOne((r) => r.url.endsWith('/subfases') && r.params.get('id_centro_costo') === '5').flush(SUBFASES(requerida));
+    return m;
+  }
+
+  it('con presupuesto aprobado exige la subfase en cada línea', async () => {
+    const { cmp, http } = await conObra(true);
+    cmp.form.controls.lineas.at(0).patchValue({ id_producto: 10, cantidad: '3' });
+    cmp.save();
+
+    expect(cmp.formError()).toBe('Línea 1: la obra tiene presupuesto aprobado, indique la subfase a la que se imputa.');
+    http.expectNone((r) => r.method === 'POST');
+  });
+
+  it('la subfase de la línea viaja en el payload', async () => {
+    const { cmp, http } = await conObra(true);
+    cmp.form.controls.lineas.at(0).patchValue({ id_producto: 10, cantidad: '3', id_ppto_detalle_categoria: 40 });
+    cmp.save();
+
+    const req = http.expectOne(`${environment.apiUrl}/almacen/salidas`);
+    expect(req.request.body.id_centro_costo).toBe(5);
+    expect(req.request.body.lineas[0]).toMatchObject({ id_producto: 10, id_ppto_detalle_categoria: 40 });
+    req.flush({ id: 1 });
+    http.match(() => true).forEach((r) => r.flush({ data: [], page: 1, pageSize: 20, total: 0, totalPages: 0 }));
+  });
+
+  it('el mismo producto puede salir a dos subfases, no a la misma', async () => {
+    const { cmp, http } = await conObra(true);
+    cmp.addLinea();
+    cmp.form.controls.lineas.at(0).patchValue({ id_producto: 10, cantidad: '1', id_ppto_detalle_categoria: 40 });
+    cmp.form.controls.lineas.at(1).patchValue({ id_producto: 10, cantidad: '1', id_ppto_detalle_categoria: 40 });
+    cmp.save();
+    expect(cmp.formError()).toBe('Línea 2: el producto está repetido en la misma subfase.');
+
+    cmp.form.controls.lineas.at(1).patchValue({ id_ppto_detalle_categoria: 41 });
+    cmp.save();
+    const req = http.expectOne(`${environment.apiUrl}/almacen/salidas`);
+    expect(req.request.body.lineas.map((l: { id_ppto_detalle_categoria: number }) => l.id_ppto_detalle_categoria)).toEqual([40, 41]);
+    req.flush({ id: 1 });
+    http.match(() => true).forEach((r) => r.flush({ data: [], page: 1, pageSize: 20, total: 0, totalPages: 0 }));
+  });
+
+  it('una obra sin presupuesto aprobado no pide subfase', async () => {
+    const { cmp, http } = await setup('salidas');
+    cmp.form.patchValue({ id_almacen: 1, id_centro_costo: 6 });
+    http.expectOne((r) => r.url.endsWith('/subfases')).flush({ id_centro_costo: 6, requerida: false, subfases: [] });
+    cmp.form.controls.lineas.at(0).patchValue({ id_producto: 10, cantidad: '3' });
+    cmp.save();
+
+    const req = http.expectOne(`${environment.apiUrl}/almacen/salidas`);
+    expect(req.request.body.lineas[0].id_ppto_detalle_categoria).toBeUndefined();
+    req.flush({ id: 1 });
+    http.match(() => true).forEach((r) => r.flush({ data: [], page: 1, pageSize: 20, total: 0, totalPages: 0 }));
+  });
+
+  it('una entrada no pide subfases aunque se elija una obra', async () => {
+    const { cmp, http } = await setup('ingresos');
+    cmp.form.patchValue({ id_centro_costo: 5 });
+
+    http.expectNone((r) => r.url.endsWith('/subfases'));
   });
 });

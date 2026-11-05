@@ -293,10 +293,13 @@
               <div class="cc-form-field">
                 <label class="cc-label">Periodo Fiscal <span class="cc-required">*</span></label>
                 <div class="cc-segmented">
-                  <button type="button" class="cc-segment" [class.active]="formData.periodo === 2024" (click)="formData.periodo = 2024">2024</button>
-                  <button type="button" class="cc-segment" [class.active]="formData.periodo === 2025" (click)="formData.periodo = 2025">2025</button>
-                  <button type="button" class="cc-segment" [class.active]="formData.periodo === 2026" (click)="formData.periodo = 2026">2026</button>
+                  @for (anio of periodosDisponibles(); track anio) {
+                    <button type="button" class="cc-segment" [class.active]="formData.periodo === anio" (click)="setPeriodo(anio)">{{ anio }}</button>
+                  }
                 </div>
+                @if (periodoNoCoincide()) {
+                  <small class="cc-card-note" role="status">El periodo no coincide con el año de la fecha de inicio ({{ anioInicio() }}).</small>
+                }
               </div>
 
               <div class="cc-form-field">
@@ -306,6 +309,25 @@
                   <button type="button" class="cc-segment" [class.active]="formData.Estado === 'CERRADO'" (click)="formData.Estado = 'CERRADO'">CERRADO</button>
                   <button type="button" class="cc-segment" [class.active]="formData.Estado === 'POR LIQUIDAR'" (click)="formData.Estado = 'POR LIQUIDAR'">LIQUIDAR</button>
                 </div>
+                <small class="cc-card-note">Una obra se cierra al liquidarla: use «Liquidar» en la pestaña Liquidación de sus datos.</small>
+              </div>
+            </div>
+
+            <div class="cc-form-row" style="margin-top: 0.6rem;">
+              <div class="cc-form-field">
+                <label class="cc-label" for="cc-tipo-proyecto">Tipo de proyecto</label>
+                <div class="cc-select-wrapper">
+                  <select id="cc-tipo-proyecto" [(ngModel)]="formData.id_tipo_proyecto">
+                    <option [ngValue]="null">— Sin tipo —</option>
+                    @for (t of tiposProyecto(); track t.id) {
+                      <option [ngValue]="t.id">{{ t.nombre }}</option>
+                    }
+                  </select>
+                  <svg class="cc-select-icon" viewBox="0 0 14 14" fill="none">
+                    <path d="M3.5 5.25L7 8.75L10.5 5.25" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+                  </svg>
+                </div>
+                <small class="cc-card-note">Define los planos obligatorios de la obra para su liquidación y su dosier.</small>
               </div>
             </div>
           </div>
@@ -325,7 +347,7 @@
               <div class="cc-form-field">
                 <label class="cc-label">Fecha Inicio <span class="cc-required">*</span></label>
                 <div class="cc-date-input">
-                  <input type="date" [(ngModel)]="formData.FechaIncio">
+                  <input type="date" [ngModel]="formData.FechaIncio" (ngModelChange)="onFechaInicioChange($event)">
                 </div>
               </div>
 
@@ -337,10 +359,13 @@
               </div>
 
               <div class="cc-form-field">
-                <label class="cc-label">Fecha Fin Real</label>
+                <label class="cc-label" for="cc-fin-real">Fecha Fin Real</label>
                 <div class="cc-date-input">
-                  <input type="date" [(ngModel)]="formData.FechaFinReal">
+                  <input id="cc-fin-real" type="date" [(ngModel)]="formData.FechaFinReal" [disabled]="editingId() === null">
                 </div>
+                <small class="cc-card-note">
+                  {{ editingId() === null ? 'Se habilita al editar la obra.' : 'Se registra al completar la ejecución (100 % de avance).' }}
+                </small>
               </div>
             </div>
           </div>
@@ -352,7 +377,7 @@
               <lucide-icon [img]="FileText" size="15" class="cc-card-icon"></lucide-icon>
               <span class="cc-card-title">Presupuesto</span>
             </div>
-            <span class="cc-card-note">Montos en soles</span>
+            <span class="cc-card-note">Solo lectura: se calcula desde los presupuestos del centro de costo</span>
           </div>
 
           <div class="cc-form-card-body">
@@ -360,7 +385,7 @@
               <div class="cc-form-field">
                 <label class="cc-label">Estado Presupuesto</label>
                 <div class="cc-select-wrapper">
-                  <select [(ngModel)]="formData.PresupuestoEstado">
+                  <select [(ngModel)]="formData.PresupuestoEstado" disabled aria-label="Estado del presupuesto (solo lectura)">
                     @for (e of presupuestoEstadoOptions; track $index) {
                       <option [value]="e">{{ e }}</option>
                     }
@@ -374,7 +399,7 @@
               <div class="cc-form-field">
                 <label class="cc-label">Presupuesto Monto</label>
                 <div class="cc-input-only">
-                  <input type="number" [(ngModel)]="formData.PresupuestoMonto">
+                  <input type="number" [(ngModel)]="formData.PresupuestoMonto" readonly>
                 </div>
               </div>
             </div>
@@ -383,21 +408,21 @@
               <div class="cc-form-field">
                 <label class="cc-label">Costo Directo</label>
                 <div class="cc-input-only">
-                  <input type="number" [(ngModel)]="formData.PresupuestoCostoDirecto">
+                  <input type="number" [(ngModel)]="formData.PresupuestoCostoDirecto" readonly>
                 </div>
               </div>
 
               <div class="cc-form-field">
                 <label class="cc-label">Gastos Generales</label>
                 <div class="cc-input-only">
-                  <input type="number" [(ngModel)]="formData.PresupuestoGastosGenerales">
+                  <input type="number" [(ngModel)]="formData.PresupuestoGastosGenerales" readonly>
                 </div>
               </div>
 
               <div class="cc-form-field">
                 <label class="cc-label">Viáticos</label>
                 <div class="cc-input-only">
-                  <input type="number" [(ngModel)]="formData.PresupuestoViaticos">
+                  <input type="number" [(ngModel)]="formData.PresupuestoViaticos" readonly>
                 </div>
               </div>
             </div>

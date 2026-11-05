@@ -3,7 +3,7 @@ import { GeneralesDialogComponent } from './generales-dialog';
 
 const esTrabajadores = (r: { url: string }) => r.url.endsWith('/anexo/select');
 
-const abrir = async (permisos = permisosObra()) => {
+const abrir = async (permisos = permisosObra(), extra: Record<string, unknown> = {}) => {
   const m = await montar(GeneralesDialogComponent, {
     isOpen: true,
     idCentroCosto: 10,
@@ -15,6 +15,7 @@ const abrir = async (permisos = permisosObra()) => {
     },
     cabecera: { fecha_inicio: '2026-09-14T00:00:00.000Z', fecha_fin_prog: '2026-11-30T00:00:00.000Z' },
     permisos,
+    ...extra,
   });
   // La ficha pide la lista de trabajadores al abrirse (equipo de la obra).
   m.http.expectOne(esTrabajadores).flush([{ id: 7, nombre: 'Ana Ruiz' }]);
@@ -80,6 +81,35 @@ describe('GeneralesDialogComponent: ficha operativa del control de avance', () =
 
     http.expectNone((r) => r.url.endsWith('/operaciones/obra/10/generales'));
     expect(el.textContent).toContain('El fin programado no puede ser anterior al inicio.');
+  });
+});
+
+describe('GeneralesDialogComponent: plazo fijo una vez iniciada la obra (GRP S-02)', () => {
+  it('con la obra iniciada, inicio, fin y semanas son de solo lectura y se explica por qué', async () => {
+    const { el } = await abrir(TODOS_PERMISOS_OBRA, { plazoBloqueado: true });
+
+    for (const id of ['gen-inicio', 'gen-fin', 'gen-semanas']) expect(el.querySelector<HTMLInputElement>(`#${id}`)?.disabled).toBe(true);
+    expect(el.querySelector<HTMLInputElement>('#gen-avance')?.disabled).toBe(false);
+    expect(el.querySelector('[data-testid="nota-plazo"]')?.textContent).toContain('reprogramación');
+    expect(el.querySelector('[data-testid="nota-semanas"]')?.textContent).toContain('La obra ya inició');
+  });
+
+  it('con la obra iniciada, el PATCH no lleva inicio, fin ni semanas', async () => {
+    const { el, http } = await abrir(TODOS_PERMISOS_OBRA, { plazoBloqueado: true });
+    el.querySelector('form')?.dispatchEvent(new Event('submit'));
+
+    const body = http.expectOne((r) => r.url.endsWith('/operaciones/obra/10/generales')).request.body as Record<string, unknown>;
+    expect(body).not.toHaveProperty('fecha_inicio');
+    expect(body).not.toHaveProperty('fecha_fin_prog');
+    expect(body).not.toHaveProperty('semanas_totales');
+  });
+
+  it('antes de iniciar se editan y se avisa que el fin se recalcula con las semanas', async () => {
+    const { el } = await abrir(TODOS_PERMISOS_OBRA);
+
+    for (const id of ['gen-inicio', 'gen-fin', 'gen-semanas']) expect(el.querySelector<HTMLInputElement>(`#${id}`)?.disabled).toBe(false);
+    expect(el.querySelector('[data-testid="nota-plazo"]')).toBeNull();
+    expect(el.querySelector('[data-testid="nota-semanas"]')?.textContent).toContain('se recalcula');
   });
 });
 

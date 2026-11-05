@@ -16,14 +16,12 @@ import {
   ObraIncidencia,
   ObraPlano,
   ObraResidente,
-  ObraSemana,
   PlanoPayload,
   DatosEquipoDirectorioPayload,
   ResidentePayload,
-  SemanaPayload,
-  UpdateAvancePayload,
   UpdateGeneralesPayload,
 } from './obra.interface';
+import { DosierObra, GastoObra, LiquidacionObra, PlanosRequeridosObra } from './obra-liquidacion.interface';
 import {
   AvanceObra,
   CambiarEstadoPayload,
@@ -64,27 +62,6 @@ export class ObraService {
     return this.#http.patch<ObraDatosGenerales>(this.#cc(idCentroCosto, '/generales'), payload);
   }
 
-  // ─── Cronograma ────────────────────────────────────────────────────────────
-  createSemana(idCentroCosto: number, payload: SemanaPayload): Observable<ObraSemana> {
-    return this.#http.post<ObraSemana>(this.#cc(idCentroCosto, '/cronograma'), payload);
-  }
-
-  createLoteSemanas(idCentroCosto: number, payload: { semanas: SemanaPayload[]; reemplazar_existentes?: boolean }): Observable<ObraSemana[]> {
-    return this.#http.post<ObraSemana[]>(this.#cc(idCentroCosto, '/cronograma/lote'), payload);
-  }
-
-  updateSemana(idCentroCosto: number, idSemana: number, payload: Partial<SemanaPayload>): Observable<ObraSemana> {
-    return this.#http.patch<ObraSemana>(this.#cc(idCentroCosto, `/cronograma/${idSemana}`), payload);
-  }
-
-  updateAvanceSemanal(idCentroCosto: number, idSemana: number, payload: UpdateAvancePayload): Observable<ObraSemana> {
-    return this.#http.patch<ObraSemana>(this.#cc(idCentroCosto, `/cronograma/${idSemana}/avance`), payload);
-  }
-
-  deleteSemana(idCentroCosto: number, idSemana: number): Observable<DeleteResult> {
-    return this.#http.delete<DeleteResult>(this.#cc(idCentroCosto, `/cronograma/${idSemana}`));
-  }
-
   // ─── Residentes ────────────────────────────────────────────────────────────
   createResidente(idCentroCosto: number, payload: ResidentePayload): Observable<ObraResidente> {
     return this.#http.post<ObraResidente>(this.#cc(idCentroCosto, '/residentes'), payload);
@@ -101,6 +78,39 @@ export class ObraService {
 
   deleteResidente(idCentroCosto: number, idResidente: number): Observable<DeleteResult> {
     return this.#http.delete<DeleteResult>(this.#cc(idCentroCosto, `/residentes/${idResidente}`));
+  }
+
+  /** Historial del equipo de la ficha: quiénes ocuparon cada rol y ya no lo ocupan (más reciente primero). */
+  getHistorialEquipo(idCentroCosto: number): Observable<ObraResidente[]> {
+    return this.#http.get<ObraResidente[]>(this.#cc(idCentroCosto, '/residentes/historial'));
+  }
+
+  // ─── Planos requeridos y liquidación ───────────────────────────────────────
+  getPlanosRequeridos(idCentroCosto: number): Observable<PlanosRequeridosObra> {
+    return this.#http.get<PlanosRequeridosObra>(this.#cc(idCentroCosto, '/planos-requeridos'));
+  }
+
+  marcarPlanoRequerido(idCentroCosto: number, idTipoPlano: number, entregado: boolean): Observable<PlanosRequeridosObra> {
+    return this.#http.put<PlanosRequeridosObra>(this.#cc(idCentroCosto, `/planos-requeridos/${idTipoPlano}`), { entregado });
+  }
+
+  /** Gasto por subfase frente al presupuesto Meta: directo, indirecto (PECOSA) y compromiso. */
+  getGasto(idCentroCosto: number): Observable<GastoObra> {
+    return this.#http.get<GastoObra>(this.#cc(idCentroCosto, '/gasto'));
+  }
+
+  getLiquidacion(idCentroCosto: number): Observable<LiquidacionObra> {
+    return this.#http.get<LiquidacionObra>(this.#cc(idCentroCosto, '/liquidacion'));
+  }
+
+  /** Liquida la obra (acción `aprobar`): el centro de costo pasa a CERRADO. */
+  liquidar(idCentroCosto: number): Observable<LiquidacionObra> {
+    return this.#http.post<LiquidacionObra>(this.#cc(idCentroCosto, '/liquidacion'), {});
+  }
+
+  /** Qué entra en el dosier de la obra; 409 si faltan planos obligatorios. */
+  getDosier(idCentroCosto: number): Observable<DosierObra> {
+    return this.#http.get<DosierObra>(this.#cc(idCentroCosto, '/dosier'));
   }
 
   // ─── Planos ────────────────────────────────────────────────────────────────

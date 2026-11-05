@@ -1,6 +1,6 @@
 import { hayBoton } from '@app/core/auth/pantalla.testing';
 import { ObraResidente } from '../../obra.interface';
-import { TODOS_PERMISOS_OBRA, montar, permisosObra } from '../../obra-cockpit.testing';
+import { TODOS_PERMISOS_OBRA, montar, montarConCarga, permisosObra } from '../../obra-cockpit.testing';
 import { DirectorioTabComponent } from './directorio-tab';
 
 const RESIDENTE: ObraResidente = {
@@ -64,5 +64,57 @@ describe('DirectorioTabComponent: equipo de la ficha', () => {
     expect(tarjetas[0].textContent).not.toContain('Sin correo');
     expect(tarjetas[1].textContent).not.toContain('De la ficha');
     expect(tarjetas[1].textContent).not.toContain('Sin teléfono');
+  });
+});
+
+describe('DirectorioTabComponent: historial del equipo (GRP S-06)', () => {
+  const ANTERIOR: ObraResidente = {
+    id: 21,
+    clave: 'historial-21',
+    origen: 'historial',
+    roles_equipo: ['residente'],
+    nombre_completo: 'Rosa Gil',
+    rol_obra: 'Residente',
+    fecha_alta: '2026-01-10',
+    fecha_baja: '2026-06-30',
+    estado_planta: 'En Planta',
+    orden: 0,
+  };
+  const esHistorial = (r: { method: string; url: string }) => r.method === 'GET' && r.url.endsWith('/operaciones/obra/10/residentes/historial');
+
+  it('lista a quienes ocuparon antes un rol, con sus fechas de alta y baja', async () => {
+    const { el } = await montarConCarga(DirectorioTabComponent, { residentes: [JEFE], idCentroCosto: 10, permisos: permisosObra() }, (http) =>
+      http.expectOne(esHistorial).flush([ANTERIOR]),
+    );
+
+    const seccion = el.querySelector('[data-testid="historial-equipo"]')!;
+    expect(seccion.textContent).toContain('Historial del equipo');
+    expect(seccion.textContent).toContain('Rosa Gil');
+    expect(seccion.textContent).toContain('2026-01-10 → 2026-06-30');
+  });
+
+  it('sin cambios de equipo lo dice', async () => {
+    const { el } = await montarConCarga(DirectorioTabComponent, { residentes: [JEFE], idCentroCosto: 10, permisos: permisosObra() }, (http) =>
+      http.expectOne(esHistorial).flush([]),
+    );
+
+    expect(el.querySelector('[data-testid="historial-equipo"]')?.textContent).toContain('Aún no hay cambios en el equipo');
+  });
+
+  it('la tarjeta del equipo muestra desde cuándo ocupa el rol', async () => {
+    const { el } = await montarConCarga(
+      DirectorioTabComponent,
+      { residentes: [{ ...JEFE, fecha_alta: '2026-03-02' }], idCentroCosto: 10, permisos: permisosObra() },
+      (http) => http.expectOne(esHistorial).flush([]),
+    );
+
+    expect(el.querySelector('[data-testid="fecha-alta"]')?.textContent).toContain('Desde 2026-03-02');
+  });
+
+  it('sin obra no pide el historial ni muestra la sección', async () => {
+    const { el, http } = await montar(DirectorioTabComponent, { residentes: [JEFE], permisos: permisosObra() });
+
+    http.expectNone(() => true);
+    expect(el.querySelector('[data-testid="historial-equipo"]')).toBeNull();
   });
 });

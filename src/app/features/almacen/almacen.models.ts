@@ -65,6 +65,9 @@ export interface DocumentoLinea {
   costo_unitario: string | null;
   observaciones: string | null;
   id_orden_compra_detalle: number | null;
+  /** Subfase del presupuesto a la que se imputó la salida (PECOSA). */
+  id_ppto_detalle_categoria?: number | null;
+  subfase?: string | null;
 }
 
 export interface Documento {
@@ -104,6 +107,7 @@ export interface DocumentoLineaPayload {
   cantidad: string;
   costo_unitario?: string;
   observaciones?: string;
+  id_ppto_detalle_categoria?: number;
 }
 
 export interface DocumentoPayload {

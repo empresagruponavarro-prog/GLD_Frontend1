@@ -3,16 +3,19 @@ import { DatePipe } from '@angular/common';
 import { ObraPlano } from '../../obra.interface';
 import { valorDeEvento } from '@shared/utils/eventos';
 import { PermisosObra, SIN_PERMISOS_OBRA } from '../../obra-permisos';
+import { PlanosRequeridosComponent } from '../planos-requeridos/planos-requeridos';
 
 @Component({
   selector: 'app-planos-tab',
   standalone: true,
-  imports: [DatePipe],
+  imports: [DatePipe, PlanosRequeridosComponent],
   templateUrl: './planos-tab.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class PlanosTabComponent {
   readonly planos = input<readonly ObraPlano[]>([]);
+  /** Obra a la que pertenece la lista de planos requeridos (sin ella no se muestra el checklist). */
+  readonly idCentroCosto = input<number | null>(null);
   /** Permisos del módulo `obra`; sin ellos la pestaña queda en solo lectura. */
   readonly permisos = input<PermisosObra>(SIN_PERMISOS_OBRA);
   readonly subir = output<void>();

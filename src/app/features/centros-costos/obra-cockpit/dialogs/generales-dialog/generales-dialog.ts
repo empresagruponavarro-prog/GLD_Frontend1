@@ -31,6 +31,11 @@ export class GeneralesDialogComponent {
   readonly cabecera = input<ObraCabecera | undefined>(undefined);
   /** Permisos de `obra`: guardar la ficha (`PATCH …/generales`) exige `editar`. */
   readonly permisos = input<PermisosObra>(SIN_PERMISOS_OBRA);
+  /**
+   * La obra ya inició (en ejecución, entregada, culminada o con avance): inicio, fin programado y semanas no se editan;
+   * una variación se registra como reprogramación en «Control de avance» (GRP S-02).
+   */
+  readonly plazoBloqueado = input(false);
 
   readonly closed = output<void>();
   readonly saved = output<void>();
@@ -145,6 +150,9 @@ export class GeneralesDialogComponent {
       });
       if (this.soloLectura()) this.form.disable({ emitEvent: false });
       else this.form.enable({ emitEvent: false });
+      if (this.plazoBloqueado()) {
+        for (const c of [this.form.controls.fecha_inicio, this.form.controls.fecha_fin_prog, this.form.controls.semanas_totales]) c.disable({ emitEvent: false });
+      }
     });
   }
 
@@ -248,6 +256,9 @@ export class GeneralesDialogComponent {
       this.formError.set('El fin programado no puede ser anterior al inicio.');
       return;
     }
+    const plazo = this.plazoBloqueado()
+      ? {}
+      : { semanas_totales: v.semanas_totales ?? undefined, fecha_inicio: v.fecha_inicio, fecha_fin_prog: v.fecha_fin_prog };
     const base = sinVacios<UpdateGeneralesPayload>({
       expediente_codigo: v.expediente_codigo.trim(),
       direccion: v.direccion.trim(),
@@ -257,14 +268,12 @@ export class GeneralesDialogComponent {
       ubigeo_cod: v.ubigeo_cod.trim(),
       latitud: v.latitud ?? undefined,
       longitud: v.longitud ?? undefined,
-      semanas_totales: v.semanas_totales ?? undefined,
       personal_activo_promedio: v.personal_activo_promedio ?? undefined,
       turno_trabajo: v.turno_trabajo.trim(),
       contacto_cliente_nombre: v.contacto_cliente_nombre.trim(),
       contacto_cliente_telefono: v.contacto_cliente_telefono.trim(),
       contacto_cliente_correo: v.contacto_cliente_correo.trim(),
-      fecha_inicio: v.fecha_inicio,
-      fecha_fin_prog: v.fecha_fin_prog,
+      ...plazo,
     });
     // Estos campos sí se pueden vaciar: se envía `null` para borrarlos.
     const payload: UpdateGeneralesPayload = {

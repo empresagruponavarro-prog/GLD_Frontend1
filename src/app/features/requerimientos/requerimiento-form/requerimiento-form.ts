@@ -5,7 +5,7 @@ import { permisosDePantalla } from '@app/core/auth/permisos-pantalla';
 import { PermisosService } from '@app/core/auth/permisos.service';
 import { SearchSelectComponent } from '../../../shared/components/search-select/search-select';
 import { errorMessage, fmtMoney, fmtNum, todayISO } from '../../almacen/almacen.utils';
-import { FasePorCentroCosto } from '../../presupuestos/interfaces/presupuestos.interface';
+import { FasePorCentroCosto, SubfaseCentroCosto } from '../../presupuestos/interfaces/presupuestos.interface';
 import { PresupuestosService } from '../../presupuestos/presupuestos.service';
 import { CatalogoPickerComponent } from '../catalogo-picker/catalogo-picker';
 import { CotizacionesPanelComponent } from '../cotizaciones-panel/cotizaciones-panel';
@@ -37,6 +37,7 @@ function lineaGroup() {
     precio_referencial: new FormControl('', { nonNullable: true }),
     observaciones: new FormControl('', { nonNullable: true }),
     id_beneficiario: new FormControl<number | null>(null),
+    id_ppto_detalle_categoria: new FormControl<number | null>(null),
   });
 }
 
@@ -73,6 +74,7 @@ export class RequerimientoFormComponent {
   protected readonly avanceBadge = avanceBadge;
   protected readonly fmtNum = fmtNum;
   protected readonly fmtMoney = fmtMoney;
+  protected readonly hayLineasConSubfase = (r: Requerimiento) => (r.lineas ?? []).some((l) => l.subfase !== null);
 
   protected readonly requerimiento = signal<Requerimiento | null>(null);
   protected readonly isLoading = signal(false);
@@ -84,6 +86,19 @@ export class RequerimientoFormComponent {
   protected readonly trabajadores = signal<SelectOption[]>([]);
   protected readonly fases = signal<FasePorCentroCosto[]>([]);
   protected readonly areas = signal<Area[]>([]);
+  /** Subfases de los presupuestos aprobados del centro de costo elegido: cada línea puede imputarse a una. */
+  protected readonly subfases = signal<SubfaseCentroCosto[]>([]);
+  protected readonly opcionesSubfase = computed(() =>
+    this.subfases().map((s) => ({ id: s.id, nombre: s.fase ? `${s.fase} › ${s.subfase}` : s.subfase })),
+  );
+  /** Con subfases disponibles se agrega la columna a la grilla de líneas. */
+  protected readonly conSubfase = computed(() => this.subfases().length > 0);
+  protected readonly columnasLineas = computed(() => {
+    const sub = this.conSubfase() ? ' minmax(200px, 0.8fr)' : '';
+    return this.esCompra()
+      ? `minmax(260px, 1fr) 110px 120px minmax(140px, 0.6fr)${sub} 40px`
+      : `minmax(240px, 1fr) 110px 120px minmax(140px, 0.6fr) minmax(200px, 0.8fr)${sub} 40px`;
+  });
   protected readonly beneficiarios = signal<SelectOption[]>([]);
   /** Tipo elegido en el formulario (cambia lo que se pide en cada línea). */
   protected readonly tipoActual = signal<TipoRequerimiento>('COMPRA');
@@ -146,6 +161,9 @@ export class RequerimientoFormComponent {
     this.form.controls.id_centro_costo.valueChanges.subscribe((id) => {
       this.form.controls.id_fase.setValue(null, { emitEvent: false });
       this.loadFases(id);
+      // Las subfases son de la obra elegida: al cambiarla se pierden las que tenían las líneas.
+      for (const l of this.lineas.controls) l.controls.id_ppto_detalle_categoria.setValue(null, { emitEvent: false });
+      this.loadSubfases(id);
     });
     // Sin permiso de guardar, el formulario queda en solo lectura.
     effect(() => {
@@ -196,6 +214,7 @@ export class RequerimientoFormComponent {
     );
     this.tipoActual.set(r.tipo);
     this.loadFases(r.id_centro_costo, r.id_fase);
+    this.loadSubfases(r.id_centro_costo);
     this.lineas.clear();
     for (const l of r.lineas ?? []) {
       const g = lineaGroup();
@@ -207,6 +226,7 @@ export class RequerimientoFormComponent {
         precio_referencial: l.precio_referencial ?? '',
         observaciones: l.observaciones ?? '',
         id_beneficiario: l.id_beneficiario,
+        id_ppto_detalle_categoria: l.id_ppto_detalle_categoria,
       });
       this.lineas.push(g);
     }
@@ -224,6 +244,15 @@ export class RequerimientoFormComponent {
         if (seleccionada) this.form.controls.id_fase.setValue(seleccionada, { emitEvent: false });
       },
       error: () => this.fases.set([]),
+    });
+  }
+
+  private loadSubfases(idCentroCosto: number | null): void {
+    this.subfases.set([]);
+    if (!idCentroCosto) return;
+    this.presupuestos.getSubfases(idCentroCosto).subscribe({
+      next: (res) => this.subfases.set(res.subfases ?? []),
+      error: () => this.subfases.set([]),
     });
   }
 
@@ -321,8 +350,9 @@ export class RequerimientoFormComponent {
     for (const [i, l] of v.lineas.entries()) {
       const n = i + 1;
       if (!l.id_producto) return `Línea ${n}: seleccione un producto o servicio.`;
-      const clave = v.tipo === 'COMPRA' ? String(l.id_producto) : `${l.id_producto}:${l.id_beneficiario ?? v.id_beneficiario ?? 0}`;
-      if (vistos.has(clave)) return v.tipo === 'COMPRA' ? `Línea ${n}: el ítem está repetido.` : `Línea ${n}: el concepto está repetido para el mismo beneficiario.`;
+      // El mismo ítem puede repetirse si va a subfases distintas (así lo genera el presupuesto).
+      const clave = v.tipo === 'COMPRA' ? `${l.id_producto}:${l.id_ppto_detalle_categoria ?? 0}` : `${l.id_producto}:${l.id_beneficiario ?? v.id_beneficiario ?? 0}`;
+      if (vistos.has(clave)) return v.tipo === 'COMPRA' ? `Línea ${n}: el ítem está repetido${l.id_ppto_detalle_categoria ? ' en la misma subfase' : ''}.` : `Línea ${n}: el concepto está repetido para el mismo beneficiario.`;
       vistos.add(clave);
       if (v.tipo !== 'COMPRA' && !(Number(l.precio_referencial) > 0)) return `Línea ${n}: indique el importe (precio) mayor a 0.`;
       if (!DECIMAL.test(l.cantidad.trim()) || Number(l.cantidad) <= 0) return `Línea ${n}: la cantidad debe ser mayor a 0 (hasta 4 decimales).`;
@@ -346,6 +376,7 @@ export class RequerimientoFormComponent {
         precio_referencial: text(l.precio_referencial),
         observaciones: text(l.observaciones),
         id_beneficiario: l.id_beneficiario ?? undefined,
+        id_ppto_detalle_categoria: l.id_ppto_detalle_categoria ?? undefined,
       });
     }
     return {

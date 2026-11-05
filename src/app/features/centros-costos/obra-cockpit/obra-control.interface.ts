@@ -71,6 +71,8 @@ export interface ObraSubpartida {
   orden: number;
   observacion: string | null;
   id_ppto_detalle_categoria: number | null;
+  /** Costo directo de la categoría del presupuesto: su peso en el avance si todas las subpartidas de la obra lo tienen. */
+  monto?: string | null;
   /** Diez posiciones (semanas 1-10); null = reparto automático. */
   metas_manuales: (number | null)[];
   tiene_avance: boolean;
@@ -96,6 +98,8 @@ export interface SubpartidaPayload {
   fecha_inicio: string;
   fecha_fin: string;
   observacion?: string | null;
+  /** Monto de la subpartida; obligatorio si la obra ya pesa su avance por monto. */
+  monto?: number | null;
 }
 export interface PresupuestoDisponible {
   id: number;
@@ -186,6 +190,8 @@ export interface SubpartidaResultado extends MetricasItem {
   inicio: string;
   fin: string;
   peso: number;
+  /** Peso como % del total de la obra (un decimal). */
+  pesoPct?: number;
   diasLaborables: number;
   metas: number[];
   sinAvance: boolean;
@@ -198,6 +204,7 @@ export interface PartidaResultado extends MetricasItem {
   inicio: string;
   fin: string;
   peso: number;
+  pesoPct?: number;
   subpartidas: SubpartidaResultado[];
 }
 export interface PuntoCurvaS {
@@ -243,6 +250,8 @@ export interface AvisoCarga {
   mensaje: string;
 }
 export interface ResultadoObra extends MetricasItem {
+  /** Con qué se pesó el avance: el monto del presupuesto o la duración de cada subpartida. */
+  pesoPor?: 'MONTO' | 'DURACION';
   estadoEfectivo: EstadoObra;
   sinPartidas: boolean;
   sinAvance: boolean;

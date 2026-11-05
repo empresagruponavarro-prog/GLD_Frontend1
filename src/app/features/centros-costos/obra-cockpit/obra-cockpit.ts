@@ -19,12 +19,10 @@ import { PlanosTabComponent } from './components/planos-tab/planos-tab';
 import { DocumentosTabComponent } from './components/documentos-tab/documentos-tab';
 import { IncidenciasTabComponent } from './components/incidencias-tab/incidencias-tab';
 import { ControlTabComponent } from './components/control-tab/control-tab';
+import { LiquidacionTabComponent } from './components/liquidacion-tab/liquidacion-tab';
 import { SituacionChipComponent } from './components/control-tab/situacion-chip/situacion-chip';
 
 // Dialogs
-import { SemanaDialogComponent } from './dialogs/semana-dialog/semana-dialog';
-import { SemanaAvanceDialogComponent } from './dialogs/semana-avance-dialog/semana-avance-dialog';
-import { GeneradorSemanasDialogComponent } from './dialogs/generador-semanas-dialog/generador-semanas-dialog';
 import { ResidenteDialogComponent } from './dialogs/residente-dialog/residente-dialog';
 import { PlanoDialogComponent, ModoPlano } from './dialogs/plano-dialog/plano-dialog';
 import { PlanoVisorDialogComponent } from './dialogs/plano-visor-dialog/plano-visor-dialog';
@@ -42,8 +40,8 @@ import { GeneralesDialogComponent } from './dialogs/generales-dialog/generales-d
   standalone: true,
   imports: [
     CommonModule, RouterLink,
-    ControlTabComponent, SituacionChipComponent, CronogramaTabComponent, DirectorioTabComponent, PlanosTabComponent, DocumentosTabComponent, IncidenciasTabComponent,
-    SemanaDialogComponent, SemanaAvanceDialogComponent, GeneradorSemanasDialogComponent, ResidenteDialogComponent, PlanoDialogComponent, PlanoVisorDialogComponent, HistorialPlanosDialogComponent,
+    ControlTabComponent, LiquidacionTabComponent, SituacionChipComponent, CronogramaTabComponent, DirectorioTabComponent, PlanosTabComponent, DocumentosTabComponent, IncidenciasTabComponent,
+    ResidenteDialogComponent, PlanoDialogComponent, PlanoVisorDialogComponent, HistorialPlanosDialogComponent,
     DocumentoDialogComponent, DocumentoVistaDialogComponent, DocumentoEliminarDialogComponent, IncidenciaDialogComponent, IncidenciaDetalleDialogComponent, IncidenciaResolverDialogComponent, GeneralesDialogComponent
   ],
   templateUrl: './obra-cockpit.html',
@@ -74,8 +72,6 @@ export class ObraCockpitComponent implements OnInit {
   exportMenuOpen = signal<boolean>(false);
 
   // Dialog visibilities
-  showSemanaDialog = signal(false);
-  showGeneradorSemanasDialog = signal(false);
   showResidenteDialog = signal(false);
   showPlanoDialog = signal(false);
   showPlanoVisorDialog = signal(false);
@@ -87,8 +83,6 @@ export class ObraCockpitComponent implements OnInit {
   showGeneralesDialog = signal(false);
 
   // Selected items for editing
-  selectedSemana = signal<ObraSemana | null>(null);
-  selectedSemanaParaAvance = signal<ObraSemana | null>(null);
   selectedResidente = signal<ObraResidente | null>(null);
   selectedPlano = signal<ObraPlano | null>(null);
   selectedPlanoParaVer = signal<ObraPlano | null>(null);
@@ -107,6 +101,12 @@ export class ObraCockpitComponent implements OnInit {
 
   // Computed data for tabs
   /** El avance global del cronograma sale del control cuando la obra ya tiene partidas. */
+  /** La obra ya inició (en ejecución, entregada, culminada o con avance): su plazo queda fijo (GRP S-02). */
+  plazoBloqueado = computed(() => {
+    const c = this.control();
+    const estado = c?.resultado?.estadoEfectivo ?? c?.estado_obra ?? null;
+    return estado === 'EN_EJECUCION' || estado === 'POST_VENTA' || estado === 'CULMINADO' || c?.resultado?.sinAvance === false;
+  });
   desdeControl = computed(() => this.control()?.resultado?.sinPartidas === false);
   semanas = computed(() => this.cockpit()?.cronograma || []);
   kpis = computed(() => this.cockpit()?.kpis);
@@ -173,9 +173,6 @@ export class ObraCockpitComponent implements OnInit {
   // --- Generic Save Handler ---
   onDialogSaved(): void {
     // Close all dialogs and refresh data
-    this.showSemanaDialog.set(false);
-    this.showGeneradorSemanasDialog.set(false);
-    this.selectedSemanaParaAvance.set(null);
     this.showResidenteDialog.set(false);
     this.showPlanoDialog.set(false);
     this.showDocumentoDialog.set(false);
@@ -186,37 +183,6 @@ export class ObraCockpitComponent implements OnInit {
     this.showHistorialDialog.set(false);
     
     this.cargarCockpit(this.idCentroCosto());
-  }
-
-  // --- Handlers for Cronograma Tab ---
-  onNuevaSemana(): void {
-    if (!this.permisos.crear()) return;
-    this.selectedSemana.set(null);
-    this.showSemanaDialog.set(true);
-  }
-  onGenerarLoteSemanas(): void {
-    if (!this.permisos.crear()) return;
-    this.showGeneradorSemanasDialog.set(true);
-  }
-  onEditarSemana(sem: ObraSemana): void {
-    if (!this.permisos.editar()) return;
-    this.selectedSemana.set(sem);
-    this.showSemanaDialog.set(true);
-  }
-  onRegistrarAvanceSemana(sem: ObraSemana): void {
-    if (!this.permisos.editar()) return;
-    this.selectedSemanaParaAvance.set(sem);
-  }
-  onEliminarSemana(sem: ObraSemana): void {
-    if (!this.permisos.eliminar()) return;
-    if (!confirm(`¿Eliminar ${sem.etiqueta_semana} (${sem.fase_principal})? Esta acción no se puede deshacer.`)) return;
-    this.obraService.deleteSemana(this.idCentroCosto(), sem.id).subscribe({
-      next: () => this.cargarCockpit(this.idCentroCosto()),
-      error: (err: unknown) => alert(errorMessage(err)),
-    });
-  }
-  onEvidenciasSemana(sem: ObraSemana): void {
-    void sem; // TODO: implement evidence viewer
   }
 
   // --- Handlers for Directorio Tab ---

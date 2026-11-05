@@ -21,6 +21,7 @@ export class SidebarComponent {
   );
 
   readonly #abiertos = signal<Readonly<Record<IdSubmenu, boolean>>>({
+    proyectos: true,
     documentos: true,
     tesoreria: true,
     almacen: true,

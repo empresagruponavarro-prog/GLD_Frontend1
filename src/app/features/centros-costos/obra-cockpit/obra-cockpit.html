@@ -33,12 +33,15 @@
               <span class="material-symbols-outlined text-xs ml-0.5">expand_more</span>
             </button>
             <div [class.hidden]="!exportMenuOpen()" class="hidden absolute right-0 mt-1 w-48 rounded-xl bg-surface-container-lowest shadow-xl z-30 p-1.5 border border-surface-container" id="exportMenuDropdown">
-              <button class="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs text-on-surface hover:bg-surface-container-high text-left">
-                <span class="material-symbols-outlined text-sm text-error">picture_as_pdf</span> Dossier Completo (PDF)
-              </button>
-              <button class="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs text-on-surface hover:bg-surface-container-high text-left">
-                <span class="material-symbols-outlined text-sm text-primary">table_view</span> Matriz de Control (Excel)
-              </button>
+              <a id="imprimir-dosier" [routerLink]="['/imprimir/dosier', idCentroCosto()]" target="_blank" class="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs text-on-surface hover:bg-surface-container-high text-left">
+                <span class="material-symbols-outlined text-sm text-error">picture_as_pdf</span> Dosier completo (PDF)
+              </a>
+              <a id="imprimir-ficha" [routerLink]="['/imprimir/ficha-obra', idCentroCosto()]" target="_blank" class="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs text-on-surface hover:bg-surface-container-high text-left">
+                <span class="material-symbols-outlined text-sm text-primary">description</span> Ficha técnica
+              </a>
+              <a id="imprimir-informe" [routerLink]="['/imprimir/informe-avance', idCentroCosto()]" target="_blank" class="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs text-on-surface hover:bg-surface-container-high text-left">
+                <span class="material-symbols-outlined text-sm text-primary">monitoring</span> Informe de avance
+              </a>
             </div>
           </div>
         </div>
@@ -131,6 +134,10 @@
             <span>Bitácora &amp; Incidencias</span>
             <span class="px-1.5 py-0.2 rounded-full text-[10px] font-bold" [ngClass]="activeTab() === 'tab-incidencias' ? 'bg-on-primary/20 text-on-primary' : 'bg-error-container text-on-error-container'">{{ kpis()?.incidencias_pendientes ?? 0 }} Pend</span>
           </button>
+          <button type="button" id="tab-liquidacion-btn" (click)="setTab('tab-liquidacion')" class="tab-button shrink-0 whitespace-nowrap flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all shadow-sm cursor-pointer" [ngClass]="activeTab() === 'tab-liquidacion' ? 'bg-primary text-on-primary' : 'bg-surface-container-lowest text-on-surface-variant hover:bg-surface-container hover:text-on-surface'">
+            <span class="material-symbols-outlined text-sm">fact_check</span>
+            <span>Liquidación</span>
+          </button>
         </div>
 
         <!-- TAB CONTENT AREA -->
@@ -150,21 +157,16 @@
             <app-cronograma-tab 
               [semanas]="semanas()" 
               [kpis]="kpis()" 
-              [cabecera]="cabecera()" 
-              [permisos]="permisosObra()"
+              [cabecera]="cabecera()"
               [desdeControl]="desdeControl()"
-              (nueva)="onNuevaSemana()"
-              (generarLote)="onGenerarLoteSemanas()"
-              (editar)="onEditarSemana($event)"
-              (registrarAvance)="onRegistrarAvanceSemana($event)"
-              (eliminar)="onEliminarSemana($event)"
-              (evidencias)="onEvidenciasSemana($event)">
+              >
             </app-cronograma-tab>
           }
 
           @if (activeTab() === 'tab-directorio') {
             <app-directorio-tab
               [residentes]="residentes()"
+              [idCentroCosto]="idCentroCosto()"
               [permisos]="permisosObra()"
               (asignar)="onNuevoResidente()"
               (editar)="onEditarResidente($event)">
@@ -174,6 +176,7 @@
           @if (activeTab() === 'tab-planos') {
             <app-planos-tab
               [planos]="planos()"
+              [idCentroCosto]="idCentroCosto()"
               [permisos]="permisosObra()"
               (subir)="onSubirPlano()"
               (ver)="onVerPlano($event)"
@@ -196,6 +199,14 @@
               (descargar)="onDescargarDocumento($event)"
               (eliminar)="onEliminarDocumento($event)">
             </app-documentos-tab>
+          }
+
+          @if (activeTab() === 'tab-liquidacion') {
+            <app-liquidacion-tab
+              [idCentroCosto]="idCentroCosto()"
+              [puedeLiquidar]="permisos.aprobar()"
+              (liquidada)="cargarCockpit(idCentroCosto())">
+            </app-liquidacion-tab>
           }
 
           @if (activeTab() === 'tab-incidencias') {
@@ -281,15 +292,6 @@
   </div>
 
   <!-- Dialogs integration -->
-  @if (showSemanaDialog()) {
-    <app-semana-dialog [isOpen]="true" [permisos]="permisosObra()" [idCentroCosto]="idCentroCosto()" [nombreObra]="cockpit()?.nombre_obra || ''" [responsables]="responsablesIncidencia()" [semana]="selectedSemana()" [semanasExistentes]="semanas()" [fechaInicioObra]="cabecera()?.fecha_inicio" (closed)="showSemanaDialog.set(false)" (saved)="onDialogSaved()"></app-semana-dialog>
-  }
-  @if (showGeneradorSemanasDialog()) {
-    <app-generador-semanas-dialog [isOpen]="true" [permisos]="permisosObra()" [idCentroCosto]="idCentroCosto()" [nombreObra]="cockpit()?.nombre_obra || ''" [fechaInicioSugerida]="cabecera()?.fecha_inicio" [semanasExistentes]="semanas()" (closed)="showGeneradorSemanasDialog.set(false)" (saved)="onDialogSaved()"></app-generador-semanas-dialog>
-  }
-  @if (selectedSemanaParaAvance(); as semAvance) {
-    <app-semana-avance-dialog [isOpen]="true" [permisos]="permisosObra()" [idCentroCosto]="idCentroCosto()" [nombreObra]="cockpit()?.nombre_obra || ''" [semana]="semAvance" (closed)="selectedSemanaParaAvance.set(null)" (saved)="onDialogSaved()"></app-semana-avance-dialog>
-  }
   @if (showResidenteDialog()) {
     <app-residente-dialog [isOpen]="true" [permisos]="permisosObra()" [idCentroCosto]="idCentroCosto()" [residente]="selectedResidente()" (closed)="showResidenteDialog.set(false)" (saved)="onDialogSaved()"></app-residente-dialog>
   }
@@ -321,6 +323,6 @@
     <app-historial-planos-dialog [isOpen]="true" [permisos]="permisosObra()" [idCentroCosto]="idCentroCosto()" [plano]="selectedPlano()" (closed)="showHistorialDialog.set(false)" (verPlano)="onVerPlano($event)" (nuevaVersion)="onNuevaVersionPlano($event)"></app-historial-planos-dialog>
   }
   @if (showGeneralesDialog()) {
-    <app-generales-dialog [isOpen]="true" [permisos]="permisosObra()" [idCentroCosto]="idCentroCosto()" [nombreObra]="cockpit()?.nombre_obra || ''" [generales]="generales()" [cabecera]="cabecera()" (closed)="showGeneralesDialog.set(false)" (saved)="onDialogSaved()"></app-generales-dialog>
+    <app-generales-dialog [isOpen]="true" [permisos]="permisosObra()" [idCentroCosto]="idCentroCosto()" [nombreObra]="cockpit()?.nombre_obra || ''" [generales]="generales()" [cabecera]="cabecera()" [plazoBloqueado]="plazoBloqueado()" (closed)="showGeneralesDialog.set(false)" (saved)="onDialogSaved()"></app-generales-dialog>
   }
 </div>

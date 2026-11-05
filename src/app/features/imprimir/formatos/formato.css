@@ -1,0 +1,125 @@
+.imp-sub {
+  margin: 0.9rem 0 0.3rem;
+  font-size: 12px;
+}
+
+.imp-nota {
+  margin: 0.4rem 0;
+}
+
+.imp-error {
+  color: #991b1b;
+}
+
+.imp-grid,
+.imp-table,
+.imp-resumen {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 0.5rem 0;
+}
+
+.imp-grid th,
+.imp-grid td,
+.imp-table th,
+.imp-table td,
+.imp-resumen th,
+.imp-resumen td {
+  border: 1px solid #9ca3af;
+  padding: 3px 6px;
+  vertical-align: top;
+  text-align: left;
+}
+
+.imp-grid th,
+.imp-table thead th,
+.imp-resumen th {
+  background: #f3f4f6;
+}
+
+.imp-grid th {
+  width: 16%;
+}
+
+.imp-resumen {
+  width: 55%;
+  margin-left: auto;
+}
+
+.imp-resumen td,
+.num {
+  text-align: right !important;
+}
+
+.imp-total th,
+.imp-total td {
+  font-weight: 700;
+}
+
+.imp-ganadora {
+  background: #d1fae5 !important;
+}
+
+.imp-firmas {
+  display: flex;
+  justify-content: space-around;
+  gap: 1.5rem;
+  margin-top: 28mm;
+}
+
+.imp-firmas div {
+  flex: 1;
+  padding-top: 4px;
+  border-top: 1px solid #111827;
+  text-align: center;
+}
+
+.imp-seccion {
+  margin-top: 1.2rem;
+}
+
+.imp-salto {
+  break-before: page;
+}
+
+.imp-svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  margin: 0.4rem 0;
+  border: 1px solid #d1d5db;
+}
+
+.imp-leyenda {
+  display: flex;
+  gap: 1rem;
+  font-size: 10px;
+  color: #4b5563;
+}
+
+.imp-aviso {
+  margin: 0.4rem 0;
+  padding: 4px 8px;
+  border: 1px solid #f59e0b;
+  background: #fffbeb;
+  color: #92400e;
+}
+
+.imp-indice td:first-child {
+  width: 8%;
+  text-align: center;
+}
+
+@media print {
+  .imp-svg {
+    border: 1px solid #9ca3af;
+  }
+
+  .imp-seccion {
+    break-inside: auto;
+  }
+
+  .imp-table tr {
+    break-inside: avoid;
+  }
+}

@@ -39,6 +39,7 @@
             <thead>
               <tr>
                 <th>#</th><th>Código</th><th>Descripción</th><th>Unidad</th>
+                @if (hayFurSubfase(r)) { <th>Subfase</th> }
                 @if (r.tipo !== 'COMPRA') { <th>Beneficiario</th><th class="num">Importe</th> }
                 <th class="num">Cantidad</th><th class="num">Aprobado</th>
               </tr>
@@ -47,6 +48,7 @@
               @for (l of r.lineas ?? []; track l.id; let i = $index) {
                 <tr>
                   <td>{{ i + 1 }}</td><td>{{ l.codigo }}</td><td>{{ l.descripcion }}</td><td>{{ l.unidad }}</td>
+                  @if (hayFurSubfase(r)) { <td>{{ l.subfase ?? '—' }}</td> }
                   @if (r.tipo !== 'COMPRA') { <td>{{ l.beneficiario ?? r.beneficiario ?? '—' }}</td><td class="num">{{ l.precio_referencial === null ? '—' : fmtMoney(l.precio_referencial) }}</td> }
                   <td class="num">{{ fmtNum(l.cantidad) }}</td><td class="num">{{ l.cantidad_aprobada === null ? '—' : fmtNum(l.cantidad_aprobada) }}</td>
                 </tr>
@@ -151,6 +153,42 @@
             }
           </table>
           <div class="imp-firmas"><div>Tesorería{{ p.ejecutado_por ? ': ' + p.ejecutado_por : '' }}</div><div>Administración</div><div>Recibí conforme</div></div>
+        }
+      }
+
+      @case ('presupuesto-meta') { <app-formato-presupuesto-meta [presupuesto]="idRaw" /> }
+      @case ('presupuesto-comercial') { <app-formato-presupuesto-comercial [presupuesto]="idRaw" /> }
+      @case ('ficha-obra') { <app-formato-ficha-obra [idCentroCosto]="idNumero" /> }
+      @case ('informe-avance') { <app-formato-informe-avance [idCentroCosto]="idNumero" /> }
+      @case ('dosier') { <app-formato-dosier [idCentroCosto]="idNumero" /> }
+
+      @case ('pecosa') {
+        @if (pecosa(); as d) {
+          <p class="imp-numero">{{ d.numero }}{{ d.estado === 'ANULADO' ? ' · ANULADO' : '' }}</p>
+          <table class="imp-grid">
+            <tr><th>Fecha</th><td>{{ d.fecha }}</td><th>Almacén</th><td>{{ d.almacen }}</td></tr>
+            <tr><th>Obra (centro de costos)</th><td>{{ d.centro_costo ?? '—' }}</td><th>Vale / guía</th><td>{{ d.documento_referencia ?? '—' }}</td></tr>
+            <tr><th>Solicitado por</th><td>{{ d.solicitado_por ?? '—' }}</td><th>Entregado a</th><td>{{ d.entregado_a ?? '—' }}</td></tr>
+            <tr><th>Motivo / trabajo</th><td colspan="3">{{ d.motivo_trabajo ?? '—' }}</td></tr>
+            @if (d.observaciones) { <tr><th>Observaciones</th><td colspan="3">{{ d.observaciones }}</td></tr> }
+          </table>
+          <table class="imp-table">
+            <thead><tr><th>#</th><th>Código</th><th>Descripción</th><th>Subfase</th><th class="num">Cantidad</th><th class="num">Costo unit.</th><th class="num">Total</th></tr></thead>
+            <tbody>
+              @for (l of d.lineas ?? []; track l.id; let i = $index) {
+                <tr>
+                  <td>{{ i + 1 }}</td><td>{{ l.codigo }}</td><td>{{ l.descripcion }}</td><td>{{ l.subfase ?? '—' }}</td>
+                  <td class="num">{{ fmtNum(l.cantidad) }} {{ l.unidad }}</td>
+                  <td class="num">{{ l.costo_unitario === null ? '—' : fmtMoney(l.costo_unitario) }}</td>
+                  <td class="num">{{ l.costo_unitario === null ? '—' : fmtMoney(+l.cantidad * +l.costo_unitario) }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+          <table class="imp-resumen">
+            <tr class="imp-total"><th>Total imputado a la obra</th><td>S/ {{ fmtMoney(totalPecosa(d)) }}</td></tr>
+          </table>
+          <div class="imp-firmas"><div>Solicitante</div><div>Almacén (entregó)</div><div>Recibí conforme</div></div>
         }
       }
 

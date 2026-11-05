@@ -45,6 +45,8 @@ export class SubpartidaDialogComponent {
     fecha_inicio: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
     fecha_fin: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
     observacion: new FormControl('', { nonNullable: true, validators: [Validators.maxLength(200)] }),
+    /** Monto en soles; es el peso de la subpartida en el avance cuando todas las de la obra lo tienen (GRP S-02). */
+    monto: new FormControl<number | null>(null, { validators: [Validators.min(0)] }),
   });
 
   constructor() {
@@ -59,6 +61,7 @@ export class SubpartidaDialogComponent {
         fecha_inicio: s?.fecha_inicio ?? this.inicioObra(),
         fecha_fin: s?.fecha_fin ?? this.finObra(),
         observacion: s?.observacion ?? '',
+        monto: s?.monto != null && Number(s.monto) > 0 ? Number(s.monto) : null,
       });
       if (this.puedeGuardar()) this.form.enable({ emitEvent: false });
       else this.form.disable({ emitEvent: false });
@@ -70,7 +73,7 @@ export class SubpartidaDialogComponent {
     this.form.markAllAsTouched();
     const v = this.form.getRawValue();
     if (this.form.invalid) {
-      this.formError.set('Complete ítem, nombre y las fechas de inicio y fin.');
+      this.formError.set('Complete ítem, nombre y las fechas de inicio y fin (el monto, si se indica, no puede ser negativo).');
       return;
     }
     if (v.fecha_fin < v.fecha_inicio) {
@@ -84,6 +87,7 @@ export class SubpartidaDialogComponent {
       fecha_inicio: v.fecha_inicio,
       fecha_fin: v.fecha_fin,
       observacion: v.observacion.trim() || null,
+      monto: v.monto,
     };
     const s = this.subpartida();
     const p = this.partida();
