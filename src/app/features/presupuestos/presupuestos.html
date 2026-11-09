@@ -60,16 +60,6 @@
 
     <!-- Actions at toolbar right -->
     <div class="flex items-center space-x-2">
-      <div class="inline-flex rounded-md shadow-2xs border border-slate-200 p-0.5 bg-slate-100">
-        <button type="button" (click)="setVista('financiera')" [class]="vistaActual() === 'financiera' ? 'bg-white text-slate-800 shadow-2xs border border-slate-200 font-medium' : 'text-slate-600 hover:text-slate-900'" class="px-2 py-0.5 text-xs rounded flex items-center space-x-1 cursor-pointer transition">
-          <svg class="w-3.5 h-3.5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z"/></svg>
-          <span>Vista financiera</span>
-        </button>
-        <button type="button" (click)="setVista('operativa')" [class]="vistaActual() === 'operativa' ? 'bg-white text-slate-800 shadow-2xs border border-slate-200 font-medium' : 'text-slate-600 hover:text-slate-900'" class="px-2 py-0.5 text-xs rounded flex items-center space-x-1 cursor-pointer transition">
-          <svg class="w-3.5 h-3.5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"/></svg>
-          <span>Vista operativa</span>
-        </button>
-      </div>
       @if (permisos.crear()) {
         <button (click)="openNewPresupuestoForm(selectedCC() || undefined)" type="button" class="bg-[#0e9f6e] hover:bg-[#057a55] text-white px-2.5 py-1 rounded text-xs font-semibold flex items-center space-x-1 shadow-2xs transition cursor-pointer">
           <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>

@@ -191,7 +191,6 @@ export class PresupuestosComponent implements OnInit {
   empresas = signal<Empresa[]>([]);
   filtrosCC = signal<FiltrosCC>(FILTROS_CC_VACIOS);
   filterCategoria = 'Todos';
-  vistaActual = signal<'financiera' | 'operativa'>('financiera');
 
   /** La búsqueda espera 300 ms sin teclear antes de consultar al servidor. */
   private busquedaCC = toSignal(
@@ -236,10 +235,6 @@ export class PresupuestosComponent implements OnInit {
 
   setStatusPill(grupo: PptoEstadoGrupo) {
     this.setFiltroCC('grupo', this.filtrosCC().grupo === grupo ? '' : grupo);
-  }
-
-  setVista(v: 'financiera' | 'operativa') {
-    this.vistaActual.set(v);
   }
 
   
