@@ -304,3 +304,33 @@ describe('PresupuestosComponent — permisos (plan 05, etapa D3)', () => {
     expect(TestBed.inject(AvisosService).aviso()).toBeNull();
   });
 });
+
+describe('PresupuestosComponent — pestañas del asistente', () => {
+  it('la pestaña «Fases & Costos» abre el presupuesto sombreado en Datos Generales, no uno vacío', async () => {
+    const p = await montar({ editar: true });
+    p.cmp.presupuestosDelCC.set([
+      { ...PPTO, IdPresupuesto: 'P-PRINCIPAL', TipoPpto: 'Principal' },
+      { ...PPTO, IdPresupuesto: 'P-ADICIONAL', TipoPpto: 'Adicional' },
+    ]);
+    p.cmp.seleccionarFilaPresupuesto({ ...PPTO, IdPresupuesto: 'P-ADICIONAL' });
+
+    p.cmp.switchStep(2);
+
+    expect(p.http.match((r) => r.url.endsWith('/P-ADICIONAL/completo'))).toHaveLength(1);
+    expect(p.cmp.editingId()).toBe('P-ADICIONAL');
+    expect(p.cmp.formStep()).toBe(2);
+  });
+
+  it('si el presupuesto sombreado ya está abierto, cambiar de pestaña no lo vuelve a cargar', async () => {
+    const p = await montar({ editar: true });
+    p.cmp.presupuestosDelCC.set([{ ...PPTO, IdPresupuesto: 'P-PRINCIPAL' }]);
+    p.cmp.abrirPresupuestoEnForm({ ...PPTO, IdPresupuesto: 'P-PRINCIPAL' }, 2);
+    p.http.match((r) => r.url.endsWith('/P-PRINCIPAL/completo'));
+
+    p.cmp.switchStep(3);
+
+    expect(p.http.match((r) => r.url.endsWith('/completo'))).toHaveLength(0);
+    expect(p.cmp.formStep()).toBe(3);
+  });
+});
+

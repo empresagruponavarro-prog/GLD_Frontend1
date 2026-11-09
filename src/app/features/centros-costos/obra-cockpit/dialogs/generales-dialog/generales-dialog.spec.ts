@@ -2,6 +2,16 @@ import { TODOS_PERMISOS_OBRA, camposEditables, montar, permisosObra } from '../.
 import { GeneralesDialogComponent } from './generales-dialog';
 
 const esTrabajadores = (r: { url: string }) => r.url.endsWith('/anexo/select');
+const DEPARTAMENTOS = [{ id: '15', nombre: 'LIMA' }, { id: '04', nombre: 'AREQUIPA' }];
+const PROVINCIAS_LIMA = [{ id: '1501', nombre: 'LIMA' }, { id: '1505', nombre: 'CAÑETE' }];
+const DISTRITOS_LIMA = [{ id: '150101', nombre: 'LIMA' }, { id: '150142', nombre: 'VILLA EL SALVADOR' }];
+/** Responde las listas del ubigeo que la ficha pidió (departamentos y, si hay distrito, sus provincias y distritos). */
+const responderUbigeo = (http: { match: (f: (r: { url: string; urlWithParams: string }) => boolean) => { request: { urlWithParams: string }; flush: (b: unknown) => void }[] }) => {
+  for (const r of http.match((x) => x.url.includes('/maestros/ubigeo/'))) {
+    const u = r.request.urlWithParams;
+    r.flush(u.includes('/departamentos') ? DEPARTAMENTOS : u.includes('provincias') ? PROVINCIAS_LIMA : u.includes('distritos?') ? DISTRITOS_LIMA : { id_distrito: '150142', id_provincia: '1501', id_departamento: '15', departamento: 'LIMA', provincia: 'LIMA', distrito: 'VILLA EL SALVADOR' });
+  }
+};
 
 const abrir = async (permisos = permisosObra(), extra: Record<string, unknown> = {}) => {
   const m = await montar(GeneralesDialogComponent, {
@@ -11,6 +21,7 @@ const abrir = async (permisos = permisosObra(), extra: Record<string, unknown> =
     generales: {
       id: 1,
       direccion: 'Av. Central 450',
+      id_distrito: '150142',
       equipo: { jefe_proyecto: { id: 7, nombre: 'Ana Ruiz' }, coordinador: null, residente: null, resp_presupuesto: null, resp_procura: null },
     },
     cabecera: { fecha_inicio: '2026-09-14T00:00:00.000Z', fecha_fin_prog: '2026-11-30T00:00:00.000Z' },
@@ -19,6 +30,7 @@ const abrir = async (permisos = permisosObra(), extra: Record<string, unknown> =
   });
   // La ficha pide la lista de trabajadores al abrirse (equipo de la obra).
   m.http.expectOne(esTrabajadores).flush([{ id: 7, nombre: 'Ana Ruiz' }]);
+  responderUbigeo(m.http);
   await m.render();
   return m;
 };
@@ -138,3 +150,35 @@ describe('GeneralesDialogComponent: imprimir', () => {
     expect(html).toContain('Ana Ruiz');
   });
 });
+
+describe('GeneralesDialogComponent: ubicación por ubigeo', () => {
+  it('abre con el departamento, la provincia y el distrito guardados elegidos y el ubigeo lleno', async () => {
+    const { el } = await abrir(TODOS_PERMISOS_OBRA);
+    const elegido = (id: string) => el.querySelector<HTMLSelectElement>(`#${id}`)?.selectedOptions[0]?.textContent?.trim();
+    expect(elegido('gen-departamento')).toBe('LIMA');
+    expect(elegido('gen-provincia')).toBe('LIMA');
+    expect(elegido('gen-distrito')).toBe('VILLA EL SALVADOR');
+    expect(el.querySelector<HTMLInputElement>('#gen-ubigeo')?.value).toBe('150142');
+  });
+
+  it('cambiar el departamento limpia provincia, distrito y ubigeo, y pide sus provincias', async () => {
+    const { el, http, render } = await abrir(TODOS_PERMISOS_OBRA);
+    const dep = el.querySelector<HTMLSelectElement>('#gen-departamento');
+    if (!dep) throw new Error('falta el departamento');
+    dep.value = dep.options[2].value;
+    dep.dispatchEvent(new Event('change'));
+    await render();
+    expect(http.expectOne((r) => r.url.endsWith('/maestros/ubigeo/provincias')).request.params.get('departamento')).toBe('04');
+    expect(el.querySelector<HTMLInputElement>('#gen-ubigeo')?.value).toBe('');
+  });
+
+  it('el PATCH lleva solo el código del distrito', async () => {
+    const { el, http } = await abrir(TODOS_PERMISOS_OBRA);
+    el.querySelector('form')?.dispatchEvent(new Event('submit'));
+    const body = http.expectOne((r) => r.url.endsWith('/operaciones/obra/10/generales')).request.body as Record<string, unknown>;
+    expect(body['id_distrito']).toBe('150142');
+    expect(body).not.toHaveProperty('departamento');
+    expect(body).not.toHaveProperty('ubigeo_cod');
+  });
+});
+

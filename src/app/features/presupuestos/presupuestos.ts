@@ -496,25 +496,37 @@ export class PresupuestosComponent implements OnInit {
     return `${(this.formStep() / 5) * 100}%`;
   }
 
+  /** Presupuesto sobre el que trabajan los pasos 2 a 5: el sombreado en la grilla, o el primero del Centro de Costo. */
+  private presupuestoParaPasos(): PresupuestoPrincipal | null {
+    const lista = this.presupuestosDelCC();
+    const selId = this.selectedPresupuestoId() || this.editingId();
+    return (selId ? lista.find(p => String(p.IdPresupuesto ?? p.id) === String(selId)) : null) ?? lista[0] ?? null;
+  }
+
+  /**
+   * Pestañas del asistente. Ir a los pasos 2 a 5 carga el presupuesto sombreado en Datos Generales si todavía no es
+   * el que está abierto (igual que «Siguiente Paso»); si ya lo está, solo cambia de paso y no pisa lo que se editó.
+   */
   switchStep(step: number) {
-    if (step >= 1 && step <= 5) {
-      this.formStep.set(step);
+    if (step < 1 || step > 5) return;
+    if (step >= 2) {
+      const ppto = this.presupuestoParaPasos();
+      if (ppto && String(ppto.IdPresupuesto ?? ppto.id) !== this.editingId()) {
+        this.abrirPresupuestoEnForm(ppto, step);
+        return;
+      }
     }
+    this.formStep.set(step);
   }
 
   nextStep() {
     if (this.formStep() === 1) {
-      const lista = this.presupuestosDelCC();
-      if (lista.length === 0) {
+      if (this.presupuestosDelCC().length === 0) {
         alert('Debe agregar al menos un presupuesto a la grilla para este Centro de Costo antes de continuar a Fases & Costos.');
         return;
       }
-      const selId = this.selectedPresupuestoId() || this.editingId();
-      const ppto = (selId ? lista.find(p => String(p.IdPresupuesto ?? p.id) === String(selId)) : null) || lista[0];
-      if (ppto) {
-        this.abrirPresupuestoEnForm(ppto, 2);
-        return;
-      }
+      this.switchStep(2);
+      return;
     }
     if (this.formStep() < 5) {
       this.formStep.set(this.formStep() + 1);

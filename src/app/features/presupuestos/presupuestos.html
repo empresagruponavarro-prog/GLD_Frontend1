@@ -649,7 +649,7 @@
 
       <!-- PASO 1: DATOS GENERALES -->
       @if (formStep() === 1) {
-      <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-6 max-w-4xl space-y-5">
+      <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-6 space-y-5">
         
         <!-- Header del Paso 1 (Estilo idéntico a Fases & Costos) -->
         <div class="flex items-start gap-3">
@@ -681,17 +681,17 @@
 
         <!-- LA GRILLA EN EL FORM DE PRESUPUESTO (Sin columna michi) -->
         <!-- Columnas: Centro de Costo | F. Requerimiento | F. Entrega | Tipo PPTO | Costo Directo | Total | Acción -->
-        <div class="rounded-lg border border-slate-200 overflow-hidden shadow-2xs">
-          <table class="w-full text-left border-collapse">
+        <div class="rounded-lg border border-slate-200 overflow-x-auto shadow-2xs">
+          <table class="w-full min-w-[760px] text-left border-collapse">
             <thead class="bg-slate-50 text-slate-500 text-[11px] uppercase font-semibold border-b border-slate-200">
               <tr>
                 <th class="py-2.5 px-3">Centro de Costo</th>
-                <th class="py-2.5 px-3 w-28">F. Requerimiento</th>
-                <th class="py-2.5 px-3 w-28">F. Entrega</th>
-                <th class="py-2.5 px-3 w-28 text-center">Tipo PPTO</th>
-                <th class="py-2.5 px-3 text-right w-32">Costo Directo (S/)</th>
-                <th class="py-2.5 px-3 text-right w-32">Total (S/)</th>
-                <th class="py-2.5 px-3 text-center w-32">Acción</th>
+                <th class="py-2.5 px-2 w-24">F. Requerimiento</th>
+                <th class="py-2.5 px-2 w-24">F. Entrega</th>
+                <th class="py-2.5 px-2 w-24 text-center">Tipo PPTO</th>
+                <th class="py-2.5 px-2 text-right w-28">Costo Directo (S/)</th>
+                <th class="py-2.5 px-2 text-right w-28">Total (S/)</th>
+                <th class="py-2.5 px-2 text-center w-28">Acción</th>
               </tr>
             </thead>
             <tbody class="divide-y divide-slate-100 text-[13px]">
@@ -725,13 +725,13 @@
                       {{ p.TipoPpto || 'Principal' }}
                     </span>
                   </td>
-                  <td class="py-2.5 px-3 text-right font-mono font-bold text-slate-900 tabular-nums">
+                  <td class="py-2.5 px-2 text-right font-mono font-bold text-slate-900 tabular-nums whitespace-nowrap">
                     {{ (p.CostoDirecto || 0) | currency:'PEN':'S/ ' }}
                   </td>
-                  <td class="py-2.5 px-3 text-right font-mono font-bold text-emerald-700 tabular-nums">
+                  <td class="py-2.5 px-2 text-right font-mono font-bold text-emerald-700 tabular-nums whitespace-nowrap">
                     {{ (p.Total || 0) | currency:'PEN':'S/ ' }}
                   </td>
-                  <td class="py-2.5 px-3 text-center" (click)="$event.stopPropagation()">
+                  <td class="py-2.5 px-2 text-center" (click)="$event.stopPropagation()">
                     <div class="flex items-center justify-center gap-1">
                       <!-- Ver Fases y Costos (Paso 2) -->
                       <button type="button" (click)="abrirPresupuestoEnForm(p, 2)" title="Ver Fases y Costos (Paso 2)"
@@ -773,10 +773,10 @@
                   <td colspan="4" class="py-2.5 px-3 text-right uppercase text-slate-500 tracking-wider text-[11px]">
                     Totales Presupuestados:
                   </td>
-                  <td class="py-2.5 px-3 text-right font-mono font-bold text-slate-900 tabular-nums">
+                  <td class="py-2.5 px-2 text-right font-mono font-bold text-slate-900 tabular-nums whitespace-nowrap">
                     {{ totalCostoDirectoCC | currency:'PEN':'S/ ' }}
                   </td>
-                  <td class="py-2.5 px-3 text-right font-mono font-black text-emerald-800 tabular-nums">
+                  <td class="py-2.5 px-2 text-right font-mono font-black text-emerald-800 tabular-nums whitespace-nowrap">
                     {{ totalPresupuestosCC | currency:'PEN':'S/ ' }}
                   </td>
                   <td></td>

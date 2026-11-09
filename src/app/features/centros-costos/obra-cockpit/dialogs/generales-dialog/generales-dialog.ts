@@ -5,6 +5,7 @@ import { ModalComponent } from '@shared/components/modal/modal';
 import { errorMessage } from '@app/features/almacen/almacen.utils';
 import { MapaPuntoComponent, PuntoMapa } from '@shared/components/mapa-punto/mapa-punto';
 import { SearchSelectComponent } from '@shared/components/search-select/search-select';
+import { OpcionUbigeo, UbigeoService } from '@shared/data-access/ubigeo.service';
 import { AnexosService } from '@app/features/maestros-generales/anexos/anexos.service';
 import { AnexoSelect } from '@app/features/maestros-generales/anexos/interfaces/anexos.interface';
 import { sinVacios } from '../../obra.calc';
@@ -22,6 +23,7 @@ import { PermisosObra, SIN_PERMISOS_OBRA } from '../../obra-permisos';
 export class GeneralesDialogComponent {
   readonly #service = inject(ObraService);
   readonly #anexos = inject(AnexosService);
+  readonly #ubigeo = inject(UbigeoService);
 
   readonly isOpen = input(false);
   readonly idCentroCosto = input.required<number>();
@@ -40,9 +42,11 @@ export class GeneralesDialogComponent {
   readonly closed = output<void>();
   readonly saved = output<void>();
 
-  protected readonly departamentosComunes = [
-    'Lima', 'Callao', 'Arequipa', 'Cusco', 'La Libertad', 'Piura', 'Ica', 'Junín', 'Lambayeque', 'Ancash', 'San Martín', 'Loreto', 'Tacna', 'Puno'
-  ];
+  /** Listas encadenadas del ubigeo INEI: cada una se carga con el código elegido en la anterior. */
+  protected readonly departamentos = signal<OpcionUbigeo[]>([]);
+  protected readonly provincias = signal<OpcionUbigeo[]>([]);
+  protected readonly distritos = signal<OpcionUbigeo[]>([]);
+  protected readonly ubigeoError = signal('');
 
   protected readonly turnosComunes = [
     'Diurno (07:30 - 17:00)',
@@ -58,7 +62,7 @@ export class GeneralesDialogComponent {
       window.open(`https://www.google.com/maps/search/?api=1&query=${lat},${lng}`, '_blank', 'noopener');
     } else {
       const dir = this.form.controls.direccion.value;
-      const dist = this.form.controls.distrito.value;
+      const dist = this.nombreDe(this.distritos(), this.form.controls.id_distrito.value);
       if (dir) {
         window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${dir}, ${dist}, Lima, Peru`)}`, '_blank', 'noopener');
       }
@@ -76,10 +80,11 @@ export class GeneralesDialogComponent {
   protected readonly form = new FormGroup({
     expediente_codigo: new FormControl('', { nonNullable: true, validators: [Validators.maxLength(100)] }),
     direccion: new FormControl('', { nonNullable: true, validators: [Validators.maxLength(1000)] }),
-    departamento: new FormControl('', { nonNullable: true, validators: [Validators.maxLength(100)] }),
-    provincia: new FormControl('', { nonNullable: true, validators: [Validators.maxLength(100)] }),
-    distrito: new FormControl('', { nonNullable: true, validators: [Validators.maxLength(100)] }),
-    ubigeo_cod: new FormControl('', { nonNullable: true, validators: [Validators.maxLength(10)] }),
+    // Ubicación: solo se guarda el distrito; departamento y provincia filtran las listas.
+    id_departamento: new FormControl<string | null>(null),
+    id_provincia: new FormControl<string | null>(null),
+    id_distrito: new FormControl<string | null>(null),
+    ubigeo: new FormControl('', { nonNullable: true, validators: [Validators.pattern(/^\d{6}$/)] }),
     latitud: new FormControl<number | null>(null, { validators: [Validators.min(-90), Validators.max(90)] }),
     longitud: new FormControl<number | null>(null, { validators: [Validators.min(-180), Validators.max(180)] }),
     semanas_totales: new FormControl<number | null>(null, { validators: [Validators.min(1)] }),
@@ -115,8 +120,62 @@ export class GeneralesDialogComponent {
     this.form.markAsDirty();
   }
 
+  protected nombreDe(lista: readonly OpcionUbigeo[], id: string | null): string {
+    return lista.find((o) => o.id === id)?.nombre ?? '';
+  }
+
+  /** Elegir departamento limpia provincia y distrito y carga sus provincias. */
+  protected onDepartamento(): void {
+    const dep = this.form.controls.id_departamento.value;
+    this.form.patchValue({ id_provincia: null, id_distrito: null, ubigeo: '' });
+    this.provincias.set([]);
+    this.distritos.set([]);
+    if (dep) this.#ubigeo.provincias(dep).subscribe((l) => this.provincias.set(l));
+  }
+
+  /** Elegir provincia limpia el distrito y carga sus distritos. */
+  protected onProvincia(): void {
+    const prov = this.form.controls.id_provincia.value;
+    this.form.patchValue({ id_distrito: null, ubigeo: '' });
+    this.distritos.set([]);
+    if (prov) this.#ubigeo.distritos(prov).subscribe((l) => this.distritos.set(l));
+  }
+
+  /** Elegir distrito llena el ubigeo. */
+  protected onDistrito(): void {
+    this.form.controls.ubigeo.setValue(this.form.controls.id_distrito.value ?? '');
+    this.ubigeoError.set('');
+  }
+
+  /** Escribir los 6 dígitos del ubigeo completa las tres listas. */
+  protected onUbigeo(): void {
+    const codigo = this.form.controls.ubigeo.value.trim();
+    this.ubigeoError.set('');
+    if (codigo === '') {
+      this.form.patchValue({ id_distrito: null });
+      return;
+    }
+    if (!/^\d{6}$/.test(codigo)) return;
+    this.#ubigeo.ubicacion(codigo).subscribe({
+      next: (u) => this.cargarUbicacion(u.id_distrito),
+      error: () => this.ubigeoError.set(`No existe el ubigeo ${codigo}.`),
+    });
+  }
+
+  /** Deja las tres listas cargadas y elegidas según el código del distrito. */
+  private cargarUbicacion(idDistrito: string | null): void {
+    const dep = idDistrito?.slice(0, 2) ?? null;
+    const prov = idDistrito?.slice(0, 4) ?? null;
+    this.form.patchValue({ id_departamento: dep, id_provincia: prov, id_distrito: idDistrito, ubigeo: idDistrito ?? '' });
+    this.provincias.set([]);
+    this.distritos.set([]);
+    if (dep) this.#ubigeo.provincias(dep).subscribe((l) => this.provincias.set(l));
+    if (prov) this.#ubigeo.distritos(prov).subscribe((l) => this.distritos.set(l));
+  }
+
   constructor() {
     this.#anexos.getSelect('Trabajador').subscribe((res) => this.trabajadores.set(res));
+    this.#ubigeo.departamentos().subscribe((l) => this.departamentos.set(l));
     effect(() => {
       if (!this.isOpen()) return;
       this.formError.set('');
@@ -124,10 +183,6 @@ export class GeneralesDialogComponent {
       this.form.reset({
         expediente_codigo: g?.expediente_codigo ?? '',
         direccion: g?.direccion ?? '',
-        departamento: g?.departamento ?? 'Lima',
-        provincia: g?.provincia ?? 'Lima',
-        distrito: g?.distrito ?? '',
-        ubigeo_cod: g?.ubigeo_cod ?? '',
         latitud: g?.latitud ?? null,
         longitud: g?.longitud ?? null,
         semanas_totales: g?.semanas_totales ?? null,
@@ -148,6 +203,8 @@ export class GeneralesDialogComponent {
         id_resp_presupuesto: g?.equipo?.resp_presupuesto?.id ?? null,
         id_resp_procura: g?.equipo?.resp_procura?.id ?? null,
       });
+      this.ubigeoError.set('');
+      this.cargarUbicacion(g?.id_distrito ?? null);
       if (this.soloLectura()) this.form.disable({ emitEvent: false });
       else this.form.enable({ emitEvent: false });
       if (this.plazoBloqueado()) {
@@ -192,10 +249,10 @@ export class GeneralesDialogComponent {
       ${seccion('Expediente &amp; ubicación', [
         campo('Código de expediente', v.expediente_codigo, 'x2'),
         campo('Dirección de la obra', v.direccion, 'x2'),
-        campo('Departamento', v.departamento),
-        campo('Provincia', v.provincia),
-        campo('Distrito', v.distrito),
-        campo('Ubigeo INEI', v.ubigeo_cod),
+        campo('Departamento', this.nombreDe(this.departamentos(), v.id_departamento)),
+        campo('Provincia', this.nombreDe(this.provincias(), v.id_provincia)),
+        campo('Distrito', this.nombreDe(this.distritos(), v.id_distrito)),
+        campo('Ubigeo INEI', v.id_distrito),
         campo('Latitud GPS', v.latitud, 'x2'),
         campo('Longitud GPS', v.longitud, 'x2'),
       ])}
@@ -262,10 +319,6 @@ export class GeneralesDialogComponent {
     const base = sinVacios<UpdateGeneralesPayload>({
       expediente_codigo: v.expediente_codigo.trim(),
       direccion: v.direccion.trim(),
-      departamento: v.departamento.trim(),
-      provincia: v.provincia.trim(),
-      distrito: v.distrito.trim(),
-      ubigeo_cod: v.ubigeo_cod.trim(),
       latitud: v.latitud ?? undefined,
       longitud: v.longitud ?? undefined,
       personal_activo_promedio: v.personal_activo_promedio ?? undefined,
@@ -278,6 +331,7 @@ export class GeneralesDialogComponent {
     // Estos campos sí se pueden vaciar: se envía `null` para borrarlos.
     const payload: UpdateGeneralesPayload = {
       ...base,
+      id_distrito: v.id_distrito,
       avance_general: v.avance_general,
       comentario: v.comentario.trim() || null,
       plazo_postventa_dias: v.plazo_postventa_dias,

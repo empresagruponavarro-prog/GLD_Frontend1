@@ -118,68 +118,54 @@
             </div>
           </div>
 
-          <!-- Departamento -->
+          <!-- Ubicación por ubigeo INEI: departamento › provincia › distrito (se guarda solo el distrito) -->
           <div class="sm:col-span-3">
-            <label for="gen-departamento" class="block text-[11px] font-bold uppercase tracking-wider text-slate-700 mb-1">
-              Departamento
-            </label>
-            <div class="relative">
-              <input
-                id="gen-departamento"
-                type="text"
-                list="deptos-list"
-                class="h-9 w-full px-3 rounded-lg border border-slate-200 bg-white text-xs text-slate-800 focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600 transition-all shadow-2xs"
-                formControlName="departamento"
-                placeholder="Lima"
-              />
-              <datalist id="deptos-list">
-                @for (d of departamentosComunes; track d) {
-                  <option [value]="d"></option>
-                }
-              </datalist>
-            </div>
+            <label for="gen-departamento" class="block text-[11px] font-bold uppercase tracking-wider text-slate-700 mb-1">Departamento</label>
+            <select id="gen-departamento" class="h-9 w-full px-3 rounded-lg border border-slate-200 bg-white text-xs text-slate-800 focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600 transition-all shadow-2xs disabled:bg-slate-50 disabled:text-slate-400" formControlName="id_departamento" (change)="onDepartamento()">
+              <option [ngValue]="null">— Elegir —</option>
+              @for (d of departamentos(); track d.id) {
+                <option [ngValue]="d.id">{{ d.nombre }}</option>
+              }
+            </select>
           </div>
 
-          <!-- Provincia -->
           <div class="sm:col-span-3">
-            <label for="gen-provincia" class="block text-[11px] font-bold uppercase tracking-wider text-slate-700 mb-1">
-              Provincia
-            </label>
-            <input
-              id="gen-provincia"
-              type="text"
-              class="h-9 w-full px-3 rounded-lg border border-slate-200 bg-white text-xs text-slate-800 focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600 transition-all shadow-2xs"
-              formControlName="provincia"
-              placeholder="Lima"
-            />
+            <label for="gen-provincia" class="block text-[11px] font-bold uppercase tracking-wider text-slate-700 mb-1">Provincia</label>
+            <select id="gen-provincia" class="h-9 w-full px-3 rounded-lg border border-slate-200 bg-white text-xs text-slate-800 focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600 transition-all shadow-2xs disabled:bg-slate-50 disabled:text-slate-400" formControlName="id_provincia" (change)="onProvincia()">
+              <option [ngValue]="null">{{ form.controls.id_departamento.value ? '— Elegir —' : 'Elige el departamento' }}</option>
+              @for (p of provincias(); track p.id) {
+                <option [ngValue]="p.id">{{ p.nombre }}</option>
+              }
+            </select>
           </div>
 
-          <!-- Distrito -->
           <div class="sm:col-span-3">
-            <label for="gen-distrito" class="block text-[11px] font-bold uppercase tracking-wider text-slate-700 mb-1">
-              Distrito
-            </label>
-            <input
-              id="gen-distrito"
-              type="text"
-              class="h-9 w-full px-3 rounded-lg border border-slate-200 bg-white text-xs text-slate-800 focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600 transition-all shadow-2xs"
-              formControlName="distrito"
-              placeholder="Villa El Salvador"
-            />
+            <label for="gen-distrito" class="block text-[11px] font-bold uppercase tracking-wider text-slate-700 mb-1">Distrito</label>
+            <select id="gen-distrito" class="h-9 w-full px-3 rounded-lg border border-slate-200 bg-white text-xs text-slate-800 focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600 transition-all shadow-2xs disabled:bg-slate-50 disabled:text-slate-400" formControlName="id_distrito" (change)="onDistrito()">
+              <option [ngValue]="null">{{ form.controls.id_provincia.value ? '— Elegir —' : 'Elige la provincia' }}</option>
+              @for (d of distritos(); track d.id) {
+                <option [ngValue]="d.id">{{ d.nombre }}</option>
+              }
+            </select>
           </div>
 
-          <!-- Ubigeo -->
           <div class="sm:col-span-3">
-            <label for="gen-ubigeo" class="block text-[11px] font-bold uppercase tracking-wider text-slate-700 mb-1">
-              Ubigeo INEI
-            </label>
+            <label for="gen-ubigeo" class="block text-[11px] font-bold uppercase tracking-wider text-slate-700 mb-1">Ubigeo INEI</label>
             <input
               id="gen-ubigeo"
               type="text"
+              inputmode="numeric"
+              maxlength="6"
               class="h-9 w-full px-3 rounded-lg border border-slate-200 bg-white text-xs font-mono text-slate-800 focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600 transition-all shadow-2xs"
-              formControlName="ubigeo_cod"
+              formControlName="ubigeo"
+              (input)="onUbigeo()"
               placeholder="150142"
             />
+            @if (ubigeoError()) {
+              <p class="mt-1 text-[10px] text-red-600">{{ ubigeoError() }}</p>
+            } @else {
+              <p class="mt-1 text-[10px] text-slate-400">Se llena al elegir el distrito, o escríbelo.</p>
+            }
           </div>
 
           <!-- Coordenadas GPS: Latitud & Longitud -->

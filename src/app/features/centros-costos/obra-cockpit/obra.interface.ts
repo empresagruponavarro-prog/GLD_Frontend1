@@ -119,6 +119,9 @@ export interface ObraDatosGenerales {
   id: number;
   expediente_codigo?: string;
   direccion?: string;
+  /** Código ubigeo INEI del distrito (6 dígitos); lo único que se guarda de la ubicación. */
+  id_distrito?: string;
+  /** Nombres que el backend saca del catálogo a partir de `id_distrito` (solo lectura). */
   departamento?: string;
   provincia?: string;
   distrito?: string;
@@ -184,8 +187,10 @@ export interface ObraCockpit {
 }
 
 // ─── Payloads ────────────────────────────────────────────────────────────────
-type CamposSoloLectura = 'id' | 'google_maps_url' | 'waze_url' | 'estado_obra' | 'equipo' | 'id_presupuesto_origen' | 'fecha_cierre_postventa';
-type CamposLimpiablesFicha = 'avance_general' | 'comentario' | 'plazo_postventa_dias' | 'observaciones_postventa';
+type CamposSoloLectura =
+  | 'id' | 'google_maps_url' | 'waze_url' | 'estado_obra' | 'equipo' | 'id_presupuesto_origen' | 'fecha_cierre_postventa'
+  | 'departamento' | 'provincia' | 'distrito' | 'ubigeo_cod';
+type CamposLimpiablesFicha = 'avance_general' | 'comentario' | 'plazo_postventa_dias' | 'observaciones_postventa' | 'id_distrito';
 
 /** La ficha: los campos limpiables aceptan `null`; el estado se cambia con `POST …/estado`. */
 export type UpdateGeneralesPayload = Partial<Omit<ObraDatosGenerales, CamposSoloLectura | CamposLimpiablesFicha>> &
