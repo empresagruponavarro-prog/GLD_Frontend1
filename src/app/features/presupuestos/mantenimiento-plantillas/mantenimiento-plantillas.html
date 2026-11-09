@@ -195,7 +195,7 @@
 
       @if (selectedPlantilla(); as plantilla) {
         <!-- CABECERA PRINCIPAL (DASHBOARD BAR) -->
-        <div class="bg-white/80 backdrop-blur-md border-b border-slate-200/80 px-4 xl:px-8 py-3 xl:py-5 shrink-0 z-10 flex flex-col xl:flex-row xl:items-start justify-between gap-3 xl:gap-4">
+        <div class="bg-white/80 backdrop-blur-md border-b border-slate-200/80 px-4 xl:px-8 py-3 xl:py-5 shrink-0 z-10 flex flex-col xl:flex-row xl:flex-wrap xl:items-start justify-between gap-3 xl:gap-x-4 xl:gap-y-0.5">
           <div class="flex-1 min-w-0">
             <!-- Editor en línea: solo lectura sin permiso de editar -->
             <fieldset class="min-w-0" [disabled]="soloLectura()">
@@ -213,14 +213,6 @@
                 </span>
               }
               <span class="text-xs font-mono text-slate-400 bg-slate-100 px-2 py-0.5 rounded border border-slate-200/60 shrink-0">ID: {{ plantilla.IdPlantilla }}</span>
-            </div>
-            <textarea [(ngModel)]="plantilla.Descripcion" class="w-full text-xs text-slate-500 max-w-2xl font-normal leading-relaxed bg-transparent border border-transparent hover:border-slate-300 focus:border-emerald-500 focus:outline-none focus:bg-white rounded p-1 resize-none h-12 transition-colors"></textarea>
-            
-            <div class="mt-2">
-              <label class="flex items-center space-x-2 text-xs text-slate-600 font-medium cursor-pointer w-max">
-                <input type="checkbox" [(ngModel)]="plantilla.Activo" class="rounded text-emerald-600 focus:ring-emerald-500 border-slate-300">
-                <span>Plantilla Habilitada (Activa)</span>
-              </label>
             </div>
             </fieldset>
           </div>
@@ -253,6 +245,19 @@
               <span class="">Guardar Cambios</span>
             </button>
             }
+          </div>
+          <!-- DESCRIPCION: fila propia a todo el ancho (debajo del titulo y los botones) -->
+          <div class="w-full xl:basis-full min-w-0">
+            <fieldset class="min-w-0" [disabled]="soloLectura()">
+            <textarea [(ngModel)]="plantilla.Descripcion" class="w-full text-xs text-slate-500 font-normal leading-relaxed bg-transparent border border-transparent hover:border-slate-300 focus:border-emerald-500 focus:outline-none focus:bg-white rounded px-2 py-1 resize-y min-h-[2.5rem] transition-colors"></textarea>
+            
+            <div class="mt-2">
+              <label class="flex items-center space-x-2 text-xs text-slate-600 font-medium cursor-pointer w-max">
+                <input type="checkbox" [(ngModel)]="plantilla.Activo" class="rounded text-emerald-600 focus:ring-emerald-500 border-slate-300">
+                <span>Plantilla Habilitada (Activa)</span>
+              </label>
+            </div>
+            </fieldset>
           </div>
         </div>
 
