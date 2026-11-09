@@ -312,19 +312,6 @@ export class PartidaItemsDialogComponent implements OnInit {
     this.filas.set([...this.filas(), nueva]);
   }
 
-  duplicarFila(index: number): void {
-    if (this.soloLectura) return;
-    const origen = this.filas()[index];
-    if (!origen) return;
-    const clon: ItemFila = {
-      ...origen,
-      id: undefined, // nuevo ítem
-    };
-    const list = [...this.filas()];
-    list.splice(index + 1, 0, clon);
-    this.filas.set(list);
-  }
-
   eliminarFila(index: number): void {
     if (this.soloLectura) return;
     const list = [...this.filas()];

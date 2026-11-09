@@ -1523,14 +1523,9 @@ export class PresupuestosComponent implements OnInit {
           else if (Array.isArray(res) && res.length > 0) pptos = res;
           this.presupuestosDelCC.set(pptos);
           if (!this.editingId()) {
-            const yaTienePrincipal = pptos.some(p => (p.TipoPpto || '').toUpperCase().includes('PRINCIPAL') || !(p.TipoPpto || '').toUpperCase().includes('ADICIONAL'));
-            if (pptos.length > 0 && yaTienePrincipal) {
-              this.formData.TipoPpto = 'Adicional';
-              this.formData.Concepto = `Adicional #${this.getSiguienteNumeroAdicional(pptos)}`;
-            } else {
-              this.formData.TipoPpto = 'Principal';
-              this.formData.Concepto = 'PPTO CONTRACTUAL';
-            }
+            // Por defecto siempre Principal; un Adicional se elige a mano con el selector de tipo.
+            this.formData.TipoPpto = 'Principal';
+            this.formData.Concepto = 'PPTO CONTRACTUAL';
           }
         },
         error: (err) => console.error('Error al cargar presupuestos del CC:', err)
@@ -1744,11 +1739,10 @@ export class PresupuestosComponent implements OnInit {
           this.selectedPresupuestoId.set(nuevoId);
         }
 
-        // Mantener la grilla visible con todos los presupuestos y preparar
-        // los campos inferiores para permitir agregar el siguiente adicional:
+        // Mantener la grilla visible con todos los presupuestos; el siguiente vuelve a quedar en Principal por defecto.
         this.editingId.set(null);
-        this.formData.TipoPpto = 'Adicional';
-        this.formData.Concepto = `Adicional #${this.getSiguienteNumeroAdicional(pptos)}`;
+        this.formData.TipoPpto = 'Principal';
+        this.formData.Concepto = 'PPTO CONTRACTUAL';
         this.formData.FechaEntrega = '';
       },
       error: (err) => {

@@ -496,7 +496,6 @@
                       <tr class="bg-[#edf2f0] border-b border-[#d1dcd7] text-[10px] font-bold text-slate-500 uppercase tracking-wider">
                         <th class="py-2.5 px-3 w-16">ÍTEM</th>
                         <th class="py-2.5 px-4">FASE / PARTIDA</th>
-                        <th class="py-2.5 px-3">CATEGORÍA</th>
                         <th class="py-2.5 px-3">SUB FASE / CATEGORÍA</th>
                         <th class="py-2.5 px-3 text-right">P.U. (S/)</th>
                         <th class="py-2.5 px-4 text-right">SUBTOTAL CD (S/)</th>
@@ -513,9 +512,6 @@
                           <td class="py-2.5 px-4">
                             <div class="font-bold text-slate-900">{{ fase.NombreFase || fase.IdpptoFase }}</div>
                             <div class="text-[9px] font-mono text-slate-400">ID Detalle: {{ cat.IdPresupuestoDetalleCategoria || ('DF-' + cat.id) }}</div>
-                          </td>
-                          <td class="py-2.5 px-3">
-                            <span class="px-2 py-0.5 rounded text-[10px] font-mono font-semibold bg-[#edf2f0] text-slate-700 border border-[#d1dcd7] uppercase">{{ cat.categoria?.descripcion || 'N/A' }}</span>
                           </td>
                           <td class="py-2.5 px-3">
                             <span class="px-2 py-0.5 rounded text-[10px] font-mono font-semibold bg-[#529b7b]/10 text-[#2d634d] border border-[#529b7b]/25 uppercase">{{ cat.CategoriaInsumo || cat.IdpptoFaseCategoria }}</span>
@@ -908,6 +904,12 @@
           </div>
           
             <div class="ml-auto flex items-center gap-2">
+              @if (formData.IdPresupuesto) {
+                <a [routerLink]="['/imprimir/presupuesto-meta', formData.IdPresupuesto]" target="_blank" title="Vista previa de impresi&oacute;n del presupuesto" class="bg-white hover:bg-[#f6f8f7] text-slate-700 px-3 py-1.5 rounded-full text-[12px] font-medium flex items-center gap-1.5 transition shadow-sm cursor-pointer border border-[#d1dcd7]">
+                  <i class="fa-solid fa-print"></i>
+                  Vista previa
+                </a>
+              }
               @if (puedeUsarPlantilla) {
                 <button type="button" (click)="abrirModalPlantillas()" class="bg-[#1e4838] hover:bg-[#2d634d] text-white px-3 py-1.5 rounded-full text-[12px] font-medium flex items-center gap-1.5 transition shadow-sm cursor-pointer border border-[#1e4838]">
                   <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2"></path></svg>
