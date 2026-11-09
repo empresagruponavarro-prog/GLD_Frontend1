@@ -61,6 +61,8 @@ export const MENU_LATERAL: readonly SeccionMenu[] = [
         ],
       }),
       enlace({ etiqueta: 'Registro de Incidencias', ruta: '/incidencias', icono: 'fa-solid fa-clipboard-list', modulo: 'incidencias' }),
+      enlace({ etiqueta: 'Especialidades', ruta: '/maestros-generales/especialidades', icono: 'fa-solid fa-user-doctor', modulo: 'maestros.generales' }),
+      enlace({ etiqueta: 'Tipo Documento de Identidad', ruta: '/maestros-generales/tipo-doc-identidad', icono: 'fa-solid fa-id-card', modulo: 'maestros.generales' }),
       submenu({
         id: 'documentos',
         etiqueta: 'Documentos',

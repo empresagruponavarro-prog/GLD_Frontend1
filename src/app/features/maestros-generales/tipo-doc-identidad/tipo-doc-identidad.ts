@@ -1,63 +1,188 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { Observable } from 'rxjs';
+import { permisosDePantalla } from '@app/core/auth/permisos-pantalla';
+import { mensajeError } from '@shared/utils/errores-http';
+import { DataTableComponent } from '../../../shared/components/data-table/data-table';
+import { ExportarBotonesComponent } from '../../../shared/components/exportar-botones/exportar-botones';
+import { ModalComponent } from '../../../shared/components/modal/modal';
+import { DataTable } from '../../../shared/interfaces';
+import { traerTodasLasPaginas, type DatosExportacion } from '../../../shared/utils/exportar';
+import { valorDeEvento } from '../../../shared/utils/eventos';
+import { TipoAnexo, TipoDocIdentidad } from './interfaces/tipo-doc-identidad.interface';
 import { TipoDocIdentidadService } from './tipo-doc-identidad.service';
-import { TipoDocIdentidad } from './interfaces/tipo-doc-identidad.interface';
 
 @Component({
   selector: 'app-tipo-doc-identidad',
   standalone: true,
-  imports: [],
-  template: `
-    <div class="content-header">
-      <div>
-        <h1 class="content-title">Tipo de Documento de Identidad</h1>
-        <p class="content-subtitle">Maestro de documento de identidad</p>
-      </div>
-    </div>
-
-    <div class="content-body">
-      <div class="table-card">
-        <div class="table-toolbar">
-          <span class="toolbar-title">Listado de documentos</span>
-        </div>
-
-        <table class="table table-sm">
-          <thead>
-            <tr>
-              <th>ID</th>
-              <th>Tipo Anexo</th>
-              <th>Descripción</th>
-            </tr>
-          </thead>
-          <tbody>
-            @for (item of tipos(); track item.id) {
-              <tr>
-                <td>{{ item.id }}</td>
-                <td>{{ item.tipoAnexo ?? '—' }}</td>
-                <td>{{ item.descripcion ?? '—' }}</td>
-              </tr>
-            } @empty {
-              <tr>
-                <td colspan="3" class="text-muted text-center">Sin registros</td>
-              </tr>
-            }
-          </tbody>
-        </table>
-      </div>
-    </div>
-  `
+  imports: [ReactiveFormsModule, DataTableComponent, ModalComponent, ExportarBotonesComponent],
+  templateUrl: './tipo-doc-identidad.html',
+  host: { class: 'page-scroll' },
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class TipoDocIdentidadComponent implements OnInit {
+export class TipoDocIdentidadComponent {
   private readonly service = inject(TipoDocIdentidadService);
-  tipos = signal<TipoDocIdentidad[]>([]);
+  protected readonly permisos = permisosDePantalla('maestros.generales');
 
-  ngOnInit(): void {
-    this.service.getAll({ page: 1, pageSize: 20 }).subscribe({
-      next: (res) => {
-        this.tipos.set(res.data ?? []);
+  protected readonly columns: DataTable[] = [
+    { label: 'ID', width: '100px' },
+    { label: 'Tipo de Anexo', width: '180px' },
+    { label: 'Descripción' },
+    { label: 'Acciones', width: '130px', align: 'center' },
+  ];
+
+  // Listado y filtros
+  protected readonly items = signal<readonly TipoDocIdentidad[]>([]);
+  protected readonly total = signal(0);
+  protected readonly page = signal(1);
+  protected readonly pageSize = signal(20);
+  protected readonly descripcionFiltro = signal('');
+  protected readonly tipoAnexoFiltro = signal<TipoAnexo | 'TODOS'>('TODOS');
+  protected readonly isLoading = signal(false);
+  protected readonly listError = signal('');
+  private searchTimer: ReturnType<typeof setTimeout> | undefined;
+
+  // Modal
+  protected readonly isModalOpen = signal(false);
+  protected readonly isSaving = signal(false);
+  protected readonly modalError = signal('');
+  protected readonly editando = signal<TipoDocIdentidad | null>(null);
+
+  protected readonly form = new FormGroup({
+    tipoAnexo: new FormControl<TipoAnexo>('Proveedor', { nonNullable: true, validators: [Validators.required] }),
+    descripcion: new FormControl('', { nonNullable: true, validators: [Validators.required, Validators.maxLength(255)] }),
+  });
+
+  readonly exportar = async (): Promise<DatosExportacion> => {
+    const query = {
+      tipoAnexo: this.tipoAnexoFiltro() === 'TODOS' ? undefined : (this.tipoAnexoFiltro() as TipoAnexo),
+      descripcion: this.descripcionFiltro().trim() || undefined,
+    };
+    const filas = await traerTodasLasPaginas((page, pageSize) => this.service.getAll({ ...query, page, pageSize }));
+    return {
+      nombre: 'Tipos_Documento_Identidad',
+      columnas: ['ID', 'Tipo de Anexo', 'Descripción'],
+      filas: filas.map((d) => [d.id, d.tipoAnexo ?? 'Sin anexo', d.descripcion ?? '']),
+    };
+  };
+
+  constructor() {
+    this.load();
+  }
+
+  protected load(): void {
+    this.isLoading.set(true);
+    this.listError.set('');
+    this.service
+      .getAll({
+        page: this.page(),
+        pageSize: this.pageSize(),
+        tipoAnexo: this.tipoAnexoFiltro() === 'TODOS' ? undefined : (this.tipoAnexoFiltro() as TipoAnexo),
+        descripcion: this.descripcionFiltro().trim() || undefined,
+      })
+      .subscribe({
+        next: (res) => {
+          this.items.set(res.data ?? []);
+          this.total.set(res.total ?? 0);
+          this.isLoading.set(false);
+        },
+        error: (err: unknown) => {
+          this.items.set([]);
+          this.total.set(0);
+          this.listError.set(mensajeError(err));
+          this.isLoading.set(false);
+        },
+      });
+  }
+
+  // Filtros
+  protected onSearch(event: Event): void {
+    this.descripcionFiltro.set(valorDeEvento(event));
+    clearTimeout(this.searchTimer);
+    this.searchTimer = setTimeout(() => this.irAPagina(1), 350);
+  }
+
+  protected onTipoAnexoChange(event: Event): void {
+    const val = valorDeEvento(event) as TipoAnexo | 'TODOS';
+    this.tipoAnexoFiltro.set(val);
+    this.irAPagina(1);
+  }
+
+  protected restablecer(): void {
+    this.descripcionFiltro.set('');
+    this.tipoAnexoFiltro.set('TODOS');
+    this.irAPagina(1);
+  }
+
+  protected irAPagina(page: number): void {
+    this.page.set(page);
+    this.load();
+  }
+
+  protected cambiarTamano(size: number): void {
+    this.pageSize.set(size);
+    this.irAPagina(1);
+  }
+
+  // CRUD
+  protected nuevo(): void {
+    if (!this.permisos.crear()) return;
+    this.editando.set(null);
+    this.modalError.set('');
+    this.form.reset({ tipoAnexo: 'Proveedor', descripcion: '' });
+    this.isModalOpen.set(true);
+  }
+
+  protected editar(item: TipoDocIdentidad): void {
+    if (!this.permisos.editar()) return;
+    this.editando.set(item);
+    this.modalError.set('');
+    this.form.reset({
+      tipoAnexo: item.tipoAnexo ?? 'Proveedor',
+      descripcion: item.descripcion ?? '',
+    });
+    this.isModalOpen.set(true);
+  }
+
+  protected closeModal(): void {
+    this.isModalOpen.set(false);
+  }
+
+  protected guardar(): void {
+    if (this.form.invalid) {
+      this.form.markAllAsTouched();
+      return this.modalError.set('Indique la descripción del documento de identidad.');
+    }
+    const v = this.form.getRawValue();
+    const payload = {
+      tipoAnexo: v.tipoAnexo,
+      descripcion: v.descripcion.trim().toUpperCase(),
+    };
+    const actual = this.editando();
+    this.isSaving.set(true);
+    const request$: Observable<TipoDocIdentidad> = actual
+      ? this.service.update(actual.id, payload)
+      : this.service.create(payload);
+
+    request$.subscribe({
+      next: () => {
+        this.isSaving.set(false);
+        this.closeModal();
+        this.load();
       },
-      error: () => {
-        this.tipos.set([]);
-      }
+      error: (err: unknown) => {
+        this.isSaving.set(false);
+        this.modalError.set(mensajeError(err));
+      },
+    });
+  }
+
+  protected eliminar(item: TipoDocIdentidad): void {
+    if (!this.permisos.eliminar()) return;
+    if (!confirm(`¿Eliminar el tipo de documento "${item.descripcion}" (ID: ${item.id})? Esta acción no se puede deshacer.`)) return;
+    this.service.delete(item.id).subscribe({
+      next: () => this.load(),
+      error: (err: unknown) => alert(mensajeError(err)),
     });
   }
 }

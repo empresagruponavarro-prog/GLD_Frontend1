@@ -1,0 +1,145 @@
+<div class="content-header">
+  <div>
+    <h1 class="content-title">Especialidades</h1>
+    <p class="content-subtitle">Maestro de especialidades de proveedores, clientes y trabajadores.</p>
+  </div>
+  <div style="display: flex; gap: 0.5rem; align-items: center">
+    <app-exportar-botones [obtener]="exportar" [cargando]="isLoading()" />
+    @if (permisos.crear()) {
+      <button class="btn btn-primary" type="button" (click)="nueva()"><i class="fa-solid fa-plus"></i> Nueva especialidad</button>
+    }
+    <button class="btn btn-secondary" type="button" (click)="load()" [disabled]="isLoading()">
+      <i class="fa-solid fa-arrows-rotate" [class.fa-spin]="isLoading()"></i> {{ isLoading() ? 'Cargando...' : 'Actualizar' }}
+    </button>
+  </div>
+</div>
+
+<div class="content-body">
+  <section class="toolbar-shell">
+    <div class="toolbar-search-row">
+      <div class="search-field">
+        <span class="search-icon"><i class="fa-solid fa-magnifying-glass"></i></span>
+        <input
+          type="text"
+          class="form-control search-input"
+          placeholder="Buscar por descripción..."
+          aria-label="Buscar especialidad"
+          maxlength="100"
+          [value]="descripcionFiltro()"
+          (input)="onSearch($event)"
+        />
+      </div>
+      <div class="toolbar-meta">
+        <span>Mostrando</span>
+        <strong>{{ total() }}</strong>
+        <span>registros</span>
+      </div>
+    </div>
+
+    <div class="toolbar-filters-row">
+      <div class="toolbar-filters-left">
+        <select class="toolbar-select" aria-label="Filtrar por tipo de anexo" [value]="tipoAnexoFiltro()" (change)="onTipoAnexoChange($event)">
+          <option value="TODOS">Todos los tipos de anexo</option>
+          <option value="Proveedor">Proveedor</option>
+          <option value="Cliente">Cliente</option>
+          <option value="Trabajador">Trabajador</option>
+        </select>
+        <button class="toolbar-reset" type="button" (click)="restablecer()"><i class="fa-solid fa-rotate-left"></i> Restablecer</button>
+      </div>
+    </div>
+  </section>
+
+  @if (listError()) {
+    <p class="badge badge-danger" role="alert">{{ listError() }}</p>
+  }
+
+  <app-data-table
+    [columns]="columns"
+    [items]="items()"
+    [loading]="isLoading()"
+    [totalItems]="total()"
+    [currentPage]="page()"
+    [pageSize]="pageSize()"
+    [pageSizeOptions]="[10, 20, 50, 100]"
+    [minWidth]="'700px'"
+    emptyMessage="No hay especialidades registradas con esos filtros."
+    emptyIcon="fa-solid fa-user-doctor"
+    [rowTemplate]="fila"
+    (pageChange)="irAPagina($event)"
+    (pageSizeChange)="cambiarTamano($event)"
+  />
+
+  <ng-template #fila let-item>
+    <tr>
+      <td><strong>{{ item.id }}</strong></td>
+      <td>
+        <span class="badge badge-progress">{{ item.tipoAnexo ?? 'Sin anexo' }}</span>
+      </td>
+      <td>{{ item.descripcion ?? '—' }}</td>
+      <td align="center">
+        @if (permisos.editar()) {
+          <button class="table-action-btn table-action-btn--primary" type="button" title="Editar" (click)="editar(item)">
+            <i class="fa-solid fa-pen-to-square"></i>
+          </button>
+        }
+        @if (permisos.eliminar()) {
+          <button class="table-action-btn table-action-btn--danger" type="button" title="Eliminar" (click)="eliminar(item)">
+            <i class="fa-solid fa-trash"></i>
+          </button>
+        }
+      </td>
+    </tr>
+  </ng-template>
+</div>
+
+<app-modal
+  [isOpen]="isModalOpen()"
+  [title]="editando() ? 'Editar especialidad' : 'Nueva especialidad'"
+  icon="fa-solid fa-user-doctor"
+  maxWidth="480px"
+  [showDefaultFooter]="false"
+  (closed)="closeModal()"
+>
+  <form [formGroup]="form" (ngSubmit)="guardar()" class="space-y-4">
+    @if (editando(); as item) {
+      <p class="content-subtitle">ID: <strong>{{ item.id }}</strong></p>
+    }
+    <div class="form-group">
+      <label for="esp-tipo-anexo">Tipo de Anexo <span class="required text-rose-500">*</span></label>
+      <select id="esp-tipo-anexo" class="form-control" formControlName="tipoAnexo">
+        <option value="Proveedor">Proveedor</option>
+        <option value="Cliente">Cliente</option>
+        <option value="Trabajador">Trabajador</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label for="esp-descripcion">Descripción <span class="required text-rose-500">*</span></label>
+      <input
+        id="esp-descripcion"
+        class="form-control"
+        formControlName="descripcion"
+        maxlength="255"
+        style="text-transform: uppercase"
+        placeholder="Ej. ESTRUCTURAS, ELECTRICIDAD, PINTURA..."
+      />
+    </div>
+  </form>
+
+  @if (modalError()) {
+    <p class="mt-3 p-2.5 rounded-lg text-xs font-medium bg-rose-50 border border-rose-200 text-rose-700" role="alert" style="white-space: pre-line">
+      <i class="fa-solid fa-circle-exclamation mr-1.5"></i>{{ modalError() }}
+    </p>
+  }
+
+  <div modal-footer class="modal-footer">
+    <button class="btn btn-secondary" type="button" (click)="closeModal()" [disabled]="isSaving()">Cancelar</button>
+    <button class="btn btn-primary" type="button" (click)="guardar()" [disabled]="isSaving()">
+      @if (isSaving()) {
+        <i class="fa-solid fa-spinner fa-spin"></i> Guardando...
+      } @else {
+        <i class="fa-solid fa-floppy-disk"></i> Guardar
+      }
+    </button>
+  </div>
+</app-modal>
+

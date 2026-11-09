@@ -51,7 +51,7 @@ describe('SidebarComponent', () => {
     const { enlaces, textos } = await setup('Administrador', misPermisos('Administrador', {}, true));
     const lista = enlaces();
     expect(lista.map((e) => e.href)).toEqual(TODAS);
-    expect(lista).toHaveLength(38);
+    expect(lista).toHaveLength(40);
     expect(textos('.menu-category')).toEqual(['Navegación', 'Operaciones', 'Módulos del Sistema', 'Inv. Tecnología', 'RR.HH.', 'Administración']);
     expect(textos('.sidebar-item.has-sub > span')).toEqual(['Proyectos', 'Documentos', 'Tesorería', 'Control de Almacén', 'Maestros Generales', 'Activo Fijo']);
     expect(lista[0]).toEqual({
@@ -67,6 +67,10 @@ describe('SidebarComponent', () => {
     expect(lista[i].texto).toBe('Usuarios');
     expect(lista[i + 1]).toMatchObject({ href: '/admin/roles', texto: 'Roles y permisos' });
     expect(lista[i + 1].clase).toContain('sidebar-item');
+
+    // Especialidades y Tipo Documento de Identidad van justo debajo de "Registro de Incidencias".
+    const j = lista.findIndex((e) => e.href === '/incidencias');
+    expect(lista.slice(j, j + 3).map((e) => e.href)).toEqual(['/incidencias', '/maestros-generales/especialidades', '/maestros-generales/tipo-doc-identidad']);
   });
 
   it('un usuario con permisos parciales ve solo sus enlaces y grupos', async () => {
