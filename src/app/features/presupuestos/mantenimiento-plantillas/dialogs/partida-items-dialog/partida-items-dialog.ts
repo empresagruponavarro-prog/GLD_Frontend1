@@ -2,6 +2,7 @@ import {
   ChangeDetectionStrategy,
   Component,
   EventEmitter,
+  HostListener,
   Input,
   OnInit,
   Output,
@@ -67,6 +68,37 @@ export interface GuardadoEvent {
  */
 export type ModoItemsDialog = 'plantilla' | 'presupuesto' | 'local';
 
+/** Dónde dibujar la lista de resultados: por encima de todo, pegada al campo (hacia abajo o hacia arriba). */
+export interface PosicionLista {
+  left: number;
+  width: number;
+  top: number | null;
+  bottom: number | null;
+  maxHeight: number;
+}
+
+const ALTO_LISTA = 240;
+const ANCHO_MINIMO_LISTA = 340;
+const MARGEN = 8;
+
+/**
+ * Calcula la posición de la lista (coordenadas de la ventana del navegador) para un campo ubicado en `campo`.
+ * Se abre debajo del campo; si abajo no cabe y arriba hay más lugar, se abre hacia arriba.
+ */
+export function posicionarLista(campo: DOMRect, ventana: { ancho: number; alto: number }): PosicionLista {
+  const abajo = ventana.alto - campo.bottom - MARGEN;
+  const arriba = campo.top - MARGEN;
+  const haciaArriba = abajo < ALTO_LISTA && arriba > abajo;
+  const ancho = Math.min(Math.max(campo.width, ANCHO_MINIMO_LISTA), ventana.ancho - MARGEN * 2);
+  return {
+    left: Math.max(MARGEN, Math.min(campo.left, ventana.ancho - ancho - MARGEN)),
+    width: ancho,
+    top: haciaArriba ? null : campo.bottom + 4,
+    bottom: haciaArriba ? ventana.alto - campo.top + 4 : null,
+    maxHeight: Math.max(96, Math.min(ALTO_LISTA, (haciaArriba ? arriba : abajo) - 4)),
+  };
+}
+
 function redondear(n: number): number {
   return Math.round(((Number(n) || 0) + Number.EPSILON) * 100) / 100;
 }
@@ -106,6 +138,9 @@ export class PartidaItemsDialogComponent implements OnInit {
   buscandoProductos = signal(false);
   mostrarResultados = signal(false);
   indiceFilaSeleccionando = signal<number | null>(null);
+  /** Lugar de la lista de resultados, calculado desde el campo que se está escribiendo. */
+  posicionLista = signal<PosicionLista | null>(null);
+  private campoActivo: HTMLElement | null = null;
   private searchSubject = new Subject<string>();
 
   // Totales calculados
@@ -206,6 +241,7 @@ export class PartidaItemsDialogComponent implements OnInit {
           this.buscandoProductos.set(false);
           const data: Producto[] = Array.isArray(res) ? res : res.data || [];
           this.resultadosBusqueda.set(data);
+          this.colocarLista();
           this.mostrarResultados.set(data.length > 0);
         },
         error: () => {
@@ -215,8 +251,25 @@ export class PartidaItemsDialogComponent implements OnInit {
       });
   }
 
-  abrirBuscador(fila: ItemFila, indexFila: number): void {
+  /** Pone la lista junto al campo activo, por encima de la tabla y del pie del diálogo. */
+  private colocarLista(): void {
+    if (!this.campoActivo) return;
+    this.posicionLista.set(
+      posicionarLista(this.campoActivo.getBoundingClientRect(), { ancho: window.innerWidth, alto: window.innerHeight }),
+    );
+  }
+
+  /** Al mover el scroll de la tabla o cambiar el tamaño de la ventana, la lista se cierra en vez de quedar suelta. */
+  @HostListener('window:resize')
+  cerrarLista(): void {
+    this.mostrarResultados.set(false);
+    this.indiceFilaSeleccionando.set(null);
+  }
+
+  abrirBuscador(fila: ItemFila, indexFila: number, evento?: Event): void {
     if (this.soloLectura) return;
+    if (evento?.target instanceof HTMLElement) this.campoActivo = evento.target;
+    this.colocarLista();
     this.indiceFilaSeleccionando.set(indexFila);
     const term = fila.descripcion_producto || '';
     this.busquedaProducto.set(term);

@@ -334,3 +334,112 @@ describe('PresupuestosComponent — pestañas del asistente', () => {
   });
 });
 
+describe('PresupuestosComponent — vista previa de plantillas (panel lateral)', () => {
+  const PLANTILLA = {
+    id: 1, IdPlantilla: 'TPL-1', Nombre: 'DEMO CORTA – TAMBO', Activo: true, FechaCreacion: '2026-11-01',
+    fases: [
+      { id: 10, IdPlantillaFase: 'F1', IdpptoFase: 'IMPL', NombreFase: 'IMPLEMENTACIÓN', Orden: 1, categorias: [
+        { id: 100, IdPlantillaFase: 'F1', IdpptoFaseCategoria: 'C1', NombreCategoria: 'Demoliciones', CostoReferencial: 1144.67 },
+        { id: 101, IdPlantillaFase: 'F1', IdpptoFaseCategoria: 'C2', NombreCategoria: 'Obras civiles', CostoReferencial: 3820 },
+      ] },
+      { id: 11, IdPlantillaFase: 'F2', IdpptoFase: 'ACAB', NombreFase: 'ACABADOS', Orden: 2, categorias: [
+        { id: 102, IdPlantillaFase: 'F2', IdpptoFaseCategoria: 'C3', NombreCategoria: 'Pintura', CostoReferencial: 980 },
+      ] },
+    ],
+  };
+  const URL = `${API}/presupuestos/plantillas/TPL-1/completa`;
+
+  async function abrir() {
+    const p = await montar({ crear: true, editar: true });
+    p.cmp.plantillasActivas.set([{ id: 1, IdPlantilla: 'TPL-1', Nombre: 'DEMO CORTA – TAMBO', Activo: true, FechaCreacion: '2026-11-01', totalFases: 2, totalCategorias: 3 }]);
+    p.cmp.abrirModalPlantillas();
+    await p.render();
+    return p;
+  }
+
+  it('el ojo muestra las fases y categorías con sus montos, sin elegir la plantilla', async () => {
+    const p = await abrir();
+    const panel = () => p.el.querySelector('aside[aria-label="Vista previa de la plantilla"]');
+    const ventana = () => p.el.querySelector('div.max-w-md, div.max-w-4xl');
+    // Sin pulsar el ojo no hay panel y la ventana queda angosta.
+    expect(panel()).toBeNull();
+    expect(ventana()?.classList.contains('max-w-md')).toBe(true);
+    (p.el.querySelector('button[aria-label="Vista previa de la plantilla"]') as HTMLButtonElement).click();
+    await p.render();
+    expect(panel()).not.toBeNull();
+    expect(ventana()?.classList.contains('max-w-4xl')).toBe(true);
+    expect(p.el.textContent).toContain('Cargando vista previa');
+    p.http.expectOne(URL).flush(PLANTILLA);
+    await p.render();
+
+    expect(p.el.textContent).toContain('Vista previa · DEMO CORTA – TAMBO');
+    expect(p.el.textContent).toContain('IMPLEMENTACIÓN');
+    expect(p.el.textContent).toContain('Obras civiles');
+    expect(p.el.textContent).toContain('2 partidas');
+    expect(p.el.textContent).toContain('3 subpartidas');
+    expect(p.el.textContent).toContain('S/ 5,944.67'); // costo directo total de la plantilla
+    expect(p.el.textContent).toContain('S/ 4,964.67'); // subtotal de la primera fase
+    expect(p.cmp.selectedPlantilla()).toBe('');
+  });
+
+  it('la plantilla ya vista no se vuelve a pedir, y las fases se pueden contraer', async () => {
+    const p = await abrir();
+    p.cmp.verVistaPrevia('TPL-1');
+    p.http.expectOne(URL).flush(PLANTILLA);
+    await p.render();
+
+    p.cmp.verVistaPrevia('TPL-1');
+    p.http.expectNone(URL);
+
+    p.cmp.contraerTodasVista();
+    await p.render();
+    expect(p.el.textContent).not.toContain('Obras civiles');
+    expect(p.el.textContent).toContain('IMPLEMENTACIÓN');
+    p.cmp.expandirTodasVista();
+    await p.render();
+    expect(p.el.textContent).toContain('Obras civiles');
+  });
+
+  it('pulsar el ojo otra vez, o la X del panel, cierra la vista previa y la ventana vuelve a quedar angosta', async () => {
+    const p = await abrir();
+    const ojo = () => p.el.querySelector('button[aria-label="Vista previa de la plantilla"]') as HTMLButtonElement;
+    ojo().click();
+    p.http.expectOne(URL).flush(PLANTILLA);
+    await p.render();
+    ojo().click();
+    await p.render();
+    expect(p.el.querySelector('aside[aria-label="Vista previa de la plantilla"]')).toBeNull();
+
+    ojo().click();
+    await p.render();
+    (p.el.querySelector('button[aria-label="Cerrar vista previa"]') as HTMLButtonElement).click();
+    await p.render();
+    expect(p.cmp.vistaPreviaId()).toBe('');
+    expect(p.http.match((r) => r.url === URL)).toHaveLength(0); // la segunda vista salió del caché
+  });
+
+  it('si el servidor falla avisa en el panel y se puede volver a intentar', async () => {
+    const p = await abrir();
+    p.cmp.verVistaPrevia('TPL-1');
+    p.http.expectOne(URL).flush('error', { status: 500, statusText: 'Server Error' });
+    await p.render();
+    expect(p.el.textContent).toContain('No se pudo cargar la vista previa');
+
+    p.cmp.verVistaPrevia('TPL-1');
+    p.http.expectOne(URL).flush(PLANTILLA);
+    await p.render();
+    expect(p.el.textContent).toContain('Obras civiles');
+  });
+
+  it('al volver a abrir el diálogo la vista previa empieza vacía', async () => {
+    const p = await abrir();
+    p.cmp.verVistaPrevia('TPL-1');
+    p.http.expectOne(URL).flush(PLANTILLA);
+    p.cmp.cerrarModalPlantillas();
+    p.cmp.abrirModalPlantillas();
+    await p.render();
+    expect(p.cmp.vistaPreviaId()).toBe('');
+    expect(p.el.querySelector('aside[aria-label="Vista previa de la plantilla"]')).toBeNull();
+  });
+});
+

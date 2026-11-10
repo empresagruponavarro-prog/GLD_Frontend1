@@ -1881,7 +1881,8 @@
   @if (showPlantillasModal()) {
     <div class="fixed inset-0 z-[100] flex items-center justify-center p-4">
       <div aria-hidden="true" class="absolute inset-0 bg-slate-900/40 backdrop-blur-sm w-full h-full border-none cursor-default"></div>
-      <div class="bg-white rounded-xl shadow-xl w-full max-w-md relative flex flex-col max-h-[90vh] overflow-hidden border border-slate-200">
+      <div class="bg-white rounded-xl shadow-xl w-full relative flex flex-col max-h-[90vh] overflow-hidden border border-slate-200 transition-[max-width] duration-200"
+           [ngClass]="vistaPreviaId() ? 'max-w-4xl' : 'max-w-md'">
         <!-- Header -->
         <div class="px-5 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50">
           <h3 class="font-bold text-slate-800 flex items-center gap-2">
@@ -1894,9 +1895,10 @@
         </div>
         
         <!-- Body -->
-        <div class="p-5 overflow-y-auto">
+        <div class="flex flex-col md:flex-row flex-1 min-h-0 overflow-y-auto md:overflow-hidden">
+        <div class="p-5 md:overflow-y-auto" [ngClass]="vistaPreviaId() ? 'md:w-[420px] md:shrink-0' : 'w-full'">
           <p class="text-sm text-slate-500 mb-4">
-            Seleccione una plantilla. Se cargarán sus fases y categorías
+            Seleccione una plantilla. Se cargarán sus partidas y subpartidas
             @if (plantillaVaAlServidor) {
               <strong>directamente en el presupuesto guardado</strong>;
             } @else {
@@ -1907,11 +1909,11 @@
 
           @if (hayFasesParaPlantilla) {
             <div class="mb-4 rounded-lg border border-amber-200 bg-amber-50 p-3">
-              <p class="text-[12px] font-bold text-amber-900 mb-2">El presupuesto ya tiene fases. ¿Qué hacer con ellas?</p>
+              <p class="text-[12px] font-bold text-amber-900 mb-2">El presupuesto ya tiene partidas. ¿Qué hacer con ellas?</p>
               <label class="flex items-start gap-2 text-[13px] text-slate-700 cursor-pointer mb-1.5">
                 <input type="radio" name="modo_plantilla" value="agregar" class="mt-0.5"
                        [ngModel]="modoPlantilla()" (ngModelChange)="modoPlantilla.set($event)">
-                <span><strong>Agregar</strong> — conservar las actuales y añadir solo las fases/categorías que falten.</span>
+                <span><strong>Agregar</strong> — conservar las actuales y añadir solo las partidas/subpartidas que falten.</span>
               </label>
               <label class="flex items-start gap-2 text-[13px] text-slate-700 cursor-pointer">
                 <input type="radio" name="modo_plantilla" value="reemplazar" class="mt-0.5"
@@ -1935,10 +1937,17 @@
                     {{ plantilla.Nombre }}
                   </span>
                   <div class="flex items-center gap-4 text-xs mt-1" [ngClass]="selectedPlantilla() === plantilla.IdPlantilla ? 'text-emerald-700' : 'text-slate-600'">
-                    <p><span class="font-semibold text-slate-500">Total Fases:</span> <span class="font-bold">{{ plantilla.totalFases ?? 0 }}</span> Fases</p>
-                    <p><span class="font-semibold text-slate-500">Categorías:</span> <span class="font-bold">{{ plantilla.totalCategorias ?? 0 }}</span> Categorías</p>
+                    <p><span class="font-semibold text-slate-500">Partidas:</span> <span class="font-bold">{{ plantilla.totalFases ?? 0 }}</span></p>
+                    <p><span class="font-semibold text-slate-500">Subpartidas:</span> <span class="font-bold">{{ plantilla.totalCategorias ?? 0 }}</span></p>
                   </div>
                 </div>
+                <!-- Ojo: mira la plantilla en el panel sin elegirla -->
+                <button type="button" (click)="alternarVistaPrevia(plantilla.IdPlantilla, $event)"
+                        title="Vista previa de la plantilla" aria-label="Vista previa de la plantilla"
+                        class="ml-2 p-1.5 rounded-lg border transition cursor-pointer shrink-0"
+                        [ngClass]="vistaPreviaId() === plantilla.IdPlantilla ? 'bg-emerald-50 border-emerald-500 text-emerald-700' : 'border-transparent text-slate-400 hover:text-slate-700 hover:bg-slate-100'">
+                  <svg class="w-[18px] h-[18px]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3" stroke-width="2"/></svg>
+                </button>
               </label>
             }
             @empty {
@@ -1947,6 +1956,71 @@
               </div>
             }
           </div>
+        </div>
+
+        <!-- Panel de vista previa (partidas › subpartidas): solo aparece al pulsar el ojo de una plantilla -->
+        @if (vistaPreviaId()) {
+        <aside class="border-t md:border-t-0 md:border-l border-slate-200 bg-slate-50 p-5 md:overflow-y-auto md:flex-1 min-w-0" aria-label="Vista previa de la plantilla">
+          @if (vistaPreviaPlantilla(); as vp) {
+            <div class="flex items-start justify-between gap-3 mb-3">
+              <div class="min-w-0">
+                <h4 class="text-sm font-bold text-slate-800 truncate">Vista previa · {{ vp.Nombre }}</h4>
+                <p class="text-xs text-slate-500 mt-0.5">
+                  <strong class="text-slate-700">{{ vp.fases.length }}</strong> partidas ·
+                  <strong class="text-slate-700">{{ vistaPreviaCategorias() }}</strong> subpartidas ·
+                  Costo directo <strong class="text-emerald-800">{{ vistaPreviaCostoTotal() | currency:'PEN':'S/ ' }}</strong>
+                </p>
+              </div>
+              @if (vp.fases.length > 0) {
+                <div class="flex items-center gap-1 text-xs shrink-0">
+                  <button type="button" (click)="expandirTodasVista()" class="px-2 py-1 rounded text-slate-600 hover:bg-slate-200 cursor-pointer font-medium">Expandir</button>
+                  <button type="button" (click)="contraerTodasVista()" class="px-2 py-1 rounded text-slate-600 hover:bg-slate-200 cursor-pointer font-medium">Contraer</button>
+                  <button type="button" (click)="cerrarVistaPrevia()" title="Cerrar vista previa" aria-label="Cerrar vista previa"
+                          class="ml-1 p-1 rounded text-slate-400 hover:text-slate-700 hover:bg-slate-200 cursor-pointer">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                  </button>
+                </div>
+              }
+            </div>
+            <div class="space-y-2">
+              @for (fase of vp.fases; track fase.IdPlantillaFase) {
+                @let cerrada = vistaFasesCerradas().has(fase.IdPlantillaFase);
+                <div class="rounded-lg border border-slate-200 bg-white overflow-hidden">
+                  <button type="button" (click)="alternarFaseVista(fase.IdPlantillaFase)"
+                          class="w-full flex items-center justify-between gap-3 px-3 py-2 bg-slate-100 hover:bg-slate-200/70 text-left cursor-pointer transition">
+                    <span class="flex items-center gap-2 min-w-0">
+                      <svg class="w-3.5 h-3.5 text-slate-500 shrink-0 transition-transform" [class.-rotate-90]="cerrada" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="m6 9 6 6 6-6"/></svg>
+                      <span class="text-xs font-extrabold text-slate-800 truncate">{{ fase.NombreFase || fase.IdpptoFase }}</span>
+                      <span class="text-[11px] text-slate-500 shrink-0">{{ fase.categorias.length }} subpartidas</span>
+                    </span>
+                    <span class="text-xs font-bold text-slate-800 font-mono shrink-0">{{ subtotalFaseVista(fase) | currency:'PEN':'S/ ' }}</span>
+                  </button>
+                  @if (!cerrada) {
+                    <ul class="divide-y divide-slate-100">
+                      @for (cat of fase.categorias; track cat.id; let i = $index) {
+                        <li class="flex items-center justify-between gap-3 pl-9 pr-3 py-1.5 text-xs">
+                          <span class="flex items-center gap-2 min-w-0">
+                            <span class="text-slate-400 font-bold shrink-0">{{ i + 1 }}</span>
+                            <span class="text-slate-800 font-medium truncate">{{ cat.NombreCategoria || cat.IdpptoFaseCategoria }}</span>
+                          </span>
+                          <span class="text-slate-500 font-mono shrink-0">{{ (cat.CostoReferencial || 0) | currency:'PEN':'S/ ' }}</span>
+                        </li>
+                      }
+                    </ul>
+                  }
+                </div>
+              } @empty {
+                <p class="text-xs text-slate-400 text-center py-6 border border-dashed rounded-lg">Esta plantilla no tiene partidas.</p>
+              }
+            </div>
+            <p class="text-[10px] text-slate-400 mt-3">Vista de lectura: lo que se cargará al presupuesto. Los ítems de cada subpartida no se muestran aquí.</p>
+          } @else if (vistaPreviaCargando()) {
+            <p class="text-xs text-slate-500 text-center py-10">Cargando vista previa…</p>
+          } @else if (vistaPreviaError()) {
+            <p class="text-xs text-red-600 text-center py-10">{{ vistaPreviaError() }}</p>
+          }
+        </aside>
+        }
         </div>
         
         <!-- Footer -->

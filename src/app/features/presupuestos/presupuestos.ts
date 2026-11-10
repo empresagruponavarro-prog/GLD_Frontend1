@@ -48,6 +48,8 @@ import { Empresa } from '../administration/empresas/interfaces';
 import {
   PresupuestosService,
   Plantilla,
+  PlantillaCompleta,
+  PlantillaFaseDto,
   PartidaItemsResponse,
   PreviewFursPresupuestoResponse,
   GenerarFursPresupuestoResponse,
@@ -2017,10 +2019,78 @@ export class PresupuestosComponent implements OnInit {
       : (this.presupuestoActivo()?.fases?.length ?? 0) > 0;
   }
 
+  /** Vista previa de plantillas (panel lateral): plantilla que se está mirando y las ya traídas del servidor. */
+  vistaPreviaId = signal<string>('');
+  private vistasPrevias = signal<Readonly<Record<string, PlantillaCompleta>>>({});
+  vistaPreviaError = signal<string | null>(null);
+  /** Fases que el usuario contrajo en el panel (por `IdPlantillaFase`). */
+  vistaFasesCerradas = signal<ReadonlySet<string>>(new Set());
+
+  vistaPreviaPlantilla = computed<PlantillaCompleta | null>(() => this.vistasPrevias()[this.vistaPreviaId()] ?? null);
+  vistaPreviaCargando = computed(() => !!this.vistaPreviaId() && !this.vistaPreviaPlantilla() && !this.vistaPreviaError());
+  vistaPreviaCostoTotal = computed(() => (this.vistaPreviaPlantilla()?.fases ?? []).reduce((suma, f) => suma + this.subtotalFaseVista(f), 0));
+  vistaPreviaCategorias = computed(() => (this.vistaPreviaPlantilla()?.fases ?? []).reduce((suma, f) => suma + f.categorias.length, 0));
+
+  subtotalFaseVista(fase: PlantillaFaseDto): number {
+    return fase.categorias.reduce((suma, c) => suma + (Number(c.CostoReferencial) || 0), 0);
+  }
+
+  /** El ojo de una plantilla: la muestra en el panel sin elegirla. La trae del servidor una sola vez. */
+  verVistaPrevia(idPlantilla: string, evento?: Event): void {
+    evento?.preventDefault();
+    evento?.stopPropagation();
+    this.vistaPreviaId.set(idPlantilla);
+    this.vistaPreviaError.set(null);
+    this.vistaFasesCerradas.set(new Set());
+    if (this.vistasPrevias()[idPlantilla]) return;
+    this.presupuestosService.getPlantillaCompleta(idPlantilla).subscribe({
+      next: (plantilla) => this.vistasPrevias.update((m) => ({ ...m, [idPlantilla]: plantilla })),
+      error: () => {
+        if (this.vistaPreviaId() === idPlantilla) this.vistaPreviaError.set('No se pudo cargar la vista previa de la plantilla.');
+      },
+    });
+  }
+
+  /** El ojo abre el panel con esa plantilla; pulsarlo otra vez (en la misma) lo cierra. */
+  alternarVistaPrevia(idPlantilla: string, evento?: Event): void {
+    if (this.vistaPreviaId() === idPlantilla) {
+      evento?.preventDefault();
+      evento?.stopPropagation();
+      this.cerrarVistaPrevia();
+      return;
+    }
+    this.verVistaPrevia(idPlantilla, evento);
+  }
+
+  cerrarVistaPrevia(): void {
+    this.vistaPreviaId.set('');
+    this.vistaPreviaError.set(null);
+  }
+
+  alternarFaseVista(idFase: string): void {
+    this.vistaFasesCerradas.update((cerradas) => {
+      const nuevas = new Set(cerradas);
+      if (!nuevas.delete(idFase)) nuevas.add(idFase);
+      return nuevas;
+    });
+  }
+
+  expandirTodasVista(): void {
+    this.vistaFasesCerradas.set(new Set());
+  }
+
+  contraerTodasVista(): void {
+    this.vistaFasesCerradas.set(new Set((this.vistaPreviaPlantilla()?.fases ?? []).map((f) => f.IdPlantillaFase)));
+  }
+
   abrirModalPlantillas() {
     if (this.plantillasActivas().length === 0) {
       this.loadPlantillasActivas();
     }
+    this.vistaPreviaId.set('');
+    this.vistasPrevias.set({});
+    this.vistaPreviaError.set(null);
+    this.vistaFasesCerradas.set(new Set());
     this.selectedPlantilla.set('');
     this.modoPlantilla.set('agregar');
     this.showPlantillasModal.set(true);
@@ -2035,7 +2105,7 @@ export class PresupuestosComponent implements OnInit {
     if (!id || !this.puedeUsarPlantilla) return;
     const modo: ModoPlantilla = this.hayFasesParaPlantilla ? this.modoPlantilla() : 'agregar';
     if (modo === 'reemplazar' && this.plantillaVaAlServidor
-      && !confirm('Se eliminarán TODAS las fases y categorías actuales del presupuesto y se cargarán las de la plantilla. ¿Continuar?')) {
+      && !confirm('Se eliminarán TODAS las partidas y subpartidas actuales del presupuesto y se cargarán las de la plantilla. ¿Continuar?')) {
       return;
     }
     if (this.editingFilaIndex !== null) this.cancelarEdicionFase();
