@@ -204,7 +204,7 @@
           </div>
 
           <div class="sm:col-span-12">
-            <app-mapa-punto [latitud]="latitudMapa()" [longitud]="longitudMapa()" [soloLectura]="soloLectura()" (cambio)="elegirPunto($event)" />
+            <app-mapa-punto [latitud]="latitudMapa()" [longitud]="longitudMapa()" [centro]="centroDistrito()" [soloLectura]="soloLectura()" (cambio)="elegirPunto($event)" />
           </div>
         </div>
       </div>

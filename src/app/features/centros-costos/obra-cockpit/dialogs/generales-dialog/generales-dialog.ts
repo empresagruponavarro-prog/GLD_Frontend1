@@ -111,6 +111,13 @@ export class GeneralesDialogComponent {
   protected readonly codigoObra = computed(() => `CC-${this.idCentroCosto()}`);
   protected readonly tiendaObra = computed(() => this.nombreObra() || '—');
 
+  /** Distrito elegido, como señal, para centrar el mapa en él mientras la obra no tenga un punto. */
+  private readonly idDistritoElegido = toSignal(this.form.controls.id_distrito.valueChanges, { initialValue: this.form.controls.id_distrito.value });
+  protected readonly centroDistrito = computed<PuntoMapa | null>(() => {
+    const d = this.distritos().find((o) => o.id === this.idDistritoElegido());
+    return d?.latitud !== undefined && d.longitud !== undefined ? { latitud: d.latitud, longitud: d.longitud } : null;
+  });
+
   protected readonly latitudMapa = toSignal(this.form.controls.latitud.valueChanges, { initialValue: this.form.controls.latitud.value });
   protected readonly longitudMapa = toSignal(this.form.controls.longitud.valueChanges, { initialValue: this.form.controls.longitud.value });
 

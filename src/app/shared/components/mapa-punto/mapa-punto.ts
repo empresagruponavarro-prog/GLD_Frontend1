@@ -13,12 +13,16 @@ export interface PuntoMapa {
 const CENTRO_POR_DEFECTO: [number, number] = [-12.0464, -77.0428];
 const ZOOM_SIN_PUNTO = 11;
 const ZOOM_CON_PUNTO = 16;
+/** Acercamiento al centrar el mapa en un distrito: se ven unas cuantas cuadras alrededor del centro. */
+const ZOOM_DISTRITO = 13;
 
 const redondear = (n: number): number => Number(n.toFixed(6));
 
 /**
  * Mapa para elegir un punto (latitud y longitud): clic para colocarlo, arrastrar el pin para afinarlo.
  * Las coordenadas entran y salen por `latitud`/`longitud` y `cambio`; en `soloLectura` solo muestra el punto.
+ * Mientras no hay punto, `centro` (p. ej. el centro del distrito elegido) dice dónde abrir y acercar el mapa; con un
+ * punto puesto el mapa siempre sigue al punto.
  */
 @Component({
   selector: 'app-mapa-punto',
@@ -30,6 +34,7 @@ const redondear = (n: number): number => Number(n.toFixed(6));
 export class MapaPuntoComponent {
   readonly latitud = input<number | null>(null);
   readonly longitud = input<number | null>(null);
+  readonly centro = input<PuntoMapa | null>(null);
   readonly soloLectura = input(false);
   readonly altura = input('240px');
   readonly cambio = output<PuntoMapa>();
@@ -50,6 +55,11 @@ export class MapaPuntoComponent {
       this.soloLectura();
       if (this.#listo()) this.#sincronizar(lat, lng);
     });
+    // Un centro nuevo (otro distrito) mueve el mapa solo si todavía no hay un punto puesto.
+    effect(() => {
+      const centro = this.centro();
+      if (this.#listo() && !this.#pin && centro) this.#centrar(centro);
+    });
     this.#destroyRef.onDestroy(() => this.#mapa?.remove());
   }
 
@@ -63,7 +73,10 @@ export class MapaPuntoComponent {
     const lat = this.latitud();
     const lng = this.longitud();
     const hayPunto = lat !== null && lng !== null;
-    mapa.setView(hayPunto ? [lat, lng] : CENTRO_POR_DEFECTO, hayPunto ? ZOOM_CON_PUNTO : ZOOM_SIN_PUNTO);
+    const centro = this.centro();
+    if (hayPunto) mapa.setView([lat, lng], ZOOM_CON_PUNTO);
+    else if (centro) mapa.setView([centro.latitud, centro.longitud], ZOOM_DISTRITO);
+    else mapa.setView(CENTRO_POR_DEFECTO, ZOOM_SIN_PUNTO);
     mapa.on('click', (e) => {
       if (this.soloLectura()) return;
       this.#elegir(e.latlng.lat, e.latlng.lng);
@@ -71,6 +84,10 @@ export class MapaPuntoComponent {
     this.#listo.set(true);
     // El modal anima su apertura: el mapa mide 0 hasta que termina.
     setTimeout(() => mapa.invalidateSize(), 250);
+  }
+
+  #centrar(centro: PuntoMapa): void {
+    this.#mapa?.setView([centro.latitud, centro.longitud], ZOOM_DISTRITO);
   }
 
   #elegir(lat: number, lng: number): void {
@@ -84,6 +101,8 @@ export class MapaPuntoComponent {
     if (lat === null || lng === null || Number.isNaN(lat) || Number.isNaN(lng)) {
       this.#pin?.remove();
       this.#pin = null;
+      const centro = this.centro();
+      if (centro) this.#centrar(centro);
       return;
     }
     if (typeof L === 'undefined') return;

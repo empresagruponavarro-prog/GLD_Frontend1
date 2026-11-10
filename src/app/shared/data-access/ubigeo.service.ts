@@ -7,6 +7,9 @@ import { Observable } from 'rxjs';
 export interface OpcionUbigeo {
   id: string;
   nombre: string;
+  /** Solo en distritos: centro del distrito. */
+  latitud?: number;
+  longitud?: number;
 }
 
 /** Ubicación completa de un distrito. */
@@ -17,6 +20,8 @@ export interface Ubicacion {
   departamento: string;
   provincia: string;
   distrito: string;
+  latitud?: number;
+  longitud?: number;
 }
 
 /**

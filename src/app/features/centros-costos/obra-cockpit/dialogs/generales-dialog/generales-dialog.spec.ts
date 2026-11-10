@@ -4,7 +4,10 @@ import { GeneralesDialogComponent } from './generales-dialog';
 const esTrabajadores = (r: { url: string }) => r.url.endsWith('/anexo/select');
 const DEPARTAMENTOS = [{ id: '15', nombre: 'LIMA' }, { id: '04', nombre: 'AREQUIPA' }];
 const PROVINCIAS_LIMA = [{ id: '1501', nombre: 'LIMA' }, { id: '1505', nombre: 'CAÑETE' }];
-const DISTRITOS_LIMA = [{ id: '150101', nombre: 'LIMA' }, { id: '150142', nombre: 'VILLA EL SALVADOR' }];
+const DISTRITOS_LIMA = [
+  { id: '150101', nombre: 'LIMA', latitud: -12.045278, longitud: -77.030833 },
+  { id: '150142', nombre: 'VILLA EL SALVADOR', latitud: -12.213333, longitud: -76.937222 },
+];
 /** Responde las listas del ubigeo que la ficha pidió (departamentos y, si hay distrito, sus provincias y distritos). */
 const responderUbigeo = (http: { match: (f: (r: { url: string; urlWithParams: string }) => boolean) => { request: { urlWithParams: string }; flush: (b: unknown) => void }[] }) => {
   for (const r of http.match((x) => x.url.includes('/maestros/ubigeo/'))) {
@@ -179,6 +182,18 @@ describe('GeneralesDialogComponent: ubicación por ubigeo', () => {
     expect(body['id_distrito']).toBe('150142');
     expect(body).not.toHaveProperty('departamento');
     expect(body).not.toHaveProperty('ubigeo_cod');
+  });
+
+  it('el mapa se centra en el distrito elegido, sin poner el punto', async () => {
+    const { fixture, render } = await abrir(TODOS_PERMISOS_OBRA);
+    const cmp = fixture.componentInstance as unknown as { centroDistrito: () => { latitud: number; longitud: number } | null };
+    expect(cmp.centroDistrito()).toEqual({ latitud: -12.213333, longitud: -76.937222 });
+    const sel = fixture.nativeElement.querySelector('#gen-distrito') as HTMLSelectElement;
+    sel.value = sel.options[1].value;
+    sel.dispatchEvent(new Event('change'));
+    await render();
+    expect(cmp.centroDistrito()).toEqual({ latitud: -12.045278, longitud: -77.030833 });
+    expect((fixture.nativeElement.querySelector('#gen-lat') as HTMLInputElement).value).toBe('');
   });
 });
 

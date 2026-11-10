@@ -57,12 +57,13 @@ function instalarLeaflet(): MapaFalso {
   return falso;
 }
 
-async function montar(entradas: { lat: number | null; lng: number | null; soloLectura?: boolean }) {
+async function montar(entradas: { lat: number | null; lng: number | null; soloLectura?: boolean; centro?: { latitud: number; longitud: number } | null }) {
   const falso = instalarLeaflet();
   const fixture = TestBed.createComponent(MapaPuntoComponent);
   fixture.componentRef.setInput('latitud', entradas.lat);
   fixture.componentRef.setInput('longitud', entradas.lng);
   fixture.componentRef.setInput('soloLectura', entradas.soloLectura ?? false);
+  fixture.componentRef.setInput('centro', entradas.centro ?? null);
   const elegidos: PuntoMapa[] = [];
   fixture.componentInstance.cambio.subscribe((p) => elegidos.push(p));
   fixture.detectChanges();
@@ -115,6 +116,38 @@ describe('MapaPuntoComponent', () => {
     fixture.componentRef.setInput('latitud', null);
     fixture.detectChanges();
     expect(falso.pines[0].quitado).toBe(true);
+  });
+
+  it('sin punto, abre acercado al centro del distrito en lugar de Lima', async () => {
+    const { falso } = await montar({ lat: null, lng: null, centro: { latitud: -12.2133, longitud: -76.9372 } });
+    expect(falso.vistas[0]).toEqual([-12.2133, -76.9372]);
+    expect(falso.pines).toHaveLength(0);
+  });
+
+  it('con un punto puesto, el mapa sigue al punto aunque haya un centro', async () => {
+    const { falso, fixture } = await montar({ lat: -12.2, lng: -76.9, centro: { latitud: -12.5, longitud: -77.1 } });
+    expect(falso.vistas[0]).toEqual([-12.2, -76.9]);
+    const antes = falso.vistas.length;
+    fixture.componentRef.setInput('centro', { latitud: -13, longitud: -74 });
+    fixture.detectChanges();
+    expect(falso.vistas).toHaveLength(antes);
+  });
+
+  it('un centro nuevo mueve el mapa mientras no haya punto, y al vaciar el punto vuelve al centro', async () => {
+    const { falso, fixture } = await montar({ lat: null, lng: null, centro: { latitud: -12.2, longitud: -76.9 } });
+    fixture.componentRef.setInput('centro', { latitud: -16.4, longitud: -71.5 });
+    fixture.detectChanges();
+    expect(falso.vistas.at(-1)).toEqual([-16.4, -71.5]);
+
+    fixture.componentRef.setInput('latitud', -16.41);
+    fixture.componentRef.setInput('longitud', -71.52);
+    fixture.detectChanges();
+    expect(falso.pines).toHaveLength(1);
+    fixture.componentRef.setInput('latitud', null);
+    fixture.componentRef.setInput('longitud', null);
+    fixture.detectChanges();
+    expect(falso.pines[0].quitado).toBe(true);
+    expect(falso.vistas.at(-1)).toEqual([-16.4, -71.5]);
   });
 
   it('sin Leaflet (sin internet) avisa y no falla', async () => {
