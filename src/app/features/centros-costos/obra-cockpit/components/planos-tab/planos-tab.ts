@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, HostListener, computed, input, output, signal } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { ObraPlano } from '../../obra.interface';
+import { PlanoRequerido } from '../../obra-liquidacion.interface';
 import { valorDeEvento } from '@shared/utils/eventos';
 import { PermisosObra, SIN_PERMISOS_OBRA } from '../../obra-permisos';
 import { PlanosRequeridosComponent } from '../planos-requeridos/planos-requeridos';
@@ -18,7 +19,13 @@ export class PlanosTabComponent {
   readonly idCentroCosto = input<number | null>(null);
   /** Permisos del módulo `obra`; sin ellos la pestaña queda en solo lectura. */
   readonly permisos = input<PermisosObra>(SIN_PERMISOS_OBRA);
+  /** Sube cuando se guarda o elimina un plano: la lista de planos requeridos vuelve a pedir el archivo de cada uno. */
+  readonly recargaRequeridos = input(0);
   readonly subir = output<void>();
+  /** Plano de la lista requerida sin archivo: abrir la subida con su código, nombre y disciplina. */
+  readonly subirRequerido = output<PlanoRequerido>();
+  /** Plano de la lista requerida con archivo: emitir una nueva versión. */
+  readonly versionRequerido = output<PlanoRequerido>();
   readonly ver = output<ObraPlano>();
   readonly descargar = output<ObraPlano>();
   readonly nuevaVersion = output<ObraPlano>();

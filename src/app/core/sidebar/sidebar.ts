@@ -21,12 +21,12 @@ export class SidebarComponent {
   );
 
   readonly #abiertos = signal<Readonly<Record<IdSubmenu, boolean>>>({
-    proyectos: true,
-    documentos: true,
-    tesoreria: true,
-    almacen: true,
-    maestros: true,
-    'activo-fijo': true,
+    proyectos: false,
+    documentos: false,
+    tesoreria: false,
+    almacen: false,
+    maestros: false,
+    'activo-fijo': false,
   });
 
   protected abierto(id: IdSubmenu): boolean {

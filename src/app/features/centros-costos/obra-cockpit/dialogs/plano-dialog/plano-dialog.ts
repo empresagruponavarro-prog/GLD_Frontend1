@@ -7,8 +7,9 @@ import { ModalComponent } from '@shared/components/modal/modal';
 import { errorMessage } from '@app/features/almacen/almacen.utils';
 import { valorDeEvento } from '@shared/utils/eventos';
 import { sinVacios } from '../../obra.calc';
+import { rxResource } from '@angular/core/rxjs-interop';
 import {
-  DISCIPLINAS_PLANO,
+  DisciplinaPlano,
   ESTADOS_APROBACION_PLANO,
   ObraPlano,
   PLANO_EXTENSIONES,
@@ -20,18 +21,15 @@ import { PermisosObra, SIN_PERMISOS_OBRA } from '../../obra-permisos';
 
 export type ModoPlano = 'crear' | 'editar' | 'version';
 
-export const PREFIJOS_DISCIPLINA: Record<string, string> = {
-  Arquitectura: 'ARQ',
-  Estructuras: 'EST',
-  Eléctricas: 'IE',
-  Sanitarias: 'IS',
-  Mecánicas: 'MEC',
-  Comunicaciones: 'COM',
-  Otros: 'PLN',
-};
+/** Plano de la lista requerida que se sube: su código, nombre y disciplina vienen del catálogo y no se cambian. */
+export interface PlanoInicial {
+  codigo_plano: string;
+  nombre_plano: string;
+  disciplina: string;
+}
 
-export function generarSiguienteCodigoPlano(disciplina: string, planos: readonly ObraPlano[]): string {
-  const prefijo = PREFIJOS_DISCIPLINA[disciplina] || 'PLN';
+/** Siguiente código sugerido con el prefijo de la disciplina (ARQ-01, ARQ-02…), a partir de los planos de la obra. Puro. */
+export function generarSiguienteCodigoPlano(prefijo: string, planos: readonly ObraPlano[]): string {
   const regex = new RegExp(`^${prefijo}-(\\d+)`, 'i');
   let maxNum = 0;
   for (const p of planos) {
@@ -69,6 +67,8 @@ export class PlanoDialogComponent {
   readonly nombreObra = input<string>('');
   readonly plano = input<ObraPlano | null>(null);
   readonly modo = input<ModoPlano>('crear');
+  /** Solo al crear: plano de la lista requerida (fija código y disciplina y exige el archivo). */
+  readonly inicial = input<PlanoInicial | null>(null);
   readonly planosExistentes = input<readonly ObraPlano[]>([]);
   readonly responsables = input<readonly string[]>([]);
   /**
@@ -80,16 +80,17 @@ export class PlanoDialogComponent {
   readonly closed = output<void>();
   readonly saved = output<void>();
 
-  protected readonly disciplinas = DISCIPLINAS_PLANO;
-  protected readonly disciplinasOpciones = [
-    { value: 'Arquitectura', label: 'Arquitectura (ARQ)' },
-    { value: 'Estructuras', label: 'Estructuras (EST)' },
-    { value: 'Eléctricas', label: 'Instalaciones Eléctricas (IE)' },
-    { value: 'Sanitarias', label: 'Instalaciones Sanitarias (IS)' },
-    { value: 'Mecánicas', label: 'Mecánicas (MEC)' },
-    { value: 'Comunicaciones', label: 'Comunicaciones (COM)' },
-    { value: 'Otros', label: 'Otros' },
-  ];
+  /** Disciplinas de la obra: columna «Disciplina» de los tipos de plano de su tipo de proyecto (Catálogos de proyecto). */
+  protected readonly disciplinasCatalogo = rxResource({
+    params: () => (this.isOpen() ? this.idCentroCosto() : undefined),
+    stream: ({ params }) => this.#service.getDisciplinasPlano(params),
+  });
+  /** Opciones del desplegable; la disciplina que ya tiene el plano se conserva aunque ya no sea del tipo de proyecto. */
+  protected readonly disciplinasOpciones = computed<DisciplinaPlano[]>(() => {
+    const lista = this.disciplinasCatalogo.hasValue() ? this.disciplinasCatalogo.value() : [];
+    const actual = this.plano()?.disciplina ?? (this.modo() === 'crear' ? this.inicial()?.disciplina : undefined);
+    return actual && !lista.some((d) => d.nombre === actual) ? [...lista, { nombre: actual, prefijo: 'PLN' }] : lista;
+  });
   protected readonly estadosAprobacion = ESTADOS_APROBACION_PLANO;
   protected readonly extensionesAceptadas = PLANO_EXTENSIONES.join(',');
   protected readonly extensionesTexto = PLANO_EXTENSIONES.join(', ');
@@ -121,15 +122,17 @@ export class PlanoDialogComponent {
         return `Editar plano ${p?.codigo_plano ?? ''}`;
       case 'version':
         return `Nueva versión de ${p?.codigo_plano ?? ''} (actual ${p?.version ?? ''})`;
-      default:
-        return 'Registrar nuevo plano de obra';
+      default: {
+        const ini = this.inicial();
+        return ini ? `Subir plano ${ini.codigo_plano}` : 'Registrar nuevo plano de obra';
+      }
     }
   });
 
   protected readonly form = new FormGroup({
     codigo_plano: new FormControl('', { nonNullable: true, validators: [Validators.required, Validators.maxLength(50)] }),
     nombre_plano: new FormControl('', { nonNullable: true, validators: [Validators.required, Validators.maxLength(255)] }),
-    disciplina: new FormControl<string>('Arquitectura', { nonNullable: true, validators: [Validators.required] }),
+    disciplina: new FormControl<string>('', { nonNullable: true, validators: [Validators.required] }),
     version: new FormControl('', { nonNullable: true, validators: [Validators.maxLength(20)] }),
     estado_aprobacion: new FormControl<string>('En Revisión', { nonNullable: true }),
     fecha_vobo: new FormControl('', { nonNullable: true }),
@@ -155,12 +158,14 @@ export class PlanoDialogComponent {
       this.formError.set('');
       const p = this.plano();
       const modo = this.modo();
-      const disciplinaInicial = p?.disciplina ?? 'Arquitectura';
-      const codigoInicial = p?.codigo_plano || (modo === 'crear' ? generarSiguienteCodigoPlano(disciplinaInicial, this.planosExistentes()) : '');
+      const ini = modo === 'crear' ? this.inicial() : null;
+      // Sin disciplina fija, al crear se elige la primera de la obra cuando llega la lista (ver el efecto de abajo).
+      const disciplinaInicial = p?.disciplina ?? ini?.disciplina ?? '';
+      const codigoInicial = p?.codigo_plano || ini?.codigo_plano || '';
 
       this.form.reset({
         codigo_plano: codigoInicial,
-        nombre_plano: p?.nombre_plano ?? '',
+        nombre_plano: p?.nombre_plano ?? ini?.nombre_plano ?? '',
         disciplina: disciplinaInicial,
         version: modo === 'crear' ? 'v1.0' : modo === 'editar' ? (p?.version ?? '') : '',
         estado_aprobacion: modo === 'crear' || modo === 'version' ? 'En Revisión' : (p?.estado_aprobacion ?? 'En Revisión'),
@@ -177,6 +182,9 @@ export class PlanoDialogComponent {
         c.codigo_plano.enable();
         c.disciplina.enable();
         c.version.enable();
+        // El plano de la lista requerida conserva el código y la disciplina del catálogo.
+        if (ini) c.codigo_plano.disable();
+        if (ini?.disciplina) c.disciplina.disable();
       } else {
         c.codigo_plano.disable();
         if (modo === 'version') c.disciplina.disable();
@@ -186,21 +194,36 @@ export class PlanoDialogComponent {
       }
       if (this.soloLectura()) this.form.disable({ emitEvent: false });
     });
+    // Alta libre (sin plano de la lista): al llegar las disciplinas de la obra se elige la primera y se sugiere su código.
+    effect(() => {
+      const opciones = this.disciplinasOpciones();
+      if (!this.isOpen() || this.modo() !== 'crear' || this.inicial()?.codigo_plano) return;
+      untracked(() => {
+        const control = this.form.controls.disciplina;
+        if (control.value || opciones.length === 0) return;
+        control.setValue(opciones[0].nombre);
+        this.form.controls.codigo_plano.setValue(generarSiguienteCodigoPlano(opciones[0].prefijo, this.planosExistentes()));
+      });
+    });
+  }
+
+  /** Prefijo de código de una disciplina de la obra (PLN si no está en la lista). */
+  #prefijoDe(disciplina: string): string {
+    return this.disciplinasOpciones().find((d) => d.nombre === disciplina)?.prefijo ?? 'PLN';
   }
 
   /** Al cambiar de disciplina, si estamos en modo crear autogeneramos el correlativo */
   protected onDisciplinaChange(event: Event): void {
-    if (this.modo() === 'crear') {
-      const cod = generarSiguienteCodigoPlano(valorDeEvento(event), this.planosExistentes());
+    if (this.modo() === 'crear' && !this.form.controls.codigo_plano.disabled) {
+      const cod = generarSiguienteCodigoPlano(this.#prefijoDe(valorDeEvento(event)), this.planosExistentes());
       this.form.controls.codigo_plano.setValue(cod);
     }
   }
 
   /** Permite al usuario regenerar el código automáticamente en base a la disciplina actual */
   protected regenerarCodigo(): void {
-    if (this.soloLectura()) return;
-    const disc = this.form.controls.disciplina.value || 'Arquitectura';
-    const cod = generarSiguienteCodigoPlano(disc, this.planosExistentes());
+    if (this.soloLectura() || this.form.controls.codigo_plano.disabled) return;
+    const cod = generarSiguienteCodigoPlano(this.#prefijoDe(this.form.controls.disciplina.value), this.planosExistentes());
     this.form.controls.codigo_plano.setValue(cod);
   }
 
@@ -281,6 +304,10 @@ export class PlanoDialogComponent {
       return;
     }
     const v = this.form.getRawValue();
+    if (this.modo() === 'crear' && this.inicial() && !v.archivo_url.trim()) {
+      this.formError.set('Adjunta el archivo o el enlace del plano: sin archivo no se puede marcar como entregado.');
+      return;
+    }
     const comun = {
       nombre_plano: v.nombre_plano.trim(),
       estado_aprobacion: v.estado_aprobacion,

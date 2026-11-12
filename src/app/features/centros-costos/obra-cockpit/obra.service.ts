@@ -6,6 +6,7 @@ import {
   ArchivoDocumento,
   ArchivoPlano,
   DeleteResult,
+  DisciplinaPlano,
   DocumentoPatch,
   DocumentoPayload,
   IncidenciaPayload,
@@ -132,6 +133,11 @@ export class ObraService {
 
   deletePlano(idCentroCosto: number, idPlano: number): Observable<DeleteResult> {
     return this.#http.delete<DeleteResult>(this.#cc(idCentroCosto, `/planos/${idPlano}`));
+  }
+
+  /** Disciplinas que se pueden elegir en la obra: las de los planos de su tipo de proyecto (o todas las del catálogo). */
+  getDisciplinasPlano(idCentroCosto: number): Observable<DisciplinaPlano[]> {
+    return this.#http.get<DisciplinaPlano[]>(this.#cc(idCentroCosto, '/planos/disciplinas'));
   }
 
   /** Sube el archivo del plano (multipart). Emite eventos para mostrar el progreso. */

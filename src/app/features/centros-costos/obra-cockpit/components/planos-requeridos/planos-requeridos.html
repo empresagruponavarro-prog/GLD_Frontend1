@@ -6,7 +6,7 @@
         <h3 class="font-bold text-xs text-on-surface">Planos requeridos de la obra</h3>
         <p class="text-[11px] text-on-surface-variant">
           @if (d?.tipo_proyecto) {
-            Lista del tipo de proyecto {{ d?.tipo_proyecto }}.
+            Lista del tipo de proyecto {{ d?.tipo_proyecto }}. Sube el archivo de cada plano y marca el check cuando esté completo.
           } @else {
             La obra no tiene tipo de proyecto: no hay lista de planos.
           }
@@ -35,29 +35,86 @@
     } @else if (d && d.items.length === 0) {
       <p class="text-[11px] text-on-surface-variant italic">Esta obra no tiene planos requeridos.</p>
     } @else if (d) {
-      <ul class="grid grid-cols-1 md:grid-cols-2 gap-1.5">
-        @for (item of d.items; track item.id_tipo_plano) {
-          <li class="flex items-center gap-2 px-2 py-1.5 rounded-lg border border-surface-container text-xs">
-            <input
-              type="checkbox"
-              class="w-4 h-4 accent-primary"
-              [id]="'plano-req-' + item.id_tipo_plano"
-              [checked]="item.entregado"
-              [disabled]="!puedeEditar() || guardando() !== null"
-              (change)="alternar(item)"
-            />
-            <label [for]="'plano-req-' + item.id_tipo_plano" class="flex-1 text-on-surface">
-              <span class="font-semibold">{{ item.codigo }}</span> · {{ item.nombre }}
-            </label>
-            @if (item.obligatorio) {
-              <span class="text-[10px] font-bold uppercase text-on-surface-variant">Obligatorio</span>
+      <div class="flex flex-col gap-1.5">
+        @for (grupo of grupos(); track grupo.clave) {
+          @let abierto = abiertos().has(grupo.clave);
+          <div class="rounded-lg border border-surface-container overflow-hidden" [attr.data-testid]="'grupo-' + grupo.clave">
+            <button
+              type="button"
+              class="w-full flex items-center gap-2 px-3 py-2 text-left text-[11px] tracking-wide cursor-pointer hover:brightness-95"
+              [class]="colorGrupo(grupo.clave)"
+              [attr.aria-expanded]="abierto"
+              (click)="alternarGrupo(grupo.clave)"
+            >
+              <span class="material-symbols-outlined text-base transition-transform" [class.rotate-90]="abierto">chevron_right</span>
+              <span class="font-bold flex-1">{{ grupo.titulo }}</span>
+              <span class="font-semibold">{{ grupo.completados }} de {{ grupo.items.length }} completados</span>
+              <span class="w-20 h-1.5 rounded-full bg-white/70 overflow-hidden" aria-hidden="true">
+                <span class="block h-full bg-current" [style.width.%]="(grupo.completados / grupo.items.length) * 100"></span>
+              </span>
+            </button>
+            @if (abierto) {
+              <ul class="grid grid-cols-1 md:grid-cols-2 gap-1.5 p-2">
+                @for (item of grupo.items; track item.id_tipo_plano) {
+                  <li
+                    class="flex items-center gap-2 px-2 py-1.5 rounded-lg border text-xs"
+                    [class.border-surface-container]="!item.entregado"
+                    [class.bg-primary-fixed]="item.entregado"
+                    [class.border-primary-fixed-dim]="item.entregado"
+                  >
+                    <input
+                      type="checkbox"
+                      class="w-4 h-4 accent-primary shrink-0"
+                      [id]="'plano-req-' + item.id_tipo_plano"
+                      [checked]="item.entregado"
+                      [disabled]="!puedeEditar() || guardando() !== null || (!item.entregado && !item.archivo)"
+                      [title]="!item.entregado && !item.archivo ? 'Sube primero el archivo del plano' : ''"
+                      (change)="alternar(item)"
+                    />
+                    <label [for]="'plano-req-' + item.id_tipo_plano" class="flex-1 min-w-0 text-on-surface">
+                      <span class="block truncate" [title]="item.codigo + ' · ' + item.nombre"
+                        ><span class="font-semibold">{{ item.codigo }}</span> · {{ item.nombre }}</span
+                      >
+                      @if (item.entregado && item.entregado_por) {
+                        <span class="block text-[10px] text-on-surface-variant" [title]="item.entregado_en ?? ''">Completado por {{ item.entregado_por }}</span>
+                      } @else if (!item.archivo) {
+                        <span class="block text-[10px] text-on-surface-variant italic">Sin archivo</span>
+                      }
+                    </label>
+                    @if (item.archivo) {
+                      <span class="text-[10px] font-semibold text-primary shrink-0" [title]="item.archivo.formato_peso ?? ''">
+                        <span class="material-symbols-outlined text-xs align-middle">attach_file</span>{{ item.archivo.version }}
+                      </span>
+                      @if (puedeEditar()) {
+                        <button
+                          type="button"
+                          class="px-2 py-0.5 rounded-md border border-surface-container text-[10px] text-on-surface-variant hover:bg-surface-container shrink-0 cursor-pointer"
+                          [attr.aria-label]="'Nueva versión de ' + item.codigo"
+                          (click)="nuevaVersion.emit(item)"
+                        >
+                          Nueva versión
+                        </button>
+                      }
+                    } @else if (puedeSubir()) {
+                      <button
+                        type="button"
+                        class="px-2 py-0.5 rounded-md border border-primary text-primary text-[10px] font-semibold hover:bg-primary-fixed shrink-0 cursor-pointer"
+                        [attr.aria-label]="'Subir archivo de ' + item.codigo"
+                        (click)="subir.emit(item)"
+                      >
+                        Subir
+                      </button>
+                    }
+                    @if (item.obligatorio) {
+                      <span class="text-[10px] font-bold uppercase text-on-surface-variant shrink-0">Obligatorio</span>
+                    }
+                  </li>
+                }
+              </ul>
             }
-            @if (item.entregado && item.entregado_por) {
-              <span class="text-[10px] text-on-surface-variant" [title]="item.entregado_en ?? ''">{{ item.entregado_por }}</span>
-            }
-          </li>
+          </div>
         }
-      </ul>
+      </div>
     }
   </section>
 }

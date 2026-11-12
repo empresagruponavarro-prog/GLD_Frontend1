@@ -27,10 +27,13 @@ import { PlanosRequeridosObra } from '../../centros-costos/obra-cockpit/obra-liq
         @if (req && req.items.length > 0) {
           <p class="imp-nota">Lista de verificación{{ req.tipo_proyecto ? ' del tipo ' + req.tipo_proyecto : '' }}: {{ req.resumen.entregados_obligatorios }} de {{ req.resumen.obligatorios }} planos obligatorios entregados.</p>
           <table class="imp-table">
-            <thead><tr><th>Código</th><th>Plano</th><th>Obligatorio</th><th>Entregado</th></tr></thead>
+            <thead><tr><th>Código</th><th>Plano</th><th>Disciplina</th><th>Archivo</th><th>Obligatorio</th><th>Entregado</th></tr></thead>
             <tbody>
               @for (i of req.items; track i.id_tipo_plano) {
-                <tr><td>{{ i.codigo }}</td><td>{{ i.nombre }}</td><td>{{ i.obligatorio ? 'Sí' : 'No' }}</td><td>{{ i.entregado ? 'Sí' + (i.entregado_por ? ' · ' + i.entregado_por : '') : 'No' }}</td></tr>
+                <tr>
+                  <td>{{ i.codigo }}</td><td>{{ i.nombre }}</td><td>{{ i.disciplina ?? '—' }}</td><td>{{ i.archivo?.version ?? 'Sin archivo' }}</td>
+                  <td>{{ i.obligatorio ? 'Sí' : 'No' }}</td><td>{{ i.entregado ? 'Sí' + (i.entregado_por ? ' · ' + i.entregado_por : '') : 'No' }}</td>
+                </tr>
               }
             </tbody>
           </table>

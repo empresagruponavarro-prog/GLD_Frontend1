@@ -29,7 +29,7 @@ import { FormatoPresupuestoMetaComponent } from './presupuesto-meta';
   template: `
     @if (recurso.error()) {
       <p class="imp-error" role="alert" data-testid="dosier-bloqueado">{{ error() }}</p>
-      <p class="imp-nota">Complete los planos obligatorios en la pestaña Liquidación de la obra y vuelva a emitir el dosier.</p>
+      <p class="imp-nota">Suba el archivo y marque cada plano obligatorio en la pestaña Planos de Obra y vuelva a emitir el dosier.</p>
     } @else if (recurso.isLoading() || !d()) {
       <p>Armando el dosier…</p>
     } @else {

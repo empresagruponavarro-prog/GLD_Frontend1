@@ -24,7 +24,8 @@ import { SituacionChipComponent } from './components/control-tab/situacion-chip/
 
 // Dialogs
 import { ResidenteDialogComponent } from './dialogs/residente-dialog/residente-dialog';
-import { PlanoDialogComponent, ModoPlano } from './dialogs/plano-dialog/plano-dialog';
+import { PlanoDialogComponent, ModoPlano, PlanoInicial } from './dialogs/plano-dialog/plano-dialog';
+import { PlanoRequerido } from './obra-liquidacion.interface';
 import { PlanoVisorDialogComponent } from './dialogs/plano-visor-dialog/plano-visor-dialog';
 import { HistorialPlanosDialogComponent } from './dialogs/historial-planos-dialog/historial-planos-dialog';
 import { DocumentoDialogComponent } from './dialogs/documento-dialog/documento-dialog';
@@ -87,6 +88,10 @@ export class ObraCockpitComponent implements OnInit {
   selectedPlano = signal<ObraPlano | null>(null);
   selectedPlanoParaVer = signal<ObraPlano | null>(null);
   planoDialogModo = signal<ModoPlano>('crear');
+  /** Datos fijos del plano al subirlo desde la lista de planos requeridos (código, nombre y disciplina del catálogo). */
+  planoInicial = signal<PlanoInicial | null>(null);
+  /** Se incrementa al guardar o eliminar un plano: la lista de planos requeridos vuelve a pedir sus archivos. */
+  recargaRequeridos = signal(0);
   selectedDocumento = signal<ObraDocumento | null>(null);
   errorDocumento = signal<string>('');
   /** Documento que se está previsualizando en el pop-up (null = cerrado). */
@@ -181,7 +186,8 @@ export class ObraCockpitComponent implements OnInit {
     this.showIncidenciaResolverDialog.set(false);
     this.showGeneralesDialog.set(false);
     this.showHistorialDialog.set(false);
-    
+    this.recargaRequeridos.update((n) => n + 1);
+
     this.cargarCockpit(this.idCentroCosto());
   }
 
@@ -206,12 +212,36 @@ export class ObraCockpitComponent implements OnInit {
   // --- Handlers for Planos Tab ---
   onSubirPlano(): void {
     if (!this.permisos.crear()) return;
+    this.planoInicial.set(null);
     this.selectedPlano.set(null);
     this.planoDialogModo.set('crear');
     this.showPlanoDialog.set(true);
   }
+  /**
+   * «Subir» en un plano de la lista requerida: si la obra ya registró un plano vigente con ese código (sin archivo), se
+   * edita para adjuntarlo; si no, se registra uno nuevo con el código, el nombre y la disciplina del catálogo.
+   */
+  onSubirRequerido(item: PlanoRequerido): void {
+    const codigo = item.codigo.trim().toUpperCase();
+    const registrado = this.planos().find((p) => p.codigo_plano.trim().toUpperCase() === codigo);
+    if (registrado) {
+      this.onEditarPlano(registrado);
+      return;
+    }
+    if (!this.permisos.crear()) return;
+    this.planoInicial.set({ codigo_plano: item.codigo, nombre_plano: item.nombre, disciplina: item.disciplina ?? '' });
+    this.selectedPlano.set(null);
+    this.planoDialogModo.set('crear');
+    this.showPlanoDialog.set(true);
+  }
+  /** «Nueva versión» en un plano de la lista requerida: la versión nueva sigue respaldando el check. */
+  onVersionRequerido(item: PlanoRequerido): void {
+    const plano = this.planos().find((p) => p.id === item.archivo?.id_plano);
+    if (plano) this.onNuevaVersionPlano(plano);
+  }
   onEditarPlano(plano: ObraPlano): void {
     if (!this.permisos.editar()) return;
+    this.planoInicial.set(null);
     this.selectedPlano.set(plano);
     this.planoDialogModo.set('editar');
     this.showPlanoDialog.set(true);
@@ -255,6 +285,7 @@ export class ObraCockpitComponent implements OnInit {
   }
   onNuevaVersionPlano(plano: ObraPlano): void {
     if (!this.permisos.editar()) return;
+    this.planoInicial.set(null);
     this.selectedPlano.set(plano);
     this.planoDialogModo.set('version');
     this.showPlanoDialog.set(true);
@@ -270,7 +301,10 @@ export class ObraCockpitComponent implements OnInit {
       : `¿Eliminar el plano ${plano.codigo_plano} (${plano.version}) y su archivo? Esta acción no se puede deshacer.`;
     if (!confirm(msg)) return;
     this.obraService.deletePlano(this.idCentroCosto(), plano.id).subscribe({
-      next: () => this.cargarCockpit(this.idCentroCosto()),
+      next: () => {
+        this.recargaRequeridos.update((n) => n + 1);
+        this.cargarCockpit(this.idCentroCosto());
+      },
       error: () => alert('No se pudo eliminar el plano.'),
     });
   }

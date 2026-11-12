@@ -178,7 +178,10 @@
               [planos]="planos()"
               [idCentroCosto]="idCentroCosto()"
               [permisos]="permisosObra()"
+              [recargaRequeridos]="recargaRequeridos()"
               (subir)="onSubirPlano()"
+              (subirRequerido)="onSubirRequerido($event)"
+              (versionRequerido)="onVersionRequerido($event)"
               (ver)="onVerPlano($event)"
               (descargar)="onDescargarPlano($event)"
               (editar)="onEditarPlano($event)"
@@ -296,7 +299,7 @@
     <app-residente-dialog [isOpen]="true" [permisos]="permisosObra()" [idCentroCosto]="idCentroCosto()" [residente]="selectedResidente()" (closed)="showResidenteDialog.set(false)" (saved)="onDialogSaved()"></app-residente-dialog>
   }
   @if (showPlanoDialog()) {
-    <app-plano-dialog [isOpen]="true" [permisos]="permisosObra()" [idCentroCosto]="idCentroCosto()" [nombreObra]="cockpit()?.nombre_obra || ''" [plano]="selectedPlano()" [modo]="planoDialogModo()" [planosExistentes]="planos()" [responsables]="responsablesPlano()" (closed)="showPlanoDialog.set(false)" (saved)="onDialogSaved()"></app-plano-dialog>
+    <app-plano-dialog [isOpen]="true" [permisos]="permisosObra()" [idCentroCosto]="idCentroCosto()" [nombreObra]="cockpit()?.nombre_obra || ''" [plano]="selectedPlano()" [modo]="planoDialogModo()" [inicial]="planoInicial()" [planosExistentes]="planos()" [responsables]="responsablesPlano()" (closed)="showPlanoDialog.set(false)" (saved)="onDialogSaved()"></app-plano-dialog>
   }
   @if (showPlanoVisorDialog()) {
     <app-plano-visor-dialog [isOpen]="true" [idCentroCosto]="idCentroCosto()" [plano]="selectedPlanoParaVer()" (closed)="showPlanoVisorDialog.set(false)" (nuevaVersion)="onNuevaVersionPlano($event)"></app-plano-visor-dialog>

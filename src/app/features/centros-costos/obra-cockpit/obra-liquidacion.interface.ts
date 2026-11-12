@@ -1,13 +1,24 @@
 /** Modelos de la lista de planos requeridos y de la liquidación de la obra (GRP F4/F5). */
 
+/** Archivo vigente que respalda un plano de la lista: el plano de la obra con el mismo código y con archivo o enlace. */
+export interface ArchivoRequerido {
+  id_plano: number;
+  version: string;
+  formato_peso: string | null;
+}
+
 export interface PlanoRequerido {
   id_tipo_plano: number;
   codigo: string;
   nombre: string;
+  /** Disciplina del catálogo (ARQUITECTURA, ELÉCTRICAS…): agrupa la lista en pantalla. */
+  disciplina: string | null;
   obligatorio: boolean;
   entregado: boolean;
   entregado_por: string | null;
   entregado_en: string | null;
+  /** Sin archivo el plano no se puede marcar como entregado. */
+  archivo: ArchivoRequerido | null;
 }
 
 export interface FaltantePlano {

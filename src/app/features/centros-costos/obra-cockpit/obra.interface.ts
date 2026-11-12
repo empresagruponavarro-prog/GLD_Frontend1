@@ -3,7 +3,14 @@ import type { EquipoObra, EstadoObra } from './obra-control.interface';
 // ─── Catálogos (deben coincidir con las validaciones del backend) ────────────
 export const ESTADOS_SEMANA = ['Programado', 'En Plazo', 'Retrasado', 'Completado'] as const;
 export const ESTADOS_PLANTA = ['En Planta', 'Fuera de Planta', 'Vacaciones', 'Retirado'] as const;
-export const DISCIPLINAS_PLANO = ['Arquitectura', 'Estructuras', 'Eléctricas', 'Sanitarias', 'Mecánicas', 'Comunicaciones', 'Otros'] as const;
+/**
+ * Disciplina que se puede elegir para un plano de la obra (`GET …/planos/disciplinas`): sale de la columna «Disciplina» de
+ * los tipos de plano del tipo de proyecto de la obra (Catálogos de proyecto); el prefijo arma el código sugerido (ARQ-01).
+ */
+export interface DisciplinaPlano {
+  nombre: string;
+  prefijo: string;
+}
 export const ESTADOS_APROBACION_PLANO = ['Aprobado Obra', 'En Revisión', 'Observado', 'Para Construcción'] as const;
 export const CATEGORIAS_DOCUMENTO = ['Acta', 'Permiso', 'Seguridad', 'Calidad', 'Contrato', 'Otros'] as const;
 export const ESTADOS_DOCUMENTO = ['Validado', 'Pendiente', 'Observado', 'Vencido'] as const;

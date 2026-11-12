@@ -37,7 +37,13 @@ async function setup(rol: string, respuesta: MisPermisos | null) {
       icono: Array.from(a.querySelector('i')?.classList ?? []).sort().join(' '),
     }));
   const textos = (sel: string) => Array.from(el.querySelectorAll(sel)).map((x) => x.textContent?.trim());
-  return { fixture, el, enlaces, textos };
+  const desplegarTodos = async () => {
+    el.querySelectorAll<HTMLElement>('.sidebar-item.has-sub').forEach((h) => {
+      if (h.getAttribute('aria-expanded') !== 'true') h.click();
+    });
+    await fixture.whenStable();
+  };
+  return { fixture, el, enlaces, textos, desplegarTodos };
 }
 
 describe('SidebarComponent', () => {
@@ -47,8 +53,9 @@ describe('SidebarComponent', () => {
     storage.clear();
   });
 
-  it('Administrador ve todos los enlaces, en el mismo orden, con sus clases e iconos', async () => {
-    const { enlaces, textos } = await setup('Administrador', misPermisos('Administrador', {}, true));
+  it('Administrador ve todos los enlaces, en el mismo orden, con sus clases e iconos al desplegar', async () => {
+    const { enlaces, textos, desplegarTodos } = await setup('Administrador', misPermisos('Administrador', {}, true));
+    await desplegarTodos();
     const lista = enlaces();
     expect(lista.map((e) => e.href)).toEqual(TODAS);
     expect(lista).toHaveLength(40);
@@ -74,17 +81,19 @@ describe('SidebarComponent', () => {
   });
 
   it('un usuario con permisos parciales ve solo sus enlaces y grupos', async () => {
-    const { enlaces, textos } = await setup(
+    const { enlaces, textos, desplegarTodos } = await setup(
       'Jefe de Área',
       misPermisos('Jefe de Área', { incidencias: {}, 'tesoreria.pagos': {}, 'tesoreria.cuentas': {}, 'maestros.anexos': {}, 'tecnologia.dashboard': {}, 'tecnologia.mantenimiento': {}, 'tecnologia.ambientes': {}, 'rrhh.trabajadores': {} }),
     );
+    await desplegarTodos();
     expect(enlaces().map((e) => e.href)).toEqual(['/incidencias', '/tesoreria/pagos', '/tesoreria/cuentas', '/anexos', '/equipos-tecnologicos', '/equipos-mantenimiento', '/maestros-generales/locales', '/rrhh/trabajadores']);
     expect(textos('.menu-category')).toEqual(['Operaciones', 'Módulos del Sistema', 'Inv. Tecnología', 'RR.HH.']);
     expect(textos('.sidebar-item.has-sub > span')).toEqual(['Tesorería', 'Maestros Generales', 'Activo Fijo']);
   });
 
   it('Administración se muestra a cualquier rol con ver (la decide la matriz, no el rol)', async () => {
-    const { enlaces } = await setup('Gerente', misPermisos('Gerente', { 'admin.usuarios': {}, 'admin.empresas': {}, operaciones: {} }));
+    const { enlaces, desplegarTodos } = await setup('Gerente', misPermisos('Gerente', { 'admin.usuarios': {}, 'admin.empresas': {}, operaciones: {} }));
+    await desplegarTodos();
     expect(enlaces().map((e) => e.href)).toEqual(['/operaciones', '/admin/empresas', '/admin/usuarios']);
   });
 
@@ -112,24 +121,29 @@ describe('SidebarComponent', () => {
     expect(enlaces()).toEqual([]);
   });
 
-  it('los submenús se pliegan y despliegan con clic y teclado', async () => {
+  it('los submenús inician cerrados y se pliegan y despliegan con clic y teclado', async () => {
     const { el, fixture, enlaces } = await setup('Usuario', misPermisos('Usuario', { 'almacen.stock': {}, 'almacen.kardex': {} }));
     const cabecera = el.querySelector<HTMLElement>('.sidebar-item.has-sub');
-    expect(cabecera?.getAttribute('aria-expanded')).toBe('true');
+    expect(cabecera?.getAttribute('aria-expanded')).toBe('false');
+    expect(enlaces()).toEqual([]);
+
     cabecera?.click();
+    await fixture.whenStable();
+    expect(enlaces().map((e) => e.href)).toEqual(['/almacen/stock', '/almacen/kardex']);
+    expect(cabecera?.getAttribute('aria-expanded')).toBe('true');
+
+    cabecera?.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter' }));
     await fixture.whenStable();
     expect(enlaces()).toEqual([]);
     expect(cabecera?.getAttribute('aria-expanded')).toBe('false');
-    cabecera?.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter' }));
-    await fixture.whenStable();
-    expect(enlaces().map((e) => e.href)).toEqual(['/almacen/stock', '/almacen/kardex']);
   });
 
   it('el grupo «Proyectos» reúne Centros de Costos, Presupuestos, Plantillas y Catálogos, en ese orden', async () => {
-    const { enlaces, textos } = await setup(
+    const { enlaces, textos, desplegarTodos } = await setup(
       'Promotor',
       misPermisos('Promotor', { 'centros-costos': {}, presupuestos: {}, 'presupuestos.plantillas': {}, 'proyectos.catalogos': {} }),
     );
+    await desplegarTodos();
 
     expect(textos('.sidebar-item.has-sub > span')).toEqual(['Proyectos']);
     expect(enlaces().map((e) => e.href)).toEqual(['/centros-costos', '/presupuestos', '/presupuestos/plantillas', '/proyectos/catalogos']);
