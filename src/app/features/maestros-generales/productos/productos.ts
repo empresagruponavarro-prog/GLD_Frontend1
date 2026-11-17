@@ -94,7 +94,7 @@ export class ProductosComponent {
   caracteristicas = signal<Caracteristica[]>([]);
   /** Tipo de equipo (se guarda como la característica «Tipo» y se muestra en el detalle del trabajador). */
   tipoEquipo = signal('');
-  readonly tiposEquipo = ['Laptop', 'PC', 'Celular', 'Tablet', 'Impresora', 'Monitor', 'TV', 'Otro'];
+  readonly tiposEquipo = ['Laptop', 'PC', 'Celular', 'Tablet', 'Impresora', 'Monitor', 'TV', 'Cámara de seguridad', 'UPS', 'Estabilizador', 'Switch', 'Otro'];
   readonly sugerenciasCaracteristicas = [
     'Marca',
     'Modelo',
@@ -428,7 +428,7 @@ export class ProductosComponent {
         this.saving.set(false);
         alert(
           (id !== null ? 'Error al actualizar: ' : 'Error al crear: ') +
-            mensajeError(err),
+          mensajeError(err),
         );
       },
     });

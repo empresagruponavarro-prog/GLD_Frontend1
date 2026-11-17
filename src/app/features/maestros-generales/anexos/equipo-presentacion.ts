@@ -11,6 +11,10 @@ const ICONOS_POR_TIPO: readonly (readonly [string, string])[] = [
   ['tv', 'fa-tv'],
   ['pc', 'fa-computer'],
   ['computad', 'fa-computer'],
+  ['camara', 'fa-video'],
+  ['ups', 'fa-car-battery'],
+  ['estabilizador', 'fa-bolt'],
+  ['switch', 'fa-network-wired'],
 ];
 
 const CLASE_ESTADO: Record<EstadoEquipo, string> = {
@@ -26,9 +30,9 @@ export const ESTADOS_EQUIPO: readonly { valor: EstadoEquipo; codigo: CodigoEstad
   { valor: 'En reparación', codigo: 'EN_REPARACION' },
 ];
 
-/** Icono Font Awesome según el tipo de equipo (Laptop, PC, Celular...). */
+/** Icono Font Awesome según el tipo de equipo (Laptop, PC, Celular...), sin distinguir mayúsculas ni tildes. */
 export function iconoDeTipo(tipo: string): string {
-  const t = tipo.toLowerCase();
+  const t = tipo.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
   return ICONOS_POR_TIPO.find(([clave]) => t.includes(clave))?.[1] ?? 'fa-microchip';
 }
 
