@@ -31,7 +31,7 @@ describe('ImprimirComponent: PECOSA', () => {
       providers: [
         provideHttpClient(),
         provideHttpClientTesting(),
-        { provide: ActivatedRoute, useValue: { snapshot: { data: { tipo: 'pecosa' }, paramMap: convertToParamMap({ id: '4' }) } } },
+        { provide: ActivatedRoute, useValue: { snapshot: { data: { tipo: 'pecosa' }, paramMap: convertToParamMap({ id: '4' }), queryParamMap: convertToParamMap({}) } } },
       ],
     });
     const fixture = TestBed.createComponent(ImprimirComponent);
@@ -61,13 +61,61 @@ describe('ImprimirComponent: PECOSA', () => {
     http.verify();
   });
 
+  async function montarOrden(id: string, cuerpo: object) {
+    TestBed.resetTestingModule();
+    TestBed.configureTestingModule({
+      providers: [
+        provideHttpClient(),
+        provideHttpClientTesting(),
+        { provide: ActivatedRoute, useValue: { snapshot: { data: { tipo: 'documento-origen' }, paramMap: convertToParamMap({ id }), queryParamMap: convertToParamMap({}) } } },
+      ],
+    });
+    const fixture = TestBed.createComponent(ImprimirComponent);
+    fixture.detectChanges();
+    const http = TestBed.inject(HttpTestingController);
+    http.match((r) => r.url.includes('/empresa')).forEach((r) => r.flush([]));
+    http.expectOne((r) => r.url.endsWith(`/administracion/documentos-origen/${id}`)).flush(cuerpo);
+    await fixture.whenStable();
+    fixture.detectChanges();
+    http.verify();
+    return fixture.nativeElement as HTMLElement;
+  }
+
+  const MONTOS = { monto: '100.00', igv: '18.00', total: '118.00', renta_4ta: '0', dscto_compras: '0', dscto_intervencion: '0', dscto_otros: '0', neto_proveedor: '118.00', lineas: [], programaciones: [], pagos: [], tope_avance: null };
+
+  it('una orden provisional lleva la marca de agua y las condiciones de su cotización', async () => {
+    const el = await montarOrden('12', {
+      ...MONTOS,
+      id: 12,
+      numero_documento: 'OS-000012',
+      numero_oc: null,
+      clase_documento: 'ORDEN_SERVICIO',
+      estado: 'PROVISIONAL',
+      proveedor: 'CONTRATISTA SAC',
+      ruc: '20111111111',
+      cotizacion: { numero: 'COT-3', referencia: null, plazo_entrega_dias: 20, validez_dias: 15, garantia: '12 MESES', adelanto_porcentaje: '30', medio_pago: null, condiciones: 'INCLUYE MATERIALES MENORES', archivo_url: null },
+    });
+    expect(el.querySelector('h1')?.textContent).toContain('ORDEN DE SERVICIO');
+    expect(el.querySelector('.imp-marca-agua')?.textContent).toContain('PROVISIONAL');
+    expect(el.textContent).toContain('20 días');
+    expect(el.textContent).toContain('12 MESES');
+    expect(el.textContent).toContain('30 %');
+    expect(el.textContent).toContain('INCLUYE MATERIALES MENORES');
+  });
+
+  it('una orden registrada no lleva marca de agua', async () => {
+    const el = await montarOrden('13', { ...MONTOS, id: 13, numero_documento: 'OC-000013', clase_documento: 'ORDEN_COMPRA', estado: 'REGISTRADO', cotizacion: null });
+    expect(el.querySelector('.imp-marca-agua')).toBeNull();
+    expect(el.querySelector('h1')?.textContent).toContain('ORDEN DE COMPRA');
+  });
+
   it('los formatos nuevos ponen el encabezado de la página y dejan que el formato cargue sus datos', async () => {
     TestBed.resetTestingModule();
     TestBed.configureTestingModule({
       providers: [
         provideHttpClient(),
         provideHttpClientTesting(),
-        { provide: ActivatedRoute, useValue: { snapshot: { data: { tipo: 'ficha-obra' }, paramMap: convertToParamMap({ id: '10' }) } } },
+        { provide: ActivatedRoute, useValue: { snapshot: { data: { tipo: 'ficha-obra' }, paramMap: convertToParamMap({ id: '10' }), queryParamMap: convertToParamMap({}) } } },
       ],
     });
     const fixture = TestBed.createComponent(ImprimirComponent);

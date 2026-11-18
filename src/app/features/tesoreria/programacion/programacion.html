@@ -77,6 +77,14 @@
           —
         }
       </td>
+      <td>
+        @if (item.tope_avance; as t) {
+          <div class="table-cell-subtitle" data-testid="tope-avance">Adelanto {{ t.adelanto_porcentaje }} % · avance {{ t.avance_pct }} %</div>
+          <div class="table-cell-subtitle">Libera {{ item.moneda_simbolo ?? 'S/' }} {{ fmtMoney(t.tope) }} · disponible <strong>{{ fmtMoney(t.disponible) }}</strong></div>
+        } @else {
+          —
+        }
+      </td>
       <td align="right"><strong>{{ item.moneda_simbolo ?? 'S/' }} {{ fmtMoney(programable(item).proveedor) }}</strong></td>
       <td align="right">{{ programable(item).detraccion > 0 ? 'S/ ' + fmtMoney(programable(item).detraccion) : '—' }}</td>
     </tr>
@@ -188,7 +196,7 @@
 
     <div class="table-card">
       <table class="table">
-        <thead><tr><th style="width: 60px">Incluir</th><th>Documento</th><th>Concepto</th><th style="text-align: right">Saldo por programar</th><th style="width: 150px">Monto a programar</th></tr></thead>
+        <thead><tr><th style="width: 60px">Incluir</th><th>Documento</th><th>Concepto</th><th style="text-align: right">Saldo por programar</th><th style="text-align: right">Libera el avance</th><th style="width: 150px">Monto a programar</th></tr></thead>
         <tbody formArrayName="items">
           @for (i of items.controls; track i; let idx = $index) {
             <tr [formGroupName]="idx">
@@ -196,6 +204,14 @@
               <td>{{ i.controls.etiqueta.value }}</td>
               <td>{{ i.controls.concepto.value === 'DETRACCION' ? 'Detracción' : 'Proveedor' }}</td>
               <td align="right">{{ i.controls.moneda.value }} {{ fmtMoney(i.controls.maximo.value) }}</td>
+              <td align="right">
+                @if (i.controls.disponible.value !== '') {
+                  {{ i.controls.moneda.value }} {{ fmtMoney(i.controls.disponible.value) }}
+                  <label class="adm-check"><input type="checkbox" formControlName="exceder" [attr.aria-label]="'Por encima del avance ' + i.controls.etiqueta.value" /> Por encima del avance</label>
+                } @else {
+                  —
+                }
+              </td>
               <td><input class="form-control" inputmode="decimal" formControlName="monto" [attr.aria-label]="'Monto ' + i.controls.etiqueta.value" /></td>
             </tr>
           }

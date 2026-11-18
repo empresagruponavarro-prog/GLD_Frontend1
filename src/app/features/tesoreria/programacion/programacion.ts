@@ -11,18 +11,29 @@ import { errorMessage, fmtMoney, todayISO } from '../../almacen/almacen.utils';
 import { CLASES_DOCUMENTO, CLASE_LABEL, DocumentoAdmin } from '../../documentos/administracion/administracion.models';
 import { SelectOption } from '../../requerimientos/requerimientos.models';
 import { RequerimientosService } from '../../requerimientos/requerimientos.service';
-import { Agenda, Concepto, Cuenta, MEDIOS_PAGO, MEDIO_PAGO_LABEL, MedioPago, Programacion, ProgramacionItemPayload } from '../tesoreria.models';
+import { Agenda, Concepto, Cuenta, DocumentoPendiente, MEDIOS_PAGO, MEDIO_PAGO_LABEL, MedioPago, Programacion, ProgramacionItemPayload } from '../tesoreria.models';
 import { TesoreriaService } from '../tesoreria.service';
 import { addDays, esViernes, proximoViernes, proximosViernes } from '../tesoreria.utils';
 
-function itemGroup(doc: DocumentoAdmin, concepto: Concepto, monto: number) {
+/** Lo que el avance de obra deja programar de una OS de presupuesto (`null` si el documento no tiene tope). */
+export function disponiblePorAvance(doc: DocumentoPendiente, concepto: Concepto): number | null {
+  return concepto === 'PROVEEDOR' && doc.tope_avance ? doc.tope_avance.disponible : null;
+}
+
+function itemGroup(doc: DocumentoPendiente, concepto: Concepto, saldo: number) {
+  const disponible = disponiblePorAvance(doc, concepto);
+  // Con tope se propone lo que el avance ya liberó (el adelanto al inicio), sin pasar del saldo por programar.
+  const monto = disponible === null ? saldo : Math.min(saldo, doc.tope_avance?.sugerido ?? disponible);
   return new FormGroup({
     id_documento_origen: new FormControl(doc.id, { nonNullable: true }),
     concepto: new FormControl<Concepto>(concepto, { nonNullable: true }),
     etiqueta: new FormControl(`${doc.numero_documento ?? '#' + doc.id} · ${doc.proveedor ?? '—'}`, { nonNullable: true }),
     moneda: new FormControl(concepto === 'DETRACCION' ? 'S/' : (doc.moneda_simbolo ?? 'S/'), { nonNullable: true }),
-    maximo: new FormControl(String(monto), { nonNullable: true }),
-    incluir: new FormControl(true, { nonNullable: true }),
+    maximo: new FormControl(String(saldo), { nonNullable: true }),
+    /** Lo que libera el avance de obra; vacío si el documento no tiene tope. */
+    disponible: new FormControl(disponible === null ? '' : String(disponible), { nonNullable: true }),
+    exceder: new FormControl(false, { nonNullable: true }),
+    incluir: new FormControl(disponible === null || monto > 0.005, { nonNullable: true }),
     monto: new FormControl(monto.toFixed(2), { nonNullable: true }),
   });
 }
@@ -73,11 +84,13 @@ export class ProgramacionComponent {
     { label: 'Proveedor / beneficiario' },
     { label: 'Centro de costos', width: '180px' },
     { label: 'Vence', width: '110px' },
+    { label: 'Avance de obra', width: '170px' },
     { label: 'Por programar', align: 'right', width: '130px' },
     { label: 'Detracción por programar', align: 'right', width: '150px' },
   ];
 
-  protected readonly pendientes = signal<DocumentoAdmin[]>([]);
+  protected readonly pendientes = signal<DocumentoPendiente[]>([]);
+  protected readonly disponiblePorAvance = disponiblePorAvance;
   protected readonly total = signal(0);
   protected readonly page = signal(1);
   protected readonly pageSize = signal(20);
@@ -228,6 +241,11 @@ export class ProgramacionComponent {
       const monto = Number(f.monto);
       if (!/^\d{1,12}(\.\d{1,4})?$/.test(f.monto.trim()) || monto <= 0) return this.modalError.set(`${f.etiqueta}: el monto no es válido.`);
       if (monto > Number(f.maximo) + 0.005) return this.modalError.set(`${f.etiqueta}: el monto supera el saldo por programar (${fmtMoney(f.maximo)}).`);
+      const excede = f.disponible !== '' && monto > Number(f.disponible) + 0.005;
+      if (excede && !f.exceder) {
+        return this.modalError.set(`${f.etiqueta}: el monto supera lo que libera el avance de obra (${fmtMoney(f.disponible)}). Programe hasta ese monto o marque «Por encima del avance» e indique el motivo.`);
+      }
+      if (excede && !v.observaciones.trim()) return this.modalError.set(`${f.etiqueta}: indique en Observaciones el motivo de programar por encima del avance.`);
       items.push({
         id_documento_origen: f.id_documento_origen,
         concepto: f.concepto,
@@ -237,6 +255,7 @@ export class ProgramacionComponent {
         id_cuenta: v.id_cuenta ?? undefined,
         urgente: v.urgente || undefined,
         observaciones: v.observaciones.trim() || undefined,
+        exceder_avance: excede || undefined,
       });
     }
     this.isSaving.set(true);

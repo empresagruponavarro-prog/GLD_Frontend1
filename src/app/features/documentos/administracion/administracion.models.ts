@@ -29,7 +29,7 @@ export const CLASE_LABEL: Record<ClaseDocumento, string> = {
 export const CLASES_DIRECTAS: readonly ClaseDocumento[] = CLASES_DOCUMENTO.filter((c) => c !== 'ORDEN_COMPRA' && c !== 'ORDEN_SERVICIO');
 
 /** Estado del documento de origen (vigente o anulado). */
-export const ESTADOS_DOCUMENTO = ['REGISTRADO', 'ANULADO'] as const;
+export const ESTADOS_DOCUMENTO = ['PROVISIONAL', 'REGISTRADO', 'ANULADO'] as const;
 export type EstadoDocumento = (typeof ESTADOS_DOCUMENTO)[number];
 
 export type EstadoPago = 'SIN_PROGRAMAR' | 'PROGRAMADO' | 'PARCIAL' | 'PAGADO' | 'ANULADO';
@@ -58,12 +58,15 @@ export function estadoPagoBadge(estado: string): string {
   }
 }
 
+export type EstadoDocumentoOrigen = 'PROVISIONAL' | 'REGISTRADO' | 'ANULADO';
+
 export interface DocumentoAdmin {
   id: number;
   numero_documento: string | null;
   numero_oc: string | null;
   clase_documento: ClaseDocumento | null;
-  estado: 'REGISTRADO' | 'ANULADO';
+  /** `PROVISIONAL`: orden que nació de un presupuesto sin aprobar (se ve e imprime, pero no se programa, paga ni recibe). */
+  estado: EstadoDocumentoOrigen;
   id_anexo: number | null;
   proveedor: string | null;
   ruc: string | null;
@@ -146,11 +149,73 @@ export interface DocumentoPago {
   estado: 'REGISTRADO' | 'ANULADO';
 }
 
+/** Condiciones de la cotización ganadora vinculada al documento (plazo, garantía, adelanto…) para imprimir la orden. */
+export interface CotizacionDelDocumento {
+  numero: string;
+  referencia: string | null;
+  plazo_entrega_dias: number | null;
+  validez_dias: number | null;
+  garantia: string | null;
+  adelanto_porcentaje: string | null;
+  medio_pago: string | null;
+  condiciones: string | null;
+  archivo_url: string | null;
+}
+
+/** Tope de pago de una orden de servicio de un presupuesto según el avance de obra (plan 09). Importes en la moneda del documento. */
+export interface TopeAvance {
+  adelanto_porcentaje: number;
+  avance_pct: number;
+  pct_aplicado: number;
+  tope: number;
+  pagado: number;
+  programado: number;
+  disponible: number;
+  sugerido: number;
+}
+
 export interface DocumentoDetalle extends DocumentoAdmin {
   lineas: DocumentoLinea[];
   programaciones: DocumentoProgramacion[];
   pagos: DocumentoPago[];
   retencion_motivo: string;
+  /** `null` en los documentos sin cotización vinculada. */
+  cotizacion: CotizacionDelDocumento | null;
+  /** Solo en una orden de servicio registrada de un presupuesto. */
+  tope_avance: TopeAvance | null;
+}
+
+export interface LineaValorizada {
+  id: number;
+  descripcion: string | null;
+  id_subfase: number | null;
+  subfase: string | null;
+  monto: string;
+  /** Avance real (0-100) de la subfase; `null` si la obra no la tiene en el control de avance. */
+  avance_pct: number | null;
+  monto_valorizado: string;
+}
+
+/** `GET administracion/documentos-origen/:id/valorizacion`: lo ejecutado por avance, el adelanto y lo ya liberado de una OS de presupuesto. */
+export interface Valorizacion {
+  id: number;
+  numero_documento: string | null;
+  estado: EstadoDocumentoOrigen;
+  proveedor: string | null;
+  centro_costo: string | null;
+  moneda_id: string | null;
+  moneda_simbolo: string | null;
+  total: string;
+  neto_proveedor: string;
+  adelanto_porcentaje: number;
+  avance_pct: number;
+  pct_aplicado: number;
+  liberado: string;
+  pagado: string;
+  programado: string;
+  disponible: string;
+  sugerido: string;
+  lineas: LineaValorizada[];
 }
 
 export interface DocumentoQuery {
@@ -158,7 +223,7 @@ export interface DocumentoQuery {
   pageSize?: number;
   search?: string;
   clase_documento?: ClaseDocumento;
-  estado?: 'REGISTRADO' | 'ANULADO';
+  estado?: EstadoDocumentoOrigen;
   estado_pago?: EstadoPago;
   monto_min?: number;
   monto_max?: number;

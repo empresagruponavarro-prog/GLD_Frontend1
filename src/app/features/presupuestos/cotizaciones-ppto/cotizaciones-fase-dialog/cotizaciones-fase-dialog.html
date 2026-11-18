@@ -1,0 +1,195 @@
+<app-modal
+  [isOpen]="true"
+  [title]="'Cotizaciones · ' + (cuadro()?.fase ?? 'fase')"
+  maxWidth="1400px"
+  [showDefaultFooter]="false"
+  (closed)="onCerrar()"
+>
+  @if (cuadro(); as c) {
+    <div class="cf-resumen">
+      <div>
+        <strong>{{ c.codigo_presupuesto }}</strong>
+        · {{ c.items_adjudicados }} de {{ c.items_total }} ítems con proveedor
+        @if (!abierto()) {
+          <span class="badge badge-danger">Presupuesto {{ estado() }}: solo consulta</span>
+        }
+      </div>
+      <div class="cf-resumen__acciones">
+        <a class="btn btn-secondary" [routerLink]="['/imprimir/cuadro-comparativo-presupuesto', c.id_presupuesto]" [queryParams]="{ fase: c.id_detalle_fase }" target="_blank">
+          <i class="fa-solid fa-print"></i> Cuadro comparativo
+        </a>
+        @if (puedeRegistrar()) {
+          <button class="btn btn-primary" type="button" (click)="nueva()"><i class="fa-solid fa-plus"></i> Registrar cotización</button>
+        }
+      </div>
+    </div>
+
+    @if (abierto()) {
+      <p class="cf-hint">
+        Elija al ganador de cada ítem en el cuadro: cada ítem va completo a un solo proveedor y el sistema no sugiere el más barato.
+        Al guardar se generan el FUR y las órdenes de compra o de servicio; son provisionales hasta que se apruebe el presupuesto.
+      </p>
+    }
+    @if (mensaje()) {
+      <p class="badge badge-completed" role="status" style="white-space: pre-line">{{ mensaje() }}</p>
+    }
+    @if (error()) {
+      <p class="badge badge-danger" role="alert" style="white-space: pre-line">{{ error() }}</p>
+    }
+
+    @if (c.proveedores.length === 0) {
+      <p class="cf-hint">Aún no hay cotizaciones para esta fase. Use «Registrar cotización» para agregar la de un proveedor o contratista.</p>
+    }
+
+    <div class="table-card cf-tabla">
+      <table class="table">
+        <thead>
+          <tr>
+            <th class="cf-cabecera-item">Ítem</th>
+            <th style="text-align: right">Cant.</th>
+            <th style="text-align: right">Costo Meta</th>
+            @for (p of c.proveedores; track p.id_cotizacion) {
+              <th class="cf-prov">
+                {{ p.proveedor ?? '—' }}
+                <div class="table-cell-subtitle">{{ p.numero }} · {{ p.moneda_simbolo ?? p.moneda_id }} {{ fmtMoney(p.total) }}</div>
+                @if (p.total_soles !== null && p.moneda_id !== 'PEN') {
+                  <div class="table-cell-subtitle">≈ S/ {{ fmtMoney(p.total_soles) }}</div>
+                }
+                <div class="table-cell-subtitle">
+                  {{ p.forma_pago }}{{ p.adelanto_porcentaje ? ' · adelanto ' + fmtNum(p.adelanto_porcentaje) + ' %' : '' }}
+                </div>
+                <div class="table-cell-subtitle">
+                  {{ p.plazo_entrega_dias === null ? 'Entrega sin definir' : p.plazo_entrega_dias === 0 ? 'Entrega inmediata' : 'Entrega ' + p.plazo_entrega_dias + ' días' }}{{ p.garantia ? ' · ' + p.garantia : '' }}
+                </div>
+                <div class="cf-prov__acciones">
+                  @if (cotizacionCompleta(p.id_cotizacion); as cot) {
+                    @if (cot.protegida) {
+                      <span class="badge badge-pending" title="Alguno de sus ítems ya tiene una orden registrada"><i class="fa-solid fa-lock"></i> Con orden</span>
+                    } @else {
+                      @if (puedeEditar()) {
+                        <button class="table-action-btn" type="button" title="Editar" (click)="editar(cot)"><i class="fa-solid fa-pen-to-square"></i></button>
+                      }
+                      @if (puedeEliminar()) {
+                        <button class="table-action-btn table-action-btn--danger" type="button" title="Eliminar" (click)="eliminar(cot)">
+                          <i class="fa-solid fa-trash"></i>
+                        </button>
+                      }
+                    }
+                  }
+                </div>
+              </th>
+            }
+            <th class="cf-cabecera-item">Ganador y compromiso</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (l of c.lineas; track l.id_ppto_item) {
+            <tr>
+              <td>
+                <strong>{{ l.codigo }}</strong> — {{ l.descripcion }}
+                <div class="table-cell-subtitle">{{ l.subfase }}</div>
+              </td>
+              <td align="right">{{ fmtNum(l.cantidad) }} {{ l.unidad }}</td>
+              <td align="right">
+                {{ fmtMoney(l.costo_total_meta) }}
+                <div class="table-cell-subtitle">P.U. {{ fmtMoney(l.costo_unitario_meta) }}</div>
+              </td>
+              @for (p of c.proveedores; track p.id_cotizacion) {
+                <td>
+                  @if (oferta(l, p.id_cotizacion); as o) {
+                    <label class="cf-oferta" [class.cf-oferta--gana]="ganadora(l) === o.id_cot_detalle" [class.cf-oferta--menor]="!o.cantidad_completa">
+                      <input
+                        type="radio"
+                        [name]="'ganador-' + l.id_ppto_item"
+                        [checked]="ganadora(l) === o.id_cot_detalle"
+                        [disabled]="!puedeElegir(l, o)"
+                        (change)="elegir(l, o.id_cot_detalle)"
+                        [attr.aria-label]="'Elegir a ' + (p.proveedor ?? 'el proveedor') + ' para ' + l.codigo"
+                      />
+                      <span>
+                        {{ fmtMoney(o.precio_sin_igv) }} <small>sin IGV</small>
+                        <div class="table-cell-subtitle">Subtotal {{ fmtMoney(o.subtotal_sin_igv) }}</div>
+                        @if (!o.cantidad_completa) {
+                          <div class="table-cell-subtitle">Cotiza {{ fmtNum(o.cantidad) }}: no cubre el ítem completo</div>
+                        }
+                      </span>
+                    </label>
+                  } @else {
+                    <span class="table-cell-subtitle">—</span>
+                  }
+                </td>
+              }
+              <td>
+                @if (cotizacionDe(l); as g) {
+                  <strong>{{ g }}</strong>
+                  @if (diferencia(l); as d) {
+                    <div class="table-cell-subtitle" [class.cf-dif--baja]="d < 0" [class.cf-dif--sube]="d > 0">
+                      {{ d > 0 ? '+' : '' }}{{ fmtMoney(d) }} contra el Meta
+                    </div>
+                  }
+                  @if (l.cantidad_distinta) {
+                    <div class="table-cell-subtitle">La cantidad cotizada ya no coincide con la del ítem: actualice la cotización.</div>
+                  }
+                  @if (puedeQuitar(l)) {
+                    <button class="btn btn-secondary" type="button" (click)="elegir(l, null)">Quitar proveedor</button>
+                  }
+                } @else {
+                  <span class="table-cell-subtitle">Sin proveedor</span>
+                }
+                @if (l.compromiso; as k) {
+                  <div class="table-cell-subtitle">
+                    {{ k.numero_requerimiento }}
+                    @if (k.numero_documento) {
+                      · {{ k.numero_documento }}
+                      <span class="badge" [class.badge-completed]="k.estado_documento === 'REGISTRADO'" [class.badge-pending]="k.estado_documento === 'PROVISIONAL'">
+                        {{ k.estado_documento === 'PROVISIONAL' ? 'Provisional' : k.estado_documento === 'REGISTRADO' ? 'Registrada' : k.estado_documento }}
+                      </span>
+                    }
+                  </div>
+                }
+                @if (l.cubierto) {
+                  <div class="table-cell-subtitle"><i class="fa-solid fa-lock"></i> Orden registrada: para cambiarlo, anule la orden.</div>
+                }
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+
+    @if (abierto() && permisos.editar()) {
+      <div class="cf-pie">
+        <div class="form-group cf-pie__comentario">
+          <label for="cf-comentario">Motivo de la elección (opcional)</label>
+          <input id="cf-comentario" class="form-control" maxlength="200" [ngModel]="comentario()" (ngModelChange)="comentario.set($event)" />
+        </div>
+        <button class="btn btn-primary" type="button" (click)="guardarAdjudicacion()" [disabled]="cambios() === 0 || guardandoAdjudicacion()">
+          <i class="fa-solid fa-floppy-disk"></i>
+          {{ guardandoAdjudicacion() ? 'Guardando...' : 'Guardar adjudicación' + (cambios() > 0 ? ' (' + cambios() + ')' : '') }}
+        </button>
+      </div>
+    }
+  } @else if (cargando()) {
+    <p class="cf-hint"><i class="fa-solid fa-spinner fa-spin"></i> Cargando cotizaciones...</p>
+  } @else if (error()) {
+    <p class="badge badge-danger" role="alert">{{ error() }}</p>
+  }
+
+  <div modal-footer class="modal-footer">
+    <button class="btn btn-secondary" type="button" (click)="onCerrar()">Cerrar</button>
+  </div>
+</app-modal>
+
+<app-cotizacion-form-dialog
+  [abierto]="formAbierto()"
+  [titulo]="tituloForm()"
+  modo="presupuesto"
+  [lineas]="lineasCotizables()"
+  [proveedores]="proveedores()"
+  [inicial]="inicial()"
+  [marcadas]="marcadas()"
+  [guardando]="guardandoForm()"
+  [error]="errorForm()"
+  (guardar)="guardarCotizacion($event)"
+  (cancelar)="cerrarForm()"
+/>

@@ -158,6 +158,32 @@ describe('AprobacionPanelComponent', () => {
     expect(m.eventos.aprobado).toHaveLength(0);
   });
 
+  it('plan 09: los ítems sin proveedor ganador impiden aprobar y se explican', async () => {
+    const m = await montar(
+      { puedeAprobar: true },
+      validacion({
+        puede_aprobar: false,
+        bloqueos: [{ codigo: 'ITEMS_SIN_ADJUDICAR', mensaje: 'Faltan 2 ítem(s) por adjudicar a un proveedor (P-1, P-2): registre sus cotizaciones y elija al ganador' }],
+      }),
+    );
+    expect(m.el.textContent).toContain('Faltan 2 ítem(s) por adjudicar a un proveedor');
+    expect(boton(m.el, 'Aprobar presupuesto')?.disabled).toBe(true);
+  });
+
+  it('plan 09: al aprobar avisa cuántas órdenes se cerraron y pasan a programación y pago', async () => {
+    const m = await montar({ puedeAprobar: true });
+    await clic(m, 'Aprobar presupuesto');
+    boton(m.el, 'Confirmar aprobación')?.click();
+    m.http
+      .expectOne((r) => r.url.endsWith('/aprobar'))
+      .flush({ id: 7, id_presupuesto: 'PPTO-2026-007', estado_ppto: 'APROBADO', tipo: 'Principal', estructura: { capturada: true, partidas: 1, subpartidas: 1 }, documentos_cerrados: 3 });
+    m.detectar();
+    m.http.expectOne((r) => r.url.endsWith('/validacion')).flush(validacion({ estado_ppto: 'APROBADO', puede_aprobar: false }));
+    await m.render();
+    expect(m.el.textContent).toContain('Se cerraron 3 orden(es) de compra o de servicio');
+    expect(m.el.textContent).toContain('programación y pago');
+  });
+
   it('cancelar la confirmación no ejecuta nada', async () => {
     const m = await montar({ puedeAprobar: true });
     await clic(m, 'Aprobar presupuesto');

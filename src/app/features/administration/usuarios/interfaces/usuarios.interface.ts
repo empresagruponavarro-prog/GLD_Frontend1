@@ -11,6 +11,9 @@ export interface Usuario {
   /** Área asignada (plan 08); `null` = sin área (alcance global). */
   id_area?: number | null;
   area?: AreaItem | null;
+  /** Trabajador (anexo) vinculado: es quien firma lo que el usuario registra, p. ej. las cotizaciones del presupuesto (plan 09). */
+  id_trabajador?: number | null;
+  trabajador?: TrabajadorItem | null;
   /** `true` si el usuario tiene excepciones de permisos propias sobre las de su rol y su área. */
   tiene_permisos_personalizados?: boolean;
 }
@@ -27,6 +30,7 @@ export interface UsuarioCreateDto {
   Rol: string;
   Clave: string;
   id_area?: number | null;
+  id_trabajador?: number | null;
 }
 
 /** `PATCH /administration/usuarios/:id`: `Clave` solo se envía para cambiarla. */
@@ -36,6 +40,13 @@ export interface UsuarioUpdateDto {
   Rol?: string;
   Clave?: string;
   id_area?: number | null;
+  /** `null` desvincula al trabajador; si no se envía, no cambia. */
+  id_trabajador?: number | null;
+}
+
+export interface TrabajadorItem {
+  id: number;
+  nombre: string | null;
 }
 
 export interface AreaItem {

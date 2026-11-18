@@ -3,6 +3,7 @@ import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import {
   AreaItem,
+  TrabajadorItem,
   GuardarExcepcionesUsuario,
   PermisosUsuario,
   Usuario,
@@ -31,6 +32,11 @@ export class UsuariosService {
   /** Lista de áreas activas de la empresa para asignación a usuarios. */
   getAreas(): Observable<AreaItem[]> {
     return this.http.get<AreaItem[]>(`${environment.apiUrl}/maestros/area?activas=true`);
+  }
+
+  /** Trabajadores (anexos de tipo Trabajador) que se pueden vincular a un usuario. */
+  getTrabajadores(): Observable<TrabajadorItem[]> {
+    return this.http.get<TrabajadorItem[]>(`${environment.apiUrl}/maestros/anexo/select`, { params: { tipoAnexo: 'Trabajador' } });
   }
 
   create(data: UsuarioCreateDto): Observable<Usuario> {

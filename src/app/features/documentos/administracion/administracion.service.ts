@@ -9,6 +9,7 @@ import {
   DocumentoDirectoPayload,
   DocumentoQuery,
   Paginated,
+  Valorizacion,
 } from './administracion.models';
 
 export function toParams(query: object): HttpParams {
@@ -29,6 +30,9 @@ export class AdministracionDocumentosService {
   }
   getById(id: number): Observable<DocumentoDetalle> {
     return this.http.get<DocumentoDetalle>(`${this.api}/${id}`);
+  }
+  getValorizacion(id: number): Observable<Valorizacion> {
+    return this.http.get<Valorizacion>(`${this.api}/${id}/valorizacion`);
   }
   getExpediente(id: number): Observable<unknown> {
     return this.http.get<unknown>(`${this.api}/${id}/expediente`);

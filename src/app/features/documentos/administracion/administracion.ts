@@ -111,6 +111,8 @@ export class DocumentosAdministracionComponent {
   protected readonly detalleError = signal('');
   protected readonly isSavingDetalle = signal(false);
   protected readonly esAnulado = computed(() => this.detalle()?.estado === 'ANULADO');
+  /** Orden que nació de un presupuesto sin aprobar: se ve e imprime, pero no se paga ni se edita a mano hasta que se apruebe. */
+  protected readonly esProvisional = computed(() => this.detalle()?.estado === 'PROVISIONAL');
   protected readonly tienePagos = computed(() => (this.detalle()?.pagos ?? []).some((p) => p.estado === 'REGISTRADO'));
 
   protected readonly deducciones = new FormGroup({

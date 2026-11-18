@@ -46,6 +46,12 @@
             <option [value]="t">{{ tipoLabel[t] }}</option>
           }
         </select>
+        <select class="toolbar-select" [value]="fOrigen()" (change)="applyFilter('origen', valorDe($event))" aria-label="Origen del requerimiento">
+          <option value="">Todos los orígenes</option>
+          @for (o of origenes; track o) {
+            <option [value]="o">{{ origenLabel[o] }}</option>
+          }
+        </select>
         <label class="toolbar-check">Desde
           <input type="date" class="toolbar-select" [value]="fDesde()" (change)="applyFilter('desde', valorDe($event))" />
         </label>
@@ -84,10 +90,16 @@
       <td>
         {{ item.justificacion }}
         <div class="table-cell-subtitle">{{ tipoLabel[item.tipo] }}{{ item.area_nombre ? ' · ' + item.area_nombre : '' }}</div>
+        @if (item.origen !== 'MANUAL' && item.codigo_presupuesto) {
+          <div class="table-cell-subtitle" data-testid="origen-presupuesto"><i class="fa-solid fa-table-list"></i> Desde el presupuesto {{ item.codigo_presupuesto }}</div>
+        }
       </td>
       <td align="center">{{ item.total_lineas }}</td>
       <td align="center">
         <span [class]="'badge ' + estadoBadge(item.estado)">{{ estadoLabel[item.estado] }}</span>
+        @if (item.provisional) {
+          <div class="table-cell-subtitle"><span class="badge badge-pending" title="Sus órdenes se habilitan al aprobar el presupuesto">Provisional</span></div>
+        }
         @if (item.tipo === 'COMPRA' && item.total_cotizaciones > 0) {
           <div class="table-cell-subtitle">{{ item.total_cotizaciones }} cotizaci{{ item.total_cotizaciones === 1 ? 'ón' : 'ones' }}</div>
         }

@@ -5,6 +5,9 @@
 </div>
 
 <article class="imp-page">
+  @if (documento()?.estado === 'PROVISIONAL') {
+    <div class="imp-marca-agua" aria-hidden="true">PROVISIONAL — no válido para pago</div>
+  }
   <header class="imp-header">
     <div>
       <strong>{{ empresa()?.razon_social ?? 'GLD' }}</strong>
@@ -113,6 +116,12 @@
             <tr><th>Emisión</th><td>{{ d.fecha_emision ?? '—' }}</td><th>Vencimiento</th><td>{{ d.vencimiento ?? '—' }}</td></tr>
             <tr><th>Forma de pago</th><td>{{ d.forma_pago ?? '—' }}</td><th>Requerimiento</th><td>{{ d.numero_requerimiento ?? '—' }}</td></tr>
             @if (d.comentarios) { <tr><th>Concepto</th><td colspan="3">{{ d.comentarios }}</td></tr> }
+            @if (d.cotizacion; as c) {
+              <tr><th>Cotización</th><td>{{ c.numero }}{{ c.referencia ? ' · ' + c.referencia : '' }}</td><th>Plazo de entrega</th><td>{{ c.plazo_entrega_dias === null ? '—' : c.plazo_entrega_dias === 0 ? 'Inmediata' : c.plazo_entrega_dias + ' días' }}</td></tr>
+              <tr><th>Garantía</th><td>{{ c.garantia ?? '—' }}</td><th>Adelanto</th><td>{{ c.adelanto_porcentaje && +c.adelanto_porcentaje > 0 ? fmtNum(c.adelanto_porcentaje) + ' %' : 'Sin adelanto' }}</td></tr>
+              @if (c.validez_dias !== null) { <tr><th>Validez de la oferta</th><td colspan="3">{{ c.validez_dias }} días</td></tr> }
+              @if (c.condiciones) { <tr><th>Condiciones</th><td colspan="3">{{ c.condiciones }}</td></tr> }
+            }
           </table>
           @if (d.lineas.length) {
             <table class="imp-table">
@@ -156,6 +165,8 @@
         }
       }
 
+      @case ('cuadro-comparativo-presupuesto') { <app-formato-cuadro-comparativo-presupuesto [idPresupuesto]="idNumero" [idFase]="idFase" /> }
+      @case ('valorizacion') { <app-formato-valorizacion [idDocumento]="idNumero" /> }
       @case ('presupuesto-meta') { <app-formato-presupuesto-meta [presupuesto]="idRaw" /> }
       @case ('presupuesto-comercial') { <app-formato-presupuesto-comercial [presupuesto]="idRaw" /> }
       @case ('ficha-obra') { <app-formato-ficha-obra [idCentroCosto]="idNumero" /> }

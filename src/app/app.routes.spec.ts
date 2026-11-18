@@ -14,6 +14,8 @@ import { ModulesDashboardComponent } from './features/modules-dashboard/modules-
 const IMPRESIONES = [
   ['imprimir/fur/:id', 'fur'],
   ['imprimir/cuadro-comparativo/:id', 'cuadro-comparativo'],
+  ['imprimir/cuadro-comparativo-presupuesto/:id', 'cuadro-comparativo-presupuesto'],
+  ['imprimir/valorizacion/:id', 'valorizacion'],
   ['imprimir/documento-origen/:id', 'documento-origen'],
   ['imprimir/comprobante-pago/:id', 'comprobante-pago'],
   ['imprimir/expediente/:id', 'expediente'],

@@ -50,6 +50,7 @@
         <select class="toolbar-select" [value]="fEstado()" (change)="setFilter('estado', valorDe($event))" aria-label="Estado del documento">
           <option value="">Vigentes y anulados</option>
           <option value="REGISTRADO">Solo vigentes</option>
+          <option value="PROVISIONAL">Solo provisionales (presupuesto sin aprobar)</option>
           <option value="ANULADO">Solo anulados</option>
         </select>
       </div>
@@ -123,7 +124,11 @@
         }
       </td>
       <td align="center">
-        <span [class]="'badge ' + estadoPagoBadge(item.estado_pago)">{{ estadoPagoLabel[item.estado_pago] }}</span>
+        @if (item.estado === 'PROVISIONAL') {
+          <span class="badge badge-pending" title="Nació de un presupuesto sin aprobar: no se programa ni se paga todavía">Provisional</span>
+        } @else {
+          <span [class]="'badge ' + estadoPagoBadge(item.estado_pago)">{{ estadoPagoLabel[item.estado_pago] }}</span>
+        }
         @if (item.fecha_ultimo_pago) {
           <div class="table-cell-subtitle">Último pago {{ item.fecha_ultimo_pago }}</div>
         }
@@ -157,7 +162,11 @@
       <div>
         <dt>Estado</dt>
         <dd>
-          <span [class]="'badge ' + estadoPagoBadge(d.estado_pago)">{{ estadoPagoLabel[d.estado_pago] }}</span>
+          @if (d.estado === 'PROVISIONAL') {
+            <span class="badge badge-pending">Provisional</span>
+          } @else {
+            <span [class]="'badge ' + estadoPagoBadge(d.estado_pago)">{{ estadoPagoLabel[d.estado_pago] }}</span>
+          }
           @if (d.estado === 'ANULADO') {
             <span class="badge badge-danger">Anulado</span>
           }
@@ -181,7 +190,14 @@
     </div>
     <p class="adm-hint"><i class="fa-solid fa-circle-info"></i> Retención: {{ d.retencion_motivo }}</p>
 
-    @if (!esAnulado()) {
+    @if (esProvisional()) {
+      <p class="adm-hint" data-testid="aviso-provisional">
+        <i class="fa-solid fa-hourglass-half"></i> Orden <strong>provisional</strong>: nació de un presupuesto que todavía no se aprueba. Se puede ver e imprimir,
+        pero no se programa, paga ni recibe, y sus montos los define el presupuesto. Se habilita al aprobarlo.
+      </p>
+    }
+
+    @if (!esAnulado() && !esProvisional()) {
       <form class="adm-ded" [formGroup]="deducciones" (ngSubmit)="guardarDeducciones()">
         <div class="adm-ded__grid">
           <div class="form-group"><label for="ded-renta">Renta 4.ª categoría</label><input id="ded-renta" class="form-control" inputmode="decimal" formControlName="renta_4ta" /></div>
@@ -242,7 +258,7 @@
 
     <h3 class="adm-section">Programación y pagos</h3>
     @if (d.programaciones.length === 0 && d.pagos.length === 0) {
-      <p class="adm-hint">Aún no hay pagos programados.@if (puedeProgramar()) { <a routerLink="/tesoreria/programacion">Programar pagos</a>.}</p>
+      <p class="adm-hint">Aún no hay pagos programados.@if (puedeProgramar() && !esProvisional()) { <a routerLink="/tesoreria/programacion">Programar pagos</a>.}</p>
     }
     @if (d.programaciones.length) {
       <div class="table-card">
@@ -297,7 +313,10 @@
     @if (detalle(); as d) {
       <a class="btn btn-secondary" [routerLink]="['/imprimir/documento-origen', d.id]" target="_blank"><i class="fa-solid fa-print"></i> Imprimir</a>
       <a class="btn btn-secondary" [routerLink]="['/imprimir/expediente', d.id]" target="_blank"><i class="fa-solid fa-folder-open"></i> Expediente</a>
-      @if (!esAnulado()) {
+      @if (d.tope_avance) {
+        <a class="btn btn-secondary" [routerLink]="['/imprimir/valorizacion', d.id]" target="_blank"><i class="fa-solid fa-chart-line"></i> Valorización</a>
+      }
+      @if (!esAnulado() && !esProvisional()) {
         <button class="btn btn-danger" type="button" (click)="anular()"><i class="fa-solid fa-ban"></i> Anular documento</button>
       }
     }

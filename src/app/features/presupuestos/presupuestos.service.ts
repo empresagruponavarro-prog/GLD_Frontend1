@@ -21,6 +21,7 @@ import {
   NuevaVersionResponse
 } from './interfaces';
 import { environment } from '@env';
+import { Conciliacion, ResumenCotizacionItem } from './cotizaciones-ppto/cotizaciones-ppto.models';
 
 export * from './interfaces';
 
@@ -78,6 +79,8 @@ export interface PartidaItem {
   PrecioVenta: number;
   CostoTotal?: number;
   VentaTotal?: number;
+  /** Solo en los ítems de un presupuesto: cotizaciones, proveedor ganador y compromiso (plan 09). */
+  cotizacion?: ResumenCotizacionItem;
 }
 
 export interface PartidaItemsResponse {
@@ -85,6 +88,8 @@ export interface PartidaItemsResponse {
   items: PartidaItem[];
   costoTotal: number;
   ventaTotal: number;
+  /** Solo en el guardado de ítems de un presupuesto: lo que se actualizó en los FUR y órdenes. */
+  compromisos?: Conciliacion;
 }
 
 export interface SyncPartidaItemsDto {
@@ -379,6 +384,7 @@ export interface FurGeneradoItem {
   /** Subfase del presupuesto a la que se imputa la línea (una línea por producto y subfase). */
   id_ppto_detalle_categoria: number;
   subfase: string;
+  id_ppto_item?: number;
 }
 
 export interface FaseFurPreview {
@@ -388,6 +394,8 @@ export interface FaseFurPreview {
   total_cantidad: number;
   total_estimado: number;
   fur_existente?: { id: number; numero: string; estado: string } | null;
+  /** Ítems de la fase que no se piden aquí: ya tienen proveedor ganador o están en un FUR vigente. */
+  items_ya_pedidos?: number;
   items: FurGeneradoItem[];
 }
 

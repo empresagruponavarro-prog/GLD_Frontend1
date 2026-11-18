@@ -1,0 +1,95 @@
+<section class="rounded-xl border border-slate-200 bg-white p-4" aria-label="Compromisos del presupuesto">
+  <div class="flex items-center justify-between gap-3 mb-3">
+    <h3 class="text-[12px] font-bold text-slate-500 uppercase tracking-wide">Cotizaciones y compromisos</h3>
+    <button type="button" (click)="recargar()" class="text-[12px] font-semibold text-[#1e4838] underline cursor-pointer">Actualizar</button>
+  </div>
+
+  @if (res.isLoading() && !datos()) {
+    <p class="text-[13px] text-slate-500">Leyendo los compromisos…</p>
+  } @else if (errorCarga()) {
+    <p class="text-[13px] text-rose-700" role="alert">{{ errorCarga() }}</p>
+  } @else if (datos(); as d) {
+    <p class="text-[12px] text-slate-500 mb-1">
+      <strong class="text-slate-700">{{ d.items_adjudicados }}</strong> de {{ d.items_total }} ítem(s) con proveedor ganador
+    </p>
+    <div class="h-1.5 w-full rounded-full bg-slate-100 overflow-hidden mb-3" role="progressbar" [attr.aria-valuenow]="avance()" aria-valuemin="0" aria-valuemax="100">
+      <div class="h-full bg-emerald-500" [style.width.%]="avance()"></div>
+    </div>
+
+    @if (d.conflictos.length > 0) {
+      <div class="mb-3 text-[13px] text-rose-800 bg-rose-50 border border-rose-200 rounded-lg px-3 py-2" role="alert">
+        <p class="font-semibold">Ítems adjudicados a otro proveedor que el de una orden registrada de una versión anterior:</p>
+        <ul class="list-disc ml-5">
+          @for (c of d.conflictos; track c.id_ppto_item) {
+            <li>{{ c.codigo }} ({{ c.documentos.join(', ') }})</li>
+          }
+        </ul>
+        <p class="mt-1">Anule la orden anterior o vuelva a adjudicar al mismo proveedor; mientras tanto no se puede aprobar.</p>
+      </div>
+    }
+
+    @if (d.items_sin_adjudicar.length > 0) {
+      <div class="mb-3 text-[13px] text-amber-900 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
+        <p class="font-semibold">Faltan ítems por adjudicar ({{ d.items_sin_adjudicar.length }}): no se puede aprobar hasta que todos tengan proveedor.</p>
+        <ul class="list-disc ml-5">
+          @for (i of pendientesVisibles(); track i.id_ppto_item) {
+            <li>{{ i.codigo }} — {{ i.descripcion }} <span class="text-amber-700">· {{ i.fase }}</span></li>
+          }
+          @if (pendientesOcultos() > 0) {
+            <li>… y {{ pendientesOcultos() }} más</li>
+          }
+        </ul>
+        <p class="mt-1 text-[12px]">Abra los ítems de cada fase y use «Cotizar» o «Cuadro» para registrar las cotizaciones y elegir al proveedor.</p>
+      </div>
+    }
+
+    @if (d.compromisos.length === 0) {
+      <p class="text-[13px] text-slate-500">Todavía no se generó ningún FUR. Se crean solos al elegir un proveedor ganador.</p>
+    } @else {
+      @if (hayProvisionales()) {
+        <p class="mb-2 text-[12px] text-slate-500">
+          Las órdenes <strong>provisionales</strong> se pueden ver e imprimir, pero no se programan, pagan ni reciben hasta que se apruebe el presupuesto.
+        </p>
+      }
+      <div class="overflow-x-auto">
+        <table class="w-full text-left text-[12px]">
+          <thead>
+            <tr class="text-[10px] uppercase tracking-wide text-slate-500 border-b border-slate-200">
+              <th class="py-1.5 pr-3">FUR</th>
+              <th class="py-1.5 pr-3">Fase</th>
+              <th class="py-1.5 pr-3">Proveedor</th>
+              <th class="py-1.5 pr-3 text-right">Líneas</th>
+              <th class="py-1.5">Órdenes</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-100">
+            @for (c of d.compromisos; track c.id_requerimiento) {
+              <tr [class.opacity-60]="c.estado === 'ANULADO'">
+                <td class="py-2 pr-3 align-top">
+                  <a [routerLink]="['/requerimientos', c.id_requerimiento]" class="font-semibold text-[#1e4838] hover:underline">{{ c.numero }}</a>
+                  <span class="ml-1 inline-flex px-1.5 py-0.5 rounded border text-[10px] font-semibold" [class]="clase(c.estado)">{{ etiqueta(c.estado) }}</span>
+                </td>
+                <td class="py-2 pr-3 align-top">{{ c.fase ?? '—' }}</td>
+                <td class="py-2 pr-3 align-top">{{ c.proveedor ?? '—' }}</td>
+                <td class="py-2 pr-3 align-top text-right">{{ c.lineas }}</td>
+                <td class="py-2 align-top">
+                  <ul class="space-y-1">
+                    @for (o of c.documentos; track o.id) {
+                      <li class="flex flex-wrap items-center gap-1.5">
+                        <a [routerLink]="['/imprimir/documento-origen', o.id]" target="_blank" class="font-semibold text-slate-800 hover:underline" title="Imprimir">
+                          {{ tipo(o.clase) }} {{ o.numero_documento }}
+                        </a>
+                        <span class="inline-flex px-1.5 py-0.5 rounded border text-[10px] font-semibold" [class]="clase(o.estado)">{{ etiqueta(o.estado) }}</span>
+                        <span class="text-slate-500">{{ o.moneda_simbolo ?? '' }} {{ fmtMoney(o.total) }}</span>
+                      </li>
+                    }
+                  </ul>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  }
+</section>

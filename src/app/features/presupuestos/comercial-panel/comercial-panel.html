@@ -1,0 +1,106 @@
+<section class="rounded-xl border border-slate-200 bg-white p-4" aria-label="Presupuesto Comercial por fase">
+  <div class="flex items-center justify-between gap-3 mb-3">
+    <h3 class="text-[12px] font-bold text-slate-500 uppercase tracking-wide">Comercial por fase</h3>
+    <button type="button" (click)="res.reload()" class="text-[12px] font-semibold text-[#1e4838] underline cursor-pointer">Actualizar</button>
+  </div>
+
+  @if (res.isLoading() && !datos()) {
+    <p class="text-[13px] text-slate-500">Calculando el Comercial…</p>
+  } @else if (errorCarga()) {
+    <p class="text-[13px] text-rose-700" role="alert">{{ errorCarga() }}</p>
+  } @else if (datos(); as d) {
+    @if (!hayAdjudicados()) {
+      <p class="text-[13px] text-slate-500">
+        Todavía no hay proveedores elegidos: el Comercial es igual al Meta ({{ fmtMoney(d.total.meta) }}). Se calcula con los proveedores que elija en cada ítem.
+      </p>
+    } @else {
+      <p class="mb-2 text-[12px] text-slate-500">
+        El Meta no cambia: conserva el costo de la plantilla. El Comercial toma el precio sin IGV del proveedor elegido en cada ítem (y el Meta en los demás).
+      </p>
+      <div class="overflow-x-auto">
+        <table class="w-full text-left text-[12px]">
+          <thead>
+            <tr class="text-[10px] uppercase tracking-wide text-slate-500 border-b border-slate-200">
+              <th class="py-1.5 pr-3">Fase</th>
+              <th class="py-1.5 pr-3 text-right">Meta</th>
+              <th class="py-1.5 pr-3 text-right">Comercial</th>
+              <th class="py-1.5 pr-3 text-right">Diferencia</th>
+              <th class="py-1.5 pr-3 text-right">Ítems con proveedor</th>
+              <th class="py-1.5">Origen</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-100">
+            @for (f of d.fases; track f.id_fase) {
+              <tr>
+                <td class="py-2 pr-3 align-top">
+                  <details>
+                    <summary class="cursor-pointer font-semibold text-slate-800">{{ f.nombre_fase }}</summary>
+                    @if (f.items.length > 0) {
+                      <table class="mt-2 w-full text-[11px]">
+                        <thead>
+                          <tr class="text-slate-400">
+                            <th class="pr-2 font-medium text-left">Ítem</th>
+                            <th class="pr-2 font-medium text-right">Meta</th>
+                            <th class="pr-2 font-medium text-right">Comercial</th>
+                            <th class="pr-2 font-medium text-right">Dif.</th>
+                            <th class="font-medium text-left">Proveedor</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          @for (i of f.items; track i.id_item) {
+                            <tr>
+                              <td class="pr-2">{{ i.codigo }} — {{ i.descripcion }}</td>
+                              <td class="pr-2 text-right tabular-nums">{{ fmtMoney(i.meta) }}</td>
+                              <td class="pr-2 text-right tabular-nums">{{ fmtMoney(i.comercial) }}</td>
+                              <td class="pr-2 text-right tabular-nums" [class]="claseDif(i.diferencia)">
+                                @if (i.adjudicado) {
+                                  {{ signo(i.diferencia) }}{{ fmtMoney(i.diferencia) }}
+                                  @if (i.diferencia_pct !== null) {
+                                    <span class="text-slate-400">({{ signo(i.diferencia_pct) }}{{ i.diferencia_pct }} %)</span>
+                                  }
+                                } @else {
+                                  <span class="text-slate-300">—</span>
+                                }
+                              </td>
+                              <td>
+                                {{ i.proveedor ?? 'Sin proveedor' }}
+                                @if (i.sin_tipo_cambio) {
+                                  <span class="text-amber-700" title="Su moneda no tiene tipo de cambio registrado: se deja al Meta">· sin tipo de cambio</span>
+                                }
+                              </td>
+                            </tr>
+                          }
+                        </tbody>
+                      </table>
+                    }
+                  </details>
+                </td>
+                <td class="py-2 pr-3 align-top text-right tabular-nums">{{ fmtMoney(f.meta) }}</td>
+                <td class="py-2 pr-3 align-top text-right tabular-nums font-semibold">{{ fmtMoney(f.comercial) }}</td>
+                <td class="py-2 pr-3 align-top text-right tabular-nums" [class]="claseDif(f.comercial - f.meta)">
+                  {{ signo(f.comercial - f.meta) }}{{ fmtMoney(f.comercial - f.meta) }}
+                </td>
+                <td class="py-2 pr-3 align-top text-right tabular-nums">{{ f.items_adjudicados }} / {{ f.items.length }}</td>
+                <td class="py-2 align-top text-slate-500">
+                  {{ fuente(f) }}
+                  @if (f.sin_tipo_cambio) {
+                    <span class="text-amber-700">· falta tipo de cambio</span>
+                  }
+                </td>
+              </tr>
+            }
+          </tbody>
+          <tfoot>
+            <tr class="border-t-2 border-slate-200 font-bold text-slate-800">
+              <td class="py-2 pr-3">Total</td>
+              <td class="py-2 pr-3 text-right tabular-nums">{{ fmtMoney(d.total.meta) }}</td>
+              <td class="py-2 pr-3 text-right tabular-nums">{{ fmtMoney(d.total.comercial) }}</td>
+              <td class="py-2 pr-3 text-right tabular-nums" [class]="claseDif(d.total.diferencia)">{{ signo(d.total.diferencia) }}{{ fmtMoney(d.total.diferencia) }}</td>
+              <td colspan="2"></td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+    }
+  }
+</section>

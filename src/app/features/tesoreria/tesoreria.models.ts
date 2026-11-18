@@ -1,3 +1,5 @@
+import { DocumentoAdmin, TopeAvance } from '../documentos/administracion/administracion.models';
+
 export const MEDIOS_PAGO = ['EFECTIVO', 'CHEQUE', 'TRANSFERENCIA', 'DEPOSITO', 'YAPE', 'PLIN', 'OTRO'] as const;
 export type MedioPago = (typeof MEDIOS_PAGO)[number];
 
@@ -58,6 +60,9 @@ export interface TipoCambioVigente {
   exacto: boolean;
 }
 
+/** Documento por programar; en una orden de servicio de un presupuesto trae el tope de pago según el avance de obra (plan 09). */
+export type DocumentoPendiente = DocumentoAdmin & { tope_avance: TopeAvance | null };
+
 export interface ProgramacionItemPayload {
   id_documento_origen: number;
   concepto?: Concepto;
@@ -68,6 +73,8 @@ export interface ProgramacionItemPayload {
   cuenta_destino?: string;
   urgente?: boolean;
   observaciones?: string;
+  /** Pago de una OS de presupuesto por encima de lo que libera el avance: exige el motivo en `observaciones`. */
+  exceder_avance?: boolean;
 }
 
 export interface Programacion {

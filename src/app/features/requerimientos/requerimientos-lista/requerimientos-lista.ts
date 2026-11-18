@@ -11,6 +11,9 @@ import {
   ESTADOS_REQUERIMIENTO,
   ESTADO_LABEL,
   EstadoRequerimiento,
+  ORIGENES_REQUERIMIENTO,
+  ORIGEN_LABEL,
+  OrigenRequerimiento,
   Requerimiento,
   RequerimientoQuery,
   TIPOS_REQUERIMIENTO,
@@ -69,8 +72,11 @@ export class RequerimientosListaComponent {
   protected readonly isLoading = signal(false);
   protected readonly message = signal('');
 
+  protected readonly origenes = ORIGENES_REQUERIMIENTO;
+  protected readonly origenLabel = ORIGEN_LABEL;
   protected readonly fEstado = signal<EstadoRequerimiento | ''>('');
   protected readonly fTipo = signal<TipoRequerimiento | ''>('');
+  protected readonly fOrigen = signal<OrigenRequerimiento | ''>('');
   protected readonly fDesde = signal('');
   protected readonly fHasta = signal('');
   protected readonly fSearch = signal('');
@@ -89,6 +95,7 @@ export class RequerimientosListaComponent {
       pageSize: this.pageSize(),
       estado: this.fEstado() || undefined,
       tipo: this.fTipo() || undefined,
+      origen: this.fOrigen() || undefined,
       desde: this.fDesde() || undefined,
       hasta: this.fHasta() || undefined,
       search: this.fSearch().trim() || undefined,
@@ -107,9 +114,10 @@ export class RequerimientosListaComponent {
     });
   }
 
-  protected applyFilter(target: 'estado' | 'tipo' | 'desde' | 'hasta', value: string): void {
+  protected applyFilter(target: 'estado' | 'tipo' | 'origen' | 'desde' | 'hasta', value: string): void {
     if (target === 'estado') this.fEstado.set(opcionValida(ESTADOS_REQUERIMIENTO, value) ?? '');
     else if (target === 'tipo') this.fTipo.set(opcionValida(TIPOS_REQUERIMIENTO, value) ?? '');
+    else if (target === 'origen') this.fOrigen.set(opcionValida(ORIGENES_REQUERIMIENTO, value) ?? '');
     else if (target === 'desde') this.fDesde.set(value);
     else this.fHasta.set(value);
     this.page.set(1);
@@ -128,6 +136,7 @@ export class RequerimientosListaComponent {
   protected resetFilters(): void {
     this.fEstado.set('');
     this.fTipo.set('');
+    this.fOrigen.set('');
     this.fDesde.set('');
     this.fHasta.set('');
     this.fSearch.set('');
@@ -147,11 +156,13 @@ export class RequerimientosListaComponent {
   }
 
   protected canAnular(item: Requerimiento): boolean {
-    return ESTADOS_ANULABLES.includes(item.estado);
+    // Un FUR con órdenes provisionales lo gestiona el presupuesto: se cambia allí (el servidor también lo impide).
+    return ESTADOS_ANULABLES.includes(item.estado) && !item.provisional;
   }
 
   protected canGenerarOc(item: Requerimiento): boolean {
-    return this.puedeGenerarOc() && item.estado === 'APROBADO' && item.tipo === 'COMPRA' && item.avance !== 'ATENDIDO';
+    // Un FUR de presupuesto ya trae sus órdenes (provisionales o registradas): no se genera otra a mano.
+    return this.puedeGenerarOc() && item.estado === 'APROBADO' && item.tipo === 'COMPRA' && item.avance !== 'ATENDIDO' && item.origen !== 'PPTO_ADJUDICACION';
   }
 
   protected enviar(item: Requerimiento): void {

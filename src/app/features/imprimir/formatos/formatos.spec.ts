@@ -4,12 +4,14 @@ import { HttpRequest } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
+import { FormatoCuadroComparativoPresupuestoComponent } from './cuadro-comparativo-presupuesto';
 import { FormatoDosierComponent } from './dosier';
 import { FormatoFichaObraComponent } from './ficha-obra';
 import { FormatoInformeAvanceComponent } from './informe-avance';
 import { FormatoPlanosDocumentosComponent } from './planos-documentos';
 import { FormatoPresupuestoComercialComponent } from './presupuesto-comercial';
 import { FormatoPresupuestoMetaComponent } from './presupuesto-meta';
+import { FormatoValorizacionComponent } from './valorizacion';
 
 type Cuerpo = object | string | number | boolean | null;
 type Respuestas = (req: HttpRequest<unknown>) => { cuerpo: Cuerpo; status?: number } | undefined;
@@ -88,8 +90,10 @@ const COMERCIAL = {
   id_centro_costo: 10,
   estado_ppto: 'APROBADO',
   fases: [
-    { id_fase: 1, nombre_fase: 'ESTRUCTURA', meta: 1000, comercial: 900, fuente: 'COTIZACION', requerimientos: [{ id: 5, numero: 'FUR-000005', estado: 'APROBADO', proveedor: 'CONTRATISTA SAC', monto: 900 }], sin_tipo_cambio: false },
-    { id_fase: 2, nombre_fase: 'ACABADOS', meta: 500, comercial: 500, fuente: 'META', requerimientos: [], sin_tipo_cambio: false },
+    { id_fase: 1, nombre_fase: 'ESTRUCTURA', meta: 1000, comercial: 900, fuente: 'COTIZACION', requerimientos: [{ id: 5, numero: 'FUR-000005', estado: 'APROBADO', proveedor: 'CONTRATISTA SAC', monto: 900 }], sin_tipo_cambio: false,
+      items_adjudicados: 1,
+      items: [{ id_item: 1, codigo: 'P-1', descripcion: 'CONCRETO', cantidad: 10, meta: 1000, comercial: 900, diferencia: -100, diferencia_pct: -10, proveedor: 'CONTRATISTA SAC', adjudicado: true, sin_tipo_cambio: false }] },
+    { id_fase: 2, nombre_fase: 'ACABADOS', meta: 500, comercial: 500, fuente: 'META', requerimientos: [], sin_tipo_cambio: false, items_adjudicados: 0, items: [] },
   ],
   total: { meta: 1500, comercial: 1400, diferencia: -100 },
   fases_cotizadas: 1,
@@ -195,9 +199,76 @@ describe('Formatos de impresión (GRP T68, T80)', () => {
     expect(filas[0]).toContain('Cotización ganadora');
     expect(filas[0]).toContain('FUR-000005 · CONTRATISTA SAC');
     expect(filas[0]).toContain('900.00');
-    expect(filas[1]).toContain('Meta (sin cotización)');
+    expect(filas[1]).toContain('Meta (sin proveedor)');
     expect(el.querySelector('.imp-resumen .imp-total')?.textContent).toContain('1,400.00');
     expect(el.textContent).toContain('1 de 2');
+    // Detalle por ítem con proveedor elegido: Meta, Comercial y diferencia.
+    expect(el.textContent).toContain('Detalle por ítem con proveedor elegido');
+    expect(el.textContent).toContain('P-1 CONCRETO');
+    expect(el.textContent).toContain('-10 %');
+  });
+
+  it('cuadro comparativo del presupuesto: ítem × proveedor con el elegido marcado y las condiciones', async () => {
+    const oferta = (id_cotizacion: number, precio: string) => ({ id_cotizacion, id_cot_detalle: id_cotizacion * 10, cotiza: true, cantidad: '10', precio_sin_igv: precio, precio_con_igv: precio, subtotal_sin_igv: '0', plazo_entrega_dias: null, cantidad_completa: true });
+    const cuadro = {
+      id_presupuesto: 7,
+      codigo_presupuesto: 'PPTO-2026-007',
+      estado: 'EN_DESARROLLO',
+      id_detalle_fase: 12,
+      fase: 'PRELIMINARES',
+      items_total: 1,
+      items_adjudicados: 1,
+      lineas: [
+        { id_ppto_item: 1, numero_item: null, id_subfase: 1, subfase: 'MATERIALES', codigo: 'P-1', descripcion: 'CEMENTO', unidad: 'BOL', cantidad: '10', costo_unitario_meta: '5', costo_total_meta: '50', id_cot_detalle_ganadora: 20, id_cotizacion_ganadora: 2, adjudicado_por: 'ana', fecha_adjudicacion: null, comentario_adjudicacion: 'MEJOR PLAZO', cantidad_distinta: false, cubierto: false, compromiso: null, ofertas: [oferta(1, '4.50'), oferta(2, '4.00')] },
+      ],
+      proveedores: [1, 2].map((id) => ({ id_cotizacion: id, numero: `COT-${id}`, id_proveedor: id, proveedor: id === 1 ? 'ACME SAC' : 'BETA EIRL', moneda_id: 'PEN', moneda_simbolo: 'S/', forma_pago: 'Contado', dias_credito: 0, adelanto_porcentaje: id === 2 ? '30' : null, medio_pago: null, plazo_entrega_dias: 5, validez_dias: 15, garantia: '6 MESES', condiciones: id === 2 ? 'ENTREGA EN OBRA' : null, afecto_igv: true, incluye_igv: false, total_sin_igv: '45.00', igv: '8.10', total: '53.10', total_soles: null, tc_usado: null, items_ganados: id === 2 ? 1 : 0 })),
+    };
+    const { el } = await montar(FormatoCuadroComparativoPresupuestoComponent, { idPresupuesto: 7, idFase: 12 }, (r) =>
+      r.url.includes('/presupuestos/7/cuadro-comparativo') && r.params.get('id_detalle_fase') === '12' ? { cuerpo: cuadro } : undefined,
+    );
+    expect(el.textContent).toContain('PPTO-2026-007 · PRELIMINARES');
+    expect(el.textContent).toContain('ACME SAC');
+    expect(el.textContent).toContain('BETA EIRL');
+    // El ganador (BETA) queda marcado en su celda y nombrado en la última columna.
+    expect(el.querySelectorAll('td.imp-ganadora')).toHaveLength(1);
+    expect(el.querySelector('td.imp-ganadora')?.textContent).toContain('4.00');
+    expect(el.textContent).toContain('adel. 30 %');
+    expect(el.textContent).toContain('ENTREGA EN OBRA');
+    expect(el.textContent).toContain('Motivo de la elección: MEJOR PLAZO');
+  });
+
+  it('valorización: avance por línea, lo liberado, lo pagado y lo disponible', async () => {
+    const val = {
+      id: 40,
+      numero_documento: 'OS-000040',
+      estado: 'REGISTRADO',
+      proveedor: 'CONTRATISTA SAC',
+      centro_costo: 'TIENDA NORTE',
+      moneda_id: 'PEN',
+      moneda_simbolo: 'S/',
+      total: '1180.00',
+      neto_proveedor: '1180.00',
+      adelanto_porcentaje: 30,
+      avance_pct: 50,
+      pct_aplicado: 50,
+      liberado: '590.00',
+      pagado: '354.00',
+      programado: '0.00',
+      disponible: '236.00',
+      sugerido: '236.00',
+      lineas: [
+        { id: 1, descripcion: 'MURO', id_subfase: 1, subfase: 'MANO DE OBRA', monto: '1000.00', avance_pct: 50, monto_valorizado: '500.00' },
+        { id: 2, descripcion: 'PINTURA', id_subfase: 2, subfase: 'ACABADOS', monto: '180.00', avance_pct: null, monto_valorizado: '0.00' },
+      ],
+    };
+    const { el } = await montar(FormatoValorizacionComponent, { idDocumento: 40 }, (r) => (termina(r.url, '/administracion/documentos-origen/40/valorizacion') ? { cuerpo: val } : undefined));
+    expect(el.textContent).toContain('OS-000040');
+    expect(el.textContent).toContain('sin avance');
+    expect(el.textContent).toContain('Liberado hasta hoy');
+    expect(el.textContent).toContain('590.00');
+    expect(el.textContent).toContain('Disponible para pago');
+    expect(el.textContent).toContain('236.00');
+    expect(el.textContent).toContain('30 %');
   });
 
   it('ficha técnica: datos de la obra, ubicación, contacto y equipo', async () => {

@@ -76,7 +76,7 @@ export interface ProblemaPresupuesto {
 
 /** Regla de negocio que impide aprobar (aparte de lo que falta completar). */
 export interface BloqueoAprobacion {
-  codigo: 'YA_APROBADO' | 'ANULADO' | 'SIN_CENTRO_COSTO' | 'OTRO_PRINCIPAL' | 'SIN_PRINCIPAL';
+  codigo: 'YA_APROBADO' | 'ANULADO' | 'SIN_CENTRO_COSTO' | 'OTRO_PRINCIPAL' | 'SIN_PRINCIPAL' | 'ITEMS_SIN_ADJUDICAR' | 'COMPROMISO_EN_CONFLICTO';
   mensaje: string;
 }
 
@@ -108,6 +108,8 @@ export interface AprobarPresupuestoResponse {
   estructura: EstructuraCapturada;
   /** Versión anterior a la que reemplaza (pasó a ANULADO). */
   reemplaza?: { id: number; id_presupuesto: string | null };
+  /** Órdenes que pasaron de provisionales a registradas y ya están en programación y pago. */
+  documentos_cerrados: number;
 }
 
 export interface LimpiarVaciosResponse {
@@ -126,6 +128,10 @@ export interface NuevaVersionResponse {
   fases: number;
   categorias: number;
   items: number;
+  /** Cotizaciones copiadas a la versión nueva. */
+  cotizaciones: number;
+  /** Ítems que conservaron su proveedor ganador. */
+  adjudicaciones: number;
 }
 
 export interface PaginatedResponse {
@@ -258,12 +264,31 @@ export interface SubfasesCentroCosto {
 }
 
 /** Presupuesto Comercial calculado: cada fase del Meta con la cotización ganadora de su FUR (GRP SP-16). */
+/** Un ítem del Meta con su valor comercial y la diferencia (el Meta no cambia). */
+export interface ItemComercial {
+  id_item: number;
+  codigo: string;
+  descripcion: string;
+  cantidad: number;
+  meta: number;
+  comercial: number;
+  /** Comercial − Meta. */
+  diferencia: number;
+  diferencia_pct: number | null;
+  proveedor: string | null;
+  adjudicado: boolean;
+  sin_tipo_cambio: boolean;
+}
+
 export interface FaseComercial {
   id_fase: number;
   nombre_fase: string;
   meta: number;
   comercial: number;
-  fuente: 'COTIZACION' | 'META';
+  /** ADJUDICACION: todos los ítems con proveedor; MIXTA: algunos; COTIZACION: FUR ganadores (regla anterior); META: sin ganador. */
+  fuente: 'ADJUDICACION' | 'MIXTA' | 'COTIZACION' | 'META';
+  items: ItemComercial[];
+  items_adjudicados: number;
   requerimientos: { id: number; numero: string; estado: string; proveedor: string | null; monto: number }[];
   /** Hay una ganadora en otra moneda sin tipo de cambio registrado: no está sumada. */
   sin_tipo_cambio: boolean;

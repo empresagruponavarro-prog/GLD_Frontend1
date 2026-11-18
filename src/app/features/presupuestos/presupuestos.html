@@ -1393,6 +1393,18 @@
         </div>
         </fieldset>
 
+        <!-- Cotizaciones y compromisos (plan 09): FUR y órdenes que se generan al elegir al proveedor de cada ítem -->
+        @if (presupuestoActivo()?.id; as idNumerico) {
+          <div class="mt-6">
+            <app-compromisos-panel [idPresupuesto]="idNumerico" [refresco]="refrescoCompromisos()" />
+          </div>
+        }
+        @if (editingId(); as codigoPpto) {
+          <div class="mt-6">
+            <app-comercial-panel [idPresupuesto]="codigoPpto" [refresco]="refrescoCompromisos()" />
+          </div>
+        }
+
         <!-- Aprobación (GRP): fuera del fieldset, tiene sus propios permisos (editar / aprobar / crear) -->
         <div class="mt-6">
           @if (editingId(); as idPpto) {

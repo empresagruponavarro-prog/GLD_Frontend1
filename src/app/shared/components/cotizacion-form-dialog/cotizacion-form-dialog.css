@@ -1,0 +1,34 @@
+.cot-form__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 0.25rem 1rem;
+}
+
+.cot-form__wide {
+  grid-column: span 2;
+}
+
+.cot-form__full {
+  grid-column: 1 / -1;
+}
+
+.cot-form__check {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 0.35rem;
+}
+
+.cot-form__section {
+  margin: 1rem 0 0.5rem;
+  font-size: 0.9rem;
+}
+
+.cot-form__ref {
+  color: var(--info-color);
+}
+
+.cot-form__hint {
+  color: var(--text-muted);
+  font-size: 0.8rem;
+}

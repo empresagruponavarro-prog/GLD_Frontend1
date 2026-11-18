@@ -1,0 +1,144 @@
+<app-modal [isOpen]="abierto()" [title]="titulo()" maxWidth="1100px" [showDefaultFooter]="false" (closed)="onCancelar()">
+  <form [formGroup]="form" class="cot-form" (ngSubmit)="onGuardar()">
+    <div class="cot-form__grid">
+      <div class="form-group cot-form__wide">
+        <label for="cot-proveedor">Proveedor <span class="required">*</span></label>
+        <app-search-select [options]="proveedores()" placeholder="Buscar proveedor..." inputId="cot-proveedor" formControlName="id_proveedor" />
+      </div>
+      <div class="form-group">
+        <label for="cot-fecha">Fecha <span class="required">*</span></label>
+        <input id="cot-fecha" type="date" class="form-control" formControlName="fecha" />
+      </div>
+      <div class="form-group">
+        <label for="cot-ref">N.º de su cotización</label>
+        <input id="cot-ref" class="form-control" maxlength="50" formControlName="referencia" />
+      </div>
+      <div class="form-group">
+        <label for="cot-moneda">Moneda</label>
+        <select id="cot-moneda" class="form-control" formControlName="moneda_id">
+          <option value="PEN">Soles (S/)</option>
+          <option value="USD">Dólares ($)</option>
+        </select>
+      </div>
+      <div class="form-group cot-form__check">
+        <label><input type="checkbox" formControlName="incluye_igv" /> Los precios ya incluyen IGV</label>
+        <label><input type="checkbox" formControlName="afecto_igv" /> Proveedor afecto al IGV</label>
+      </div>
+    </div>
+
+    <h4 class="cot-form__section">Condiciones de pago y entrega</h4>
+    <div class="cot-form__grid">
+      <div class="form-group">
+        <label for="cot-forma">Forma de pago <span class="required">*</span></label>
+        <input id="cot-forma" class="form-control" list="cot-formas" maxlength="50" formControlName="forma_pago" />
+        <datalist id="cot-formas">
+          <option value="Contado"></option>
+          <option value="Credito 7 dias"></option>
+          <option value="Credito 10 dias"></option>
+          <option value="Credito 15 dias"></option>
+          <option value="Credito 30 dias"></option>
+        </datalist>
+      </div>
+      <div class="form-group">
+        <label for="cot-dias">Días de crédito</label>
+        <input id="cot-dias" class="form-control" inputmode="numeric" formControlName="dias_credito" />
+      </div>
+      <div class="form-group">
+        <label for="cot-adelanto">Adelanto (%)</label>
+        <input id="cot-adelanto" class="form-control" inputmode="decimal" formControlName="adelanto_porcentaje" />
+      </div>
+      <div class="form-group">
+        <label for="cot-medio">Medio de pago que pide</label>
+        <select id="cot-medio" class="form-control" formControlName="medio_pago">
+          <option value="">— Sin definir —</option>
+          @for (m of medios; track m) {
+            <option [value]="m">{{ medioLabel[m] }}</option>
+          }
+        </select>
+      </div>
+      <div class="form-group">
+        <label for="cot-entrega">Disponibilidad (días; 0 = inmediata)</label>
+        <input id="cot-entrega" class="form-control" inputmode="numeric" formControlName="plazo_entrega_dias" />
+      </div>
+      <div class="form-group">
+        <label for="cot-validez">Validez de la oferta (días)</label>
+        <input id="cot-validez" class="form-control" inputmode="numeric" formControlName="validez_dias" />
+      </div>
+      <div class="form-group">
+        <label for="cot-garantia">Garantía</label>
+        <input id="cot-garantia" class="form-control" maxlength="100" formControlName="garantia" />
+      </div>
+      <div class="form-group">
+        <label for="cot-archivo">Enlace al PDF del proveedor</label>
+        <input id="cot-archivo" class="form-control" maxlength="255" formControlName="archivo_url" />
+      </div>
+      <div class="form-group cot-form__full">
+        <label for="cot-cond">Otras facilidades o condiciones</label>
+        <textarea id="cot-cond" class="form-control" rows="2" formControlName="condiciones"></textarea>
+      </div>
+    </div>
+
+    <h4 class="cot-form__section">Ítems cotizados</h4>
+    @if (esPresupuesto()) {
+      <p class="cot-form__hint">
+        «Adjudicar» elige a este proveedor como ganador del ítem (reemplaza al actual). Un ítem se adjudica completo a un solo proveedor: debe
+        cotizar la cantidad completa. Al grabar se generan el FUR y las órdenes (provisionales hasta aprobar el presupuesto).
+      </p>
+    }
+    <div class="table-card">
+      <table class="table">
+        <thead>
+          <tr>
+            <th style="width: 70px">Cotiza</th>
+            <th>Ítem</th>
+            <th style="text-align: right">{{ esPresupuesto() ? 'En el Meta' : 'Solicitado' }}</th>
+            <th style="text-align: right; width: 110px">{{ esPresupuesto() ? 'Costo Meta' : 'P. ref.' }}</th>
+            <th style="width: 110px">Cantidad</th>
+            <th style="width: 130px">Precio unit.</th>
+            <th style="width: 110px">Días entrega</th>
+            <th style="width: 160px">Marca / modelo</th>
+            @if (esPresupuesto()) {
+              <th style="width: 90px; text-align: center">Adjudicar</th>
+            }
+          </tr>
+        </thead>
+        <tbody formArrayName="lineas">
+          @for (l of lineasForm.controls; track l; let i = $index) {
+            <tr [formGroupName]="i">
+              <td align="center"><input type="checkbox" formControlName="cotiza" [attr.aria-label]="'Cotiza ítem ' + (i + 1)" /></td>
+              <td>
+                {{ l.controls.etiqueta.value }}
+                @if (subfase(i); as sf) {
+                  <div class="table-cell-subtitle">{{ sf }}</div>
+                }
+                @if (ganador(i); as g) {
+                  <div class="table-cell-subtitle">Hoy gana: {{ g }}</div>
+                }
+              </td>
+              <td align="right">{{ fmtNum(l.controls.solicitada.value) }} {{ l.controls.unidad.value }}</td>
+              <td align="right" class="cot-form__ref">{{ fmtMoney(precioRef(i)) }}</td>
+              <td><input class="form-control" inputmode="decimal" formControlName="cantidad" [attr.aria-label]="'Cantidad ítem ' + (i + 1)" /></td>
+              <td><input class="form-control" inputmode="decimal" formControlName="precio_unitario" placeholder="0.00" [attr.aria-label]="'Precio ítem ' + (i + 1)" /></td>
+              <td><input class="form-control" inputmode="numeric" formControlName="plazo_entrega_dias" [attr.aria-label]="'Entrega ítem ' + (i + 1)" /></td>
+              <td><input class="form-control" maxlength="100" formControlName="marca_modelo" [attr.aria-label]="'Marca ítem ' + (i + 1)" /></td>
+              @if (esPresupuesto()) {
+                <td align="center"><input type="checkbox" formControlName="adjudicar" [attr.aria-label]="'Adjudicar ítem ' + (i + 1)" /></td>
+              }
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  </form>
+
+  @if (mensajeError()) {
+    <p class="badge badge-danger" role="alert" style="white-space: pre-line">{{ mensajeError() }}</p>
+  }
+
+  <div modal-footer class="modal-footer">
+    <button class="btn btn-secondary" type="button" (click)="onCancelar()" [disabled]="guardando()">Cancelar</button>
+    <button class="btn btn-primary" type="button" (click)="onGuardar()" [disabled]="guardando()">
+      <i class="fa-solid fa-floppy-disk"></i> {{ guardando() ? 'Guardando...' : 'Guardar cotización' }}
+    </button>
+  </div>
+</app-modal>

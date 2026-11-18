@@ -16,7 +16,7 @@ import { AuthService } from '@app/core/auth/auth.service';
 import { permisosDePantalla } from '@app/core/auth/permisos-pantalla';
 import { mensajeError } from '@shared/utils/errores-http';
 import { UsuariosService } from './usuarios.service';
-import { AreaItem, Usuario, UsuarioUpdateDto } from './interfaces';
+import { AreaItem, TrabajadorItem, Usuario, UsuarioUpdateDto } from './interfaces';
 import { UsuarioPermisosDialogComponent } from './permisos-dialog/usuario-permisos-dialog';
 import { CLAVE_MAX, CLAVE_MIN, validarClaveNueva } from './usuarios.validators';
 import { DataTableComponent } from '../../../shared/components/data-table/data-table';
@@ -40,6 +40,7 @@ interface UsuarioForm {
   Usuario: FormControl<string>;
   Rol: FormControl<string>;
   id_area: FormControl<number | null>;
+  id_trabajador: FormControl<number | null>;
   cambiarClave: FormControl<boolean>;
   Clave: FormControl<string>;
   ConfirmarClave: FormControl<string>;
@@ -113,6 +114,11 @@ export class UsuariosComponent {
   /** Catálogo de áreas de la empresa para asignación directa al usuario (`id_area`). */
   areas = signal<AreaItem[]>([]);
   areasError = signal<string | null>(null);
+  /** Trabajadores que se pueden vincular al usuario (`id_trabajador`). */
+  trabajadores = signal<TrabajadorItem[]>([]);
+  trabajadoresError = signal<string | null>(null);
+  /** Trabajador con el que se abrió el formulario: al editar solo se manda `id_trabajador` si cambió. */
+  private trabajadorOriginal: number | null = null;
 
   /** Usuario cuyos permisos se están viendo (diálogo rol → área → excepción). */
   usuarioPermisos = signal<Usuario | null>(null);
@@ -133,6 +139,7 @@ export class UsuariosComponent {
     Usuario: new FormControl('', { nonNullable: true }),
     Rol: new FormControl('', { nonNullable: true }),
     id_area: new FormControl<number | null>(null),
+    id_trabajador: new FormControl<number | null>(null),
     cambiarClave: new FormControl(false, { nonNullable: true }),
     Clave: new FormControl('', { nonNullable: true }),
     ConfirmarClave: new FormControl('', { nonNullable: true }),
@@ -161,7 +168,20 @@ export class UsuariosComponent {
     });
     this.loadRoles();
     this.loadAreas();
+    this.loadTrabajadores();
     this.loadUsuarios();
+  }
+
+  loadTrabajadores() {
+    this.usuariosService.getTrabajadores().subscribe({
+      next: (lista) => {
+        this.trabajadores.set(Array.isArray(lista) ? lista : []);
+        this.trabajadoresError.set(null);
+      },
+      error: (err: unknown) => {
+        this.trabajadoresError.set('No se pudieron cargar los trabajadores: ' + mensajeError(err));
+      },
+    });
   }
 
   loadAreas() {
@@ -219,9 +239,10 @@ export class UsuariosComponent {
     this.formError.set(null);
     this.mostrarClave.set(false);
     this.mostrarConfirmarClave.set(false);
+    this.trabajadorOriginal = null;
     this.form.reset({
       IdUsuario: '', Nombres: '', Usuario: '', Rol: this.rolPorDefecto(),
-      id_area: null,
+      id_area: null, id_trabajador: null,
       cambiarClave: true, Clave: '', ConfirmarClave: '',
     });
     this.showModal.set(true);
@@ -235,9 +256,11 @@ export class UsuariosComponent {
     this.mostrarConfirmarClave.set(false);
     // Un rol fuera del catálogo (heredado) obliga a elegir uno válido.
     const rol = item.Rol && this.roles().includes(item.Rol) ? item.Rol : '';
+    this.trabajadorOriginal = item.id_trabajador ?? item.trabajador?.id ?? null;
     this.form.reset({
       IdUsuario: item.IdUsuario, Nombres: item.Nombres ?? '', Usuario: item.Usuario ?? '', Rol: rol,
       id_area: item.id_area ?? item.area?.id ?? null,
+      id_trabajador: item.id_trabajador ?? item.trabajador?.id ?? null,
       cambiarClave: false, Clave: '', ConfirmarClave: '',
     });
     this.showModal.set(true);
@@ -303,15 +326,19 @@ export class UsuariosComponent {
     const idAreaRaw = v.id_area;
     const tieneArea = idAreaRaw !== null && idAreaRaw !== undefined && idAreaRaw !== ('' as unknown);
     const idAreaVal = tieneArea ? Number(idAreaRaw) : null;
+    // El trabajador sí se puede quitar: al editar se manda `null` para desvincularlo; al crear solo si se eligió uno.
+    const idTrabajador = v.id_trabajador === null || v.id_trabajador === undefined || v.id_trabajador === ('' as unknown) ? null : Number(v.id_trabajador);
     const peticion = editId
       ? this.usuariosService.update(editId, {
           ...datos,
           ...(tieneArea ? { id_area: idAreaVal } : {}),
+          ...(idTrabajador !== this.trabajadorOriginal ? { id_trabajador: idTrabajador } : {}),
           ...(enviarClave ? { Clave: v.Clave } : {}),
         } satisfies UsuarioUpdateDto)
       : this.usuariosService.create({
           ...datos,
           ...(tieneArea ? { id_area: idAreaVal } : {}),
+          ...(idTrabajador !== null ? { id_trabajador: idTrabajador } : {}),
           Clave: v.Clave,
         });
 

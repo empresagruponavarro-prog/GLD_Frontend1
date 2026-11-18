@@ -2,12 +2,13 @@ import { Service, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '@env';
-import { DocumentoAdmin, Paginated } from '../documentos/administracion/administracion.models';
+import { Paginated } from '../documentos/administracion/administracion.models';
 import { toParams } from '../documentos/administracion/administracion.service';
 import {
   Agenda,
   Cuenta,
   CuentaPayload,
+  DocumentoPendiente,
   EjecutarPagoPayload,
   Pago,
   PagoDirectoPayload,
@@ -49,8 +50,8 @@ export class TesoreriaService {
   }
 
   // ---- Programación
-  getPendientes(query: object = {}): Observable<Paginated<DocumentoAdmin>> {
-    return this.http.get<Paginated<DocumentoAdmin>>(`${this.api}/programacion/pendientes`, { params: toParams(query) });
+  getPendientes(query: object = {}): Observable<Paginated<DocumentoPendiente>> {
+    return this.http.get<Paginated<DocumentoPendiente>>(`${this.api}/programacion/pendientes`, { params: toParams(query) });
   }
   getAgenda(query: { desde?: string; hasta?: string; estado?: string; concepto?: string; id_cuenta?: number } = {}): Observable<Agenda> {
     return this.http.get<Agenda>(`${this.api}/programacion`, { params: toParams(query) });

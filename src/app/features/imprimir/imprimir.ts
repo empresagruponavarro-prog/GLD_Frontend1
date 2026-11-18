@@ -15,15 +15,19 @@ import {
 import { RequerimientosService } from '../requerimientos/requerimientos.service';
 import { Pago } from '../tesoreria/tesoreria.models';
 import { TesoreriaService } from '../tesoreria/tesoreria.service';
+import { FormatoCuadroComparativoPresupuestoComponent } from './formatos/cuadro-comparativo-presupuesto';
 import { FormatoDosierComponent } from './formatos/dosier';
 import { FormatoFichaObraComponent } from './formatos/ficha-obra';
 import { FormatoInformeAvanceComponent } from './formatos/informe-avance';
 import { FormatoPresupuestoComercialComponent } from './formatos/presupuesto-comercial';
 import { FormatoPresupuestoMetaComponent } from './formatos/presupuesto-meta';
+import { FormatoValorizacionComponent } from './formatos/valorizacion';
 
 export type TipoImpresion =
   | 'fur'
   | 'cuadro-comparativo'
+  | 'cuadro-comparativo-presupuesto'
+  | 'valorizacion'
   | 'documento-origen'
   | 'comprobante-pago'
   | 'expediente'
@@ -35,7 +39,7 @@ export type TipoImpresion =
   | 'dosier';
 
 /** Formatos que cargan sus propios datos (componentes de `formatos/`): la página solo pone el encabezado. */
-const FORMATOS_PROPIOS: readonly TipoImpresion[] = ['presupuesto-meta', 'presupuesto-comercial', 'ficha-obra', 'informe-avance', 'dosier'];
+const FORMATOS_PROPIOS: readonly TipoImpresion[] = ['cuadro-comparativo-presupuesto', 'valorizacion', 'presupuesto-meta', 'presupuesto-comercial', 'ficha-obra', 'informe-avance', 'dosier'];
 
 interface Expediente {
   documento: DocumentoDetalle;
@@ -57,7 +61,7 @@ interface EmpresaCabecera {
 @Component({
   selector: 'app-imprimir',
   standalone: true,
-  imports: [FormatoPresupuestoMetaComponent, FormatoPresupuestoComercialComponent, FormatoFichaObraComponent, FormatoInformeAvanceComponent, FormatoDosierComponent],
+  imports: [FormatoCuadroComparativoPresupuestoComponent, FormatoValorizacionComponent, FormatoPresupuestoMetaComponent, FormatoPresupuestoComercialComponent, FormatoFichaObraComponent, FormatoInformeAvanceComponent, FormatoDosierComponent],
   templateUrl: './imprimir.html',
   styleUrl: './imprimir.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -82,6 +86,8 @@ export class ImprimirComponent {
   protected readonly idRaw = this.route.snapshot.paramMap.get('id') ?? '';
   private readonly id = Number(this.idRaw);
   protected readonly idNumero = this.id;
+  /** `?fase=` (id de `ppto_DetalleFases`): fase cuyo cuadro comparativo se imprime. */
+  protected readonly idFase = Number(this.route.snapshot.queryParamMap.get('fase') ?? 0);
 
   protected readonly empresa = signal<EmpresaCabecera | null>(null);
   protected readonly isLoading = signal(true);
@@ -98,7 +104,9 @@ export class ImprimirComponent {
     switch (this.tipo) {
       case 'fur': return 'FORMATO ÚNICO DE REQUERIMIENTO (FUR)';
       case 'cuadro-comparativo': return 'CUADRO COMPARATIVO DE COTIZACIONES';
-      case 'documento-origen': return 'DOCUMENTO DE ORIGEN';
+      case 'cuadro-comparativo-presupuesto': return 'CUADRO COMPARATIVO DE COTIZACIONES DEL PRESUPUESTO';
+      case 'valorizacion': return 'VALORIZACIÓN POR AVANCE DE OBRA';
+      case 'documento-origen': return this.documento()?.clase_documento === 'ORDEN_SERVICIO' ? 'ORDEN DE SERVICIO' : this.documento()?.clase_documento === 'ORDEN_COMPRA' ? 'ORDEN DE COMPRA' : 'DOCUMENTO DE ORIGEN';
       case 'comprobante-pago': return 'COMPROBANTE DE PAGO';
       case 'pecosa': return 'PECOSA · PEDIDO-COMPROBANTE DE SALIDA';
       case 'presupuesto-meta': return 'PRESUPUESTO META';

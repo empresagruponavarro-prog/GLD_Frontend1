@@ -76,3 +76,49 @@ describe('RequerimientosListaComponent: botones según permisos (requerimientos)
     expect(botonesVisibles(conCrear.el, BOTONES)['generarOc']).toBe(true);
   });
 });
+
+
+describe('RequerimientosListaComponent: FUR que nacen de un presupuesto (plan 09)', () => {
+  afterEach(() => TestBed.inject(HttpTestingController).verify());
+
+  const DESDE_PPTO = requerimiento({
+    id: 8,
+    numero: 'FUR-000008',
+    estado: 'APROBADO',
+    tipo: 'COMPRA',
+    avance: 'SIN_ATENDER',
+    origen: 'PPTO_ADJUDICACION',
+    id_ppto_principal: 7,
+    codigo_presupuesto: 'PPTO-2026-007',
+    provisional: true,
+  });
+
+  async function montarConPresupuesto() {
+    const responderPpto = (req: HttpRequest<unknown>) => (req.url.endsWith('/requerimientos') ? paginaDe([DESDE_PPTO, BORRADOR]) : []);
+    const p = await montarPantalla(RequerimientosListaComponent, misPermisos('Usuario', { requerimientos: { editar: true }, 'documentos.origen': { crear: true } }), responderPpto);
+    expect(p.el.textContent).toContain('FUR-000008');
+    return p;
+  }
+
+  it('muestra de qué presupuesto viene y que sus órdenes son provisionales', async () => {
+    const { el } = await montarConPresupuesto();
+    expect(el.querySelector('[data-testid="origen-presupuesto"]')?.textContent).toContain('PPTO-2026-007');
+    expect(el.textContent).toContain('Provisional');
+  });
+
+  it('un FUR con órdenes provisionales no se anula ni genera otra orden a mano: lo gestiona el presupuesto', async () => {
+    const { el } = await montarConPresupuesto();
+    expect(botonesVisibles(el, { anular: 'Anular', generarOc: 'Generar orden de compra' })).toEqual({ anular: false, generarOc: false });
+  });
+
+  it('el filtro de origen manda el parámetro al servidor', async () => {
+    const p = await montarConPresupuesto();
+    const select = p.el.querySelector<HTMLSelectElement>('select[aria-label="Origen del requerimiento"]');
+    expect(select).not.toBeNull();
+    select!.value = 'PPTO_ADJUDICACION';
+    select!.dispatchEvent(new Event('change'));
+    const req = p.http.expectOne((r: HttpRequest<unknown>) => r.url.endsWith('/requerimientos') && r.params.get('origen') === 'PPTO_ADJUDICACION');
+    req.flush(paginaDe([DESDE_PPTO]));
+    await p.render();
+  });
+});

@@ -138,6 +138,8 @@ export const routes: Routes = [
       rutaSesion('imprimir/comprobante-pago/:id', ImprimirComponent, { tipo: 'comprobante-pago' }),
       rutaSesion('imprimir/expediente/:id', ImprimirComponent, { tipo: 'expediente' }),
       rutaSesion('imprimir/pecosa/:id', ImprimirComponent, { tipo: 'pecosa' }),
+      rutaSesion('imprimir/cuadro-comparativo-presupuesto/:id', ImprimirComponent, { tipo: 'cuadro-comparativo-presupuesto' }),
+      rutaSesion('imprimir/valorizacion/:id', ImprimirComponent, { tipo: 'valorizacion' }),
       rutaSesion('imprimir/presupuesto-meta/:id', ImprimirComponent, { tipo: 'presupuesto-meta' }),
       rutaSesion('imprimir/presupuesto-comercial/:id', ImprimirComponent, { tipo: 'presupuesto-comercial' }),
       rutaSesion('imprimir/ficha-obra/:id', ImprimirComponent, { tipo: 'ficha-obra' }),

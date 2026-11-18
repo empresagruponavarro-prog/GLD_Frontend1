@@ -104,6 +104,9 @@
       } @else if (r.estructura.motivo) {
         <p class="text-amber-900">No se creó la estructura de la obra: {{ r.estructura.motivo }}.</p>
       }
+      @if (r.documentos_cerrados > 0) {
+        <p>Se cerraron {{ r.documentos_cerrados }} orden(es) de compra o de servicio: ya están registradas y pasan a programación y pago.</p>
+      }
       @if (r.reemplaza) {
         <p>Reemplaza a {{ r.reemplaza.id_presupuesto || ('#' + r.reemplaza.id) }}, que quedó anulado.</p>
       }

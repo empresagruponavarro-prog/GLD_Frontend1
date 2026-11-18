@@ -62,7 +62,7 @@ const DOC: DocumentoAdmin = {
 };
 
 function detalleDe(doc: DocumentoAdmin): DocumentoDetalle {
-  return { ...doc, lineas: [], programaciones: [], pagos: [], retencion_motivo: 'No aplica' };
+  return { ...doc, lineas: [], programaciones: [], pagos: [], retencion_motivo: 'No aplica', cotizacion: null, tope_avance: null };
 }
 
 function responder(req: HttpRequest<unknown>) {
@@ -80,10 +80,10 @@ async function montar(modulos: Partial<Record<ClaveModulo, Partial<Permisos>>>) 
 }
 
 /** Abre el detalle del documento ("Ver documento") y responde su GET. */
-async function abrirDetalle(p: Pantalla<DocumentosAdministracionComponent>, doc: DocumentoAdmin = DOC): Promise<void> {
+async function abrirDetalle(p: Pantalla<DocumentosAdministracionComponent>, doc: DocumentoAdmin = DOC, extras: Partial<DocumentoDetalle> = {}): Promise<void> {
   p.el.querySelector<HTMLButtonElement>('button[title="Ver documento"]')?.click();
   await p.render();
-  p.http.expectOne(`${API}/${doc.id}`).flush(detalleDe(doc));
+  p.http.expectOne(`${API}/${doc.id}`).flush({ ...detalleDe(doc), ...extras });
   await p.render();
 }
 
@@ -134,6 +134,29 @@ describe('DocumentosAdministracionComponent: botones según permisos (documentos
     const p = await montar({ 'documentos.administracion': {} });
     await abrirDetalle(p, { ...DOC, estado: 'ANULADO' });
     expect(botonesVisibles(p.el, { anular: 'Anular documento' })).toEqual({ anular: false });
+  });
+
+  it('plan 09: una orden provisional se ve y se imprime, pero no ofrece deducciones, anular ni programar', async () => {
+    const p = await montar({ 'documentos.administracion': { editar: true }, 'tesoreria.programacion': {} });
+    await abrirDetalle(p, { ...DOC, estado: 'PROVISIONAL' });
+    expect(p.el.querySelector('[data-testid="aviso-provisional"]')?.textContent).toContain('provisional');
+    expect(p.el.textContent).toContain('Provisional');
+    expect(camposDeducciones(p.el)).toHaveLength(0);
+    expect(botonesVisibles(p.el, { guardar: 'Guardar cambios', anular: 'Anular documento', imprimir: 'Imprimir' })).toEqual({ guardar: false, anular: false, imprimir: true });
+    // Ni el enlace de "Aún no hay pagos programados" (el de la barra de la pantalla sí sigue).
+    expect(p.el.querySelectorAll('a[href="/tesoreria/programacion"]').length).toBe(1);
+  });
+
+  it('plan 09: una orden de servicio de presupuesto ofrece imprimir su valorización', async () => {
+    const p = await montar({ 'documentos.administracion': {} });
+    await abrirDetalle(p, DOC, { tope_avance: { adelanto_porcentaje: 30, avance_pct: 40, pct_aplicado: 40, tope: 400, pagado: 0, programado: 0, disponible: 400, sugerido: 300 } });
+    expect(p.el.querySelector('a[href="/imprimir/valorizacion/' + DOC.id + '"]')).not.toBeNull();
+  });
+
+  it('plan 09: sin tope de avance no hay valorización', async () => {
+    const p = await montar({ 'documentos.administracion': {} });
+    await abrirDetalle(p);
+    expect(p.el.querySelector('a[href^="/imprimir/valorizacion"]')).toBeNull();
   });
 
   it('editar → deducciones editables con su botón de guardar (la retención automática sigue bloqueada)', async () => {

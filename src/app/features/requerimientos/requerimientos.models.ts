@@ -117,6 +117,16 @@ export interface RequerimientoOrdenCompra {
   estado: string | null;
 }
 
+/** De dónde nace el FUR: a mano, la generación de borradores de un presupuesto o la adjudicación de sus cotizaciones (plan 09). */
+export const ORIGENES_REQUERIMIENTO = ['MANUAL', 'PPTO_FASE', 'PPTO_ADJUDICACION'] as const;
+export type OrigenRequerimiento = (typeof ORIGENES_REQUERIMIENTO)[number];
+
+export const ORIGEN_LABEL: Record<OrigenRequerimiento, string> = {
+  MANUAL: 'Manual',
+  PPTO_FASE: 'Desde presupuesto (borrador)',
+  PPTO_ADJUDICACION: 'Desde presupuesto (adjudicado)',
+};
+
 export interface Requerimiento {
   id: number;
   numero: string;
@@ -139,6 +149,12 @@ export interface Requerimiento {
   total_cotizaciones: number;
   justificacion: string;
   estado: EstadoRequerimiento;
+  origen: OrigenRequerimiento;
+  /** `ppto_Principal.id` del presupuesto que lo generó (FUR de presupuesto). */
+  id_ppto_principal: number | null;
+  codigo_presupuesto: string | null;
+  /** Alguna de sus órdenes es provisional: lo gestiona el presupuesto hasta que se apruebe. */
+  provisional: boolean;
   id_aprobador: number | null;
   aprobador: string | null;
   fecha_aprobacion: string | null;
@@ -179,6 +195,7 @@ export interface RequerimientoQuery {
   pageSize?: number;
   estado?: EstadoRequerimiento;
   tipo?: TipoRequerimiento;
+  origen?: OrigenRequerimiento;
   id_area?: number;
   id_centro_costo?: number;
   id_solicitante?: number;

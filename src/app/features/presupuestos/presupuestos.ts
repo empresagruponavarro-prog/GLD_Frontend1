@@ -66,6 +66,8 @@ import {
   PresupuestoPrincipal,
 } from './interfaces';
 import { AprobacionPanelComponent } from './aprobacion-panel/aprobacion-panel';
+import { ComercialPanelComponent } from './comercial-panel/comercial-panel';
+import { CompromisosPanelComponent } from './compromisos-panel/compromisos-panel';
 import { DocumentosOrigenService } from '../documentos/documentos-origen/documentos-origen.service';
 import { DocumentoOrigenDetalleLinea } from '../documentos/documentos-origen/interfaces/documentos-origen.interface';
 import { CentrosCostosService } from '../centros-costos/centros-costos.service'; import { CategoriasService } from '../maestros-generales/categorias/categorias.service'; import { CategoriaSelect } from '../maestros-generales/categorias/interfaces/categorias.interface';
@@ -140,7 +142,7 @@ function centroCostoDeEstado(estado: unknown): CentroCosto | null {
 @Component({
   selector: 'app-presupuestos',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink, ExportarBotonesComponent, PartidaItemsDialogComponent, AprobacionPanelComponent],
+  imports: [CommonModule, FormsModule, RouterLink, ExportarBotonesComponent, PartidaItemsDialogComponent, AprobacionPanelComponent, CompromisosPanelComponent, ComercialPanelComponent],
   templateUrl: './presupuestos.html',
   styleUrls: ['./presupuestos.css']
   
@@ -2178,7 +2180,14 @@ export class PresupuestosComponent implements OnInit {
       alert('Esta fila no tiene partida/categoría para asignarle ítems.');
       return;
     }
-    const partidaBase = { IdpptoFaseCategoria: fila.idCategoria, NombreCategoria: fila.categoria, NombreFase: fila.nombre };
+    // El presupuesto y la fase habilitan las cotizaciones por ítem (plan 09); en un presupuesto sin guardar no se usan.
+    const partidaBase = {
+      IdpptoFaseCategoria: fila.idCategoria,
+      NombreCategoria: fila.categoria,
+      NombreFase: fila.nombre,
+      id_presupuesto: this.presupuestoActivo()?.id,
+      id_detalle_fase: fila.idFaseDetalle,
+    };
     if (this.fasesPersistidas && fila.idCategoriaDetalle) {
       this.itemsDialog.set({ index: i, modo: 'presupuesto', partida: { id: fila.idCategoriaDetalle, ...partidaBase }, items: [] });
     } else {
@@ -2193,7 +2202,11 @@ export class PresupuestosComponent implements OnInit {
   onItemsGuardados() {
     this.itemsDialog.set(null);
     this.recargarPresupuestoActivo();
+    this.refrescoCompromisos.update((n) => n + 1);
   }
+
+  /** Se incrementa cuando cambian las cotizaciones, los ganadores o la aprobación: el panel de compromisos vuelve a leer. */
+  readonly refrescoCompromisos = signal(0);
 
   onItemsLocalesGuardados(items: ItemFila[]) {
     const d = this.itemsDialog();
@@ -2650,6 +2663,7 @@ export class PresupuestosComponent implements OnInit {
   /** Tras limpiar vacíos cambian los ítems, las categorías y los costos: se recarga el presupuesto. */
   onPresupuestoLimpiado() {
     this.recargarPresupuestoActivo();
+    this.refrescoCompromisos.update((n) => n + 1);
   }
 
   /** Abre la versión nueva para completarla (nace en desarrollo, con la estructura copiada). */

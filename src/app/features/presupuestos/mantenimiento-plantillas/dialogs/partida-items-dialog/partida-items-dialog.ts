@@ -19,6 +19,8 @@ import {
   SyncPartidaItemsDto,
 } from '@app/features/presupuestos/presupuestos.service';
 import { ProductosService } from '@app/features/maestros-generales/productos/productos.service';
+import { CotizacionesFaseDialogComponent } from '@app/features/presupuestos/cotizaciones-ppto/cotizaciones-fase-dialog/cotizaciones-fase-dialog';
+import { ResumenCotizacionItem } from '@app/features/presupuestos/cotizaciones-ppto/cotizaciones-ppto.models';
 import {
   Producto,
   SelectOption,
@@ -43,6 +45,8 @@ export interface ItemFila {
   // Campos calculados
   CostoTotal: number;
   VentaTotal: number;
+  /** Solo en un presupuesto guardado: cotizaciones, proveedor ganador y compromiso del ítem (plan 09). */
+  cotizacion?: ResumenCotizacionItem;
 }
 
 export interface PartidaInfo {
@@ -50,6 +54,9 @@ export interface PartidaInfo {
   IdpptoFaseCategoria: string;
   NombreCategoria?: string;
   NombreFase?: string;
+  /** Presupuesto (`ppto_Principal.id`) y fase (`ppto_DetalleFases.id`) de la partida: habilitan las cotizaciones por ítem (plan 09). */
+  id_presupuesto?: number;
+  id_detalle_fase?: number;
 }
 
 export interface GuardadoEvent {
@@ -106,7 +113,7 @@ function redondear(n: number): number {
 @Component({
   selector: 'app-partida-items-dialog',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, CotizacionesFaseDialogComponent],
   templateUrl: './partida-items-dialog.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -142,6 +149,40 @@ export class PartidaItemsDialogComponent implements OnInit {
   posicionLista = signal<PosicionLista | null>(null);
   private campoActivo: HTMLElement | null = null;
   private searchSubject = new Subject<string>();
+
+  /** Las acciones «Cotizar» y «Cuadro» por ítem solo existen en un presupuesto guardado (plan 09, lámina 5). */
+  get conCotizaciones(): boolean {
+    return this.modo === 'presupuesto' && !!this.partida.id_presupuesto && !!this.partida.id_detalle_fase;
+  }
+
+  /** Diálogo de cotizaciones de la fase, abierto desde un ítem (`itemInicial`) o para registrar una cotización nueva. */
+  cotizando = signal<{ itemInicial: number | null; registrar: boolean } | null>(null);
+
+  /** Abre las cotizaciones de la fase desde un ítem: `registrar` = directo al formulario de una cotización con ese ítem marcado. */
+  abrirCotizaciones(fila: ItemFila, registrar: boolean): void {
+    if (!this.conCotizaciones || fila.id === undefined) return;
+    this.cotizando.set({ itemInicial: fila.id, registrar });
+  }
+
+  cerrarCotizaciones(): void {
+    this.cotizando.set(null);
+  }
+
+  /** Hubo cotizaciones o un ganador nuevo: al cerrar el diálogo se avisa al presupuesto para que refresque sus fases y sus montos. */
+  private huboCambiosCotizacion = false;
+
+  /** Se cotizó, se eligió un ganador o cambió un compromiso: se vuelve a leer lo que muestra cada ítem. */
+  onCotizacionesCambio(): void {
+    this.huboCambiosCotizacion = true;
+    this.cargarItems();
+  }
+
+  /** Diferencia del proveedor ganador contra el Meta del ítem (precio sin IGV × cantidad − costo total), en la moneda del ganador. */
+  diferenciaGanador(fila: ItemFila): number | null {
+    const a = fila.cotizacion?.adjudicado;
+    if (!a) return null;
+    return redondear(Number(a.precio_sin_igv) * fila.Cantidad - fila.CostoTotal);
+  }
 
   // Totales calculados
   totales = computed(() => {
@@ -210,6 +251,7 @@ export class PartidaItemsDialogComponent implements OnInit {
             PrecioVenta: pv,
             CostoTotal: redondear(cant * cu),
             VentaTotal: redondear(cant * pv),
+            cotizacion: it.cotizacion,
           };
         });
         this.filas.set(convertidas);
@@ -367,6 +409,13 @@ export class PartidaItemsDialogComponent implements OnInit {
 
   eliminarFila(index: number): void {
     if (this.soloLectura) return;
+    const fila = this.filas()[index];
+    if (fila?.cotizacion?.cubierto) {
+      this.errorMensaje.set('Este ítem ya tiene una orden registrada: para quitarlo, anule la orden o cree una nueva versión del presupuesto.');
+      return;
+    }
+    const cotizaciones = fila?.cotizacion?.cotizaciones ?? 0;
+    if (cotizaciones > 0 && !confirm(`Este ítem tiene ${cotizaciones} cotización(es). Si lo quita, se pierden sus cotizaciones y su proveedor ganador. ¿Quitarlo?`)) return;
     const list = [...this.filas()];
     list.splice(index, 1);
     this.filas.set(list);
@@ -433,6 +482,10 @@ export class PartidaItemsDialogComponent implements OnInit {
   }
 
   onCerrar(): void {
+    if (this.huboCambiosCotizacion) {
+      this.guardado.emit({ idPartida: this.partida.id, costoTotal: this.totales().costoTotal, ventaTotal: 0, totalItems: this.totales().cantidadFilas });
+      return;
+    }
     this.cerrar.emit();
   }
 }

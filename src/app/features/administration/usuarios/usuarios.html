@@ -219,6 +219,28 @@
               }
               <span class="field-hint">Área a la que pertenece el colaborador en la empresa.</span>
             </div>
+
+            <!-- Trabajador vinculado (plan 09): firma lo que el usuario registra -->
+            <div class="field-item">
+              <label class="field-label" for="usuario-trabajador">
+                <span>Trabajador vinculado</span>
+              </label>
+              <div class="input-with-icon">
+                <i class="fa-solid fa-id-badge input-prefix-icon"></i>
+                <select id="usuario-trabajador" class="form-control-custom" formControlName="id_trabajador" data-testid="usuario-trabajador-select">
+                  <option [ngValue]="null">-- Sin trabajador vinculado --</option>
+                  @for (t of trabajadores(); track t.id) {
+                    <option [ngValue]="t.id">{{ t.nombre }}</option>
+                  }
+                </select>
+              </div>
+              @if (trabajadoresError(); as aviso) {
+                <span class="field-hint" role="alert" style="color: #b45309;">
+                  <i class="fa-solid fa-triangle-exclamation" aria-hidden="true"></i> {{ aviso }}
+                </span>
+              }
+              <span class="field-hint">Quien registra cotizaciones en un presupuesto firma con este trabajador. Sin vínculo, no podrá registrarlas.</span>
+            </div>
           </div>
         </div>
 

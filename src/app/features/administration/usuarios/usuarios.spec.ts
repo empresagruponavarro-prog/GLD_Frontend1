@@ -21,6 +21,8 @@ const INACTIVO: Usuario = { IdUsuario: 'USR002', Nombres: 'Luis Díaz', Usuario:
 const SESION: UsuarioSesion = { id: 'USR-0001', usuario: 'admin', nombres: 'Admin GLD', rol: 'Administrador' };
 
 const ADMIN = misPermisos('Administrador', {}, true);
+const TRABAJADORES = [{ id: 7, nombre: 'ANA RUIZ' }, { id: 8, nombre: 'LUIS PAZ' }];
+const RUTA_TRABAJADORES = (r: { url: string }) => r.url === `${environment.apiUrl}/maestros/anexo/select`;
 
 async function setup(roles: string[] | 'error' = ROLES, usuarios: Usuario[] = [USUARIO], permisos: MisPermisos = ADMIN) {
   TestBed.configureTestingModule({
@@ -40,6 +42,7 @@ async function setup(roles: string[] | 'error' = ROLES, usuarios: Usuario[] = [U
   else reqRoles.flush(roles);
   http.expectOne(API).flush(usuarios);
   http.match(`${environment.apiUrl}/maestros/area?activas=true`).forEach((r) => r.flush([]));
+  http.match(RUTA_TRABAJADORES).forEach((r) => r.flush(TRABAJADORES));
   await fixture.whenStable();
   const el: HTMLElement = fixture.nativeElement;
   const q = <T extends Element>(sel: string) => el.querySelector<T>(sel);
@@ -114,6 +117,7 @@ describe('UsuariosComponent', () => {
     http.expectOne(`${API}/roles`).flush(['Administrador', 'Almacenero', 'Supervisor']);
     http.expectOne(API).flush([{ ...USUARIO, Rol: 'Almacenero' }]);
     http.match(`${environment.apiUrl}/maestros/area?activas=true`).forEach((r) => r.flush([]));
+    http.match(RUTA_TRABAJADORES).forEach((r) => r.flush(TRABAJADORES));
     await render();
     expect(el.textContent).toContain('Almacenero');
 
@@ -232,6 +236,85 @@ describe('UsuariosComponent', () => {
     expect(conClave.request.body).toEqual({ Nombres: 'Ana Pérez', Usuario: 'aperez', Rol: 'Promotor', Clave: 'nueva-clave-1' });
     conClave.flush({});
     http.expectOne(API).flush([USUARIO]);
+  });
+
+  it('plan 09: el trabajador vinculado se elige del catálogo y se manda al crear', async () => {
+    const { q, cmp, render, escribir, guardar, http } = await setup();
+    cmp.openModal();
+    await render();
+    const select = q<HTMLSelectElement>('[data-testid="usuario-trabajador-select"]')!;
+    expect(Array.from(select.options).map((o) => o.textContent?.trim())).toEqual(['-- Sin trabajador vinculado --', 'ANA RUIZ', 'LUIS PAZ']);
+
+    escribir('#usuario-nombres', 'Ana Ruiz');
+    escribir('#usuario-login', 'aruiz');
+    escribir('#usuario-clave', 'clave-segura-1');
+    escribir('#usuario-clave-confirmar', 'clave-segura-1');
+    cmp.form.controls.id_trabajador.setValue(7);
+    await guardar();
+    const req = http.expectOne(API);
+    expect(req.request.method).toBe('POST');
+    expect(req.request.body.id_trabajador).toBe(7);
+    req.flush({});
+    http.expectOne(API).flush([USUARIO]);
+  });
+
+  it('plan 09: crear sin elegir trabajador no manda id_trabajador', async () => {
+    const { cmp, render, escribir, guardar, http } = await setup();
+    cmp.openModal();
+    await render();
+    escribir('#usuario-nombres', 'Ana Ruiz');
+    escribir('#usuario-login', 'aruiz');
+    escribir('#usuario-clave', 'clave-segura-1');
+    escribir('#usuario-clave-confirmar', 'clave-segura-1');
+    await guardar();
+    const req = http.expectOne(API);
+    expect('id_trabajador' in req.request.body).toBe(false);
+    req.flush({});
+    http.expectOne(API).flush([USUARIO]);
+  });
+
+  it('plan 09: al editar un usuario vinculado el selector trae su trabajador y quitarlo manda null', async () => {
+    const vinculado: Usuario = { ...USUARIO, id_trabajador: 7, trabajador: { id: 7, nombre: 'ANA RUIZ' } };
+    const { q, cmp, render, guardar, http } = await setup(ROLES, [vinculado]);
+    cmp.editModal(vinculado);
+    await render();
+    expect(q<HTMLSelectElement>('[data-testid="usuario-trabajador-select"]')?.selectedOptions[0]?.textContent?.trim()).toBe('ANA RUIZ');
+
+    // Sin cambios no se toca el vínculo.
+    await guardar();
+    const sinCambio = http.expectOne(`${API}/USR001`);
+    expect('id_trabajador' in sinCambio.request.body).toBe(false);
+    sinCambio.flush({});
+    http.expectOne(API).flush([vinculado]);
+    await render();
+
+    // Quitarlo manda null explícito.
+    cmp.editModal(vinculado);
+    await render();
+    cmp.form.controls.id_trabajador.setValue(null);
+    await guardar();
+    const quitar = http.expectOne(`${API}/USR001`);
+    expect(quitar.request.body.id_trabajador).toBeNull();
+    quitar.flush({});
+    http.expectOne(API).flush([USUARIO]);
+  });
+
+  it('plan 09: si no se cargan los trabajadores avisa y deja el formulario usable', async () => {
+    TestBed.configureTestingModule({
+      imports: [UsuariosComponent],
+      providers: [provideHttpClient(), provideHttpClientTesting(), provideRouter([]), { provide: AuthService, useValue: { usuario: signal<UsuarioSesion | null>(SESION), token: () => 'tok-admin' } }],
+    });
+    const http = TestBed.inject(HttpTestingController);
+    const fixture = TestBed.createComponent(UsuariosComponent);
+    await cargarPermisos(ADMIN);
+    http.expectOne(`${API}/roles`).flush(ROLES);
+    http.expectOne(API).flush([USUARIO]);
+    http.match(`${environment.apiUrl}/maestros/area?activas=true`).forEach((r) => r.flush([]));
+    http.match(RUTA_TRABAJADORES).forEach((r) => r.flush({ message: 'Fallo' }, { status: 500, statusText: 'Server Error' }));
+    await fixture.whenStable();
+    fixture.componentInstance.openModal();
+    await fixture.whenStable();
+    expect((fixture.nativeElement as HTMLElement).textContent).toContain('No se pudieron cargar los trabajadores');
   });
 
   it('un rol heredado fuera del catálogo obliga a elegir uno válido', async () => {
