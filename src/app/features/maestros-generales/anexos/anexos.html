@@ -2,7 +2,7 @@
   <div>
     <h1 class="content-title">Anexos</h1>
     <p class="content-subtitle">
-      Maestro de proveedores y clientes. Los trabajadores se ven aquí, pero se registran en RR.HH. › Trabajadores.
+      Maestro de proveedores y clientes. Los trabajadores se gestionan en RR.HH. › Trabajadores.
     </p>
   </div>
   <div style="display: flex; gap: 0.5rem; align-items: center">
@@ -122,33 +122,25 @@
         >
           <i class="fa-solid fa-eye"></i>
         </button>
-        @if (item.tipoAnexo === 'Trabajador') {
-          @if (verTrabajadores()) {
-            <a class="table-action-btn" routerLink="/rrhh/trabajadores" title="Se gestiona en RR.HH. › Trabajadores">
-              <i class="fa-solid fa-id-card"></i>
-            </a>
-          }
-        } @else {
-          @if (permisos.editar()) {
-            <button
-              class="table-action-btn table-action-btn--primary"
-              type="button"
-              (click)="openEdit(item)"
-              title="Editar"
-            >
-              <i class="fa-solid fa-pen-to-square"></i>
-            </button>
-          }
-          @if (permisos.eliminar()) {
-            <button
-              class="table-action-btn table-action-btn--danger"
-              type="button"
-              (click)="deleteAnexo(item)"
-              title="Eliminar"
-            >
-              <i class="fa-solid fa-trash"></i>
-            </button>
-          }
+        @if (permisos.editar()) {
+          <button
+            class="table-action-btn table-action-btn--primary"
+            type="button"
+            (click)="openEdit(item)"
+            title="Editar"
+          >
+            <i class="fa-solid fa-pen-to-square"></i>
+          </button>
+        }
+        @if (permisos.eliminar()) {
+          <button
+            class="table-action-btn table-action-btn--danger"
+            type="button"
+            (click)="deleteAnexo(item)"
+            title="Eliminar"
+          >
+            <i class="fa-solid fa-trash"></i>
+          </button>
         }
       </td>
     </tr>

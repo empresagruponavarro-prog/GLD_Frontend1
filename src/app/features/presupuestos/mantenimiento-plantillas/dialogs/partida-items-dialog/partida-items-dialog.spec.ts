@@ -189,7 +189,7 @@ describe('PartidaItemsDialogComponent: lista de resultados al frente', () => {
     cmp.agregarFila();
     fixture.detectChanges();
 
-    const campo = fixture.nativeElement.querySelector('tbody input[placeholder^="Buscar"]') as HTMLInputElement;
+    const campo = fixture.nativeElement.querySelector('tbody textarea[placeholder^="Buscar"]') as HTMLTextAreaElement;
     vi.spyOn(campo, 'getBoundingClientRect').mockReturnValue({ top: 400, bottom: 430, left: 300, right: 532, width: 232, height: 30, x: 300, y: 400, toJSON: () => ({}) });
     campo.dispatchEvent(new Event('focus'));
     cmp.resultadosBusqueda.set([{ id: 1, codigo: 'P-1', descripcion: 'TEMPLE CONSTRUCTOR', tipo_producto: 'PRODUCTO' } as never]);

@@ -38,17 +38,21 @@ async function montar(acciones: Partial<Permisos>) {
   return p;
 }
 
-describe('AnexosComponent: los trabajadores son de solo lectura (se gestionan en RR.HH.)', () => {
+describe('AnexosComponent: los trabajadores ya no se ven (se gestionan en RR.HH.)', () => {
   afterEach(() => TestBed.inject(HttpTestingController).verify());
 
-  it('una fila de trabajador no tiene Editar ni Eliminar aunque el rol los tenga', async () => {
-    const trabajador: Anexo = { ...ANEXO, id: 2, tipoAnexo: 'Trabajador', Anexo: 'JUAN TRABAJADOR' };
-    const responderConTrabajador = (req: HttpRequest<unknown>) =>
-      req.url.endsWith('/maestros/anexo') ? { data: [trabajador], page: 1, pageSize: 20, total: 1, totalPages: 1 } : [];
-    const permisos = misPermisos('Logística', { 'maestros.anexos': { editar: true, eliminar: true } });
-    const { el } = await montarPantalla(AnexosComponent, permisos, responderConTrabajador);
-    expect(el.textContent).toContain('JUAN TRABAJADOR');
-    expect(botonesVisibles(el, { editar: 'Editar', eliminar: 'Eliminar' })).toEqual({ editar: false, eliminar: false });
+  it('pide la lista sin trabajadores y el filtro de tipo no ofrece "Trabajador"', async () => {
+    let urlLista = '';
+    const espiar = (req: HttpRequest<unknown>) => {
+      if (req.url.endsWith('/maestros/anexo')) urlLista = req.urlWithParams;
+      return responder(req);
+    };
+    const { el } = await montarPantalla(AnexosComponent, misPermisos('Logística', { 'maestros.anexos': {} }), espiar);
+    expect(urlLista).toContain('sinTrabajadores=true');
+    const opciones = Array.from(el.querySelectorAll('select.toolbar-select option')).map((o) => o.textContent?.trim());
+    expect(opciones).toContain('Proveedor');
+    expect(opciones).toContain('Cliente');
+    expect(opciones).not.toContain('Trabajador');
   });
 });
 

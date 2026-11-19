@@ -12,7 +12,7 @@ import {
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Subject, debounceTime, distinctUntilChanged, switchMap, of } from 'rxjs';
+import { Subject, debounceTime, distinctUntilChanged, switchMap } from 'rxjs';
 import {
   PresupuestosService,
   PartidaItemsResponse,
@@ -54,6 +54,8 @@ export interface PartidaInfo {
   IdpptoFaseCategoria: string;
   NombreCategoria?: string;
   NombreFase?: string;
+  /** Posición de la partida dentro de su fase (1, 2, 3…): da el prefijo de sus ítems (partida 1 → 1.01, 1.02…). */
+  numeroPartida?: number;
   /** Presupuesto (`ppto_Principal.id`) y fase (`ppto_DetalleFases.id`) de la partida: habilitan las cotizaciones por ítem (plan 09). */
   id_presupuesto?: number;
   id_detalle_fase?: number;
@@ -166,6 +168,17 @@ export class PartidaItemsDialogComponent implements OnInit {
 
   cerrarCotizaciones(): void {
     this.cotizando.set(null);
+  }
+
+  /** Hay al menos un ítem ya guardado (sin id no se puede cotizar). */
+  hayItemsGuardados(): boolean {
+    return this.filas().some((f) => f.id !== undefined);
+  }
+
+  /** Abre las cotizaciones de la fase desde la barra de arriba: `registrar` = directo al formulario de una cotización nueva. */
+  abrirCotizacionesFase(registrar: boolean): void {
+    if (!this.conCotizaciones || !this.hayItemsGuardados()) return;
+    this.cotizando.set({ itemInicial: null, registrar });
   }
 
   /** Hubo cotizaciones o un ganador nuevo: al cerrar el diálogo se avisa al presupuesto para que refresque sus fases y sus montos. */
@@ -308,6 +321,16 @@ export class PartidaItemsDialogComponent implements OnInit {
     this.indiceFilaSeleccionando.set(null);
   }
 
+  /** Nombre completo de la unidad elegida (el desplegable lo corta; se muestra en varias líneas debajo). */
+  nombreUnidad(id: number | undefined | null): string {
+    return id ? (this.unidadesMedida().find((u) => u.id === id)?.nombre ?? '') : '';
+  }
+
+  /** Nombre completo de la categoría elegida (el desplegable lo corta; se muestra en varias líneas debajo). */
+  nombreCategoria(id: number | undefined | null): string {
+    return id == null ? '' : (this.categorias().find((c) => c.id === id)?.nombre ?? '');
+  }
+
   abrirBuscador(fila: ItemFila, indexFila: number, evento?: Event): void {
     if (this.soloLectura) return;
     if (evento?.target instanceof HTMLElement) this.campoActivo = evento.target;
@@ -384,21 +407,33 @@ export class PartidaItemsDialogComponent implements OnInit {
     this.filas.set([...this.filas()]);
   }
 
+  /** Siguiente número de ítem de la partida: partida 1 → 1.01, 1.02…; partida 2 → 2.01… (vacío si no se conoce la posición). */
+  private siguienteNumeroItem(): string {
+    const p = this.partida.numeroPartida;
+    if (!p) return '';
+    let mayor = 0;
+    for (const f of this.filas()) {
+      const m = /^(\d+)\.(\d+)$/.exec((f.Item ?? '').trim());
+      if (m && Number(m[1]) === p) mayor = Math.max(mayor, Number(m[2]));
+    }
+    return `${p}.${String(mayor + 1).padStart(2, '0')}`;
+  }
+
   agregarFila(): void {
     if (this.soloLectura) return;
-    const unidadDefault = this.unidadesMedida()[0];
     const catDefault = this.categorias()[0];
     const nueva: ItemFila = {
-      Item: '',
+      Item: this.siguienteNumeroItem(),
       id_producto: 0,
       codigo_producto: '',
       descripcion_producto: '',
       tipo_producto: 'PRODUCTO',
       id_categoria: catDefault ? catDefault.id : undefined,
       categoria_producto: catDefault ? catDefault.nombre : '',
-      id_unidad_medida: unidadDefault ? unidadDefault.id : 1,
-      simbolo_unidad: unidadDefault ? unidadDefault.nombre : 'UND',
-      Cantidad: 1,
+      // 0 = «Selecciona»: el usuario elige la unidad (o se completa al elegir el producto).
+      id_unidad_medida: 0,
+      simbolo_unidad: null,
+      Cantidad: 0,
       CostoUnitario: 0,
       PrecioVenta: 0,
       CostoTotal: 0,
@@ -429,6 +464,11 @@ export class PartidaItemsDialogComponent implements OnInit {
     const incompletas = this.filas().filter((f) => !f.id_producto);
     if (incompletas.length > 0) {
       this.errorMensaje.set(`Hay ${incompletas.length} fila(s) sin producto asignado.`);
+      return;
+    }
+    const sinUnidad = this.filas().filter((f) => !f.id_unidad_medida);
+    if (sinUnidad.length > 0) {
+      this.errorMensaje.set(`Hay ${sinUnidad.length} fila(s) sin unidad de medida: elige una en «Selecciona».`);
       return;
     }
 

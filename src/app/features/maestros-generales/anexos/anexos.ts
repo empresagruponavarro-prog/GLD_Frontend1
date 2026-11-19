@@ -1,9 +1,7 @@
 import { Component, computed, inject, signal } from '@angular/core';
-import { RouterLink } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { permisosDePantalla } from '@app/core/auth/permisos-pantalla';
-import { PermisosService } from '@app/core/auth/permisos.service';
 import { mensajeError } from '@shared/utils/errores-http';
 import { DataTableComponent } from '../../../shared/components/data-table/data-table';
 import { ExportarBotonesComponent } from '../../../shared/components/exportar-botones/exportar-botones';
@@ -22,21 +20,16 @@ import { AnexosService } from './anexos.service';
     DataTableComponent,
     ModalComponent,
     ExportarBotonesComponent,
-    RouterLink,
   ],
   templateUrl: './anexos.html',
   styleUrl: './anexos.css',
 })
 export class AnexosComponent {
   private readonly service = inject(AnexosService);
-  private readonly permisosService = inject(PermisosService);
   /** Botones de escritura según la matriz (maestros.anexos). */
   protected readonly permisos = permisosDePantalla('maestros.anexos');
-  /** Los trabajadores se ven aquí, pero se registran y editan en RR.HH. › Trabajadores. */
-  protected readonly verTrabajadores = computed(() => this.permisosService.puede('rrhh.trabajadores', 'ver'));
-
-  /** Filtro de la lista (incluye trabajadores, que aquí son de solo lectura). */
-  readonly tiposAnexo: TipoAnexo[] = ['Proveedor', 'Cliente', 'Trabajador'];
+  /** Los trabajadores ya no se listan aquí: se ven y gestionan en RR.HH. › Trabajadores. */
+  readonly tiposAnexo: TipoAnexo[] = ['Proveedor', 'Cliente'];
   /** Lo que se puede crear o editar desde Anexos. */
   readonly tiposAnexoForm: TipoAnexo[] = ['Proveedor', 'Cliente'];
 
@@ -115,6 +108,7 @@ export class AnexosComponent {
       tipoAnexo: this.tipoAnexoFilter() || undefined,
       Anexo: this.anexoFilter().trim() || undefined,
       estado: this.estadoFilter() ?? undefined,
+      sinTrabajadores: true,
     };
   }
 

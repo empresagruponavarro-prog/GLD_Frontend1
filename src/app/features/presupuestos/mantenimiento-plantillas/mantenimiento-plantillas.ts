@@ -517,8 +517,13 @@ export class MantenimientoPlantillasComponent implements OnInit {
       next: () => {
         this.service.updatePlantillaFases(p.IdPlantilla, payloadFases).subscribe({
           next: () => {
-            alert('Cambios guardados correctamente');
             this.loadPlantillas();
+            // Recarga la plantilla abierta: las partidas nuevas recién tienen id al guardarse; sin él, "+ Ítems" pide guardar otra vez.
+            this.service.getPlantillaCompleta(p.IdPlantilla).subscribe({
+              next: (res) => this.selectedPlantilla.set(res),
+              error: () => alert('Los cambios se guardaron, pero no se pudo recargar el detalle de la plantilla'),
+            });
+            alert('Cambios guardados correctamente');
           },
           error: (err) => { console.error(err); alert('Error guardando fases: ' + (err.error?.message || err.message)); }
         });
@@ -693,6 +698,7 @@ export class MantenimientoPlantillasComponent implements OnInit {
       IdpptoFaseCategoria: cat.IdpptoFaseCategoria,
       NombreCategoria: cat.NombreCategoria,
       NombreFase: fase.NombreFase,
+      numeroPartida: Math.max(1, (fase.categorias ?? []).indexOf(cat) + 1),
     });
     this.showItemsModal.set(true);
   }

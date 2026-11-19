@@ -41,6 +41,11 @@
   font-size: 0.95rem;
 }
 
+/* El cuerpo del modal es una columna flex: sin esto el cuadro (overflow: auto) se aplasta a ~1 px de alto. */
+.table-card {
+  flex-shrink: 0;
+}
+
 .bandeja-cuadro th,
 .bandeja-cuadro td {
   vertical-align: top;

@@ -149,6 +149,48 @@ describe('MantenimientoPlantillasComponent — permisos (presupuestos.plantillas
     expect(ambos.el.querySelector('#np-activo')).not.toBeNull();
   });
 
+  it('tras guardar, recarga la plantilla abierta: la partida nueva recibe su id y "+ Ítems" ya no pide guardar', async () => {
+    const alerta = vi.spyOn(window, 'alert').mockImplementation(() => undefined);
+    const p = await montar({ editar: true });
+    await abrirEditor(p);
+
+    // Partida nueva, aún sin id (como al añadirla en pantalla).
+    const original = p.cmp.selectedPlantilla();
+    if (!original) throw new Error('No se abrió la plantilla');
+    const abierta = structuredClone(original); // no se toca COMPLETA, que comparten las demás pruebas
+    p.cmp.selectedPlantilla.set(abierta);
+    const fase = abierta.fases[0];
+    const nueva = { id: 0, IdPlantillaFase: 'PF-1', IdpptoFaseCategoria: 'C02', NombreCategoria: 'Falso cielo raso', CostoReferencial: 0 };
+    fase.categorias = [...fase.categorias, nueva];
+    p.cmp.abrirModalItems(fase, nueva);
+    expect(alerta).toHaveBeenCalledTimes(1);
+    expect(p.cmp.partidaSeleccionadaParaItems()).toBeNull();
+
+    p.cmp.guardarCambios();
+    p.http.expectOne(`${API}/plantillas/PLT-001`).flush({});
+    p.http.expectOne((r) => r.method === 'PUT' && r.url.endsWith('/plantillas/PLT-001/fases')).flush({});
+    // Al guardar se vuelve a pedir el detalle; la partida nueva llega con su id.
+    const completaGuardada: PlantillaCompleta = {
+      ...COMPLETA,
+      fases: [{
+        ...COMPLETA.fases[0],
+        categorias: [COMPLETA.fases[0].categorias[0], { ...nueva, id: 21 }],
+      }],
+    };
+    p.http.expectOne(`${API}/plantillas/PLT-001/completa`).flush(completaGuardada);
+    p.http.match((r) => r.url === `${API}/plantillas/todas`).forEach((r) => r.flush([PLANTILLA]));
+
+    const recargada = p.cmp.selectedPlantilla()?.fases[0].categorias[1];
+    expect(recargada?.id).toBe(21);
+    alerta.mockClear();
+    const faseRecargada = p.cmp.selectedPlantilla()?.fases[0];
+    if (!faseRecargada || !recargada) throw new Error('Falta la partida recargada');
+    p.cmp.abrirModalItems(faseRecargada, recargada);
+    expect(alerta).not.toHaveBeenCalled();
+    expect(p.cmp.partidaSeleccionadaParaItems()?.id).toBe(21);
+    alerta.mockRestore();
+  });
+
   it('sin crear, nuevaPlantilla() no abre el pop-up', async () => {
     const p = await montar({ editar: true });
     p.cmp.nuevaPlantilla();

@@ -2181,10 +2181,16 @@ export class PresupuestosComponent implements OnInit {
       return;
     }
     // El presupuesto y la fase habilitan las cotizaciones por ítem (plan 09); en un presupuesto sin guardar no se usan.
+    // Posición de la partida dentro de su fase (para numerar sus ítems 1.01, 1.02…).
+    const clave = (f: { idFaseDetalle?: number; nombre?: string }) => (f.idFaseDetalle !== undefined ? `id:${f.idFaseDetalle}` : `n:${f.nombre}`);
+    const numeroPartida = this.formFases()
+      .slice(0, i + 1)
+      .filter((f) => !!f.idCategoria && clave(f) === clave(fila)).length;
     const partidaBase = {
       IdpptoFaseCategoria: fila.idCategoria,
       NombreCategoria: fila.categoria,
       NombreFase: fila.nombre,
+      numeroPartida,
       id_presupuesto: this.presupuestoActivo()?.id,
       id_detalle_fase: fila.idFaseDetalle,
     };

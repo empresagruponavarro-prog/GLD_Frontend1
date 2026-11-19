@@ -67,15 +67,29 @@
         <span>Catálogo de productos y servicios asociados a esta partida con su respectiva Categoría de Costo
           Directo.</span>
       </div>
-      @if (!soloLectura) {
-      <button type="button" (click)="agregarFila()"
-        class="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition-all shadow-xs flex items-center space-x-1.5 cursor-pointer active:scale-95">
-        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4" />
-        </svg>
-        <span>Añadir Ítem</span>
-      </button>
-      }
+      <div class="flex items-center space-x-2">
+        @if (conCotizaciones) {
+        <button type="button" (click)="abrirCotizacionesFase(true)" [disabled]="!hayItemsGuardados()"
+          title="Registrar la cotización de un proveedor (marca los ítems que cubre)"
+          class="px-3 py-1.5 rounded-lg border border-emerald-300 bg-white text-emerald-700 hover:bg-emerald-50 text-xs font-bold transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed">
+          Cotizar
+        </button>
+        <button type="button" (click)="abrirCotizacionesFase(false)" [disabled]="!hayItemsGuardados()"
+          title="Cuadro comparativo de la fase y elección del proveedor"
+          class="px-3 py-1.5 rounded-lg border border-slate-300 bg-white text-slate-700 hover:bg-slate-50 text-xs font-bold transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed">
+          Cuadro
+        </button>
+        }
+        @if (!soloLectura) {
+        <button type="button" (click)="agregarFila()"
+          class="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition-all shadow-xs flex items-center space-x-1.5 cursor-pointer active:scale-95">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4" />
+          </svg>
+          <span>Añadir Ítem</span>
+        </button>
+        }
+      </div>
     </div>
 
     <!-- CUERPO / TABLA SCROLLEABLE -->
@@ -119,7 +133,7 @@
               <th scope="col" class="py-2.5 px-3 w-28 xl:w-32 text-right">Costo U. (S/)</th>
               <th scope="col" class="py-2.5 px-3 w-28 xl:w-32 text-right bg-slate-50/50">Costo Total</th>
               @if (conCotizaciones) {
-              <th scope="col" class="py-2.5 px-3 min-w-[210px]">Cotización</th>
+              <th scope="col" class="py-2.5 px-3 w-36 max-w-[9rem]">Cotización</th>
               }
               @if (!soloLectura) {
               <th scope="col" class="py-2.5 px-3 w-20 text-center">Acciones</th>
@@ -152,25 +166,34 @@
 
               <!-- Categoría de Costo Directo -->
               <td class="py-2 px-2">
-                <select [(ngModel)]="fila.id_categoria" (ngModelChange)="onCambiarCategoria(fila, $event)"
-                  [disabled]="soloLectura"
-                  class="w-full px-2 py-1 text-xs font-semibold rounded border border-slate-200 bg-slate-50 text-slate-700 outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 truncate">
-                  <option [ngValue]="undefined">-- Sin categoría --</option>
-                  @for (cat of categorias(); track cat.id) {
-                  <option [ngValue]="cat.id">{{ cat.nombre }}</option>
-                  }
-                </select>
+                <!-- Caja que muestra el nombre completo en varias líneas (como Producto / Servicio); el select va encima, invisible, para elegir -->
+                <div class="relative">
+                  <div
+                    class="w-full min-h-[3rem] px-2 py-1 pr-5 text-xs leading-snug font-semibold text-left rounded border border-slate-200 bg-white text-slate-700 whitespace-normal break-words"
+                    [class.text-slate-400]="!fila.id_categoria">
+                    {{ nombreCategoria(fila.id_categoria) || '-- Sin categoría --' }}
+                  </div>
+                  <i class="fa-solid fa-chevron-down absolute right-1.5 top-2 text-[9px] text-slate-400 pointer-events-none"></i>
+                  <select [(ngModel)]="fila.id_categoria" (ngModelChange)="onCambiarCategoria(fila, $event)"
+                    [disabled]="soloLectura" aria-label="Categoría de costo directo"
+                    class="absolute inset-0 w-full h-full opacity-0 cursor-pointer disabled:cursor-default">
+                    <option [ngValue]="undefined">-- Sin categoría --</option>
+                    @for (cat of categorias(); track cat.id) {
+                    <option [ngValue]="cat.id">{{ cat.nombre }}</option>
+                    }
+                  </select>
+                </div>
               </td>
 
               <!-- Buscador / Selector de Producto -->
               <td class="py-2 px-3 relative">
                 <div class="relative">
-                  <input type="text" [(ngModel)]="fila.descripcion_producto"
+                  <textarea rows="2" [(ngModel)]="fila.descripcion_producto"
                     (ngModelChange)="onBuscarInput(fila, $event, $index)" (focus)="abrirBuscador(fila, $index, $event)"
-                    (blur)="cerrarDropdown()" [disabled]="soloLectura"
-                    placeholder="Buscar producto o servicio en catálogo..."
-                    class="w-full px-2.5 py-1 text-xs rounded border border-slate-200 bg-white focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none font-medium truncate"
-                    [title]="fila.descripcion_producto + (fila.codigo_producto ? ' (' + fila.codigo_producto + ')' : '')" />
+                    (blur)="cerrarDropdown()" (keydown.enter)="$event.preventDefault()" [disabled]="soloLectura"
+                    placeholder="Buscar producto o servicio en catálogo..." style="field-sizing: content"
+                    class="w-full min-h-[3rem] px-2.5 py-1 text-xs leading-snug rounded border border-slate-200 bg-white focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none font-medium resize-none whitespace-normal break-words"
+                    [title]="fila.descripcion_producto + (fila.codigo_producto ? ' (' + fila.codigo_producto + ')' : '')"></textarea>
                 </div>
 
                 <!-- Dropdown de resultados de búsqueda -->
@@ -181,8 +204,9 @@
                   [style.left.px]="pos.left" [style.width.px]="pos.width" [style.top.px]="pos.top"
                   [style.bottom.px]="pos.bottom" [style.max-height.px]="pos.maxHeight">
                   @for (prod of resultadosBusqueda(); track prod.id) {
-                  <div (mousedown)="$event.preventDefault(); $event.stopPropagation(); seleccionarProducto(fila, prod)"
-                    (click)="seleccionarProducto(fila, prod)"
+                  <div role="option" tabindex="-1" [attr.aria-selected]="false"
+                    (mousedown)="$event.preventDefault(); $event.stopPropagation(); seleccionarProducto(fila, prod)"
+                    (click)="seleccionarProducto(fila, prod)" (keydown.enter)="seleccionarProducto(fila, prod)"
                     class="p-2.5 hover:bg-emerald-50/80 cursor-pointer flex items-center justify-between text-xs transition-colors">
                     <div class="flex-1 pr-2">
                       <div class="font-semibold text-slate-800">{{ prod.descripcion }}</div>
@@ -202,12 +226,22 @@
 
               <!-- Unidad de Medida -->
               <td class="py-2 px-2 text-center">
-                <select [(ngModel)]="fila.id_unidad_medida" [disabled]="soloLectura"
-                  class="w-full px-1.5 py-1 text-xs font-semibold rounded border border-slate-200 bg-slate-50 text-slate-700 outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500">
-                  @for (u of unidadesMedida(); track u.id) {
-                  <option [ngValue]="u.id">{{ u.nombre }}</option>
-                  }
-                </select>
+                <!-- Caja que muestra el nombre completo en varias líneas (como Producto / Servicio); el select va encima, invisible, para elegir -->
+                <div class="relative">
+                  <div
+                    class="w-full min-h-[3rem] px-2 py-1 pr-5 text-xs leading-snug font-semibold text-left rounded border border-slate-200 bg-white text-slate-700 whitespace-normal break-words"
+                    [class.text-slate-400]="!fila.id_unidad_medida">
+                    {{ nombreUnidad(fila.id_unidad_medida) || 'Selecciona' }}
+                  </div>
+                  <i class="fa-solid fa-chevron-down absolute right-1.5 top-2 text-[9px] text-slate-400 pointer-events-none"></i>
+                  <select [(ngModel)]="fila.id_unidad_medida" [disabled]="soloLectura" aria-label="Unidad de medida"
+                    class="absolute inset-0 w-full h-full opacity-0 cursor-pointer disabled:cursor-default">
+                    <option [ngValue]="0" disabled>Selecciona</option>
+                    @for (u of unidadesMedida(); track u.id) {
+                    <option [ngValue]="u.id">{{ u.nombre }}</option>
+                    }
+                  </select>
+                </div>
               </td>
 
               <!-- Cantidad -->
@@ -235,21 +269,19 @@
 
               <!-- Cotización (plan 09): cuántas hay, quién gana, la diferencia contra el Meta y la orden que ya nació -->
               @if (conCotizaciones) {
-              <td class="py-2 px-2 align-top">
+              <td class="py-2 px-2 align-top w-36 max-w-[9rem] break-words">
                 @if (fila.id === undefined) {
                 <span class="text-[10px] text-slate-400">Guarde los ítems para cotizar</span>
                 } @else {
                 <div class="flex flex-wrap items-center gap-1">
-                  <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold bg-slate-100 text-slate-700 border border-slate-200">
+                  <span
+                    class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold bg-slate-100 text-slate-700 border border-slate-200">
                     {{ fila.cotizacion?.cotizaciones ?? 0 }} cot.
                   </span>
                   @if (fila.cotizacion?.cubierto) {
-                  <span class="text-[10px] text-slate-500" title="Tiene una orden registrada"><i class="fa-solid fa-lock"></i></span>
+                  <span class="text-[10px] text-slate-500" title="Tiene una orden registrada"><i
+                      class="fa-solid fa-lock"></i></span>
                   }
-                  <button type="button" (click)="abrirCotizaciones(fila, true)" [disabled]="fila.cotizacion?.cubierto" title="Registrar la cotización de un proveedor para este ítem"
-                    class="px-1.5 py-0.5 rounded border border-emerald-200 text-emerald-700 hover:bg-emerald-50 text-[10px] font-bold cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed">Cotizar</button>
-                  <button type="button" (click)="abrirCotizaciones(fila, false)" title="Cuadro comparativo de la fase y elección del proveedor"
-                    class="px-1.5 py-0.5 rounded border border-slate-200 text-slate-700 hover:bg-slate-50 text-[10px] font-bold cursor-pointer">Cuadro</button>
                 </div>
                 @if (fila.cotizacion?.adjudicado; as a) {
                 <div class="mt-1 text-[10px] text-slate-600">
@@ -267,7 +299,8 @@
                   {{ k.numero_requerimiento }}
                   @if (k.numero_documento) {
                   · {{ k.numero_documento }}
-                  <span [class]="k.estado_documento === 'REGISTRADO' ? 'text-emerald-700 font-semibold' : 'text-amber-700 font-semibold'">
+                  <span
+                    [class]="k.estado_documento === 'REGISTRADO' ? 'text-emerald-700 font-semibold' : 'text-amber-700 font-semibold'">
                     {{ k.estado_documento === 'REGISTRADO' ? 'registrada' : 'provisional' }}
                   </span>
                   }
@@ -342,12 +375,8 @@
 
   @if (cotizando(); as c) {
   @if (conCotizaciones) {
-  <app-cotizaciones-fase-dialog
-    [idPresupuesto]="partida.id_presupuesto!"
-    [idDetalleFase]="partida.id_detalle_fase!"
-    [itemInicial]="c.itemInicial"
-    [abrirRegistro]="c.registrar"
-    (cerrar)="cerrarCotizaciones()"
+  <app-cotizaciones-fase-dialog [idPresupuesto]="partida.id_presupuesto!" [idDetalleFase]="partida.id_detalle_fase!"
+    [itemInicial]="c.itemInicial" [abrirRegistro]="c.registrar" (cerrar)="cerrarCotizaciones()"
     (cambio)="onCotizacionesCambio()" />
   }
   }

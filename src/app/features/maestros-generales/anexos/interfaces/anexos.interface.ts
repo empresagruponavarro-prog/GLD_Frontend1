@@ -33,6 +33,8 @@ export interface AnexoQuery {
   Anexo?: string;
   NombreComercial?: string;
   estado?: boolean;
+  /** Excluye a los trabajadores (se gestionan en RR.HH.). */
+  sinTrabajadores?: boolean;
 }
 
 export interface AnexoPaginated {
