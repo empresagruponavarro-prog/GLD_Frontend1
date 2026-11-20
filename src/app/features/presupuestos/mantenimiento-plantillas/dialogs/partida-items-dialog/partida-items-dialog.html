@@ -70,12 +70,12 @@
       <div class="flex items-center space-x-2">
         @if (conCotizaciones) {
         <button type="button" (click)="abrirCotizacionesFase(true)" [disabled]="!hayItemsGuardados()"
-          title="Registrar la cotización de un proveedor (marca los ítems que cubre)"
+          title="Registrar la cotización de un proveedor por toda la subpartida"
           class="px-3 py-1.5 rounded-lg border border-emerald-300 bg-white text-emerald-700 hover:bg-emerald-50 text-xs font-bold transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed">
           Cotizar
         </button>
         <button type="button" (click)="abrirCotizacionesFase(false)" [disabled]="!hayItemsGuardados()"
-          title="Cuadro comparativo de la fase y elección del proveedor"
+          title="Cuadro comparativo de la subpartida y elección del proveedor"
           class="px-3 py-1.5 rounded-lg border border-slate-300 bg-white text-slate-700 hover:bg-slate-50 text-xs font-bold transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed">
           Cuadro
         </button>
@@ -375,9 +375,8 @@
 
   @if (cotizando(); as c) {
   @if (conCotizaciones) {
-  <app-cotizaciones-fase-dialog [idPresupuesto]="partida.id_presupuesto!" [idDetalleFase]="partida.id_detalle_fase!"
-    [itemInicial]="c.itemInicial" [abrirRegistro]="c.registrar" (cerrar)="cerrarCotizaciones()"
-    (cambio)="onCotizacionesCambio()" />
+  <app-cotizaciones-subpartida-dialog [idPresupuesto]="partida.id_presupuesto!" [idDetalleCategoria]="partida.id"
+    [abrirRegistro]="c.registrar" (cerrar)="cerrarCotizaciones()" (cambio)="onCotizacionesCambio()" />
   }
   }
 </div>

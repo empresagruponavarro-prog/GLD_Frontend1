@@ -13,7 +13,7 @@ import {
 } from './cotizaciones-ppto.models';
 
 /**
- * Cotizaciones por ítem del presupuesto Meta, su cuadro comparativo, la adjudicación y los compromisos (FUR y órdenes) que se generan
+ * Cotizaciones por subpartida del presupuesto Meta, su cuadro comparativo, la adjudicación y los compromisos (FUR y órdenes) que se generan
  * al grabar (plan 09). El presupuesto se identifica por su `id` numérico.
  */
 @Service()
@@ -21,9 +21,10 @@ export class CotizacionesPptoService {
   private readonly http = inject(HttpClient);
   private readonly api = `${environment.apiUrl}/presupuestos`;
 
-  getCotizaciones(idPresupuesto: number, idDetalleFase?: number): Observable<PptoCotizacion[]> {
+  getCotizaciones(idPresupuesto: number, filtro: { idDetalleFase?: number; idDetalleCategoria?: number } = {}): Observable<PptoCotizacion[]> {
     let params = new HttpParams();
-    if (idDetalleFase !== undefined) params = params.set('id_detalle_fase', String(idDetalleFase));
+    if (filtro.idDetalleFase !== undefined) params = params.set('id_detalle_fase', String(filtro.idDetalleFase));
+    if (filtro.idDetalleCategoria !== undefined) params = params.set('id_detalle_categoria', String(filtro.idDetalleCategoria));
     return this.http.get<PptoCotizacion[]>(`${this.api}/${idPresupuesto}/cotizaciones`, { params });
   }
 
@@ -39,8 +40,8 @@ export class CotizacionesPptoService {
     return this.http.delete<{ deleted: boolean; id: number; compromisos: Conciliacion }>(`${this.api}/${idPresupuesto}/cotizaciones/${idCotizacion}`);
   }
 
-  getCuadro(idPresupuesto: number, idDetalleFase: number): Observable<CuadroComparativoPpto> {
-    const params = new HttpParams().set('id_detalle_fase', String(idDetalleFase));
+  getCuadro(idPresupuesto: number, idDetalleCategoria: number): Observable<CuadroComparativoPpto> {
+    const params = new HttpParams().set('id_detalle_categoria', String(idDetalleCategoria));
     return this.http.get<CuadroComparativoPpto>(`${this.api}/${idPresupuesto}/cuadro-comparativo`, { params });
   }
 

@@ -1,9 +1,11 @@
 import { ChangeDetectionStrategy, Component, computed, effect, input, output, signal, untracked } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
 import { FormArray, FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { fmtMoney, fmtNum, todayISO } from '../../../features/almacen/almacen.utils';
 import { MEDIOS_PAGO, MEDIO_PAGO_LABEL, MedioPago, SelectOption } from '../../../features/requerimientos/requerimientos.models';
 import { ModalComponent } from '../modal/modal';
 import { SearchSelectComponent } from '../search-select/search-select';
+import { prorratearTotal } from './prorrateo';
 
 const DECIMAL = /^\d{1,12}(\.\d{1,4})?$/;
 
@@ -21,6 +23,8 @@ export interface LineaCotizable {
   subfase?: string | null;
   /** Proveedor que hoy gana el ítem (solo presupuesto). */
   ganador?: string | null;
+  /** Costo total del ítem en el Meta: el peso del prorrateo (solo presupuesto). */
+  costo_total?: string | null;
 }
 
 export interface CotizacionInicialLinea {
@@ -30,8 +34,6 @@ export interface CotizacionInicialLinea {
   precio_unitario: string;
   plazo_entrega_dias: number | null;
   marca_modelo: string | null;
-  /** Esta cotización es la ganadora del ítem (solo presupuesto). */
-  adjudicada?: boolean;
 }
 
 /** Una cotización ya registrada que se edita. */
@@ -52,6 +54,10 @@ export interface CotizacionInicial {
   condiciones: string | null;
   archivo_url: string | null;
   lineas: CotizacionInicialLinea[];
+  /** Total de la subpartida tal como lo dio el proveedor (solo presupuesto). */
+  total_global?: string | null;
+  /** Esta cotización es la ganadora de la subpartida (solo presupuesto). */
+  adjudicada?: boolean;
 }
 
 export interface CotizacionFormLinea {
@@ -61,8 +67,6 @@ export interface CotizacionFormLinea {
   precio_unitario: string;
   plazo_entrega_dias?: number;
   marca_modelo?: string;
-  /** Solo en modo presupuesto: true = gana el ítem; false = lo suelta si lo ganaba. */
-  adjudicar?: boolean;
 }
 
 export interface CotizacionFormValue {
@@ -82,7 +86,26 @@ export interface CotizacionFormValue {
   garantia?: string;
   condiciones?: string;
   archivo_url?: string;
+  /** Líneas por ítem (modo FUR); en modo presupuesto va vacío: las líneas salen del prorrateo del total. */
   lineas: CotizacionFormLinea[];
+  /** Solo en modo presupuesto: total de la subpartida tal como lo dio el proveedor. */
+  total?: string;
+  /** Solo en modo presupuesto: true = gana la subpartida completa; false = la suelta si la ganaba. */
+  adjudicar?: boolean;
+}
+
+interface VistaPreviaFila {
+  id: number;
+  etiqueta: string;
+  unidad: string;
+  cantidad: string;
+  costoMeta: number;
+  cotiza: boolean;
+  /** Peso del ítem en la subpartida (% del costo Meta de los ítems con cantidad). */
+  pesoPct: number;
+  /** Parte del total que le toca y su precio unitario; `null` mientras no hay un total válido. */
+  monto: number | null;
+  precioUnitario: number | null;
 }
 
 function lineaGroup(l: LineaCotizable) {
@@ -96,7 +119,6 @@ function lineaGroup(l: LineaCotizable) {
     precio_unitario: new FormControl('', { nonNullable: true }),
     plazo_entrega_dias: new FormControl('', { nonNullable: true }),
     marca_modelo: new FormControl('', { nonNullable: true }),
-    adjudicar: new FormControl(false, { nonNullable: true }),
   });
 }
 
@@ -116,7 +138,7 @@ type LineaGroup = ReturnType<typeof lineaGroup>;
 export class CotizacionFormDialogComponent {
   readonly abierto = input(false);
   readonly titulo = input('Registrar cotización');
-  /** `fur`: líneas de un requerimiento. `presupuesto`: ítems de una fase (agrega la columna «Adjudicar»). */
+  /** `fur`: líneas de un requerimiento. `presupuesto`: una subpartida (un total que se prorratea entre sus ítems). */
   readonly modo = input<'fur' | 'presupuesto'>('fur');
   readonly lineas = input<LineaCotizable[]>([]);
   readonly proveedores = input<SelectOption[]>([]);
@@ -154,7 +176,48 @@ export class CotizacionFormDialogComponent {
     garantia: new FormControl('', { nonNullable: true }),
     condiciones: new FormControl('', { nonNullable: true }),
     archivo_url: new FormControl('', { nonNullable: true }),
+    total: new FormControl('', { nonNullable: true }),
+    adjudicar: new FormControl(false, { nonNullable: true }),
     lineas: new FormArray<LineaGroup>([]),
+  });
+
+  private readonly totalTexto = toSignal(this.form.controls.total.valueChanges, { initialValue: '' });
+
+  /**
+   * Cuadro de ítems de la subpartida (solo presupuesto): siempre se ve con su cantidad, su costo Meta y su peso; al escribir el total se
+   * llenan la parte que le toca a cada ítem y su precio unitario, con la misma regla que aplica el servidor (proporcional al costo Meta).
+   * Es informativo; lo que se guarda lo calcula el backend.
+   */
+  protected readonly vistaPrevia = computed(() => {
+    if (!this.esPresupuesto()) return null;
+    const lineas = this.lineas();
+    const r = prorratearTotal(
+      Number(this.totalTexto().trim()),
+      lineas.map((l) => ({ id: l.id, cantidad: Number(l.solicitado), costoTotal: Number(l.costo_total ?? 0) })),
+    );
+    const pesoTotal = lineas.reduce((s, l) => (Number(l.solicitado) > 0 ? s + Math.max(Number(l.costo_total ?? 0), 0) : s), 0);
+    const filas = lineas.map((l, i): VistaPreviaFila => {
+      const costoMeta = Number(l.costo_total ?? 0);
+      const cotiza = Number(l.solicitado) > 0;
+      const p = r.ok ? r.partes[i] : null;
+      return {
+        id: l.id,
+        etiqueta: `${l.codigo} — ${l.descripcion}`,
+        unidad: l.unidad,
+        cantidad: l.solicitado,
+        costoMeta,
+        cotiza,
+        pesoPct: cotiza && pesoTotal > 0 ? (Math.max(costoMeta, 0) / pesoTotal) * 100 : 0,
+        monto: p ? p.monto : null,
+        precioUnitario: p ? p.precioUnitario : null,
+      };
+    });
+    return {
+      error: r.ok ? '' : r.error,
+      filas,
+      costoMeta: filas.reduce((s, f) => s + f.costoMeta, 0),
+      suma: r.ok ? r.partes.reduce((s, p) => s + p.monto, 0) : null,
+    };
   });
 
   constructor() {
@@ -219,6 +282,8 @@ export class CotizacionFormDialogComponent {
         garantia: c.garantia ?? '',
         condiciones: c.condiciones ?? '',
         archivo_url: c.archivo_url ?? '',
+        total: c.total_global ?? '',
+        adjudicar: c.adjudicada ?? false,
       });
     } else {
       this.form.reset({
@@ -237,9 +302,14 @@ export class CotizacionFormDialogComponent {
         garantia: '',
         condiciones: '',
         archivo_url: '',
+        total: '',
+        // Se propone adjudicar la subpartida si todavía no tiene proveedor; el usuario lo ajusta.
+        adjudicar: this.esPresupuesto() && this.lineas().every((l) => !l.ganador),
       });
     }
     this.lineasForm.clear();
+    // En modo presupuesto no hay líneas que llenar: el total se prorratea entre los ítems.
+    if (this.esPresupuesto()) return;
     const marcadas = this.marcadas();
     for (const l of this.lineas()) {
       const g = lineaGroup(l);
@@ -252,12 +322,7 @@ export class CotizacionFormDialogComponent {
           precio_unitario: previa?.precio_unitario ?? '',
           plazo_entrega_dias: previa?.plazo_entrega_dias == null ? '' : String(previa.plazo_entrega_dias),
           marca_modelo: previa?.marca_modelo ?? '',
-          adjudicar: previa?.adjudicada ?? false,
         });
-      } else if (this.esPresupuesto()) {
-        const cotiza = marcadas.length === 0 || marcadas.includes(l.id);
-        // Se propone adjudicar los ítems que todavía no tienen proveedor; el usuario lo ajusta.
-        g.patchValue({ cotiza, adjudicar: cotiza && !l.ganador });
       }
       this.lineasForm.push(g);
     }
@@ -271,6 +336,11 @@ export class CotizacionFormDialogComponent {
     const dias = Number(v.dias_credito || 0);
     if (!Number.isInteger(dias) || dias < 0) return 'Los días de crédito deben ser un entero mayor o igual a 0.';
     if (v.adelanto_porcentaje.trim() && !DECIMAL.test(v.adelanto_porcentaje.trim())) return 'El adelanto (%) no es válido.';
+    if (this.esPresupuesto()) {
+      if (!DECIMAL.test(v.total.trim())) return 'Indique el total de la subpartida.';
+      const previa = this.vistaPrevia();
+      return previa?.error ? previa.error : null;
+    }
     let alguna = false;
     for (const [i, l] of v.lineas.entries()) {
       if (!l.cotiza) continue;
@@ -279,12 +349,6 @@ export class CotizacionFormDialogComponent {
       if (!DECIMAL.test(l.cantidad.trim()) || Number(l.cantidad) <= 0) return `Ítem ${n}: la cantidad debe ser mayor a 0.`;
       if (Number(l.cantidad) > Number(l.solicitada)) return `Ítem ${n}: no puede ofrecer más de lo solicitado (${fmtNum(l.solicitada)}).`;
       if (!DECIMAL.test(l.precio_unitario.trim())) return `Ítem ${n}: indique el precio unitario.`;
-      if (this.esPresupuesto() && l.adjudicar && Math.abs(Number(l.cantidad) - Number(l.solicitada)) > 0.005) {
-        return `Ítem ${n}: para adjudicarlo debe cotizar la cantidad completa (${fmtNum(l.solicitada)}): un ítem va completo a un solo proveedor.`;
-      }
-    }
-    for (const [i, l] of v.lineas.entries()) {
-      if (this.esPresupuesto() && l.adjudicar && !l.cotiza) return `Ítem ${i + 1}: no puede adjudicarlo si el proveedor no lo cotiza.`;
     }
     return alguna ? null : 'La cotización debe ofrecer al menos un ítem.';
   }
@@ -311,15 +375,17 @@ export class CotizacionFormDialogComponent {
       garantia: texto(v.garantia),
       condiciones: texto(v.condiciones),
       archivo_url: texto(v.archivo_url),
-      lineas: v.lineas.map((l) => ({
-        id: l.id,
-        cotiza: l.cotiza,
-        cantidad: l.cotiza ? l.cantidad.trim() : '0',
-        precio_unitario: l.cotiza ? l.precio_unitario.trim() : '0',
-        plazo_entrega_dias: entero(l.plazo_entrega_dias),
-        marca_modelo: texto(l.marca_modelo),
-        ...(this.esPresupuesto() ? { adjudicar: l.adjudicar } : {}),
-      })),
+      lineas: this.esPresupuesto()
+        ? []
+        : v.lineas.map((l) => ({
+            id: l.id,
+            cotiza: l.cotiza,
+            cantidad: l.cotiza ? l.cantidad.trim() : '0',
+            precio_unitario: l.cotiza ? l.precio_unitario.trim() : '0',
+            plazo_entrega_dias: entero(l.plazo_entrega_dias),
+            marca_modelo: texto(l.marca_modelo),
+          })),
+      ...(this.esPresupuesto() ? { total: v.total.trim(), adjudicar: v.adjudicar } : {}),
     };
   }
 }

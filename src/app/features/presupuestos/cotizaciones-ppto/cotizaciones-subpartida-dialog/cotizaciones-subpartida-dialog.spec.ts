@@ -5,25 +5,25 @@ import { misPermisos } from '@app/core/auth/auth.testing';
 import { Permisos } from '@app/core/auth/permisos.models';
 import { montarPantalla } from '@app/core/auth/pantalla.testing';
 import { CuadroComparativoPpto, CuadroLineaPpto, PptoCotizacion } from '../cotizaciones-ppto.models';
-import { CotizacionesFaseDialogComponent } from './cotizaciones-fase-dialog';
+import { CotizacionesSubpartidaDialogComponent } from './cotizaciones-subpartida-dialog';
 
-const oferta = (id_cotizacion: number, id_cot_detalle: number, precio: string, cantidad_completa = true) => ({
+const oferta = (id_cotizacion: number, id_cot_detalle: number, precio: string, cotiza = true) => ({
   id_cotizacion,
   id_cot_detalle,
-  cotiza: true,
-  cantidad: cantidad_completa ? '10' : '6',
+  cotiza,
+  cantidad: '10',
   precio_sin_igv: precio,
   precio_con_igv: '0',
   subtotal_sin_igv: (Number(precio) * 10).toFixed(2),
   plazo_entrega_dias: null,
-  cantidad_completa,
+  cantidad_completa: cotiza,
 });
 
 const linea = (id: number, extra: Partial<CuadroLineaPpto> = {}): CuadroLineaPpto => ({
   id_ppto_item: id,
   numero_item: null,
   id_subfase: 1,
-  subfase: 'MATERIALES',
+  subfase: 'DEMOLICIONES',
   codigo: `P-${id}`,
   descripcion: `Producto ${id}`,
   unidad: 'UND',
@@ -59,12 +59,14 @@ const proveedor = (id_cotizacion: number, nombre: string, extra = {}) => ({
   condiciones: null,
   afecto_igv: true,
   incluye_igv: false,
-  total_sin_igv: '100.00',
-  igv: '18.00',
-  total: '118.00',
-  total_soles: '118.00',
+  total_sin_igv: '80.00',
+  igv: '14.40',
+  total: '94.40',
+  total_soles: '94.40',
   tc_usado: null,
   items_ganados: 0,
+  es_ganadora: false,
+  total_global: '80.00',
   ...extra,
 });
 
@@ -73,18 +75,24 @@ function cuadro(extra: Partial<CuadroComparativoPpto> = {}): CuadroComparativoPp
     id_presupuesto: 7,
     codigo_presupuesto: 'PPTO-2026-007',
     estado: 'EN_DESARROLLO',
+    id_detalle_categoria: 31,
+    subpartida: 'DEMOLICIONES',
     id_detalle_fase: 12,
-    fase: 'PRELIMINARES',
+    fase: 'IMPLEMENTACION',
     items_total: 2,
-    items_adjudicados: 1,
-    lineas: [linea(1, { id_cot_detalle_ganadora: 1001, id_cotizacion_ganadora: 100 }), linea(2, { ofertas: [oferta(100, 1002, '4', false), oferta(200, 2002, '4.5')] })],
-    proveedores: [proveedor(100, 'ACME SAC'), proveedor(200, 'BETA EIRL')],
+    items_adjudicados: 2,
+    id_cotizacion_ganadora: 100,
+    lineas: [
+      linea(1, { id_cot_detalle_ganadora: 1001, id_cotizacion_ganadora: 100 }),
+      linea(2, { id_cot_detalle_ganadora: 1002, id_cotizacion_ganadora: 100 }),
+    ],
+    proveedores: [proveedor(100, 'ACME SAC', { es_ganadora: true, items_ganados: 2 }), proveedor(200, 'BETA EIRL', { total_sin_igv: '90.00', total: '106.20' })],
     ...extra,
   };
 }
 
 const cotizacion = (id: number, protegida = false): PptoCotizacion =>
-  ({ id, numero: `COT-${id}`, id_presupuesto: 7, id_detalle_fase: 12, fase: 'PRELIMINARES', id_proveedor: id, proveedor: `P${id}`, protegida, lineas: [] }) as unknown as PptoCotizacion;
+  ({ id, numero: `COT-${id}`, id_presupuesto: 7, id_detalle_fase: 12, fase: 'IMPLEMENTACION', id_detalle_categoria: 31, subpartida: 'DEMOLICIONES', id_proveedor: id, proveedor: `P${id}`, protegida, lineas: [] }) as unknown as PptoCotizacion;
 
 async function montar(acciones: Partial<Permisos>, c: CuadroComparativoPpto = cuadro(), cotizaciones: PptoCotizacion[] = [cotizacion(100), cotizacion(200)]) {
   const responder = (req: HttpRequest<unknown>) => {
@@ -92,9 +100,9 @@ async function montar(acciones: Partial<Permisos>, c: CuadroComparativoPpto = cu
     if (req.url.endsWith('/presupuestos/7/cotizaciones')) return cotizaciones;
     return [];
   };
-  return montarPantalla(CotizacionesFaseDialogComponent, misPermisos('Operaciones', { presupuestos: acciones }), responder, [], {
+  return montarPantalla(CotizacionesSubpartidaDialogComponent, misPermisos('Operaciones', { presupuestos: acciones }), responder, [], {
     idPresupuesto: 7,
-    idDetalleFase: 12,
+    idDetalleCategoria: 31,
   });
 }
 
@@ -110,82 +118,91 @@ async function atender(p: { http: HttpTestingController; render: () => Promise<v
 
 const radios = (el: HTMLElement) => Array.from(el.querySelectorAll<HTMLInputElement>('input[type="radio"]'));
 const boton = (el: HTMLElement, texto: string) => Array.from(el.querySelectorAll('button')).find((b) => b.textContent?.includes(texto)) as HTMLButtonElement | undefined;
+const elegirRadio = async (p: { el: HTMLElement; render: () => Promise<void> }, i: number) => {
+  radios(p.el)[i].click();
+  radios(p.el)[i].dispatchEvent(new Event('change'));
+  await p.render();
+};
 
-describe('CotizacionesFaseDialogComponent', () => {
+describe('CotizacionesSubpartidaDialogComponent', () => {
   afterEach(() => TestBed.inject(HttpTestingController).verify());
 
-  it('muestra el cuadro ítem × proveedor con el ganador marcado y el avance de adjudicación', async () => {
+  it('muestra el cuadro de la subpartida con un total por proveedor y el ganador elegido', async () => {
     const { el } = await montar({ crear: true, editar: true });
-    expect(el.textContent).toContain('Cotizaciones · PRELIMINARES');
+    expect(el.textContent).toContain('Cotizaciones · DEMOLICIONES');
     expect(el.textContent).toContain('PPTO-2026-007');
-    expect(el.textContent).toContain('1 de 2 ítems con proveedor');
+    expect(el.textContent).toContain('IMPLEMENTACION');
     expect(el.textContent).toContain('ACME SAC');
     expect(el.textContent).toContain('BETA EIRL');
-    expect(radios(el)).toHaveLength(4);
-    // Ítem 1: gana ACME (oferta 1001).
+    expect(el.textContent).toContain('Total de la subpartida (sin IGV)');
+    expect(el.textContent).toContain('Registrar cotización');
+    // Un solo radio por proveedor (la subpartida va completa a uno): gana ACME.
+    expect(radios(el)).toHaveLength(2);
     expect(radios(el)[0].checked).toBe(true);
     expect(radios(el)[1].checked).toBe(false);
-    expect(el.textContent).toContain('Registrar cotización');
+    expect(el.textContent).toContain('Proveedor de la subpartida: ACME SAC');
   });
 
-  it('una oferta que no cubre la cantidad completa no se puede elegir', async () => {
+  it('el desglose por ítem muestra la parte del total que le toca a cada uno', async () => {
     const { el } = await montar({ crear: true, editar: true });
-    // Ítem 2: ACME cotiza 6 de 10 (no completa) y BETA 10.
-    expect(radios(el)[2].disabled).toBe(true);
-    expect(el.textContent).toContain('no cubre el ítem completo');
-    expect(radios(el)[3].disabled).toBe(false);
+    expect(el.textContent).toContain('P-1');
+    expect(el.textContent).toContain('P-2');
+    expect(el.textContent).toContain('40.00'); // 10 × 4 por ítem con ACME
+    expect(el.textContent).toContain('45.00'); // 10 × 4.5 por ítem con BETA
   });
 
-  it('elegir un ganador habilita «Guardar adjudicación» y lo manda con el ítem y la oferta', async () => {
+  it('elegir otro proveedor habilita «Guardar proveedor» y manda la subpartida y la cotización', async () => {
     const p = await montar({ crear: true, editar: true });
-    expect(boton(p.el, 'Guardar adjudicación')?.disabled).toBe(true);
+    expect(boton(p.el, 'Guardar proveedor')?.disabled).toBe(true);
 
-    radios(p.el)[3].click(); // BETA para el ítem 2
-    radios(p.el)[3].dispatchEvent(new Event('change'));
-    await p.render();
-    expect(boton(p.el, 'Guardar adjudicación (1)')?.disabled).toBe(false);
+    await elegirRadio(p, 1); // BETA
+    expect(boton(p.el, 'Guardar proveedor')?.disabled).toBe(false);
 
-    boton(p.el, 'Guardar adjudicación')?.click();
+    boton(p.el, 'Guardar proveedor')?.click();
     const req = p.http.expectOne((r: HttpRequest<unknown>) => r.url.endsWith('/presupuestos/7/adjudicacion'));
     expect(req.request.method).toBe('PUT');
-    expect(req.request.body).toEqual({ items: [{ id_ppto_item: 2, id_cot_detalle: 2002 }], comentario: undefined });
+    expect(req.request.body).toEqual({ id_detalle_categoria: 31, id_cotizacion: 200, comentario: undefined });
     req.flush({
-      adjudicados: 1,
+      adjudicados: 2,
       liberados: 0,
       sin_cambio: 0,
       compromisos: { creados: [{ id_requerimiento: 9, numero: 'FUR-000009', fase: 'F', id_proveedor: 200, proveedor: 'BETA EIRL', documentos: [{ id: 5, numero_documento: 'OC-000005', clase: 'ORDEN_COMPRA' }] }], actualizados: [], anulados: [], sin_cambio: 0 },
     });
     // Después de guardar se vuelve a leer el cuadro y las cotizaciones.
     await atender(p);
-    expect(p.el.textContent).toContain('Adjudicación guardada');
+    expect(p.el.textContent).toContain('Proveedor de la subpartida guardado');
     expect(p.el.textContent).toContain('FUR-000009');
     expect(p.el.textContent).toContain('OC-000005');
   });
 
-  it('«Quitar proveedor» manda el ítem con id_cot_detalle null (explícito)', async () => {
+  it('«Quitar proveedor» manda id_cotizacion null (explícito)', async () => {
     const p = await montar({ crear: true, editar: true });
     boton(p.el, 'Quitar proveedor')?.click();
     await p.render();
-    boton(p.el, 'Guardar adjudicación')?.click();
+    boton(p.el, 'Guardar proveedor')?.click();
     const req = p.http.expectOne((r: HttpRequest<unknown>) => r.url.endsWith('/presupuestos/7/adjudicacion'));
-    expect(req.request.body.items).toEqual([{ id_ppto_item: 1, id_cot_detalle: null }]);
-    req.flush({ adjudicados: 0, liberados: 1, sin_cambio: 0, compromisos: { creados: [], actualizados: [], anulados: [], sin_cambio: 0 } });
+    expect(req.request.body).toEqual({ id_detalle_categoria: 31, id_cotizacion: null, comentario: undefined });
+    req.flush({ adjudicados: 0, liberados: 2, sin_cambio: 0, compromisos: { creados: [], actualizados: [], anulados: [], sin_cambio: 0 } });
     await atender(p);
   });
 
-  it('volver a la elección guardada deja de contar como cambio', async () => {
+  it('volver al proveedor guardado deja de contar como cambio', async () => {
     const p = await montar({ crear: true, editar: true });
-    radios(p.el)[1].click();
-    radios(p.el)[1].dispatchEvent(new Event('change'));
-    await p.render();
-    expect(boton(p.el, 'Guardar adjudicación (1)')).toBeDefined();
-    radios(p.el)[0].click();
-    radios(p.el)[0].dispatchEvent(new Event('change'));
-    await p.render();
-    expect(boton(p.el, 'Guardar adjudicación')?.disabled).toBe(true);
+    await elegirRadio(p, 1);
+    expect(boton(p.el, 'Guardar proveedor')?.disabled).toBe(false);
+    await elegirRadio(p, 0);
+    expect(boton(p.el, 'Guardar proveedor')?.disabled).toBe(true);
   });
 
-  it('un ítem con una orden registrada no se puede cambiar y muestra su orden', async () => {
+  it('una subpartida sin cotizaciones lo avisa y solo ofrece registrar', async () => {
+    const sin = cuadro({ proveedores: [], id_cotizacion_ganadora: null, items_adjudicados: 0, lineas: [linea(1, { ofertas: [] }), linea(2, { ofertas: [] })] });
+    const { el } = await montar({ crear: true, editar: true }, sin, []);
+    expect(el.textContent).toContain('Aún no hay cotizaciones para esta subpartida');
+    expect(radios(el)).toHaveLength(0);
+    expect(boton(el, 'Registrar cotización')).toBeDefined();
+  });
+
+  it('con una orden registrada en la subpartida no se cambia de proveedor y se muestra su orden', async () => {
     const c = cuadro({
       lineas: [
         linea(1, {
@@ -194,13 +211,14 @@ describe('CotizacionesFaseDialogComponent', () => {
           cubierto: true,
           compromiso: { id_requerimiento: 3, numero_requerimiento: 'FUR-000003', estado_requerimiento: 'APROBADO', id_documento: 8, numero_documento: 'OC-000008', estado_documento: 'REGISTRADO' },
         }),
+        linea(2, { id_cot_detalle_ganadora: 1002, id_cotizacion_ganadora: 100 }),
       ],
     });
     const { el } = await montar({ crear: true, editar: true }, c);
     expect(radios(el).every((r) => r.disabled)).toBe(true);
     expect(el.textContent).toContain('OC-000008');
     expect(el.textContent).toContain('Registrada');
-    expect(el.textContent).toContain('anule la orden');
+    expect(el.textContent).toContain('anule primero la orden');
     expect(boton(el, 'Quitar proveedor')).toBeUndefined();
   });
 
@@ -215,7 +233,7 @@ describe('CotizacionesFaseDialogComponent', () => {
   it('sin permiso de editar no se puede elegir al ganador ni guardar', async () => {
     const { el } = await montar({});
     expect(radios(el).every((r) => r.disabled)).toBe(true);
-    expect(boton(el, 'Guardar adjudicación')).toBeUndefined();
+    expect(boton(el, 'Guardar proveedor')).toBeUndefined();
     expect(boton(el, 'Registrar cotización')).toBeUndefined();
   });
 
@@ -224,6 +242,6 @@ describe('CotizacionesFaseDialogComponent', () => {
     expect(el.textContent).toContain('Presupuesto LIQUIDADO: solo consulta');
     expect(radios(el).every((r) => r.disabled)).toBe(true);
     expect(boton(el, 'Registrar cotización')).toBeUndefined();
-    expect(boton(el, 'Guardar adjudicación')).toBeUndefined();
+    expect(boton(el, 'Guardar proveedor')).toBeUndefined();
   });
 });

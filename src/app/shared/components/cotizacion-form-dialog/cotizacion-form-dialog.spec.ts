@@ -20,10 +20,15 @@ const linea = (id: number, solicitado = '10', extra: Partial<LineaCotizable> = {
 interface Interno {
   form: {
     patchValue(v: object): void;
-    controls: { lineas: { at(i: number): { patchValue(v: object): void; getRawValue(): Record<string, unknown> } } };
+    controls: {
+      lineas: { length: number; at(i: number): { patchValue(v: object): void; getRawValue(): Record<string, unknown> } };
+      total: { value: string };
+      adjudicar: { value: boolean };
+    };
   };
   onGuardar(): void;
   mensajeError(): string;
+  vistaPrevia(): { error: string; filas: { monto: number | null; precioUnitario: number | null; pesoPct: number; cotiza: boolean }[]; suma: number | null; costoMeta: number } | null;
 }
 
 describe('CotizacionFormDialogComponent', () => {
@@ -87,42 +92,70 @@ describe('CotizacionFormDialogComponent', () => {
     expect(interno().mensajeError()).toMatch(/al menos un ítem/);
   });
 
-  describe('modo presupuesto', () => {
-    it('propone adjudicar solo los ítems que todavía no tienen ganador', async () => {
-      await abrir({ modo: 'presupuesto', lineas: [linea(1), linea(2, '10', { ganador: 'OTRO SAC' })] });
-      expect(interno().form.controls.lineas.at(0).getRawValue()['adjudicar']).toBe(true);
-      expect(interno().form.controls.lineas.at(1).getRawValue()['adjudicar']).toBe(false);
+  describe('modo presupuesto (una subpartida: un total que se prorratea)', () => {
+    const items = [
+      linea(1, '26.45', { costo_total: '431.66' }),
+      linea(2, '33.76', { costo_total: '713.01' }),
+    ];
+
+    it('propone adjudicar la subpartida solo si ningún ítem tiene ganador todavía', async () => {
+      await abrir({ modo: 'presupuesto', lineas: items });
+      expect(interno().form.controls.adjudicar.value).toBe(true);
     });
 
-    it('al abrir desde un ítem solo ese queda para cotizar', async () => {
-      await abrir({ modo: 'presupuesto', lineas: [linea(1), linea(2), linea(3)], marcadas: [2] });
-      expect([0, 1, 2].map((i) => interno().form.controls.lineas.at(i).getRawValue()['cotiza'])).toEqual([false, true, false]);
+    it('si la subpartida ya tiene proveedor, no propone adjudicar', async () => {
+      await abrir({ modo: 'presupuesto', lineas: [linea(1, '10', { costo_total: '50', ganador: 'OTRO SAC' }), linea(2, '5', { costo_total: '30' })] });
+      expect(interno().form.controls.adjudicar.value).toBe(false);
     });
 
-    it('para adjudicar un ítem debe cotizar la cantidad completa (un ítem va completo a un solo proveedor)', async () => {
-      await abrir({ modo: 'presupuesto', lineas: [linea(1)] });
+    it('no pide precio por ítem: solo el total de la subpartida', async () => {
+      await abrir({ modo: 'presupuesto', lineas: items });
+      expect(interno().form.controls.lineas.length).toBe(0);
       interno().form.patchValue({ id_proveedor: 3 });
-      interno().form.controls.lineas.at(0).patchValue({ cantidad: '6', precio_unitario: '2' });
       interno().onGuardar();
-      expect(interno().mensajeError()).toMatch(/cantidad completa/);
+      expect(interno().mensajeError()).toMatch(/total de la subpartida/);
       expect(emitidos).toHaveLength(0);
-
-      interno().form.controls.lineas.at(0).patchValue({ adjudicar: false });
-      interno().onGuardar();
-      expect(emitidos).toHaveLength(1); // cotizar menos cantidad sí se puede, solo no se adjudica
-      expect(emitidos[0].lineas[0]).toMatchObject({ cantidad: '6', adjudicar: false });
     });
 
-    it('no se adjudica un ítem que el proveedor no cotiza', async () => {
-      await abrir({ modo: 'presupuesto', lineas: [linea(1), linea(2)] });
-      interno().form.patchValue({ id_proveedor: 3 });
-      interno().form.controls.lineas.at(0).patchValue({ precio_unitario: '2' });
-      interno().form.controls.lineas.at(1).patchValue({ cotiza: false, adjudicar: true });
-      interno().onGuardar();
-      expect(interno().mensajeError()).toMatch(/no puede adjudicarlo/);
+    it('el cuadro de ítems se ve siempre, aun sin total: con su peso en el Meta y sin montos todavía', async () => {
+      await abrir({ modo: 'presupuesto', lineas: items });
+      const v = interno().vistaPrevia();
+      expect(v?.filas).toHaveLength(2);
+      expect(v?.error).toMatch(/total de la subpartida/);
+      expect(v?.filas.map((f) => f.monto)).toEqual([null, null]);
+      expect(v?.filas.map((f) => Math.round(f.pesoPct * 10) / 10)).toEqual([37.7, 62.3]);
+      expect(v?.costoMeta).toBeCloseTo(1144.67, 2);
+      expect(v?.suma).toBeNull();
+      expect(fixture.nativeElement.querySelectorAll('table[aria-label="Ítems de la subpartida y reparto del total"] tbody tr')).toHaveLength(3); // 2 ítems + total
     });
 
-    it('al editar trae lo registrado y deja marcado el ítem que esta cotización ya gana', async () => {
+    it('al escribir el total, el cuadro reparte según el costo Meta y la suma sale exacta', async () => {
+      await abrir({ modo: 'presupuesto', lineas: items });
+      interno().form.patchValue({ total: '1000' });
+      const v = interno().vistaPrevia();
+      expect(v?.error).toBe('');
+      expect(v?.filas.map((f) => f.monto)).toEqual([377.1, 622.9]);
+      expect(v?.suma).toBe(1000);
+    });
+
+    it('avisa si la subpartida no tiene costo en el Meta (no hay base para repartir)', async () => {
+      await abrir({ modo: 'presupuesto', lineas: [linea(1, '4', { costo_total: '0' })] });
+      interno().form.patchValue({ id_proveedor: 3, total: '100' });
+      interno().onGuardar();
+      expect(interno().mensajeError()).toMatch(/no tiene costo en el Meta/);
+      expect(emitidos).toHaveLength(0);
+    });
+
+    it('emite el total y la marca de adjudicar, sin líneas por ítem', async () => {
+      await abrir({ modo: 'presupuesto', lineas: items });
+      interno().form.patchValue({ id_proveedor: 3, total: ' 1000.50 ' });
+      interno().onGuardar();
+      expect(interno().mensajeError()).toBe('');
+      expect(emitidos).toHaveLength(1);
+      expect(emitidos[0]).toMatchObject({ id_proveedor: 3, total: '1000.50', adjudicar: true, lineas: [] });
+    });
+
+    it('al editar trae el total y deja marcada la adjudicación si esta cotización ya gana la subpartida', async () => {
       const inicial: CotizacionInicial = {
         id_proveedor: 3,
         fecha: '2026-11-18',
@@ -139,17 +172,16 @@ describe('CotizacionFormDialogComponent', () => {
         garantia: null,
         condiciones: null,
         archivo_url: null,
-        lineas: [{ id: 1, cotiza: true, cantidad: '10', precio_unitario: '4', plazo_entrega_dias: null, marca_modelo: null, adjudicada: true }],
+        lineas: [],
+        total_global: '900',
+        adjudicada: true,
       };
-      await abrir({ modo: 'presupuesto', lineas: [linea(1), linea(2)], inicial });
-      const [l1, l2] = [interno().form.controls.lineas.at(0).getRawValue(), interno().form.controls.lineas.at(1).getRawValue()];
-      expect(l1).toMatchObject({ cotiza: true, cantidad: '10', precio_unitario: '4', adjudicar: true });
-      expect(l2).toMatchObject({ cotiza: false, adjudicar: false }); // el ítem 2 no estaba en la cotización
+      await abrir({ modo: 'presupuesto', lineas: items, inicial });
+      expect(interno().form.controls.total.value).toBe('900');
+      expect(interno().form.controls.adjudicar.value).toBe(true);
       interno().onGuardar();
       expect(emitidos).toHaveLength(1);
-      expect(emitidos[0]).toMatchObject({ id_proveedor: 3, referencia: 'A-1', forma_pago: 'Credito 30 dias', dias_credito: 30, adelanto_porcentaje: '20', medio_pago: 'TRANSFERENCIA', plazo_entrega_dias: 15 });
-      expect(emitidos[0].lineas[0]).toMatchObject({ id: 1, adjudicar: true }); // sigue ganando el ítem
-      expect(emitidos[0].lineas[1]).toMatchObject({ id: 2, cotiza: false, adjudicar: false });
+      expect(emitidos[0]).toMatchObject({ id_proveedor: 3, referencia: 'A-1', forma_pago: 'Credito 30 dias', dias_credito: 30, adelanto_porcentaje: '20', medio_pago: 'TRANSFERENCIA', plazo_entrega_dias: 15, total: '900', adjudicar: true });
     });
   });
 });

@@ -16,6 +16,7 @@ import {
   CuadroComparativoPpto,
   CuadroLineaPpto,
   CuadroOfertaPpto,
+  CuadroProveedorPpto,
   PptoCotizacion,
   PptoCotizacionPayload,
   resumenConciliacion,
@@ -26,27 +27,26 @@ import { CotizacionesPptoService } from '../cotizaciones-ppto.service';
 const ESTADOS_CERRADOS = ['ENTREGADO', 'LIQUIDADO', 'ANULADO'];
 
 /**
- * Cotizaciones de una fase del presupuesto Meta (plan 09, láminas 5 y 6): una cotización por proveedor con sus condiciones, el cuadro
- * comparativo ítem × proveedor y la elección del ganador de cada ítem. Quien registra ya aprueba: al grabar se generan el FUR y las
- * órdenes (provisionales hasta aprobar el presupuesto). El sistema no sugiere ni exige el más barato.
+ * Cotizaciones de una subpartida del presupuesto Meta (plan 09): cada proveedor cotiza UN total por toda la subpartida, el sistema lo
+ * prorratea entre sus ítems según el costo Meta, y quien aprueba elige un solo ganador para la subpartida completa. Al grabar se
+ * generan el FUR y las órdenes (provisionales hasta aprobar el presupuesto). El sistema no sugiere ni exige el más barato.
  */
 @Component({
-  selector: 'app-cotizaciones-fase-dialog',
+  selector: 'app-cotizaciones-subpartida-dialog',
   imports: [FormsModule, RouterLink, ModalComponent, CotizacionFormDialogComponent],
-  templateUrl: './cotizaciones-fase-dialog.html',
-  styleUrl: './cotizaciones-fase-dialog.css',
+  templateUrl: './cotizaciones-subpartida-dialog.html',
+  styleUrl: './cotizaciones-subpartida-dialog.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class CotizacionesFaseDialogComponent implements OnInit {
+export class CotizacionesSubpartidaDialogComponent implements OnInit {
   private readonly service = inject(CotizacionesPptoService);
   private readonly requerimientos = inject(RequerimientosService);
   /** Módulo `presupuestos`: registrar → crear; editar y elegir ganador → editar; eliminar → eliminar. */
   protected readonly permisos = permisosDePantalla('presupuestos');
 
   readonly idPresupuesto = input.required<number>();
-  readonly idDetalleFase = input.required<number>();
-  /** Ítem desde el que se abrió («Cotizar»): se marca para cotizar. */
-  readonly itemInicial = input<number | null>(null);
+  /** La subpartida (`ppto_DetalleFasesCate.id`) cuyas cotizaciones se ven. */
+  readonly idDetalleCategoria = input.required<number>();
   /** Abre directamente el formulario de una cotización nueva. */
   readonly abrirRegistro = input(false);
 
@@ -64,8 +64,8 @@ export class CotizacionesFaseDialogComponent implements OnInit {
   protected readonly error = signal('');
   protected readonly mensaje = signal('');
 
-  /** Ganadores elegidos y todavía sin guardar: ítem → `id_cot_detalle` (o `null` para quitar el ganador). */
-  protected readonly seleccion = signal<Record<number, number | null>>({});
+  /** Ganador elegido y todavía sin guardar: `undefined` = sin cambio; `null` = quitar el ganador. */
+  protected readonly eleccion = signal<number | null | undefined>(undefined);
   protected readonly comentario = signal('');
   protected readonly guardandoAdjudicacion = signal(false);
 
@@ -73,7 +73,6 @@ export class CotizacionesFaseDialogComponent implements OnInit {
   protected readonly editando = signal<PptoCotizacion | null>(null);
   protected readonly guardandoForm = signal(false);
   protected readonly errorForm = signal('');
-  protected readonly marcadas = signal<number[]>([]);
 
   protected readonly estado = computed(() => this.cuadro()?.estado ?? '');
   /** El presupuesto todavía admite cotizar y cambiar proveedores. */
@@ -81,25 +80,35 @@ export class CotizacionesFaseDialogComponent implements OnInit {
   protected readonly puedeRegistrar = computed(() => this.abierto() && this.permisos.crear());
   protected readonly puedeEditar = computed(() => this.abierto() && this.permisos.editar());
   protected readonly puedeEliminar = computed(() => this.abierto() && this.permisos.eliminar());
-  protected readonly cambios = computed(() => Object.keys(this.seleccion()).length);
+
+  /** Algún ítem de la subpartida ya tiene una orden registrada: el proveedor no cambia mientras no se anule. */
+  protected readonly cubierta = computed(() => (this.cuadro()?.lineas ?? []).some((l) => l.cubierto));
+  /** Ganador de la subpartida ahora (con lo elegido y todavía sin guardar). */
+  protected readonly ganadora = computed(() => {
+    const e = this.eleccion();
+    return e === undefined ? (this.cuadro()?.id_cotizacion_ganadora ?? null) : e;
+  });
+  protected readonly hayCambio = computed(() => this.eleccion() !== undefined && this.eleccion() !== (this.cuadro()?.id_cotizacion_ganadora ?? null));
+  protected readonly puedeElegir = computed(() => this.abierto() && this.permisos.editar() && !this.cubierta());
+  protected readonly proveedorGanador = computed(() => this.cuadro()?.proveedores.find((p) => p.id_cotizacion === this.ganadora()) ?? null);
+  /** Costo total de la subpartida en el Meta (la base del prorrateo). */
+  protected readonly costoMeta = computed(() => (this.cuadro()?.lineas ?? []).reduce((s, l) => s + Number(l.costo_total_meta), 0));
 
   protected readonly lineasCotizables = computed<LineaCotizable[]>(() => {
     const c = this.cuadro();
     if (!c) return [];
     const nombrePorCot = new Map(c.proveedores.map((p) => [p.id_cotizacion, p.proveedor]));
-    // Un ítem con una orden registrada no se cotiza de nuevo: se deja fuera del formulario.
-    return c.lineas
-      .filter((l) => !l.cubierto)
-      .map((l) => ({
-        id: l.id_ppto_item,
-        codigo: l.codigo,
-        descripcion: l.descripcion,
-        unidad: l.unidad,
-        solicitado: l.cantidad,
-        precio_ref: l.costo_unitario_meta,
-        subfase: l.subfase,
-        ganador: l.id_cotizacion_ganadora === null ? null : (nombrePorCot.get(l.id_cotizacion_ganadora) ?? null),
-      }));
+    return c.lineas.map((l) => ({
+      id: l.id_ppto_item,
+      codigo: l.codigo,
+      descripcion: l.descripcion,
+      unidad: l.unidad,
+      solicitado: l.cantidad,
+      precio_ref: l.costo_unitario_meta,
+      costo_total: l.costo_total_meta,
+      subfase: l.subfase,
+      ganador: l.id_cotizacion_ganadora === null ? null : (nombrePorCot.get(l.id_cotizacion_ganadora) ?? null),
+    }));
   });
 
   protected readonly inicial = computed<CotizacionInicial | null>(() => {
@@ -121,15 +130,9 @@ export class CotizacionesFaseDialogComponent implements OnInit {
       garantia: c.garantia,
       condiciones: c.condiciones,
       archivo_url: c.archivo_url,
-      lineas: c.lineas.map((l) => ({
-        id: l.id_ppto_item,
-        cotiza: l.cotiza,
-        cantidad: l.cantidad,
-        precio_unitario: l.precio_unitario,
-        plazo_entrega_dias: l.plazo_entrega_dias,
-        marca_modelo: l.marca_modelo,
-        adjudicada: l.adjudicada,
-      })),
+      lineas: [],
+      total_global: c.total_global,
+      adjudicada: c.id === this.cuadro()?.id_cotizacion_ganadora,
     };
   });
 
@@ -141,7 +144,7 @@ export class CotizacionesFaseDialogComponent implements OnInit {
   ngOnInit(): void {
     this.requerimientos.getProveedoresSelect().subscribe({ next: (r) => this.proveedores.set(r), error: () => this.proveedores.set([]) });
     this.cargar(() => {
-      if (this.abrirRegistro() && this.puedeRegistrar()) this.nueva(this.itemInicial());
+      if (this.abrirRegistro() && this.puedeRegistrar()) this.nueva();
     });
   }
 
@@ -150,12 +153,12 @@ export class CotizacionesFaseDialogComponent implements OnInit {
     this.cargando.set(true);
     this.error.set('');
     const idP = this.idPresupuesto();
-    const idF = this.idDetalleFase();
-    this.service.getCuadro(idP, idF).subscribe({
+    const idS = this.idDetalleCategoria();
+    this.service.getCuadro(idP, idS).subscribe({
       next: (c) => {
         this.cuadro.set(c);
-        this.seleccion.set({});
-        this.service.getCotizaciones(idP, idF).subscribe({
+        this.eleccion.set(undefined);
+        this.service.getCotizaciones(idP, { idDetalleCategoria: idS }).subscribe({
           next: (cs) => {
             this.cotizaciones.set(cs);
             this.cargando.set(false);
@@ -174,75 +177,55 @@ export class CotizacionesFaseDialogComponent implements OnInit {
     });
   }
 
+  /** Lo que ofrece un proveedor por un ítem (su parte del total prorrateado). */
   protected oferta(l: CuadroLineaPpto, idCotizacion: number): CuadroOfertaPpto | undefined {
     return l.ofertas.find((o) => o.id_cotizacion === idCotizacion && o.cotiza);
   }
 
-  /** `id_cot_detalle` que gana el ítem ahora (con lo elegido y todavía sin guardar). */
-  protected ganadora(l: CuadroLineaPpto): number | null {
-    const s = this.seleccion();
-    return l.id_ppto_item in s ? s[l.id_ppto_item] : l.id_cot_detalle_ganadora;
+  /** Diferencia del total sin IGV de un proveedor contra el costo Meta de la subpartida (sin convertir moneda). */
+  protected diferencia(p: CuadroProveedorPpto): number {
+    return Number(p.total_sin_igv) - this.costoMeta();
   }
 
-  protected cotizacionDe(l: CuadroLineaPpto): string | null {
-    const idCot = l.ofertas.find((o) => o.id_cot_detalle === this.ganadora(l))?.id_cotizacion;
-    return this.cuadro()?.proveedores.find((p) => p.id_cotizacion === idCot)?.proveedor ?? null;
-  }
-
-  /** Se puede elegir al proveedor de esa oferta: cotiza el ítem completo, el presupuesto está abierto y el ítem no tiene orden registrada. */
-  protected puedeElegir(l: CuadroLineaPpto, o: CuadroOfertaPpto | undefined): boolean {
-    return !!o && o.cantidad_completa && !l.cubierto && this.abierto() && this.permisos.editar();
-  }
-
-  /** Se puede dejar al ítem sin proveedor: tiene uno, el presupuesto está abierto y el ítem no tiene orden registrada. */
-  protected puedeQuitar(l: CuadroLineaPpto): boolean {
-    return this.abierto() && this.permisos.editar() && !l.cubierto && this.ganadora(l) !== null;
-  }
-
-  /** Diferencia del ganador actual contra el costo del Meta (cantidad × precio sin IGV, sin convertir moneda). */
-  protected diferencia(l: CuadroLineaPpto): number | null {
-    const o = l.ofertas.find((x) => x.id_cot_detalle === this.ganadora(l));
-    if (!o) return null;
-    return Number(o.subtotal_sin_igv) - Number(l.costo_total_meta);
+  /** FUR y orden que ya nacieron de la subpartida (el del primer ítem que los tiene). */
+  protected compromiso() {
+    return this.cuadro()?.lineas.find((l) => l.compromiso !== null)?.compromiso ?? null;
   }
 
   // ---------------------------------------------------------------- elegir ganador
-  protected elegir(l: CuadroLineaPpto, idCotDetalle: number | null): void {
-    this.seleccion.update((s) => {
-      const nuevo = { ...s };
-      // Volver a lo que ya estaba guardado deja de ser un cambio.
-      if (idCotDetalle === l.id_cot_detalle_ganadora) delete nuevo[l.id_ppto_item];
-      else nuevo[l.id_ppto_item] = idCotDetalle;
-      return nuevo;
-    });
+  protected elegir(idCotizacion: number | null): void {
+    if (!this.puedeElegir()) return;
+    // Volver a lo que ya estaba guardado deja de ser un cambio.
+    this.eleccion.set(idCotizacion === (this.cuadro()?.id_cotizacion_ganadora ?? null) ? undefined : idCotizacion);
   }
 
   protected guardarAdjudicacion(): void {
-    if (this.cambios() === 0 || !this.permisos.editar()) return;
-    const items = Object.entries(this.seleccion()).map(([id, cot]) => ({ id_ppto_item: Number(id), id_cot_detalle: cot }));
+    const e = this.eleccion();
+    if (e === undefined || !this.hayCambio() || !this.permisos.editar()) return;
     this.guardandoAdjudicacion.set(true);
     this.error.set('');
-    this.service.adjudicar(this.idPresupuesto(), { items, comentario: this.comentario().trim() || undefined }).subscribe({
-      next: (r) => {
-        this.guardandoAdjudicacion.set(false);
-        this.comentario.set('');
-        this.mensaje.set(this.textoGrabado(`Adjudicación guardada (${r.adjudicados} elegido(s), ${r.liberados} quitado(s)).`, resumenConciliacion(r.compromisos)));
-        this.cargar();
-        this.cambio.emit();
-      },
-      error: (err: unknown) => {
-        this.guardandoAdjudicacion.set(false);
-        this.error.set(errorMessage(err));
-      },
-    });
+    this.service
+      .adjudicar(this.idPresupuesto(), { id_detalle_categoria: this.idDetalleCategoria(), id_cotizacion: e, comentario: this.comentario().trim() || undefined })
+      .subscribe({
+        next: (r) => {
+          this.guardandoAdjudicacion.set(false);
+          this.comentario.set('');
+          this.mensaje.set(this.textoGrabado(e === null ? 'Se quitó el proveedor de la subpartida.' : 'Proveedor de la subpartida guardado.', resumenConciliacion(r.compromisos)));
+          this.cargar();
+          this.cambio.emit();
+        },
+        error: (err: unknown) => {
+          this.guardandoAdjudicacion.set(false);
+          this.error.set(errorMessage(err));
+        },
+      });
   }
 
   // ---------------------------------------------------------------- cotizaciones
-  protected nueva(itemInicial: number | null = null): void {
+  protected nueva(): void {
     if (!this.puedeRegistrar()) return;
     this.editando.set(null);
     this.errorForm.set('');
-    this.marcadas.set(itemInicial === null ? [] : [itemInicial]);
     this.formAbierto.set(true);
   }
 
@@ -250,7 +233,6 @@ export class CotizacionesFaseDialogComponent implements OnInit {
     if (!this.puedeEditar() || c.protegida) return;
     this.editando.set(c);
     this.errorForm.set('');
-    this.marcadas.set([]);
     this.formAbierto.set(true);
   }
 
@@ -260,12 +242,13 @@ export class CotizacionesFaseDialogComponent implements OnInit {
 
   protected guardarCotizacion(v: CotizacionFormValue): void {
     const actual = this.editando();
-    const payload: PptoCotizacionPayload = { ...v, lineas: v.lineas.map(({ id, ...resto }) => ({ id_ppto_item: id, ...resto })) };
+    const { lineas: _lineas, total, ...cabecera } = v;
+    const payload: PptoCotizacionPayload = { ...cabecera, total: total ?? '' };
     this.guardandoForm.set(true);
     this.errorForm.set('');
     const peticion$ = actual
       ? this.service.updateCotizacion(this.idPresupuesto(), actual.id, payload)
-      : this.service.createCotizacion(this.idPresupuesto(), { ...payload, id_detalle_fase: this.idDetalleFase() });
+      : this.service.createCotizacion(this.idPresupuesto(), { ...payload, id_detalle_categoria: this.idDetalleCategoria() });
     peticion$.subscribe({
       next: (r) => {
         this.guardandoForm.set(false);
@@ -283,7 +266,7 @@ export class CotizacionesFaseDialogComponent implements OnInit {
 
   protected eliminar(c: PptoCotizacion): void {
     if (!this.puedeEliminar() || c.protegida) return;
-    if (!confirm(`¿Eliminar la cotización ${c.numero} de ${c.proveedor ?? 'este proveedor'}? Los ítems que ganaba quedarán sin proveedor.`)) return;
+    if (!confirm(`¿Eliminar la cotización ${c.numero} de ${c.proveedor ?? 'este proveedor'}? Si ganaba la subpartida, quedará sin proveedor.`)) return;
     this.service.deleteCotizacion(this.idPresupuesto(), c.id).subscribe({
       next: (r) => {
         this.mensaje.set(this.textoGrabado('Cotización eliminada.', resumenConciliacion(r.compromisos)));

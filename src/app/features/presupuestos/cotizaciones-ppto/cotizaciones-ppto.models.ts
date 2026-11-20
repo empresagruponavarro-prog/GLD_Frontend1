@@ -1,7 +1,8 @@
 import { MedioPago } from '../../requerimientos/requerimientos.models';
 
 /**
- * Cotizaciones por ítem del presupuesto Meta y sus compromisos (plan 09). Tipos de lo que devuelve el backend
+ * Cotizaciones por subpartida del presupuesto Meta y sus compromisos (plan 09): el proveedor da un total por toda la subpartida y el
+ * backend lo prorratea entre sus ítems según el costo Meta. Tipos de lo que devuelve el backend
  * (`presupuestos/:id/cotizaciones`, `cuadro-comparativo`, `adjudicacion` y `compromisos`).
  */
 
@@ -70,6 +71,13 @@ export interface PptoCotizacion {
   id_presupuesto: number;
   id_detalle_fase: number;
   fase: string;
+  /** La subpartida que se cotizó; nula solo en cotizaciones antiguas por ítem. */
+  id_detalle_categoria: number | null;
+  subpartida: string | null;
+  /** Total de la subpartida tal como lo dio el proveedor. */
+  total_global: string | null;
+  /** Las líneas por ítem salen del prorrateo del total según el costo Meta. */
+  prorrateada: boolean;
   id_proveedor: number;
   proveedor: string | null;
   fecha: string;
@@ -99,20 +107,11 @@ export interface PptoCotizacion {
   compromisos?: Conciliacion;
 }
 
-export interface PptoCotizacionLineaPayload {
-  id_ppto_item: number;
-  cotiza?: boolean;
-  cantidad: string;
-  precio_unitario: string;
-  plazo_entrega_dias?: number;
-  marca_modelo?: string;
-  observaciones?: string;
-  /** true = gana el ítem; false = lo suelta si lo ganaba; sin valor = no cambia. */
-  adjudicar?: boolean;
-}
-
 export interface PptoCotizacionPayload {
-  id_detalle_fase?: number;
+  /** La subpartida que se cotiza (`ppto_DetalleFasesCate.id`); al editar no se envía. */
+  id_detalle_categoria?: number;
+  /** Total de la subpartida tal como lo dio el proveedor (con IGV si `incluye_igv`). */
+  total: string;
   id_proveedor: number;
   fecha: string;
   referencia?: string;
@@ -129,8 +128,9 @@ export interface PptoCotizacionPayload {
   garantia?: string;
   condiciones?: string;
   archivo_url?: string;
+  /** true = gana la subpartida completa; false = la suelta si la ganaba; sin valor = no cambia. */
+  adjudicar?: boolean;
   comentario_adjudicacion?: string;
-  lineas: PptoCotizacionLineaPayload[];
 }
 
 // ---------------------------------------------------------------- cuadro y adjudicación
@@ -194,22 +194,31 @@ export interface CuadroProveedorPpto {
   total_soles: string | null;
   tc_usado: string | null;
   items_ganados: number;
+  /** Este proveedor es el ganador de la subpartida. */
+  es_ganadora: boolean;
+  total_global: string | null;
 }
 
 export interface CuadroComparativoPpto {
   id_presupuesto: number;
   codigo_presupuesto: string;
   estado: string;
+  id_detalle_categoria: number;
+  subpartida: string;
   id_detalle_fase: number;
   fase: string;
   items_total: number;
   items_adjudicados: number;
+  /** Cotización ganadora de la subpartida (siempre una sola). */
+  id_cotizacion_ganadora: number | null;
   lineas: CuadroLineaPpto[];
   proveedores: CuadroProveedorPpto[];
 }
 
+/** Elige (o quita, con `null`) al ganador de la subpartida completa. */
 export interface AdjudicacionPayload {
-  items: { id_ppto_item: number; id_cot_detalle: number | null }[];
+  id_detalle_categoria: number;
+  id_cotizacion: number | null;
   comentario?: string;
 }
 

@@ -19,7 +19,7 @@ import {
   SyncPartidaItemsDto,
 } from '@app/features/presupuestos/presupuestos.service';
 import { ProductosService } from '@app/features/maestros-generales/productos/productos.service';
-import { CotizacionesFaseDialogComponent } from '@app/features/presupuestos/cotizaciones-ppto/cotizaciones-fase-dialog/cotizaciones-fase-dialog';
+import { CotizacionesSubpartidaDialogComponent } from '@app/features/presupuestos/cotizaciones-ppto/cotizaciones-subpartida-dialog/cotizaciones-subpartida-dialog';
 import { ResumenCotizacionItem } from '@app/features/presupuestos/cotizaciones-ppto/cotizaciones-ppto.models';
 import {
   Producto,
@@ -56,7 +56,7 @@ export interface PartidaInfo {
   NombreFase?: string;
   /** Posición de la partida dentro de su fase (1, 2, 3…): da el prefijo de sus ítems (partida 1 → 1.01, 1.02…). */
   numeroPartida?: number;
-  /** Presupuesto (`ppto_Principal.id`) y fase (`ppto_DetalleFases.id`) de la partida: habilitan las cotizaciones por ítem (plan 09). */
+  /** Presupuesto (`ppto_Principal.id`) y fase (`ppto_DetalleFases.id`) de la partida: habilitan las cotizaciones de la subpartida (plan 09). */
   id_presupuesto?: number;
   id_detalle_fase?: number;
 }
@@ -115,7 +115,7 @@ function redondear(n: number): number {
 @Component({
   selector: 'app-partida-items-dialog',
   standalone: true,
-  imports: [CommonModule, FormsModule, CotizacionesFaseDialogComponent],
+  imports: [CommonModule, FormsModule, CotizacionesSubpartidaDialogComponent],
   templateUrl: './partida-items-dialog.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -152,19 +152,13 @@ export class PartidaItemsDialogComponent implements OnInit {
   private campoActivo: HTMLElement | null = null;
   private searchSubject = new Subject<string>();
 
-  /** Las acciones «Cotizar» y «Cuadro» por ítem solo existen en un presupuesto guardado (plan 09, lámina 5). */
+  /** Las acciones «Cotizar» y «Cuadro» de la subpartida solo existen en un presupuesto guardado (plan 09). */
   get conCotizaciones(): boolean {
     return this.modo === 'presupuesto' && !!this.partida.id_presupuesto && !!this.partida.id_detalle_fase;
   }
 
-  /** Diálogo de cotizaciones de la fase, abierto desde un ítem (`itemInicial`) o para registrar una cotización nueva. */
-  cotizando = signal<{ itemInicial: number | null; registrar: boolean } | null>(null);
-
-  /** Abre las cotizaciones de la fase desde un ítem: `registrar` = directo al formulario de una cotización con ese ítem marcado. */
-  abrirCotizaciones(fila: ItemFila, registrar: boolean): void {
-    if (!this.conCotizaciones || fila.id === undefined) return;
-    this.cotizando.set({ itemInicial: fila.id, registrar });
-  }
+  /** Diálogo de cotizaciones de la subpartida; `registrar` = abre directo el formulario de una cotización nueva. */
+  cotizando = signal<{ registrar: boolean } | null>(null);
 
   cerrarCotizaciones(): void {
     this.cotizando.set(null);
@@ -175,10 +169,10 @@ export class PartidaItemsDialogComponent implements OnInit {
     return this.filas().some((f) => f.id !== undefined);
   }
 
-  /** Abre las cotizaciones de la fase desde la barra de arriba: `registrar` = directo al formulario de una cotización nueva. */
+  /** Abre las cotizaciones de la subpartida: `registrar` = directo al formulario de una cotización nueva. */
   abrirCotizacionesFase(registrar: boolean): void {
     if (!this.conCotizaciones || !this.hayItemsGuardados()) return;
-    this.cotizando.set({ itemInicial: null, registrar });
+    this.cotizando.set({ registrar });
   }
 
   /** Hubo cotizaciones o un ganador nuevo: al cerrar el diálogo se avisa al presupuesto para que refresque sus fases y sus montos. */

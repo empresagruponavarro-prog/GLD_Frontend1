@@ -86,8 +86,8 @@ export class ImprimirComponent {
   protected readonly idRaw = this.route.snapshot.paramMap.get('id') ?? '';
   private readonly id = Number(this.idRaw);
   protected readonly idNumero = this.id;
-  /** `?fase=` (id de `ppto_DetalleFases`): fase cuyo cuadro comparativo se imprime. */
-  protected readonly idFase = Number(this.route.snapshot.queryParamMap.get('fase') ?? 0);
+  /** `?subpartida=` (id de `ppto_DetalleFasesCate`): subpartida cuyo cuadro comparativo se imprime. */
+  protected readonly idSubpartida = Number(this.route.snapshot.queryParamMap.get('subpartida') ?? 0);
 
   protected readonly empresa = signal<EmpresaCabecera | null>(null);
   protected readonly isLoading = signal(true);

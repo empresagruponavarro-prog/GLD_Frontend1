@@ -19,8 +19,12 @@
   margin: 0 0 0.75rem;
 }
 
+/* El cuadro se ve desplegado completo: el cuerpo del modal es el que hace scroll, no la tabla (la global `.table-card` limita el alto y,
+   dentro de la columna flex del modal, se aplastaba). */
 .cf-tabla {
   overflow-x: auto;
+  max-height: none;
+  flex-shrink: 0;
 }
 
 .cf-prov {
@@ -69,4 +73,19 @@
 
 .cf-pie__comentario {
   flex: 1 1 260px;
+}
+
+.cf-fila-total td {
+  border-top: 2px solid var(--border-color, #e5e7eb);
+  font-weight: 600;
+}
+
+.cf-ganador {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.cf-ganador--gana {
+  font-weight: 700;
 }

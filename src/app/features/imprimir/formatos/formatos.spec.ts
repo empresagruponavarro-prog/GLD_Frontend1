@@ -208,30 +208,36 @@ describe('Formatos de impresión (GRP T68, T80)', () => {
     expect(el.textContent).toContain('-10 %');
   });
 
-  it('cuadro comparativo del presupuesto: ítem × proveedor con el elegido marcado y las condiciones', async () => {
-    const oferta = (id_cotizacion: number, precio: string) => ({ id_cotizacion, id_cot_detalle: id_cotizacion * 10, cotiza: true, cantidad: '10', precio_sin_igv: precio, precio_con_igv: precio, subtotal_sin_igv: '0', plazo_entrega_dias: null, cantidad_completa: true });
+  it('cuadro comparativo del presupuesto: un total por proveedor con su desglose por ítem, el elegido marcado y las condiciones', async () => {
+    const oferta = (id_cotizacion: number, subtotal: string, precio: string) => ({ id_cotizacion, id_cot_detalle: id_cotizacion * 10, cotiza: true, cantidad: '10', precio_sin_igv: precio, precio_con_igv: precio, subtotal_sin_igv: subtotal, plazo_entrega_dias: null, cantidad_completa: true });
     const cuadro = {
       id_presupuesto: 7,
       codigo_presupuesto: 'PPTO-2026-007',
       estado: 'EN_DESARROLLO',
+      id_detalle_categoria: 31,
+      subpartida: 'DEMOLICIONES',
       id_detalle_fase: 12,
       fase: 'PRELIMINARES',
       items_total: 1,
       items_adjudicados: 1,
+      id_cotizacion_ganadora: 2,
       lineas: [
-        { id_ppto_item: 1, numero_item: null, id_subfase: 1, subfase: 'MATERIALES', codigo: 'P-1', descripcion: 'CEMENTO', unidad: 'BOL', cantidad: '10', costo_unitario_meta: '5', costo_total_meta: '50', id_cot_detalle_ganadora: 20, id_cotizacion_ganadora: 2, adjudicado_por: 'ana', fecha_adjudicacion: null, comentario_adjudicacion: 'MEJOR PLAZO', cantidad_distinta: false, cubierto: false, compromiso: null, ofertas: [oferta(1, '4.50'), oferta(2, '4.00')] },
+        { id_ppto_item: 1, numero_item: null, id_subfase: 1, subfase: 'DEMOLICIONES', codigo: 'P-1', descripcion: 'CEMENTO', unidad: 'BOL', cantidad: '10', costo_unitario_meta: '5', costo_total_meta: '50', id_cot_detalle_ganadora: 20, id_cotizacion_ganadora: 2, adjudicado_por: 'ana', fecha_adjudicacion: null, comentario_adjudicacion: 'MEJOR PLAZO', cantidad_distinta: false, cubierto: false, compromiso: null, ofertas: [oferta(1, '45.00', '4.50'), oferta(2, '40.00', '4.00')] },
       ],
-      proveedores: [1, 2].map((id) => ({ id_cotizacion: id, numero: `COT-${id}`, id_proveedor: id, proveedor: id === 1 ? 'ACME SAC' : 'BETA EIRL', moneda_id: 'PEN', moneda_simbolo: 'S/', forma_pago: 'Contado', dias_credito: 0, adelanto_porcentaje: id === 2 ? '30' : null, medio_pago: null, plazo_entrega_dias: 5, validez_dias: 15, garantia: '6 MESES', condiciones: id === 2 ? 'ENTREGA EN OBRA' : null, afecto_igv: true, incluye_igv: false, total_sin_igv: '45.00', igv: '8.10', total: '53.10', total_soles: null, tc_usado: null, items_ganados: id === 2 ? 1 : 0 })),
+      proveedores: [1, 2].map((id) => ({ id_cotizacion: id, numero: `COT-${id}`, id_proveedor: id, proveedor: id === 1 ? 'ACME SAC' : 'BETA EIRL', moneda_id: 'PEN', moneda_simbolo: 'S/', forma_pago: 'Contado', dias_credito: 0, adelanto_porcentaje: id === 2 ? '30' : null, medio_pago: null, plazo_entrega_dias: 5, validez_dias: 15, garantia: '6 MESES', condiciones: id === 2 ? 'ENTREGA EN OBRA' : null, afecto_igv: true, incluye_igv: false, total_sin_igv: id === 1 ? '45.00' : '40.00', igv: '8.10', total: '53.10', total_soles: null, tc_usado: null, items_ganados: id === 2 ? 1 : 0, es_ganadora: id === 2, total_global: id === 1 ? '45.00' : '40.00' })),
     };
-    const { el } = await montar(FormatoCuadroComparativoPresupuestoComponent, { idPresupuesto: 7, idFase: 12 }, (r) =>
-      r.url.includes('/presupuestos/7/cuadro-comparativo') && r.params.get('id_detalle_fase') === '12' ? { cuerpo: cuadro } : undefined,
+    const { el } = await montar(FormatoCuadroComparativoPresupuestoComponent, { idPresupuesto: 7, idSubpartida: 31 }, (r) =>
+      r.url.includes('/presupuestos/7/cuadro-comparativo') && r.params.get('id_detalle_categoria') === '31' ? { cuerpo: cuadro } : undefined,
     );
-    expect(el.textContent).toContain('PPTO-2026-007 · PRELIMINARES');
+    expect(el.textContent).toContain('PPTO-2026-007 · PRELIMINARES · DEMOLICIONES');
     expect(el.textContent).toContain('ACME SAC');
     expect(el.textContent).toContain('BETA EIRL');
-    // El ganador (BETA) queda marcado en su celda y nombrado en la última columna.
-    expect(el.querySelectorAll('td.imp-ganadora')).toHaveLength(1);
-    expect(el.querySelector('td.imp-ganadora')?.textContent).toContain('4.00');
+    expect(el.textContent).toContain('Proveedor elegido: BETA EIRL');
+    // El proveedor elegido (BETA) queda marcado en toda su columna: encabezado + la fila del ítem.
+    const marcadas = Array.from(el.querySelectorAll('.imp-ganadora'));
+    expect(marcadas.length).toBeGreaterThanOrEqual(2);
+    expect(marcadas.some((c) => c.textContent?.includes('40.00'))).toBe(true);
+    expect(el.textContent).toContain('Total de la subpartida sin IGV');
     expect(el.textContent).toContain('adel. 30 %');
     expect(el.textContent).toContain('ENTREGA EN OBRA');
     expect(el.textContent).toContain('Motivo de la elección: MEJOR PLAZO');

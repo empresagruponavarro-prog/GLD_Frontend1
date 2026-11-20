@@ -18,20 +18,26 @@ describe('CotizacionesPptoService', () => {
 
   afterEach(() => http.verify());
 
-  it('lista las cotizaciones del presupuesto, con o sin filtro de fase', () => {
+  it('lista las cotizaciones del presupuesto, con o sin filtro de fase o de subpartida', () => {
     service.getCotizaciones(7).subscribe();
     const todas = http.expectOne((r) => r.url === `${api}/cotizaciones`);
     expect(todas.request.params.has('id_detalle_fase')).toBe(false);
+    expect(todas.request.params.has('id_detalle_categoria')).toBe(false);
     todas.flush([]);
 
-    service.getCotizaciones(7, 12).subscribe();
+    service.getCotizaciones(7, { idDetalleFase: 12 }).subscribe();
     const fase = http.expectOne((r) => r.url === `${api}/cotizaciones`);
     expect(fase.request.params.get('id_detalle_fase')).toBe('12');
     fase.flush([]);
+
+    service.getCotizaciones(7, { idDetalleCategoria: 31 }).subscribe();
+    const subpartida = http.expectOne((r) => r.url === `${api}/cotizaciones`);
+    expect(subpartida.request.params.get('id_detalle_categoria')).toBe('31');
+    subpartida.flush([]);
   });
 
   it('crea, edita y elimina una cotización por la ruta del presupuesto', () => {
-    const payload = { id_detalle_fase: 12, id_proveedor: 3, fecha: '2026-11-18', moneda_id: 'PEN', forma_pago: 'Contado', lineas: [] };
+    const payload = { id_detalle_categoria: 31, total: '1000', id_proveedor: 3, fecha: '2026-11-18', moneda_id: 'PEN', forma_pago: 'Contado' };
     service.createCotizacion(7, payload).subscribe();
     const crear = http.expectOne(`${api}/cotizaciones`);
     expect(crear.request.method).toBe('POST');
@@ -47,16 +53,16 @@ describe('CotizacionesPptoService', () => {
     expect(http.expectOne(`${api}/cotizaciones/5`).request.method).toBe('DELETE');
   });
 
-  it('el cuadro lleva la fase obligatoria; la adjudicación y los compromisos usan su ruta', () => {
-    service.getCuadro(7, 12).subscribe();
+  it('el cuadro lleva la subpartida obligatoria; la adjudicación y los compromisos usan su ruta', () => {
+    service.getCuadro(7, 31).subscribe();
     const cuadro = http.expectOne((r) => r.url === `${api}/cuadro-comparativo`);
-    expect(cuadro.request.params.get('id_detalle_fase')).toBe('12');
+    expect(cuadro.request.params.get('id_detalle_categoria')).toBe('31');
     cuadro.flush({});
 
-    service.adjudicar(7, { items: [{ id_ppto_item: 1, id_cot_detalle: null }], comentario: 'x' }).subscribe();
+    service.adjudicar(7, { id_detalle_categoria: 31, id_cotizacion: null, comentario: 'x' }).subscribe();
     const adj = http.expectOne(`${api}/adjudicacion`);
     expect(adj.request.method).toBe('PUT');
-    expect(adj.request.body.items[0].id_cot_detalle).toBeNull(); // null explícito = quitar el ganador
+    expect(adj.request.body).toEqual({ id_detalle_categoria: 31, id_cotizacion: null, comentario: 'x' }); // null explícito = quitar el ganador
     adj.flush({});
 
     service.getCompromisos(7).subscribe();
